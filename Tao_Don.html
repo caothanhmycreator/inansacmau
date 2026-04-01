@@ -61,7 +61,28 @@
 </head>
 <body>
 
-  <div id="sidebar-placeholder"></div>
+<div class="mobile-top-bar" style="display:none; background:#2D5A27; color:white; padding:10px; justify-content:space-between; align-items:center;">
+    <button onclick="toggleMobileSidebar()" style="background:none; border:1px solid white; color:white; padding:5px 10px; border-radius:4px;">☰ MENU</button>
+    <b style="font-size:14px;">SẮC MÀU</b>
+</div>
+
+<iframe src="sidebar.html" id="sidebar-frame" frameborder="0"></iframe>
+
+<div class="main-content">
+    </div>
+
+<style>
+    /* CSS Cố định khung - Hết giật */
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 1000; transition: 0.3s; }
+    .main-content { margin-left: 250px; transition: 0.3s; padding: 20px; }
+
+    @media (max-width: 768px) {
+        .mobile-top-bar { display: flex !important; }
+        #sidebar-frame { left: -250px; } /* Ẩn sidebar trên mobile */
+        .main-content { margin-left: 0 !important; }
+        body.sidebar-open #sidebar-frame { left: 0; } /* Trượt ra khi bấm Menu */
+    }
+</style>
 
   <div class="main-content">
     <div class="sacmau-wrapper">

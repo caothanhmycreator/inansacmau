@@ -1,24 +1,96 @@
-<div class="sidebar-wrapper" style="width: 250px; background: #2D5A27; height: 100vh; color: white; position: fixed; left: 0; top: 0; overflow-y: auto;">
-  <div style="padding: 25px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">
-    <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 80px;">
-    <h3 style="margin: 15px 0 5px 0; font-size: 18px; letter-spacing: 1px;">SẮC MÀU</h3>
-    <div id="user-display" style="font-size: 12px; color: #a5d6a7; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 4px; margin-top: 10px;">...</div>
-  </div>
-  
-  <div id="dynamic-menu-container" style="padding: 10px 0;">
-    </div>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { margin: 0; background: #2D5A27; color: white; font-family: sans-serif; overflow: hidden; }
+        .sidebar-header { padding: 15px; text-align: center; border-bottom: 1px solid #3d7a35; }
+        #user-display { font-size: 12px; background: rgba(0,0,0,0.2); padding: 5px; display: block; margin-top: 5px; border-radius: 4px; }
+        
+        .menu-box { height: calc(100vh - 160px); overflow-y: auto; padding-bottom: 50px; }
+        .menu-box::-webkit-scrollbar { width: 0px; } /* Bỏ thanh cuộn nhìn cho đẹp */
 
-  <div style="padding: 20px; margin-top: 20px;">
-    <button onclick="logout()" style="width: 100%; padding: 12px; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;">🚪 ĐĂNG XUẤT</button>
-  </div>
+        /* Cấu trúc 2 cấp */
+        .group { border-bottom: 1px solid #3d7a35; }
+        .group-title { padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; background: #2D5A27; font-size: 14px; }
+        .group-title:hover { background: #366b2f; }
+        .group-items { display: none; background: #1e3d1a; }
+        .group.active .group-items { display: block; }
+        .group.active .group-title span { transform: rotate(180deg); }
+
+        .nav-link { display: none; padding: 10px 20px 10px 35px; color: #cbd5e0; text-decoration: none; font-size: 13px; border-left: 3px solid transparent; }
+        .nav-link:hover { background: #1a3617; color: white; border-left-color: #FF8C00; }
+        
+        .logout-box { position: fixed; bottom: 0; width: 100%; padding: 10px; background: #2D5A27; border-top: 1px solid #3d7a35; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar-header">
+    <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" width="60">
+    <span id="user-display">Đang tải...</span>
 </div>
 
-<style>
-  .menu-item { 
-    display: flex; align-items: center; padding: 12px 20px; color: white; 
-    text-decoration: none; transition: 0.3s; font-size: 14px; border-left: 4px solid transparent;
-  }
-  .menu-item:hover { background: rgba(255,255,255,0.1); border-left-color: #FF8C00; }
-  .menu-item.active { background: #1e3d1a; border-left-color: #FF8C00; font-weight: bold; color: #FF8C00; }
-  .menu-item i { margin-right: 12px; font-size: 18px; width: 25px; text-align: center; }
-</style>
+<div class="menu-box">
+    <div class="group">
+        <div class="group-title" onclick="this.parentElement.classList.toggle('active')">📦 ĐƠN HÀNG <span>▼</span></div>
+        <div class="group-items">
+            <a href="Tao_Don.html" id="f1" target="_parent" class="nav-link">📝 Tạo đơn mới</a>
+            <a href="Sua_Don.html" id="f2" target="_parent" class="nav-link">✏️ Sửa phiếu đặt</a>
+            <a href="Xu_Ly.html" id="f3" target="_parent" class="nav-link">⚙️ Xử lý đơn</a>
+            <a href="Thanh_Toan.html" id="f11" target="_parent" class="nav-link">💳 Thanh toán</a>
+        </div>
+    </div>
+
+    <div class="group">
+        <div class="group-title" onclick="this.parentElement.classList.toggle('active')">🛠️ SẢN XUẤT <span>▼</span></div>
+        <div class="group-items">
+            <a href="Thiet_Ke.html" id="f4" target="_parent" class="nav-link">🎨 Thiết kế</a>
+            <a href="Duyet_File.html" id="f5" target="_parent" class="nav-link">✅ Duyệt File</a>
+            <a href="Cho_In.html" id="f12" target="_parent" class="nav-link">🖨️ Đơn chờ In</a>
+            <a href="Gia_Cong.html" id="f6" target="_parent" class="nav-link">🔨 Gia Công</a>
+            <a href="Giao_Hang.html" id="f10" target="_parent" class="nav-link">🚚 Giao Hàng</a>
+        </div>
+    </div>
+
+    <div class="group">
+        <div class="group-title" onclick="this.parentElement.classList.toggle('active')">💰 TÀI CHÍNH <span>▼</span></div>
+        <div class="group-items">
+            <a href="Thu_Chi.html" id="f14" target="_parent" class="nav-link">💵 Két đầu ngày & Chi</a>
+            <a href="Bao_Cao_Thu_Chi.html" id="f15" target="_parent" class="nav-link">📊 Báo cáo thu chi</a>
+            <a href="Cong_No.html" id="f8" target="_parent" class="nav-link">💸 Công nợ</a>
+        </div>
+    </div>
+
+    <div class="group">
+        <div class="group-title" onclick="this.parentElement.classList.toggle('active')">🛡️ QUẢN TRỊ <span>▼</span></div>
+        <div class="group-items">
+            <a href="Tien_Do.html" id="f16" target="_parent" class="nav-link">📈 Tiến độ</a>
+            <a href="BC_Cong_Viec.html" id="f7" target="_parent" class="nav-link">📝 Công việc</a>
+            <a href="Quan_Tri.html" id="f9" target="_parent" class="nav-link">🗂️ Quản trị đơn</a>
+        </div>
+    </div>
+</div>
+
+<div class="logout-box">
+    <button onclick="parent.logout()" style="width:100%; padding:8px; background:#c0392b; color:white; border:none; cursor:pointer; border-radius:4px;">🚪 Đăng xuất</button>
+</div>
+
+<script>
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    if (user) {
+        document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
+        const myModules = user.modules.split(',').map(s => s.trim());
+        myModules.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'block';
+        });
+        // Tự ẩn nhóm nếu không có mục nào bên trong
+        document.querySelectorAll('.group').forEach(g => {
+            const hasItem = Array.from(g.querySelectorAll('.nav-link')).some(a => a.style.display === 'block');
+            if (!hasItem) g.style.display = 'none';
+        });
+    }
+</script>
+</body>
+</html>
