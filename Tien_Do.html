@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radar Tiến Độ - Tiệm In Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+
+  <style>
+    :root { --primary-radar: #1a4d2e; --header-gradient: linear-gradient(135deg, #1a4d2e 0%, #2d5a27 100%); --bg-light: #f8fafc; }
+    body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    
+    .radar-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .radar-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* Stats Box */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 15px 0; }
+    .stat-card { padding: 12px; border-radius: 10px; text-align: center; font-weight: 800; border: 1px solid rgba(0,0,0,0.05); }
+    .stat-xanh { background: #f1f8f4; color: #28a745; border-color: #d4edda; }
+    .stat-cam { background: #fffdf5; color: #ffc107; border-color: #ffeeba; }
+    .stat-do { background: #fff5f5; color: #dc3545; border-color: #f8d7da; }
+
+    /* Radar Items */
+    .radar-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .radar-card { background: white; border-radius: 8px; padding: 12px 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-left: 6px solid #eee; transition: 0.2s; }
+    .radar-card:hover { transform: translateX(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+    .progress-track { height: 4px; background: #eee; border-radius: 2px; margin-top: 6px; width: 120px; overflow: hidden; }
+    .progress-bar { height: 100%; transition: 0.5s; }
+
+    .status-badge { padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; }
+
+    @media (max-width: 768px) { .main-content { margin-left: 0; } .radar-card { flex-direction: column; align-items: flex-start; gap: 8px; } }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar-placeholder"></div>
+
+  <div class="main-content">
+    <div class="radar-container">
+      <div class="radar-header">
+        <div>
+          <h2 style="margin:0; font-size: 18px;">📡 RADAR TIẾN ĐỘ ƯU TIÊN</h2>
+          <p style="margin:5px 0 0 0; font-size: 11px; opacity: 0.9;">Phân tích thời gian thực đơn hàng tồn đọng</p>
+        </div>
+        <button onclick="loadRadarData()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 CẬP NHẬT</button>
+      </div>
+
+      <div class="stats-grid" id="radar-stats">
+        <div class="stat-card stat-xanh">🟢 --</div>
+        <div class="stat-card stat-cam">🟠 --</div>
+        <div class="stat-card stat-do">🔴 --</div>
+      </div>
+
+      <div id="radar-list" class="radar-list">
+        <div style="text-align:center; padding:50px; color:#64748b;">📡 Đang quét tín hiệu đơn hàng...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STATUS_STYLE = {
+      "Chờ xử lý":     { icon: "⏳", color: "#607d8b" },
+      "Chờ thiết kế":   { icon: "🎨", color: "#2196f3" },
+      "Chờ duyệt file": { icon: "📝", color: "#9c27b0" },
+      "Chờ in":         { icon: "🖨️", color: "#009688" },
+      "Chờ gia công":   { icon: "🛠️", color: "#ff9800" },
+      "Chờ giao hàng":  { icon: "🚚", color: "#4caf50" },
+      "Chờ thanh toán": { icon: "💰", color: "#ffc107" },
+      "Đã giao lẻ":     { icon: "📦", color: "#2980b9" }
+    };
+
+    // SLA theo phút: Đỏ khi vượt ngưỡng này
+    const SLA_CONFIG = {
+      "Chờ xử lý": 30, "Chờ duyệt file": 60, "Chờ thiết kế": 180, 
+      "Chờ in": 120, "Chờ gia công": 240, "Chờ giao hàng": 60, 
+      "Chờ thanh toán": 1440, "Đã giao lẻ": 1440
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => { loadRadarData(); }, 600);
+    });
+
+    async function loadRadarData() {
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      try {
+        // Chỉ lấy những đơn chưa Hoàn tất và chưa vào Công nợ
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=not.in.("Hoàn tất","Công nợ")&order=id.desc`, { headers: h });
+        const data = await res.json();
+        processRadar(data);
+      } catch (e) { console.error(e); }
+    }
+
+    function processRadar(data) {
+      let stats = { xanh: 0, cam: 0, do: 0 };
+      let items = [];
+
+      data.forEach(item => {
+        const now = new Date();
+        const startTime = parseVNTime(item.Ngay_Gio);
+        const diffMins = Math.floor((now - startTime) / (1000 * 60));
+        
+        const limit = SLA_CONFIG[item.Trang_Thai] || 120;
+        let level = "xanh";
+        let alertColor = "#28a745";
+
+        if (diffMins >= limit) {
+          level = "do"; alertColor = "#dc3545"; stats.do++;
+        } else if (diffMins >= limit / 2) {
+          level = "cam"; alertColor = "#FF9800"; stats.cam++;
+        } else {
+          stats.xanh++;
+        }
+
+        const percent = Math.min(Math.floor((diffMins / limit) * 100), 100);
+        const displayTime = formatDuration(diffMins);
+
+        items.push({ ...item, level, alertColor, percent, displayTime });
+      });
+
+      // Sắp xếp Đỏ lên đầu
+      items.sort((a, b) => (a.level === 'do' ? -1 : 1) - (b.level === 'do' ? -1 : 1));
+
+      renderRadar(items, stats);
+    }
+
+    function renderRadar(items, s) {
+      document.getElementById('radar-stats').innerHTML = `
+        <div class="stat-card stat-xanh">🟢 AN TOÀN: ${s.xanh}</div>
+        <div class="stat-card stat-cam">🟠 CẢNH BÁO: ${s.cam}</div>
+        <div class="stat-card stat-do">🔴 CẦN GẤP: ${s.do}</div>
+      `;
+
+      if (items.length === 0) {
+        document.getElementById('radar-list').innerHTML = '<div style="text-align:center; padding:50px;">✅ Tuyệt vời! Không còn đơn hàng nào tồn đọng.</div>';
+        return;
+      }
+
+      document.getElementById('radar-list').innerHTML = items.map(it => {
+        const st = STATUS_STYLE[it.Trang_Thai] || { icon: "📍", color: "#95a5a6" };
+        return `
+          <div class="radar-card" style="border-left-color: ${it.alertColor}">
+            <div style="flex: 1.5; min-width: 150px;">
+              <div style="font-size: 13px; font-weight: 800; color: #1e293b;">${it.Ten_Khach_Hang}</div>
+              <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Mã: #${it.Ma_Don}</div>
+              <div class="progress-track">
+                <div class="progress-bar" style="width: ${it.percent}%; background: ${it.alertColor};"></div>
+              </div>
+            </div>
+
+            <div style="flex: 2; font-size: 12px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              ${it.Ten_Hang}
+            </div>
+
+            <div style="flex: 1; text-align: center;">
+              <span class="status-badge" style="background: ${st.color}15; color: ${st.color}; border: 1px solid ${st.color}30;">
+                ${st.icon} ${it.Trang_Thai}
+              </span>
+            </div>
+
+            <div style="flex: 1; text-align: right; font-size: 13px; font-weight: 800; color: ${it.alertColor};">
+              ${it.displayTime}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /** HELPER: Chuyển đổi DD/MM/YYYY HH:mm:ss sang Date Object */
+    function parseVNTime(vnStr) {
+      if (!vnStr) return new Date();
+      const parts = vnStr.split(' ');
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].split(':');
+      return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
+    }
+
+    /** HELPER: Định dạng thời gian trôi qua */
+    function formatDuration(mins) {
+      if (mins < 60) return `${mins} phút`;
+      const hours = Math.floor(mins / 60);
+      const m = mins % 60;
+      if (hours < 24) return `${hours} giờ ${m}p`;
+      const days = Math.floor(hours / 24);
+      const h = hours % 24;
+      return `${days} ngày ${h}h`;
+    }
+  </script>
+</body>
+</html>
