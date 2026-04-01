@@ -167,7 +167,7 @@
           <div>${m.Ten_Hang}<br><small>${m.Trang_Thai}</small></div>
           <div style="text-align:center">${m.So_Luong}</div>
           <div style="text-align:right">${(m.Thanh_Tien || 0).toLocaleString()}</div>
-          <div style="text-align:right">${isReady ? `<button class="btn-action btn-giao" onclick="execLe(${idx}, ${mIdx})">XỬ LÝ LẺ</button>` : '⌛'}</div>
+          <div style="text-align:right">${isReady ? `<button class="btn-action btn-giao" onclick="execLe(${idx}, ${mIdx})">XỬ LÝ ĐẺ</button>` : '⌛'}</div>
         </div>`;
       }).join('');
       Swal.fire({ title: warning || 'CHI TIẾT ĐƠN HÀNG', html: `<div style="text-align:left;">${header}${rows}</div>`, showConfirmButton: false, showCloseButton: true, width: '750px' });
@@ -177,7 +177,7 @@
       const it = window.listF8[idx];
       const m = it.cacMon[mIdx];
       Swal.fire({
-        title: 'XỬ LÝ GIAO LẺ',
+        title: 'XỬ LÝ GIAO ĐẺ',
         text: m.Ten_Hang,
         icon: 'info',
         showDenyButton: true,
@@ -192,7 +192,7 @@
       });
     }
 
-    /** 4. CẬP NHẬT CƠ SỞ DỮ LIỆU */
+    /** 4. CẬP NHẬT CƠ SỞ DỮ LIỆU (Đã cập nhật Gio_Thanh_Toan) */
     async function processUpdate(it, type, extra = {}) {
       Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
@@ -208,7 +208,7 @@
           const rowLog = await resLog.json();
           if (rowLog.length > 0) {
             await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
-              method: 'PATCH', headers: h, body: JSON.stringify({ Trang_Thai: statusMoi, Gio_Giao_Hang: cleanNow, Nguoi_Thuc_Hien: "Giao hàng" })
+              method: 'PATCH', headers: h, body: JSON.stringify({ Trang_Thai: statusMoi, Gio_Thanh_Toan: cleanNow, Nguoi_Thuc_Hien: "Giao hàng" })
             });
           }
         }
@@ -267,7 +267,7 @@
 
     function showPreviewLe(it, mIdx) {
       const m = it.cacMon[mIdx];
-      const rows = `<tr><td>${m.Ten_Hang} (GIAO LẺ)</td><td style="text-align:center;">${m.So_Luong}</td></tr>`;
+      const rows = `<tr><td>${m.Ten_Hang} (GIAO ĐẺ)</td><td style="text-align:center;">${m.So_Luong}</td></tr>`;
       const footer = `<div style="font-size:12px; font-weight:bold;">Đơn còn nợ tổng: ${(it.tongDon - it.tongDaTra).toLocaleString()}đ</div>`;
       renderAndPrint(getPrintHTML(it, rows, footer));
     }
