@@ -3,45 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Báo cáo công việc - Sắc Màu</title>
+  <title>Báo cáo năng suất - Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
 
   <style>
-    :root { --primary: #2c3e50; --accent: #27ae60; --bg: #f1f5f9; }
-    body { margin: 0; background: var(--bg); display: flex; font-family: 'Segoe UI', sans-serif; }
+    :root { --primary-dark: #2c3e50; --success: #27ae60; --bg-body: #f4f7f6; --border: #e2e8f0; }
+    body { margin: 0; background: var(--bg-body); display: flex; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     
-    /* 1. SỬA LỖI TRÀN SIDEBAR */
-    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    /* 1. CỐ ĐỊNH SIDEBAR MARGIN */
+    .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
 
-    .bc-container { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; }
-    .bc-header { background: white; padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    .bc-card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid var(--border); }
     
-    .filter-group { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
-    .filter-group input { border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; outline: none; }
-    .btn-view { background: var(--primary); color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .bc-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: white; }
+    .bc-title { margin: 0; font-size: 20px; color: var(--primary-dark); font-weight: 800; display: flex; align-items: center; gap: 10px; }
+    
+    .filter-box { display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px 15px; border-radius: 10px; border: 1px solid var(--border); }
+    .filter-box input { border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; outline: none; font-weight: 600; color: var(--primary-dark); }
+    .btn-refresh { background: var(--primary-dark); color: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; }
+    .btn-refresh:hover { background: #1a252f; transform: translateY(-1px); }
 
-    /* Stats Overview */
-    .overview-grid { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 20px; }
-    .main-stat-card { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; padding: 25px; border-radius: 12px; text-align: center; }
-    .main-stat-value { font-size: 32px; font-weight: 800; margin: 5px 0; }
+    /* Stats Banner */
+    .stats-banner { display: grid; grid-template-columns: 1fr; padding: 20px; gap: 20px; }
+    .stat-mini-card { background: #2c3e50; color: white; padding: 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .stat-label { font-size: 13px; opacity: 0.8; text-transform: uppercase; font-weight: 600; }
+    .stat-value { font-size: 36px; font-weight: 900; }
 
     /* Productivity Table */
-    .prod-section { padding: 0 20px 20px 20px; }
-    .prod-table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
-    .prod-table th { background: #f8fafc; padding: 15px; text-align: left; color: #64748b; font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
-    .prod-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+    .table-container { padding: 0 20px 20px 20px; }
+    .productivity-table { width: 100%; border-collapse: collapse; background: white; }
+    .productivity-table th { text-align: left; padding: 15px; background: #f1f5f9; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--border); }
+    .productivity-table td { padding: 16px 15px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     
-    .step-name { display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1e293b; }
-    .step-icon { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: #f1f5f9; }
-    
-    .count-badge { background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; }
-    .btn-check { background: none; border: 1px solid #e2e8f0; padding: 5px 12px; border-radius: 6px; cursor: pointer; color: #64748b; font-size: 12px; transition: 0.2s; }
-    .btn-check:hover { background: var(--primary); color: white; }
+    .milestone-name { display: flex; align-items: center; gap: 12px; font-weight: 700; color: #1e293b; font-size: 15px; }
+    .milestone-icon { width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 
-    @media (max-width: 768px) { .main-content { margin-left: 0; } }
+    .result-badge { background: #ecfdf5; color: #065f46; padding: 6px 14px; border-radius: 30px; font-weight: 800; font-size: 15px; border: 1px solid #a7f3d0; }
+    .btn-detail { background: white; border: 1px solid #cbd5e1; padding: 6px 15px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; transition: 0.2s; }
+    .btn-detail:hover { background: #f8fafc; border-color: var(--primary-dark); color: var(--primary-dark); }
+
+    @media (max-width: 1024px) { .main-content { margin-left: 0; } }
   </style>
 </head>
 <body>
@@ -49,35 +53,35 @@
   <div id="sidebar-placeholder"></div>
 
   <div class="main-content">
-    <div class="bc-container">
+    <div class="bc-card">
       <div class="bc-header">
-        <h2 style="margin:0; font-size: 20px; color: var(--primary);">📋 BÁO CÁO NĂNG SUẤT</h2>
-        <div class="filter-group">
-          <label style="font-size: 13px; font-weight: 600;">Chọn ngày:</label>
+        <h2 class="bc-title">📊 BÁO CÁO NĂNG SUẤT</h2>
+        <div class="filter-box">
           <input type="date" id="report-date">
-          <button class="btn-view" onclick="loadReportData()">XEM DỮ LIỆU</button>
+          <button class="btn-refresh" onclick="loadDailyReport()">TRÍCH XUẤT</button>
         </div>
       </div>
 
-      <div class="overview-grid">
-        <div class="main-stat-card">
-          <div style="font-size: 13px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px;">Tổng số đơn nhận trong ngày</div>
-          <div class="main-stat-value" id="val-tongDon">0</div>
-          <div style="font-size: 12px; opacity: 0.7;">Đơn hàng mới được khởi tạo</div>
+      <div class="stats-banner">
+        <div class="stat-mini-card">
+          <div>
+            <div class="stat-label">Số đơn mới nhận</div>
+            <div style="font-size: 11px; opacity: 0.6;">Đơn hàng được khởi tạo trong ngày</div>
+          </div>
+          <div class="stat-value" id="val-new-orders">0</div>
         </div>
       </div>
 
-      <div class="prod-section">
-        <h3 style="font-size: 15px; color: #475569; margin-bottom: 15px;">🚀 TIẾN ĐỘ THỰC HIỆN TRONG NGÀY</h3>
-        <table class="prod-table">
+      <div class="table-container">
+        <table class="productivity-table">
           <thead>
             <tr>
-              <th>Công đoạn sản xuất</th>
-              <th style="text-align: center;">Số lượng đã xong</th>
-              <th style="text-align: right;">Hành động</th>
+              <th>Kết quả hoàn thành trong ngày</th>
+              <th style="text-align: center;">Số lượng</th>
+              <th style="text-align: right;">Danh sách</th>
             </tr>
           </thead>
-          <tbody id="prod-body">
+          <tbody id="productivity-body">
             </tbody>
         </table>
       </div>
@@ -85,31 +89,29 @@
   </div>
 
   <script>
-    // Cấu hình các khâu cần theo dõi (Khớp với cột trong Log_TienDo)
-    const STEPS = [
-      { label: "Xử lý đơn", col: "Gio_Xu_Ly", icon: "⏳", color: "#64748b" },
-      { label: "Thiết kế", col: "Gio_Thiet_Ke", icon: "🎨", color: "#3b82f6" },
-      { label: "Duyệt file", col: "Gio_Duyet_File", icon: "✅", color: "#8b5cf6" },
-      { label: "In ấn", col: "Gio_In", icon: "🖨️", color: "#10b981" },
-      { label: "Gia công", col: "Gio_Gia_Cong", icon: "⚙️", color: "#f59e0b" },
-      { label: "Giao hàng/Thanh toán", col: "Gio_Thanh_Toan", icon: "🚚", color: "#ef4444" },
-      { label: "Hoàn tất đơn", col: "Gio_Hoan_Tat", icon: "🎉", color: "#22c55e" }
+    /** 🚀 LOGIC ĐIỂM CHẠM: Đếm các món đã cập bến khâu tiếp theo thành công */
+    const MILESTONES = [
+      { label: "Đã xử lý xong (Chuyển thiết kế)", col: "Gio_Thiet_Ke", icon: "📋", color: "#f1f5f9" },
+      { label: "Đã thiết kế xong (Chuyển duyệt)", col: "Gio_Duyet_File", icon: "🎨", color: "#e0f2fe" },
+      { label: "Chốt File xong (Chuyển đi In)", col: "Gio_In", icon: "🖨️", color: "#dcfce7" },
+      { label: "Đã in xong (Chuyển Gia công)", col: "Gio_Gia_Cong", icon: "⚙️", color: "#fef3c7" },
+      { label: "Gia công xong (Chuyển Giao hàng)", col: "Gio_Thanh_Toan", icon: "🚚", color: "#fee2e2" },
+      { label: "Đã hoàn tất toàn bộ đơn", col: "Gio_Hoan_Tat", icon: "🎉", color: "#f3e8ff" }
     ];
 
-    window.reportData = {};
+    window.cacheData = {};
 
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('report-date').value = new Date().toISOString().split('T')[0];
-      setTimeout(() => { loadReportData(); }, 600);
+      setTimeout(() => { loadDailyReport(); }, 600);
     });
 
-    /** 🚀 2. TẢI DỮ LIỆU CHÍNH XÁC TỪ LOG_TIENDO */
-    async function loadReportData() {
+    async function loadDailyReport() {
       const rawDate = document.getElementById('report-date').value;
       const [y, m, d] = rawDate.split('-');
-      const dateStr = `${d}/${m}/${y}`; // Định dạng chuẩn Database
+      const dateStr = `${d}/${m}/${y}`; // Định dạng DD/MM/YYYY
 
-      Swal.fire({ title: 'Đang phân tích...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      Swal.fire({ title: 'Đang tổng hợp...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
 
       try {
@@ -121,91 +123,80 @@
         const dataBH = await resBH.json();
         const dataLog = await resLog.json();
 
-        // 1. Tính tổng đơn mới (Gom nhóm theo Ma_Don)
-        const newOrders = new Set(dataBH.map(it => it.Ma_Don));
-        document.getElementById('val-tongDon').innerText = newOrders.size;
+        // 1. Đếm đơn mới
+        const uniqueOrders = new Set(dataBH.map(i => i.Ma_Don));
+        document.getElementById('val-new-orders').innerText = uniqueOrders.size;
 
-        // 2. Tính số lượng thực hiện từng giai đoạn (Dựa trên Log_TienDo)
+        // 2. Phân tích năng suất theo cột mốc giờ
         let stats = {};
-        STEPS.forEach(s => stats[s.col] = []);
+        MILESTONES.forEach(m => stats[m.col] = []);
 
         dataLog.forEach(row => {
-          STEPS.forEach(step => {
-            const timeVal = row[step.col];
+          MILESTONES.forEach(ms => {
+            const timeVal = row[ms.col];
             if (timeVal && timeVal.includes(dateStr)) {
-              stats[step.col].push(row);
+              stats[ms.col].push(row);
             }
           });
         });
 
-        window.reportData = stats;
-        renderProductivityTable(stats);
+        window.cacheData = stats;
+        renderTable(stats);
         Swal.close();
 
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
-    /** 🚀 3. HIỂN THỊ BẢNG NĂNG SUẤT */
-    function renderProductivityTable(stats) {
-      const tbody = document.getElementById('prod-body');
-      
-      tbody.innerHTML = STEPS.map(step => {
-        const count = stats[step.col].length;
+    function renderTable(stats) {
+      const tbody = document.getElementById('productivity-body');
+      tbody.innerHTML = MILESTONES.map(ms => {
+        const count = stats[ms.col].length;
         return `
           <tr>
             <td>
-              <div class="step-name">
-                <div class="step-icon" style="color: ${step.color}">${step.icon}</div>
-                ${step.label}
+              <div class="milestone-name">
+                <div class="milestone-icon" style="background: ${ms.color}">${ms.icon}</div>
+                ${ms.label}
               </div>
             </td>
             <td style="text-align: center;">
-              <span class="count-badge">${count} món</span>
+              <span class="result-badge">${count} món</span>
             </td>
             <td style="text-align: right;">
-              <button class="btn-check" onclick="showStepDetail('${step.col}', '${step.label}')">Xem chi tiết</button>
+              <button class="btn-detail" onclick="showPopupDetail('${ms.col}', '${ms.label}')">Xem chi tiết</button>
             </td>
           </tr>
         `;
       }).join('');
     }
 
-    /** 🚀 4. POPUP XEM DANH SÁCH MÓN HÀNG THEO CÔNG ĐOẠN */
-    window.showStepDetail = function(col, label) {
-      const items = window.reportData[col];
-      if (!items || items.length === 0) {
-        return Swal.fire('Thông báo', 'Không có sản phẩm nào hoàn thành khâu này trong ngày.', 'info');
-      }
+    window.showPopupDetail = function(col, label) {
+      const items = window.cacheData[col];
+      if (!items || items.length === 0) return Swal.fire('Trống', 'Không có dữ liệu khâu này.', 'info');
 
       let html = `
-        <div style="max-height:400px; overflow-y:auto;">
-          <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+        <div style="max-height:450px; overflow-y:auto; border:1px solid #eee; border-radius:8px;">
+          <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
             <thead>
-              <tr style="background:#f1f5f9;">
-                <th style="padding:10px;">Mã đơn</th>
-                <th style="padding:10px;">Khách hàng</th>
-                <th style="padding:10px;">Sản phẩm</th>
+              <tr style="background:#f8fafc; position:sticky; top:0;">
+                <th style="padding:12px; border-bottom:2px solid #e2e8f0;">Mã đơn</th>
+                <th style="padding:12px; border-bottom:2px solid #e2e8f0;">Khách hàng</th>
+                <th style="padding:12px; border-bottom:2px solid #e2e8f0;">Sản phẩm</th>
               </tr>
             </thead>
             <tbody>
               ${items.map(i => `
-                <tr style="border-bottom:1px solid #eee;">
-                  <td style="padding:10px;"><b>${i.Ma_Don}</b></td>
-                  <td style="padding:10px;">${i.Khach_Hang}</td>
-                  <td style="padding:10px;">${i.Ten_Hang}</td>
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:12px;"><b>${i.Ma_Don}</b></td>
+                  <td style="padding:12px;">${i.Khach_Hang}</td>
+                  <td style="padding:12px; color:#475569;">${i.Ten_Hang}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
         </div>`;
 
-      Swal.fire({
-        title: `DANH SÁCH: ${label.toUpperCase()}`,
-        html: html,
-        width: '700px',
-        confirmButtonColor: '#2c3e50',
-        confirmButtonText: 'ĐÓNG'
-      });
+      Swal.fire({ title: label.toUpperCase(), html: html, width: '800px', confirmButtonColor: '#2c3e50' });
     };
   </script>
 </body>
