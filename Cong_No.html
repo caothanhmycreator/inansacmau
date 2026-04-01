@@ -125,7 +125,7 @@
       } catch (e) { console.error(e); }
     }
 
-    /** 2. XEM CHI TIẾT ĐƠN HÀNG (Gom nhóm từ NhatKy_BanHang) */
+    /** 2. XEM CHI TIẾT ĐƠN HÀNG */
     async function viewOrderDetails(maDon) {
       Swal.fire({ title: 'Đang tải chi tiết...', didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
@@ -157,7 +157,7 @@
       } catch (e) { console.error(e); }
     }
 
-    /** 3. FORM NHẬP CÔNG NỢ MỚI (ĐẸP & AUTO TRỪ) */
+    /** 3. FORM NHẬP CÔNG NỢ MỚI (BỔ SUNG Ô GHI CHÚ) */
     function openAddDebtPopup() {
       Swal.fire({
         title: 'NHẬP CÔNG NỢ MỚI',
@@ -184,6 +184,10 @@
               <label>Số nợ còn lại (Tự động)</label>
               <input id="add_conlai" value="0" readonly>
             </div>
+            <div class="f9-input-group" style="grid-column: span 2;">
+              <label>Ghi chú</label>
+              <input id="add_ghichu" placeholder="Nhập ghi chú (nếu có)">
+            </div>
           </div>`,
         showCancelButton: true, confirmButtonText: '💾 LƯU NỢ', confirmButtonColor: '#c0392b',
         preConfirm: () => {
@@ -191,12 +195,13 @@
           const kh = document.getElementById('add_kh').value;
           const tong = cleanF9Money(document.getElementById('add_tong').value);
           const datra = cleanF9Money(document.getElementById('add_datra').value);
+          const ghichu = document.getElementById('add_ghichu').value;
           const conlai = tong - datra;
 
           if (!ma || !kh || tong <= 0) return Swal.showValidationMessage('Vui lòng điền mã, tên khách và tổng nợ > 0!');
           if (datra > tong) return Swal.showValidationMessage('Số đã trả không được lớn hơn tổng nợ!');
           
-          return { ma, kh, tong, datra, conlai };
+          return { ma, kh, tong, datra, conlai, ghichu };
         }
       }).then(async (r) => {
         if (r.isConfirmed) {
@@ -208,7 +213,7 @@
     async function saveDebtToDB(data) {
       Swal.fire({ title: 'Đang lưu...', didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
-      const nowFull = window.formatDateTimeVN(); // Lấy đủ Ngày & Giờ
+      const nowFull = window.formatDateTimeVN();
 
       try {
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No`, {
@@ -216,7 +221,8 @@
           body: JSON.stringify({
             Ngay_Gio: nowFull,
             Ma_Don: data.ma, Khach_Hang: data.kh,
-            Tong_Don: String(data.tong), Da_Tra: String(data.datra), Con_Lai: String(data.conlai),
+            Tong_Don: String(data.tong), Da_Tra: String(data.datra), 
+            Con_Lai: String(data.conlai), Ghi_Chu: data.ghichu,
             id: Math.floor(Date.now() / 1000)
           })
         });
@@ -225,7 +231,7 @@
       } catch (e) { console.error(e); }
     }
 
-    /** 4. THU NỢ & GHI NHẬT KÝ THU NỢ (FIX LỖI) */
+    /** 4. THU NỢ & GHI NHẬT KÝ THU NỢ */
     window.openDebtPopup = function(idx) {
       const it = window.listF9[idx];
       const nợHiệnTại = parseFloat(it.Con_Lai);
@@ -277,23 +283,17 @@
         const moiDaTra = parseFloat(it.Da_Tra) + soTienThu;
         const moiConLai = parseFloat(it.Con_Lai) - soTienThu;
 
-        // 1. Cập nhật bảng Cong_No
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?id=eq.${it.id}`, {
           method: 'PATCH', headers: h,
           body: JSON.stringify({ Da_Tra: String(moiDaTra), Con_Lai: String(moiConLai < 0 ? 0 : moiConLai) })
         });
 
-        // 2. Ghi Nhật ký thu nợ (KHỚP THEO ẢNH ab482d)
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, {
           method: 'POST', headers: h,
           body: JSON.stringify({
-            Ngay_Gio: nowFull,
-            Ma_Don: it.Ma_Don,
-            Khach_Hang: it.Khach_Hang,
-            San_Pham: "Thu nợ đơn: " + it.Ma_Don,
-            So_Tien_Thu: soTienThu, // Cột trong ảnh ab482d
-            Hinh_Thuc_Thanh_Toan: hinhThuc, // Cột trong ảnh ab482d
-            id: Math.floor(Date.now() / 1000)
+            Ngay_Gio: nowFull, Ma_Don: it.Ma_Don, Khach_Hang: it.Khach_Hang,
+            San_Pham: "Thu nợ đơn: " + it.Ma_Don, So_Tien_Thu: soTienThu,
+            Hinh_Thuc_Thanh_Toan: hinhThuc, id: Math.floor(Date.now() / 1000)
           })
         });
 
@@ -321,9 +321,10 @@
       document.querySelectorAll('.pay-opt-f9').forEach(e => e.classList.remove('active'));
       s.className = 'pay-sld-f9 ' + (val === 'TM' ? 'tm' : (val === 'CK' ? 'ck' : 'mid'));
       if (val) document.getElementById('f9-opt-' + val.toLowerCase()).classList.add('active');
+      else document.getElementById('f9-opt-mid').classList.add('active');
     }
 
-    /** PHIẾU IN (GIỮ TÔNG ĐỎ ĐÔ) */
+    /** PHIẾU IN */
     function showPrintPreviewF9(it, soTienThu, conLai) {
       const isCleared = conLai <= 10;
       const billHtml = `
