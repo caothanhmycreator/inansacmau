@@ -182,7 +182,7 @@
           Ngay_Gio: cleanNow,
           Ma_Don: item.Ma_Don,
           Khach_Hang: item.Ten_Khach_Hang,
-          San_Pham: item.Ten_Hang,
+          Ten_Hang: item.Ten_Hang,
           Ma_Nguyen_Lieu: m.maNL,
           Ten_Nguyen_Lieu: m.tenNL,
           Phan_Loai: m.loaiNL,
@@ -201,7 +201,7 @@
         });
 
         // --- BƯỚC 3: CẬP NHẬT LOG TIẾN ĐỘ ---
-        const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${item.Ma_Don}&San_Pham=eq.${encodeURIComponent(item.Ten_Hang)}&select=id`, { headers: h });
+        const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${item.Ma_Don}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}&select=id`, { headers: h });
         const rowLog = await resLog.json();
 
         if (rowLog.length > 0) {

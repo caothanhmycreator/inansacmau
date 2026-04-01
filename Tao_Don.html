@@ -239,11 +239,11 @@
 
       try {
         const rowsBH = cart.map((i, idx) => ({ Ngay_Gio: cleanTime, Ma_Don: ma, So_Dien_Thoai: document.getElementById("sdt").value, Ten_Khach_Hang: tenKH, Ten_Hang: i.sp, So_Luong: i.sl, Don_Gia: i.dg, Thanh_Tien: (i.sl * i.dg), Trang_Thai: "Chờ xử lý", Don_Vi_Tinh: i.dvt, Khach_Da_Tra: (idx === 0 ? daTra : 0), Con_No: (idx === 0 ? (totalBill - daTra) : 0), Dia_Chi: document.getElementById("diaChi").value, Hinh_Thuc_Thanh_Toan: (idx === 0 ? currentPayMethod : "") }));
-        const rowsLog = cart.map(i => ({ Ngay_Gio: cleanTime, Ma_Don: ma, San_Pham: i.sp, Khach_Hang: tenKH, Gio_Tao_Don: cleanTime, Gio_Xu_Ly: cleanTime, Trang_Thai: "Chờ xử lý", Nguoi_Thuc_Hien: "Hệ thống" }));
+        const rowsLog = cart.map(i => ({ Ngay_Gio: cleanTime, Ma_Don: ma, Ten_Hang: i.sp, Khach_Hang: tenKH, Gio_Tao_Don: cleanTime, Gio_Xu_Ly: cleanTime, Trang_Thai: "Chờ xử lý", Nguoi_Thuc_Hien: "Hệ thống" }));
         
         await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_BanHang`, { method: 'POST', headers: h, body: JSON.stringify(rowsBH) });
         await fetch(`${SB_CONFIG.URL}/rest/v1/Log_TienDo`, { method: 'POST', headers: h, body: JSON.stringify(rowsLog) });
-        if (daTra > 0) { await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers: h, body: JSON.stringify({ Ngay_Gio: cleanTime, Ma_Don: ma, Khach_Hang: tenKH, San_Pham: cart.map(x => x.sp).join(", "), So_Tien_Thu: daTra, Hinh_Thuc_Thanh_Toan: currentPayMethod }) }); }
+        if (daTra > 0) { await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers: h, body: JSON.stringify({ Ngay_Gio: cleanTime, Ma_Don: ma, Khach_Hang: tenKH, Ten_Hang: cart.map(x => x.sp).join(", "), So_Tien_Thu: daTra, Hinh_Thuc_Thanh_Toan: currentPayMethod }) }); }
 
         Swal.fire('Thành công', 'Đã lưu đơn: ' + ma, 'success').then(() => { location.reload(); });
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }

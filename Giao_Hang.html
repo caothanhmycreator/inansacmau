@@ -204,7 +204,7 @@
 
         for (let m of itemsToUpdate) {
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${m.id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ Trang_Thai: statusMoi }) });
-          const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${it.maDon}&San_Pham=eq.${encodeURIComponent(m.Ten_Hang)}&select=id`, { headers: h });
+          const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${it.maDon}&Ten_Hang=eq.${encodeURIComponent(m.Ten_Hang)}&select=id`, { headers: h });
           const rowLog = await resLog.json();
           if (rowLog.length > 0) {
             await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {

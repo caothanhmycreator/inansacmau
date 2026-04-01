@@ -226,7 +226,7 @@
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${m.id}`, { method: 'PATCH', headers: h, body: JSON.stringify(bhData) });
 
           // --- BƯỚC 2: CẬP NHẬT LOG TIẾN ĐỘ (THEO YÊU CẦU 2 & 3) ---
-          const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${it.maDon}&San_Pham=eq.${encodeURIComponent(m.tenMon)}&select=id`, { headers: h });
+          const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${it.maDon}&Ten_Hang=eq.${encodeURIComponent(m.tenMon)}&select=id`, { headers: h });
           const rowLog = await resLog.json();
           if (rowLog.length > 0) {
             let logData = { 
@@ -263,7 +263,7 @@
             method: 'POST', headers: h,
             body: JSON.stringify({
               Ngay_Gio: cleanNow, Ma_Don: it.maDon, Khach_Hang: it.khachHang,
-              San_Pham: "Thanh toán đơn: " + it.maDon, So_Tien_Thu: payMore,
+              Ten_Hang: "Thanh toán đơn: " + it.maDon, So_Tien_Thu: payMore,
               Hinh_Thuc_Thanh_Toan: hinhThuc, id: Math.floor(Date.now() / 1000) + 1
             })
           });

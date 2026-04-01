@@ -175,7 +175,7 @@
           });
 
           // --- Cập nhật Log Tiến độ (Ghi vào đúng các cột thời gian) ---
-          const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${ma}&San_Pham=eq.${encodeURIComponent(sp)}&select=id`, { headers: h });
+          const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${ma}&Ten_Hang=eq.${encodeURIComponent(sp)}&select=id`, { headers: h });
           const rowLog = await resLog.json();
 
           if (rowLog.length > 0) {

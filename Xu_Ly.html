@@ -203,7 +203,7 @@
           });
         }
 
-        const searchLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${p.maDon}&San_Pham=eq.${encodeURIComponent(p.tenSP)}&select=id`, { headers: h });
+        const searchLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.tenSP)}&select=id`, { headers: h });
         const rowLog = await searchLog.json();
 
         if (rowLog.length > 0) {

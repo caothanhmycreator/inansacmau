@@ -157,7 +157,7 @@
           Ngay_Gio: cleanNow,
           Ma_Don: item.Ma_Don,
           Khach_Hang: item.Ten_Khach_Hang,
-          San_Pham: item.Ten_Hang,
+          Ten_Hang: item.Ten_Hang,
           So_Luong: item.So_Luong || 0,
           Thanh_Tien: item.Thanh_Tien || 0,
           Don_Vi_Lien_Ket: gcData.dvLK,
@@ -177,7 +177,7 @@
           })
         });
 
-        const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${item.Ma_Don}&San_Pham=eq.${encodeURIComponent(item.Ten_Hang)}&select=id`, { headers: h });
+        const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${item.Ma_Don}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}&select=id`, { headers: h });
         const rowLog = await resLog.json();
         if (rowLog.length > 0) {
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {

@@ -292,7 +292,7 @@
           method: 'POST', headers: h,
           body: JSON.stringify({
             Ngay_Gio: nowFull, Ma_Don: it.Ma_Don, Khach_Hang: it.Khach_Hang,
-            San_Pham: "Thu nợ đơn: " + it.Ma_Don, So_Tien_Thu: soTienThu,
+            Ten_Hang: "Thu nợ đơn: " + it.Ma_Don, So_Tien_Thu: soTienThu,
             Hinh_Thuc_Thanh_Toan: hinhThuc, id: Math.floor(Date.now() / 1000)
           })
         });

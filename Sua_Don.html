@@ -331,20 +331,20 @@ async function f12_saveFinal() {
     // 2. NHẬT KÝ THU NỢ
     if (extraDeposit > 0) {
       await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers, body: JSON.stringify({ 
-        Ngay_Gio: cleanNow, Ma_Don: maDon, Khach_Hang: tenKH, So_Tien_Thu: extraDeposit, Hinh_Thuc_Thanh_Toan: f12_hinhThuc, San_Pham: "Cọc thêm đơn " + maDon
+        Ngay_Gio: cleanNow, Ma_Don: maDon, Khach_Hang: tenKH, So_Tien_Thu: extraDeposit, Hinh_Thuc_Thanh_Toan: f12_hinhThuc, Ten_Hang: "Cọc thêm đơn " + maDon
       }) });
     }
 
     // 🎯 3. LOG TIẾN ĐỘ (Cập nhật đúng cấu hình bảng của Mỹ)
     const allItems = [...itemsToUpdate, ...itemsToCreate];
     for (let item of allItems) {
-      const checkLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${maDon}&San_Pham=eq.${encodeURIComponent(item.Ten_Hang)}`, { headers });
+      const checkLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${maDon}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { headers });
       const logData = await checkLog.json();
       
       const logBody = { 
         Ngay_Gio: cleanNow,
         Ma_Don: maDon, 
-        San_Pham: item.Ten_Hang, 
+        Ten_Hang: item.Ten_Hang, 
         Khach_Hang: tenKH, 
         Gio_Tao_Don: cleanNow, 
         Gio_Xu_Ly: cleanNow, 
