@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thu Chi Phát Sinh - Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+
+  <style>
+    body { margin: 0; background: #f4f7f6; font-family: sans-serif; }
+    .f14-wrapper { font-family: 'Segoe UI', sans-serif; max-width: 500px; margin: auto; padding: 15px; }
+    .f14-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 5px solid #2D5A27; }
+    .f14-title { color: #2D5A27; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+    .f14-label { display: block; font-size: 13px; font-weight: bold; color: #555; margin-bottom: 4px; }
+    .f14-input { width: 100%; padding: 10px; border: 2px solid #eee; border-radius: 8px; font-size: 15px; box-sizing: border-box; transition: 0.3s; }
+    .f14-input:focus { border-color: #2D5A27; outline: none; }
+    .btn-save-ket { width: 100%; padding: 12px; background: #2D5A27; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+    .btn-save-chi { width: 100%; padding: 12px; background: #FF8C00; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+    .f14-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    .f14-table td { padding: 8px 4px; border-bottom: 1px solid #eee; vertical-align: top; }
+    .money-text { color: #d35400; font-weight: bold; font-size: 14px; }
+    .btn-del { color: #e74c3c; border: none; background: none; cursor: pointer; font-size: 16px; padding: 0 5px; }
+  </style>
+</head>
+<body>
+
+<div class="f14-wrapper">
+  <div class="f14-card">
+    <div class="f14-title">💰 MỞ SỔ: KÉT ĐẦU NGÀY</div>
+    <label class="f14-label">Số tiền mặt trong két:</label>
+    <input type="text" id="ket_dau_ngay" class="f14-input" placeholder="0" oninput="f14_fm(this)">
+    <button class="btn-save-ket" onclick="saveKetF14()">✅ XÁC NHẬN ĐẦU NGÀY</button>
+  </div>
+
+  <div class="f14-card" style="border-top-color: #FF8C00;">
+    <div class="f14-title">💸 NHẬP KHOẢN CHI TIỀN MẶT</div>
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+      <div style="flex: 1.5;">
+        <label class="f14-label">Nội dung chi:</label>
+        <input type="text" id="chi_noi_dung" class="f14-input" placeholder="Vill, Băng keo...">
+      </div>
+      <div style="flex: 1;">
+        <label class="f14-label">Chi cho ai:</label>
+        <input type="text" id="chi_doi_tuong" class="f14-input" placeholder="Tên người nhận">
+      </div>
+    </div>
+    <div style="margin-bottom: 15px;">
+      <label class="f14-label">Số tiền chi:</label>
+      <input type="text" id="chi_so_tien" class="f14-input" placeholder="0" oninput="f14_fm(this)">
+    </div>
+    <button class="btn-save-chi" onclick="saveChiF14()">🚀 LƯU KHOẢN CHI</button>
+  </div>
+
+  <div class="f14-card" style="border-top: none; background: #fdfdfd;">
+    <div style="font-weight: bold; font-size: 13px; color: #888; margin-bottom: 10px;">🕒 Lịch sử nhập (Xóa nếu sai):</div>
+    <table class="f14-table">
+        <tbody id="f14_history_body">
+            <tr><td colspan="3" style="text-align:center">Đang tải lịch sử...</td></tr>
+        </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // 🚀 TẢI DỮ LIỆU KHI TRANG SẴN SÀNG
+  document.addEventListener("DOMContentLoaded", function() {
+    loadHistoryF14();
+  });
+
+  function f14_fm(input) {
+    var v = input.value.replace(/\D/g, "");
+    input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+
+  function getRaw(id) { return Number(document.getElementById(id).value.replace(/\./g, "")) || 0; }
+
+  function getCleanVNTime() {
+    const d = new Date();
+    const pad = (n) => n.toString().padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  function saveKetF14() {
+    const tien = getRaw("ket_dau_ngay");
+    if (tien <= 0) return Swal.fire("Lỗi", "Vui lòng nhập số tiền", "error");
+    executeSaveF14({ loai: "Két đầu ngày", noiDung: "Mở sổ đầu ngày", doiTuong: "Nhân viên trực", soTien: tien });
+  }
+
+  function saveChiF14() {
+    const nd = document.getElementById("chi_noi_dung").value.trim();
+    const dt = document.getElementById("chi_doi_tuong").value.trim();
+    const tien = getRaw("chi_so_tien");
+    if (!nd || tien <= 0) return Swal.fire("Lỗi", "Nhập đủ nội dung và tiền", "error");
+    executeSaveF14({ loai: "Chi TM", noiDung: nd, doiTuong: dt, soTien: tien });
+  }
+
+  async function executeSaveF14(payload) {
+    Swal.fire({ title: 'Đang lưu...', didOpen: () => Swal.showLoading() });
+    
+    const headers = { 
+        'apikey': window.SB_CONFIG.KEY, 
+        'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+    };
+
+    const bodyData = {
+        Ngay_Gio: getCleanVNTime(),
+        Loai: payload.loai,
+        Noi_Dung: payload.noiDung,
+        So_Tien: payload.soTien,
+        Nhan_Vien: payload.doiTuong
+    };
+
+    try {
+        const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NK_ThuChi_PhatSinh`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(bodyData)
+        });
+
+        Swal.close();
+        if (response.ok) {
+            document.getElementById("chi_noi_dung").value = "";
+            document.getElementById("chi_so_tien").value = "";
+            document.getElementById("chi_doi_tuong").value = "";
+            document.getElementById("ket_dau_ngay").value = "";
+            loadHistoryF14();
+        } else {
+            const err = await response.json();
+            Swal.fire("Lỗi", err.message || "Không thể lưu", "error");
+        }
+    } catch (e) {
+        Swal.fire("Lỗi kết nối", e.message, "error");
+    }
+  }
+
+  async function loadHistoryF14() {
+    const tbody = document.getElementById("f14_history_body");
+    const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+
+    try {
+        const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NK_ThuChi_PhatSinh?select=*&order=id.desc&limit=15`, { headers });
+        const data = await response.json();
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='3' style='text-align:center'>Trống.</td></tr>";
+            return;
+        }
+
+        tbody.innerHTML = data.map(item => `
+            <tr>
+              <td>
+                <small style="color:#999">${item.Ngay_Gio}</small><br>
+                <b>${item.Noi_Dung}</b><br>
+                <small>👤 ${item.Nhan_Vien || ""}</small>
+              </td>
+              <td style="text-align:right">
+                <span class="money-text">${Number(item.So_Tien).toLocaleString()}</span><br>
+                <small style="color:#666">${item.Loai === "Chi TM" ? "💸 Chi" : "💰 Két"}</small>
+              </td>
+              <td style="text-align:center; width:30px">
+                <button class="btn-del" onclick="deleteItemF14('${item.id}', '${item.Noi_Dung}')">🗑️</button>
+              </td>
+            </tr>
+        `).join("");
+    } catch (e) {
+        tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:red;'>Lỗi tải dữ liệu.</td></tr>";
+    }
+  }
+
+  async function deleteItemF14(id, content) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Xóa khoản này?',
+      text: content,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'XÓA NGAY',
+      confirmButtonColor: '#d33'
+    });
+
+    if (isConfirmed) {
+      Swal.fire({ title: 'Đang xóa...', didOpen: () => Swal.showLoading() });
+      const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+
+      try {
+        const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NK_ThuChi_PhatSinh?id=eq.${id}`, {
+            method: 'DELETE',
+            headers: headers
+        });
+
+        Swal.close();
+        if (response.ok) {
+            loadHistoryF14();
+        } else {
+            Swal.fire("Lỗi", "Không thể xóa dòng này", "error");
+        }
+      } catch (e) {
+        Swal.fire("Lỗi kết nối", e.message, "error");
+      }
+    }
+  }
+</script>
+</body>
+</html>
