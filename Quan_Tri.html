@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản trị đơn hàng - Tiệm In Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+
+  <style>
+    :root { --primary-f10: #34495e; --header-gradient: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); --bg-light: #f8fafc; }
+    body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    .f10-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .f10-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* Bộ lọc chuyên nghiệp */
+    .filter-bar { display: grid; grid-template-columns: 2fr 1.2fr 1fr; gap: 10px; margin: 15px 0; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .filter-bar input, .filter-bar select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 13px; }
+
+    .f10-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
+    .f10-table th { padding: 12px 15px; color: #64748b; font-size: 12px; text-transform: uppercase; text-align: left; }
+    .f10-row { background: white; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .f10-row td { padding: 12px 8px; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; vertical-align: middle; font-size: 13px; }
+    
+    .status-select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; width: 100%; font-size: 11px; cursor: pointer; background: #f9fafb; }
+    .btn-del { background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+    .btn-del:hover { background: #c0392b; }
+    .btn-detail { background: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
+
+    @media (max-width: 768px) { .main-content { margin-left: 0; } .filter-bar { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar-placeholder"></div>
+
+  <div class="main-content">
+    <div class="f10-container">
+      <div class="f10-header">
+        <div>
+          <h2 style="margin:0; font-size: 18px;">🛠 QUẢN TRỊ ĐƠN HÀNG</h2>
+          <p style="margin:5px 0 0 0; font-size: 11px; opacity: 0.9;">Truy quét dữ liệu & Cập nhật trạng thái sản xuất</p>
+        </div>
+        <button onclick="loadF10Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 TẢI LẠI</button>
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" id="f10-search" placeholder="🔍 Tìm mã đơn, tên khách..." oninput="filterF10()">
+        <select id="f10-status-filter" onchange="filterF10()">
+          <option value="">-- Tất cả trạng thái --</option>
+          <option value="Chờ xử lý">Chờ xử lý</option>
+          <option value="Chờ thiết kế">Chờ thiết kế</option>
+          <option value="Chờ duyệt file">Chờ duyệt file</option>
+          <option value="Chờ in">Chờ in</option>
+          <option value="Chờ gia công">Chờ gia công</option>
+          <option value="Chờ giao hàng">Chờ giao hàng</option>
+          <option value="Công nợ">Công nợ</option>
+          <option value="Hoàn tất">Hoàn tất</option>
+        </select>
+        <input type="date" id="f10-date-filter" onchange="filterF10()">
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="f10-table">
+          <thead>
+            <tr>
+              <th style="width: 15%">Mã/Ngày</th>
+              <th style="width: 20%">Khách hàng</th>
+              <th style="width: 25%">Sản phẩm</th>
+              <th style="width: 20%">Trạng Thái</th>
+              <th style="width: 20%; text-align:center;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="f10-table-body">
+            <tr><td colspan="5" style="text-align:center; padding:50px;">⚡ Đang lấy dữ liệu từ hệ thống...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.listAllF10 = [];
+    const statuses = ["Chờ xử lý", "Chờ thiết kế", "Chờ duyệt file", "Chờ in", "Chờ gia công", "Chờ giao hàng", "Chờ thanh toán", "Đã giao lẻ", "Công nợ", "Hoàn tất"];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => { loadF10Data(); }, 600);
+    });
+
+    /** 1. TẢI DỮ LIỆU (SẮP XẾP MỚI NHẤT) */
+    async function loadF10Data() {
+      const tbody = document.getElementById('f10-table-body');
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*&order=id.desc`, { headers: h });
+        const data = await res.json();
+        
+        window.listAllF10 = data;
+        renderF10Table(window.listAllF10);
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Lỗi: ${e.message}</td></tr>`;
+      }
+    }
+
+    /** 2. HIỂN THỊ BẢNG */
+    function renderF10Table(data) {
+      const tbody = document.getElementById('f10-table-body');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;">❌ Không có dữ liệu phù hợp.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.map((item, index) => {
+        let options = statuses.map(s => `<option value="${s}" ${item.Trang_Thai === s ? 'selected' : ''}>${s}</option>`).join('');
+        const ngayHienThi = item.Ngay_Gio ? item.Ngay_Gio.split(' ')[0] : "";
+        
+        return `<tr class="f10-row">
+          <td onclick="viewF10Detail(${index})"><b>${item.Ma_Don}</b><br><small>${ngayHienThi}</small></td>
+          <td onclick="viewF10Detail(${index})">${item.Ten_Khach_Hang}</td>
+          <td onclick="viewF10Detail(${index})" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.Ten_Hang}</td>
+          <td>
+            <select class="status-select" onchange="changeStatusF10(${item.id}, this.value, '${item.Ma_Don}', '${item.Ten_Hang}')">
+              ${options}
+            </select>
+          </td>
+          <td style="text-align:center">
+            <button class="btn-detail" onclick="viewF10Detail(${index})" title="Chi tiết">👁️</button>
+            <button class="btn-del" onclick="confirmDeleteF10(${item.id}, '${item.Ma_Don}', '${item.Ten_Hang}')" title="Xóa">🗑️</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    /** 3. BỘ LỌC (TÌM KIẾM + TRẠNG THÁI + NGÀY) */
+    function filterF10() {
+      const search = document.getElementById('f10-search').value.toLowerCase();
+      const status = document.getElementById('f10-status-filter').value;
+      const date = document.getElementById('f10-date-filter').value; // YYYY-MM-DD
+
+      const filtered = window.listAllF10.filter(it => {
+        const matchSearch = it.Ma_Don.toLowerCase().includes(search) || it.Ten_Khach_Hang.toLowerCase().includes(search);
+        const matchStatus = status === "" || it.Trang_Thai === status;
+        
+        // Chuyển DD/MM/YYYY sang YYYY-MM-DD
+        const parts = it.Ngay_Gio ? it.Ngay_Gio.split(' ')[0].split('/') : [];
+        const formattedDate = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : "";
+        const matchDate = date === "" || formattedDate === date;
+
+        return matchSearch && matchStatus && matchDate;
+      });
+      renderF10Table(filtered);
+    }
+
+    /** 4. CẬP NHẬT TRẠNG THÁI & LOG TIẾN ĐỘ */
+    async function changeStatusF10(id, newStatus, maDon, tenHang) {
+      Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+      const nowISO = new Date().toISOString();
+      const nowVN = window.formatDateTimeVN();
+
+      const colMap = { "Chờ xử lý": "Gio_Xu_Ly", "Chờ thiết kế": "Gio_Thiet_Ke", "Chờ duyệt file": "Gio_Duyet_File", "Chờ in": "Gio_In", "Chờ gia công": "Gio_Gia_Cong", "Chờ giao hàng": "Gio_Giao_Hang", "Chờ thanh toán": "Gio_Thanh_Toan", "Hoàn tất": "Gio_Hoan_Tat", "Công nợ": "Cong_No" };
+
+      try {
+        // Cập nhật Nhật ký bán hàng
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, {
+          method: 'PATCH', headers: h, body: JSON.stringify({ "Trang_Thai": newStatus })
+        });
+
+        // Cập nhật Log Tiến Độ
+        let logData = { "Trang_Thai": newStatus, "Nguoi_Thuc_Hien": "Quản trị (F10)" };
+        if (colMap[newStatus]) logData[colMap[newStatus]] = nowVN;
+
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${maDon}&San_Pham=eq.${encodeURIComponent(tenHang)}`, {
+          method: 'PATCH', headers: h, body: JSON.stringify(logData)
+        });
+
+        Swal.fire({ icon: 'success', title: 'Đã cập nhật!', timer: 800, showConfirmButton: false });
+        loadF10Data();
+      } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
+    }
+
+    /** 5. XÓA ĐỒNG BỘ 6 LỚP (BỔ SUNG CONG_NO) */
+    function confirmDeleteF10(id, maDon, tenHang) {
+      Swal.fire({
+        title: 'XÓA VĨNH VIỄN?',
+        text: `Đơn ${maDon} sẽ bị xóa khỏi tất cả bảng dữ liệu (bao gồm cả Công nợ nếu có)!`,
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'XÓA NGAY'
+      }).then(async (r) => {
+        if (r.isConfirmed) {
+          Swal.fire({ title: 'Đang truy quét xóa...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          
+          const tables = ["Log_TienDo", "Nhatky_giacong", "Nhatky_nguyenlieu", "NhatKy_ThuNo", "Cong_No"];
+          const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+
+          try {
+            // Xóa ở các bảng phụ (Dựa trên Mã Đơn)
+            await Promise.all(tables.map(table => 
+              fetch(`${window.SB_CONFIG.URL}/rest/v1/${table}?Ma_Don=eq.${maDon}`, { method: 'DELETE', headers: h })
+            ));
+            
+            // Xóa bảng chính
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, { method: 'DELETE', headers: h });
+
+            Swal.fire('Đã xóa sạch!', 'Dữ liệu đơn hàng đã được loại bỏ hoàn toàn.', 'success');
+            loadF10Data();
+          } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
+        }
+      });
+    }
+
+    /** 6. XEM CHI TIẾT ĐƠN (GOM NHÓM) */
+    window.viewF10Detail = function(idx) {
+      const currentItem = window.listAllF10[idx];
+      const dsMon = window.listAllF10.filter(item => item.Ma_Don === currentItem.Ma_Don);
+      
+      let rowsHtml = dsMon.map(mon => `
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding:10px 0;">${mon.Ten_Hang}</td>
+          <td style="text-align:center;">${mon.So_Luong}</td>
+          <td style="text-align:right;">${(mon.Thanh_Tien || 0).toLocaleString()} đ</td>
+        </tr>`).join('');
+      
+      Swal.fire({
+        title: 'MÃ ĐƠN: ' + currentItem.Ma_Don,
+        width: '600px',
+        html: `
+          <div style="text-align:left; font-size:14px; margin-bottom:10px;">👤 Khách: <b>${currentItem.Ten_Khach_Hang}</b></div>
+          <table style="width:100%; border-collapse:collapse; font-size:13px;">
+            <thead style="background:#f4f4f4;"><tr><th style="text-align:left; padding:5px;">Sản phẩm</th><th>SL</th><th style="text-align:right;">Tiền</th></tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>`,
+        confirmButtonColor: '#34495e',
+        confirmButtonText: 'ĐÓNG'
+      });
+    };
+  </script>
+</body>
+</html>
