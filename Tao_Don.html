@@ -9,6 +9,18 @@
   <script src="js/auth_guard.js"></script>
 
   <style>
+    /* PC: Chừa lề sẵn 250px để trang KHÔNG bị giật khi load */
+.main-content { margin-left: 250px; transition: 0.3s; padding: 20px; }
+
+@media (max-width: 768px) {
+  .main-content { margin-left: 0 !important; padding-top: 50px; }
+  .mobile-nav-btn {
+    display: block; position: fixed; top: 10px; left: 10px; z-index: 999;
+    background: #2D5A27; color: white; padding: 8px 12px; border-radius: 4px; border: none;
+  }
+}
+@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+
     /* 1. GIAO DIỆN TRÊN MÀN HÌNH */
     body { margin: 0; background: #f4f7f6; display: flex; font-family: 'Segoe UI', sans-serif; }
     .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
@@ -57,11 +69,41 @@
     }
 
     @media (max-width: 768px) { .main-content { margin-left: 0; } }
+
+
+    /* PC: Chừa lề 250px cố định */
+#sidebar-frame { 
+    width: 250px; height: 100vh; position: fixed; 
+    left: 0; top: 0; z-index: 9999; border: none; 
+}
+
+.main-content { 
+    margin-left: 250px; /* Giữ lề cố định */
+    transition: 0.3s; 
+    padding: 20px; 
+}
+
+/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
+@media (max-width: 768px) {
+    #sidebar-frame { left: -250px; }
+    .main-content { margin-left: 0 !important; }
+    body.sidebar-open #sidebar-frame { left: 0; }
+    
+    .mobile-nav-btn {
+        display: block; position: fixed; top: 10px; left: 10px; 
+        z-index: 1000; background: #2D5A27; color: white; 
+        padding: 8px 12px; border: none; border-radius: 4px;
+    }
+}
+
+@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
-  <div id="sidebar-placeholder"></div>
+ <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
+
+<iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
 
   <div class="main-content">
     <div class="sacmau-wrapper">

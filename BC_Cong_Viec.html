@@ -41,11 +41,40 @@
     .btn-detail:hover { background: #1a252f; }
 
     @media (max-width: 1024px) { .main-content { margin-left: 0; } .summary-section { grid-template-columns: 1fr; } }
+  
+    /* PC: Chừa lề 250px cố định */
+#sidebar-frame { 
+    width: 250px; height: 100vh; position: fixed; 
+    left: 0; top: 0; z-index: 9999; border: none; 
+}
+
+.main-content { 
+    margin-left: 250px; /* Giữ lề cố định */
+    transition: 0.3s; 
+    padding: 20px; 
+}
+
+/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
+@media (max-width: 768px) {
+    #sidebar-frame { left: -250px; }
+    .main-content { margin-left: 0 !important; }
+    body.sidebar-open #sidebar-frame { left: 0; }
+    
+    .mobile-nav-btn {
+        display: block; position: fixed; top: 10px; left: 10px; 
+        z-index: 1000; background: #2D5A27; color: white; 
+        padding: 8px 12px; border: none; border-radius: 4px;
+    }
+}
+
+@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
-  <div id="sidebar-placeholder"></div>
+ <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
+
+<iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
 
   <div class="main-content">
     <div class="bc-container">
