@@ -222,7 +222,7 @@
       if (m) { document.getElementById("gia").value = Number(m.Gia_Le || 0).toLocaleString("vi-VN"); document.getElementById("dvt").value = m.DVT || ""; updateTmpTotal(); }
     }
 
-    /** 🚀 BỔ SUNG TONG_DON VÀO BẢNG NHATKY_BANHANG */
+    /** 🚀 CHỈ GHI TONG_DON VÀO DÒNG ĐẦU TIÊN CỦA ĐƠN HÀNG */
     async function saveOrder() {
       if (cart.length === 0) return Swal.fire('Lỗi', 'Chưa có sản phẩm!', 'error');
       const totalBill = cart.reduce((s, item) => s + (item.sl * item.dg), 0);
@@ -254,7 +254,7 @@
           Con_No: (idx === 0 ? (totalBill - daTra) : 0), 
           Dia_Chi: document.getElementById("diaChi").value, 
           Hinh_Thuc_Thanh_Toan: (idx === 0 ? currentPayMethod : ""),
-          Tong_Don: totalBill // Bổ sung cột Tong_Don vào NhatKy_BanHang
+          Tong_Don: (idx === 0 ? totalBill : 0) // GHI TỔNG ĐƠN VÀO DÒNG ĐẦU TIÊN
         }));
         
         const rowsLog = cart.map(i => ({ Ngay_Gio: cleanTime, Ma_Don: ma, Ten_Hang: i.sp, Khach_Hang: tenKH, Gio_Tao_Don: cleanTime, Gio_Xu_Ly: cleanTime, Trang_Thai: "Chờ xử lý", Nguoi_Thuc_Hien: "Hệ thống" }));
