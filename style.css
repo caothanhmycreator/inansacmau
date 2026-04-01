@@ -1,4 +1,38 @@
 <style>
+/* Sidebar cố định bên trái, có thanh cuộn riêng nếu quá dài */
+#sidebar-placeholder {
+    width: 250px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background: #2D5A27;
+    z-index: 1000;
+    overflow-y: auto; /* LỖI 2: Tự hiện thanh cuộn khi menu dài */
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+/* Nội dung chính luôn cách sidebar 250px */
+.main-content {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    transition: 0.3s;
+}
+
+/* LỖI 3: TRÊN ĐIỆN THOẠI (Mobile) */
+@media (max-width: 768px) {
+    #sidebar-placeholder {
+        position: relative; /* Không còn đè lên nội dung */
+        width: 100%;
+        height: auto;
+        max-height: 250px; /* Menu dài quá thì cuộn trong khung này */
+    }
+    
+    .main-content {
+        margin-left: 0 !important; /* Đẩy nội dung xuống dưới menu */
+        width: 100%;
+    }
+}
 /* ==========================
    1. RESET & BIẾN TOÀN CỤC
 ========================== */
