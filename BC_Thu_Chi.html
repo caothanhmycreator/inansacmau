@@ -10,11 +10,9 @@
   <script src="js/auth_guard.js"></script>
 
   <style>
-    /* GIAO DIỆN CHUNG ĐỂ CHẠY SIDEBAR */
     body { margin: 0; background: #f4f7f6; display: flex; font-family: sans-serif; }
     .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
 
-    /* STYLE BÁO CÁO (GIỮ NGUYÊN CỦA MỸ) */
     :root { --f15-primary: #2c3e50; --f15-green: #27ae60; --f15-red: #e74c3c; --f15-blue: #2980b9; }
     .f15-container { font-family: 'Segoe UI', sans-serif; }
     
@@ -25,6 +23,7 @@
     
     .card-ket { border-left-color: #95a5a6; }
     .card-thu { border-left-color: var(--f15-green); }
+    .card-tm { border-left-color: #2ecc71; } /* Màu xanh lá nhạt cho Tiền mặt */
     .card-chi { border-left-color: var(--f15-red); }
     .card-ck { border-left-color: var(--f15-blue); }
     .card-cuoi { border-left-color: #f39c12; background: #fffdf2; }
@@ -78,7 +77,7 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 async function loadF15Data() {
-  const dateVal = document.getElementById('f15-date-picker').value; // yyyy-mm-dd
+  const dateVal = document.getElementById('f15-date-picker').value;
   if (!dateVal) return;
 
   const dash = document.getElementById('f15-dash');
@@ -87,14 +86,11 @@ async function loadF15Data() {
   dash.innerHTML = "⚡ Đang tính toán...";
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">☕ Đang quét sổ sách...</td></tr>';
 
-  // Chuyển yyyy-mm-dd sang dd/mm/yyyy để filter
   const parts = dateVal.split('-');
   const dateSearch = `${parts[2]}/${parts[1]}/${parts[0]}`;
-
   const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
 
   try {
-    // 1. Lấy dữ liệu từ NK_ThuChi_PhatSinh (Két & Chi) và NhatKy_ThuNo (Thu đơn hàng)
     const [resPhatSinh, resThuNo] = await Promise.all([
       fetch(`${window.SB_CONFIG.URL}/rest/v1/NK_ThuChi_PhatSinh?Ngay_Gio=like.${dateSearch}*&select=*`, { headers }),
       fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?Ngay_Gio=like.${dateSearch}*&select=*`, { headers })
@@ -103,33 +99,20 @@ async function loadF15Data() {
     const dataPS = await resPhatSinh.json();
     const dataTN = await resThuNo.json();
 
-    let report = {
-      ketDauNgay: 0,
-      thuTM: 0,
-      thuCK: 0,
-      tongChi: 0,
-      transactions: []
-    };
+    let report = { ketDauNgay: 0, thuTM: 0, thuCK: 0, tongChi: 0, transactions: [] };
 
-    // Xử lý Phát sinh (Chi & Két)
     dataPS.forEach(i => {
       const tien = Number(i.So_Tien) || 0;
-      if (i.Loai === "Két đầu ngày") {
-        report.ketDauNgay = tien;
-      } else if (i.Loai === "Chi TM") {
+      if (i.Loai === "Két đầu ngày") report.ketDauNgay = tien;
+      else if (i.Loai === "Chi TM") {
         report.tongChi += tien;
         report.transactions.push({
           gio: i.Ngay_Gio.split(' ')[1].substring(0, 5),
-          loai: "Chi",
-          noiDung: i.Noi_Dung,
-          soTien: tien,
-          hinhThuc: "TM",
-          maDon: ""
+          loai: "Chi", noiDung: i.Noi_Dung, soTien: tien, hinhThuc: "TM", maDon: ""
         });
       }
     });
 
-    // Xử lý Thu nợ (Đơn hàng)
     dataTN.forEach(i => {
       const tien = Number(i.So_Tien_Thu) || 0;
       const ht = i.Hinh_Thuc_Thanh_Toan;
@@ -138,30 +121,25 @@ async function loadF15Data() {
 
       report.transactions.push({
         gio: i.Ngay_Gio.split(' ')[1].substring(0, 5),
-        loai: "Thu",
-        noiDung: `${i.Khach_Hang} (${i.Ten_Hang || 'Thanh toán đơn'})`,
-        soTien: tien,
-        hinhThuc: ht,
-        maDon: i.Ma_Don
+        loai: "Thu", noiDung: `${i.Khach_Hang} (${i.Ten_Hang || 'Thanh toán đơn'})`,
+        soTien: tien, hinhThuc: ht, maDon: i.Ma_Don
       });
     });
 
-    // Sắp xếp theo giờ
     report.transactions.sort((a, b) => a.gio.localeCompare(b.gio));
-
     const tongThu = report.thuTM + report.thuCK;
     const tonCuoi = report.ketDauNgay + report.thuTM - report.tongChi;
 
-    // Render Dashboard
+    // 🚀 CẬP NHẬT: THÊM Ô THU TIỀN MẶT VÀO ĐÂY
     dash.innerHTML = `
       <div class="f15-card card-ket"><h4>Két đầu ngày</h4><span class="value">${report.ketDauNgay.toLocaleString()} đ</span></div>
       <div class="f15-card card-thu"><h4>Tổng Thu (TM+CK)</h4><span class="value" style="color:var(--f15-green)">+ ${tongThu.toLocaleString()} đ</span></div>
+      <div class="f15-card card-tm"><h4>Thu Tiền mặt</h4><span class="value" style="color:#27ae60">${report.thuTM.toLocaleString()} đ</span></div>
       <div class="f15-card card-ck"><h4>Thu Chuyển khoản</h4><span class="value" style="color:var(--f15-blue)">${report.thuCK.toLocaleString()} đ</span></div>
       <div class="f15-card card-chi"><h4>Tổng Chi</h4><span class="value" style="color:var(--f15-red)">- ${report.tongChi.toLocaleString()} đ</span></div>
       <div class="f15-card card-cuoi"><h4>Tồn két cuối ngày</h4><span class="value" style="color:#f39c12">${tonCuoi.toLocaleString()} đ</span></div>
     `;
 
-    // Render Table
     if (report.transactions.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Ngày này chưa phát sinh giao dịch.</td></tr>';
       return;
@@ -187,46 +165,20 @@ async function loadF15Data() {
 
 async function showF15Detail(maDon, noiDung) {
   if (!maDon || maDon === "") return;
-
   Swal.fire({ title: 'Đang tra cứu đơn...', didOpen: () => Swal.showLoading() });
   const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-
   try {
     const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${maDon}&select=*`, { headers });
     const items = await res.json();
     Swal.close();
-
-    if (!items || items.length === 0) { 
-      Swal.fire('Thông báo', 'Không tìm thấy dữ liệu đơn hàng.', 'info'); 
-      return; 
-    }
-
-    let table = `<table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
-      <tr style="background:#eee;">
-        <th style="padding:8px;">Sản phẩm</th>
-        <th style="padding:8px; text-align:center;">SL</th>
-        <th style="padding:8px; text-align:right;">Thành tiền</th>
-      </tr>`;
-    
+    if (!items || items.length === 0) { Swal.fire('Thông báo', 'Không tìm thấy dữ liệu đơn hàng.', 'info'); return; }
+    let table = `<table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;"><tr style="background:#eee;"><th style="padding:8px;">Sản phẩm</th><th style="padding:8px; text-align:center;">SL</th><th style="padding:8px; text-align:right;">Thành tiền</th></tr>`;
     items.forEach(it => {
-      table += `<tr>
-        <td style="padding:8px; border-bottom:1px solid #eee;">${it.Ten_Hang}<br><small style="color:blue">${it.Trang_Thai || ''}</small></td>
-        <td style="padding:8px; border-bottom:1px solid #eee; text-align:center;">${it.So_Luong}</td>
-        <td style="padding:8px; border-bottom:1px solid #eee; text-align:right;">${Number(it.Thanh_Tien).toLocaleString()}</td>
-      </tr>`;
+      table += `<tr><td style="padding:8px; border-bottom:1px solid #eee;">${it.Ten_Hang}<br><small style="color:blue">${it.Trang_Thai || ''}</small></td><td style="padding:8px; border-bottom:1px solid #eee; text-align:center;">${it.So_Luong}</td><td style="padding:8px; border-bottom:1px solid #eee; text-align:right;">${Number(it.Thanh_Tien).toLocaleString()}</td></tr>`;
     });
     table += `</table>`;
-
-    Swal.fire({
-      title: 'CHI TIẾT: ' + maDon,
-      html: `<div style="text-align:left; margin-bottom:10px;"><b>Giao dịch:</b> ${noiDung}</div>` + table,
-      confirmButtonText: 'ĐÓNG',
-      confirmButtonColor: '#2c3e50',
-      width: '600px'
-    });
-  } catch (e) {
-    Swal.fire('Lỗi', 'Không thể lấy chi tiết đơn hàng', 'error');
-  }
+    Swal.fire({ title: 'CHI TIẾT: ' + maDon, html: `<div style="text-align:left; margin-bottom:10px;"><b>Giao dịch:</b> ${noiDung}</div>` + table, confirmButtonText: 'ĐÓNG', confirmButtonColor: '#2c3e50', width: '600px' });
+  } catch (e) { Swal.fire('Lỗi', 'Không thể lấy chi tiết đơn hàng', 'error'); }
 }
 </script>
 </body>
