@@ -222,6 +222,7 @@
       if (m) { document.getElementById("gia").value = Number(m.Gia_Le || 0).toLocaleString("vi-VN"); document.getElementById("dvt").value = m.DVT || ""; updateTmpTotal(); }
     }
 
+    /** 🚀 BỔ SUNG TONG_DON VÀO BẢNG NHATKY_BANHANG */
     async function saveOrder() {
       if (cart.length === 0) return Swal.fire('Lỗi', 'Chưa có sản phẩm!', 'error');
       const totalBill = cart.reduce((s, item) => s + (item.sl * item.dg), 0);
@@ -238,7 +239,24 @@
       const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
 
       try {
-        const rowsBH = cart.map((i, idx) => ({ Ngay_Gio: cleanTime, Ma_Don: ma, So_Dien_Thoai: document.getElementById("sdt").value, Ten_Khach_Hang: tenKH, Ten_Hang: i.sp, So_Luong: i.sl, Don_Gia: i.dg, Thanh_Tien: (i.sl * i.dg), Trang_Thai: "Chờ xử lý", Don_Vi_Tinh: i.dvt, Khach_Da_Tra: (idx === 0 ? daTra : 0), Con_No: (idx === 0 ? (totalBill - daTra) : 0), Dia_Chi: document.getElementById("diaChi").value, Hinh_Thuc_Thanh_Toan: (idx === 0 ? currentPayMethod : "") }));
+        const rowsBH = cart.map((i, idx) => ({ 
+          Ngay_Gio: cleanTime, 
+          Ma_Don: ma, 
+          So_Dien_Thoai: document.getElementById("sdt").value, 
+          Ten_Khach_Hang: tenKH, 
+          Ten_Hang: i.sp, 
+          So_Luong: i.sl, 
+          Don_Gia: i.dg, 
+          Thanh_Tien: (i.sl * i.dg), 
+          Trang_Thai: "Chờ xử lý", 
+          Don_Vi_Tinh: i.dvt, 
+          Khach_Da_Tra: (idx === 0 ? daTra : 0), 
+          Con_No: (idx === 0 ? (totalBill - daTra) : 0), 
+          Dia_Chi: document.getElementById("diaChi").value, 
+          Hinh_Thuc_Thanh_Toan: (idx === 0 ? currentPayMethod : ""),
+          Tong_Don: totalBill // Bổ sung cột Tong_Don vào NhatKy_BanHang
+        }));
+        
         const rowsLog = cart.map(i => ({ Ngay_Gio: cleanTime, Ma_Don: ma, Ten_Hang: i.sp, Khach_Hang: tenKH, Gio_Tao_Don: cleanTime, Gio_Xu_Ly: cleanTime, Trang_Thai: "Chờ xử lý", Nguoi_Thuc_Hien: "Hệ thống" }));
         
         await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_BanHang`, { method: 'POST', headers: h, body: JSON.stringify(rowsBH) });
@@ -256,7 +274,6 @@
     function addItem() { let sp = document.getElementById("sanPham").value; let sl = getRaw("sl"); let gia = getRaw("gia"); let dvt = document.getElementById("dvt").value; if (!sp || sl <= 0) return Swal.fire('Lỗi', 'Chọn SP và SL > 0', 'error'); cart.push({sp, sl, dg: gia, dvt}); render(); ["sanPham","dvt","gia","sl","tmpTotal"].forEach(id => document.getElementById(id).value = (id=="sl"||id=="tmpTotal"?"0":"")); }
     function render() { document.getElementById("cart-body").innerHTML = cart.map((i, idx) => `<tr><td><b>${i.sp}</b></td><td style="text-align:center">${i.dvt}</td><td style="text-align:center">${i.sl.toLocaleString()}</td><td style="text-align:right">${i.dg.toLocaleString()}</td><td style="text-align:right; font-weight:bold">${(i.sl*i.dg).toLocaleString()}</td><td onclick="cart.splice(${idx},1);render()" style="color:red; cursor:pointer; text-align:center">✕</td></tr>`).join(""); calc(); }
     
-    /** 🚀 HÀM TÍNH TOÁN TRỪ TRỰC TIẾP */
     function calc() { 
       let t = cart.reduce((s, i) => s + (i.sl * i.dg), 0); 
       let c = getRaw("tra"); 
