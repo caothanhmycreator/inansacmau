@@ -51,7 +51,7 @@
       <div class="f7-header">
         <div>
           <h2 style="margin:0; font-size: 20px;">💰 QUẢN LÝ THANH TOÁN</h2>
-          <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Chốt sổ đơn hàng & Ghi nhận sổ thu nợ</p>
+          <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Chốt sổ đơn hàng & Ghi nhận công nợ</p>
         </div>
         <button onclick="loadF7Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 LÀM MỚI</button>
       </div>
@@ -86,7 +86,6 @@
       setTimeout(() => { loadF7Data(); }, 600);
     });
 
-    /** 1. TẢI DỮ LIỆU & GOM NHÓM ĐƠN HÀNG (Khớp Khach_Da_Tra) */
     async function loadF7Data() {
       const tbody = document.getElementById('f7-table-body');
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
@@ -102,7 +101,6 @@
         rawData.forEach(row => {
           const maDon = row.Ma_Don;
           if (!maDon) return;
-
           if (!grouped[maDon]) {
             grouped[maDon] = {
               maDon: maDon, khachHang: row.Ten_Khach_Hang, sdt: row.So_Dien_Thoai || "",
@@ -110,22 +108,14 @@
               cacMon: [], tongDon: 0, tongDaTra: 0, isReady: true
             };
           }
-
           if (pendingStatus.includes(row.Trang_Thai)) grouped[maDon].isReady = false;
-          
-          grouped[maDon].cacMon.push({ 
-            tenMon: row.Ten_Hang, sl: row.So_Luong, thanhTien: row.Thanh_Tien || 0, 
-            trangThai: row.Trang_Thai, id: row.id 
-          });
+          grouped[maDon].cacMon.push({ tenMon: row.Ten_Hang, sl: row.So_Luong, thanhTien: row.Thanh_Tien || 0, trangThai: row.Trang_Thai, id: row.id });
           grouped[maDon].tongDon += (row.Thanh_Tien || 0);
-          
-          // Lấy tiền đã trả (Khớp cột Khach_Da_Tra trong ảnh 4ada63)
           if (row.Khach_Da_Tra > grouped[maDon].tongDaTra) grouped[maDon].tongDaTra = row.Khach_Da_Tra;
         });
 
         window.listF7 = Object.values(grouped).filter(g => {
-          const coMonCanThu = g.cacMon.some(m => allowedStatus.includes(m.trangThai));
-          return g.isReady && coMonCanThu;
+          return g.isReady && g.cacMon.some(m => allowedStatus.includes(m.trangThai));
         });
 
         if (window.listF7.length === 0) {
@@ -147,12 +137,10 @@
       } catch (e) { console.error(e); }
     }
 
-    /** 2. POPUP THANH TOÁN */
     window.openPayPopup = function(idx) {
       const it = window.listF7[idx];
       const conNoHienTai = it.tongDon - it.tongDaTra;
       currentPayF7 = ""; 
-
       let monHtml = `<div class="popup-mon-row" style="font-weight:bold; background:#f9f9f9;"><div>Sản phẩm</div><div>SL</div><div style="text-align:right">Tiền</div></div>` +
         it.cacMon.map(m => `<div class="popup-mon-row"><div>${m.tenMon}</div><div>${m.sl}</div><div style="text-align:right">${(m.thanhTien || 0).toLocaleString()}</div></div>`).join('');
 
@@ -211,7 +199,7 @@
       });
     };
 
-    /** 3. THỰC THI THANH TOÁN (Khớp chính xác cột bảng ảnh gởi) */
+    /** 3. THỰC THI LƯU DỮ LIỆU (CẬP NHẬT THEO YÊU CẦU MỚI) */
     async function executePayment(idx, payMore, hinhThuc) {
       const it = window.listF7[idx];
       Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -221,46 +209,62 @@
       try {
         const newPaid = it.tongDaTra + payMore;
         const remainingDebt = it.tongDon - newPaid;
-        const finalStatus = remainingDebt <= 500 ? "Hoàn tất" : "Công nợ";
+        const isDebt = remainingDebt > 500; // Ngưỡng xác định công nợ
+        
+        // Trạng thái cho NhatKy_BanHang
+        const finalStatusBH = isDebt ? "Công nợ" : "Hoàn tất";
 
-        // --- BƯỚC 1: CẬP NHẬT NHẬT KÝ BÁN HÀNG (Ảnh 4ada63) ---
         for (let i = 0; i < it.cacMon.length; i++) {
           const m = it.cacMon[i];
-          let bhData = { Trang_Thai: finalStatus };
           
-          if (i === 0) { // Chỉ ghi tiền vào dòng chính của mã đơn
-            bhData.Khach_Da_Tra = newPaid; // Đổi Da_Tra -> Khach_Da_Tra
+          // --- BƯỚC 1: CẬP NHẬT NHẬT KÝ BÁN HÀNG ---
+          let bhData = { Trang_Thai: finalStatusBH };
+          if (i === 0) { 
+            bhData.Khach_Da_Tra = newPaid; 
             bhData.Con_No = remainingDebt < 0 ? 0 : remainingDebt;
-            // Nếu Database có cột Hinh_Thuc_TT thì bật dòng dưới, không thì bỏ qua
-            // bhData.Hinh_Thuc_TT = hinhThuc; 
           }
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${m.id}`, { method: 'PATCH', headers: h, body: JSON.stringify(bhData) });
 
-          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${m.id}`, {
-            method: 'PATCH', headers: h, body: JSON.stringify(bhData)
-          });
-
-          // --- BƯỚC 2: CẬP NHẬT LOG TIẾN ĐỘ ---
+          // --- BƯỚC 2: CẬP NHẬT LOG TIẾN ĐỘ (THEO YÊU CẦU 2 & 3) ---
           const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${it.maDon}&San_Pham=eq.${encodeURIComponent(m.tenMon)}&select=id`, { headers: h });
           const rowLog = await resLog.json();
           if (rowLog.length > 0) {
-            let logData = { Trang_Thai: finalStatus, Nguoi_Thuc_Hien: "Kế toán" };
-            if (finalStatus === "Hoàn tất") logData.Gio_Hoan_Tat = cleanNow; else logData.Gio_Cong_No = cleanNow;
+            let logData = { 
+              Trang_Thai: "Hoàn tất", // Luôn ghi Hoàn tất vào Log_TienDo theo yêu cầu
+              Gio_Hoan_Tat: cleanNow,
+              Nguoi_Thuc_Hien: "Kế toán"
+            };
+            // Nếu phát sinh công nợ, ghi thêm vào cột Cong_No (Yêu cầu 3)
+            if (isDebt) { logData.Cong_No = cleanNow; }
+
             await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, { method: 'PATCH', headers: h, body: JSON.stringify(logData) });
           }
         }
 
-        // --- BƯỚC 3: GHI NHẬT KÝ THU NỢ (Ảnh 4ad759) ---
+        // --- BƯỚC 3: GHI VÀO BẢNG CONG_NO (YÊU CẦU 1) ---
+        if (isDebt) {
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No`, {
+            method: 'POST', headers: h,
+            body: JSON.stringify({
+              Ngay_Gio: cleanNow,
+              Ma_Don: it.maDon,
+              Khach_Hang: it.khachHang,
+              Tong_Don: String(it.tongDon),
+              Da_Tra: String(newPaid),
+              Con_Lai: String(remainingDebt),
+              id: Math.floor(Date.now() / 1000)
+            })
+          });
+        }
+
+        // --- BƯỚC 4: GHI NHẬT KÝ THU NỢ ---
         if (payMore > 0) {
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, {
             method: 'POST', headers: h,
             body: JSON.stringify({
-              Ngay_Gio: cleanNow, 
-              Ma_Don: it.maDon, 
-              Khach_Hang: it.khachHang,
-              San_Pham: "Thanh toán đơn: " + it.maDon,
-              So_Tien_Thu: payMore, // Đổi So_Tien -> So_Tien_Thu
-              Hinh_Thuc_Thanh_Toan: hinhThuc, // Đổi Hinh_Thuc -> Hinh_Thuc_Thanh_Toan
-              id: Math.floor(Date.now() / 1000)
+              Ngay_Gio: cleanNow, Ma_Don: it.maDon, Khach_Hang: it.khachHang,
+              San_Pham: "Thanh toán đơn: " + it.maDon, So_Tien_Thu: payMore,
+              Hinh_Thuc_Thanh_Toan: hinhThuc, id: Math.floor(Date.now() / 1000) + 1
             })
           });
         }
@@ -268,62 +272,34 @@
         Swal.close();
         renderBill(idx, payMore, true);
         loadF7Data();
-      } catch (e) { 
-        console.error(e);
-        Swal.fire('Lỗi', 'Lưu thất bại, hãy kiểm tra kết nối!', 'error'); 
-      }
+      } catch (e) { console.error(e); Swal.fire('Lỗi', 'Lưu thất bại!', 'error'); }
     }
 
-    /** 4. HỆ THỐNG IN (GIỮ NGUYÊN) */
     function renderBill(idx, payMore, isDirect = false) {
       const it = window.listF7[idx]; 
       const debtRemain = it.tongDon - it.tongDaTra - payMore;
       const isFull = debtRemain <= 500;
       const rows = it.cacMon.map(m => `<tr><td><b>${m.tenMon}</b></td><td style="text-align:center;">${m.sl}</td><td style="text-align:right; font-weight:bold;">${(m.thanhTien || 0).toLocaleString()}</td></tr>`).join('');
-      
       const bill = `
         <div style="background:#fff; padding:10px; font-family:Arial, sans-serif;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #2D5A27; padding-bottom: 10px;">
-            <div>
-              <h1 style="color: #2D5A27; margin: 0; font-size: 22px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1>
-              <p style="margin: 3px 0; font-size: 13px;">📍 27 Nguyễn Văn Cừ, P. Cao Lãnh, Đồng Tháp</p>
-              <p style="margin: 3px 0; font-size: 13px;">📞 0399.221.753 - 0337.663.113</p>
-            </div>
+            <div><h1 style="color: #2D5A27; margin: 0; font-size: 22px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1><p style="margin: 3px 0; font-size: 13px;">📍 27 Nguyễn Văn Cừ, P. Cao Lãnh, Đồng Tháp</p></div>
             <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 100px;">
           </div>
-          <div style="text-align: center; margin: 20px 0;">
-            <h2 style="color: #2D5A27; margin: 0; text-transform: uppercase;">HÓA ĐƠN THANH TOÁN</h2>
-            <p style="font-weight: bold;">Mã đơn: ${it.maDon}</p>
-          </div>
-          <div style="background: #f4f9f4; padding: 15px; border-radius: 8px; border: 1px solid #dcfce7; font-size: 14px; margin-bottom:15px;">
-            <p>👤 <b>Khách hàng:</b> ${it.khachHang}</p>
-            <p>📱 <b>SĐT:</b> ${it.sdt || '---'}</p>
-            <p>📅 <b>Ngày:</b> ${new Date().toLocaleString('vi-VN')}</p>
-          </div>
-          <table class="print-table-f7">
-            <thead><tr><th>Sản phẩm</th><th style="width:60px;">SL</th><th style="width:120px; text-align:right;">Tiền</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
+          <div style="text-align: center; margin: 20px 0;"><h2 style="color: #2D5A27; margin: 0; text-transform: uppercase;">HÓA ĐƠN THANH TOÁN</h2><p style="font-weight: bold;">Mã đơn: ${it.maDon}</p></div>
+          <div style="background: #f4f9f4; padding: 15px; border-radius: 8px; border: 1px solid #dcfce7; font-size: 14px; margin-bottom:15px;"><p>👤 <b>Khách hàng:</b> ${it.khachHang}</p><p>📱 <b>SĐT:</b> ${it.sdt || '---'}</p></div>
+          <table class="print-table-f7"><thead><tr><th>Sản phẩm</th><th style="width:60px;">SL</th><th style="width:120px; text-align:right;">Tiền</th></tr></thead><tbody>${rows}</tbody></table>
           <div style="margin-left: auto; width: 340px; background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; position: relative;">
             ${isFull ? '<div style="position:absolute; left:-140px; top:10px; color:#2D5A27; border:4px double #2D5A27; padding:5px 10px; font-weight:bold; transform:rotate(-15deg); background:rgba(255,255,255,0.8);">ĐÃ HOÀN TẤT</div>' : ''}
             <div style="display:flex; justify-content:space-between;"><span>Tổng đơn:</span><b>${it.tongDon.toLocaleString()} đ</b></div>
             <div style="display:flex; justify-content:space-between;"><span>Cọc cũ:</span><b>-${it.tongDaTra.toLocaleString()} đ</b></div>
             <div style="display:flex; justify-content:space-between; color:#d35400;"><span>Thu thêm:</span><b>-${payMore.toLocaleString()} đ</b></div>
-            <div style="display:flex; justify-content:space-between; border-top:1px dashed #FF8C00; margin-top:10px; padding-top:10px;">
-              <span><b>CÒN NỢ:</b></span><b style="color:red; font-size:18px;">${(debtRemain < 0 ? 0 : debtRemain).toLocaleString()} đ</b>
-            </div>
-          </div>
-          <div style="margin-top:40px; display:grid; grid-template-columns:1fr 1fr; text-align:center;">
-            <div><p><b>KHÁCH HÀNG</b></p><br><br><br><i>(Ký tên)</i></div>
-            <div><p><b>NGƯỜI LẬP PHIẾU</b></p><br><br><br><p><b>Tiệm In Sắc Màu</b></p></div>
+            <div style="display:flex; justify-content:space-between; border-top:1px dashed #FF8C00; margin-top:10px; padding-top:10px;"><span><b>CÒN NỢ:</b></span><b style="color:red; font-size:18px;">${(debtRemain < 0 ? 0 : debtRemain).toLocaleString()} đ</b></div>
           </div>
         </div>`;
-
       document.getElementById('vung-in-f7').innerHTML = bill;
       if (isDirect) { setTimeout(() => window.print(), 500); } 
-      else {
-        Swal.fire({ title: 'XEM PHIẾU', html: `<div style="text-align:left;">${bill}</div>`, showCancelButton: true, confirmButtonText: '🖨️ IN PHIẾU', width: '750px' }).then(r => { if (r.isConfirmed) window.print(); });
-      }
+      else { Swal.fire({ title: 'XEM PHIẾU', html: `<div style="text-align:left;">${bill}</div>`, showCancelButton: true, confirmButtonText: '🖨️ IN PHIẾU', width: '750px' }).then(r => { if (r.isConfirmed) window.print(); }); }
     }
 
     function setPayF7(val) {
