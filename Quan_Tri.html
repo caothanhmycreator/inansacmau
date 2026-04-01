@@ -143,8 +143,24 @@
       renderF10Table(filtered);
     }
 
-    /** 🚀 LOGIC CẬP NHẬT TRẠNG THÁI & LÀM SẠCH CÁC CỘT GIỜ KHÁC */
+    /** 🚀 BỔ SUNG BẢNG HỎI XÁC NHẬN TRƯỚC KHI THAY ĐỔI */
     async function changeStatusF10(id, newStatus, maDon, tenHang) {
+      const confirmResult = await Swal.fire({
+        title: 'XÁC NHẬN CHUYỂN TRẠNG THÁI?',
+        text: `Bạn muốn chuyển đơn ${maDon} sang "${newStatus}"?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#34495e',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'ĐỒNG Ý',
+        cancelButtonText: 'HUỶ'
+      });
+
+      if (!confirmResult.isConfirmed) {
+        loadF10Data(); // Tải lại để reset dropdown về trạng thái cũ
+        return;
+      }
+
       Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const nowVN = window.formatDateTimeVN();
@@ -176,10 +192,8 @@
           "Cong_No": null
         };
 
-        // Ghi giờ vào đúng cột của trạng thái mới
         if (colMap[newStatus]) logData[colMap[newStatus]] = nowVN;
 
-        // Cập nhật Log_TienDo: Dùng Ten_Hang khớp với bảng bán hàng
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(maDon)}&Ten_Hang=eq.${encodeURIComponent(tenHang)}`, {
           method: 'PATCH', headers: h, body: JSON.stringify(logData)
         });
