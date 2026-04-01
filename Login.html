@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Đăng nhập - Sắc Màu</title>
+  <meta charset="UTF-8">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <style>
+    body { background: #1a2a1b; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .login-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); width: 380px; text-align: center; }
+    input { width: 100%; padding: 14px; margin: 12px 0; border: 1.5px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+    input:focus { border-color: #2D5A27; }
+    button { width: 100%; padding: 15px; background: #2D5A27; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 15px; transition: 0.3s; }
+    button:hover { background: #1e3d1a; transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 120px; margin-bottom: 10px;">
+    <h2 style="color: #2D5A27; margin-bottom: 30px; letter-spacing: 1px;">QUẢN TRỊ SẮC MÀU</h2>
+    <input type="text" id="email" placeholder="Tên đăng nhập (User)">
+    <input type="password" id="pass" placeholder="Mật khẩu">
+    <button onclick="handleLogin()">🚀 VÀO HỆ THỐNG</button>
+  </div>
+
+  <script>
+    async function handleLogin() {
+  const userVal = document.getElementById('email').value.trim();
+  const passVal = document.getElementById('pass').value.trim();
+  
+  if(!userVal || !passVal) return Swal.fire('Nhắc nhở', 'Vui lòng nhập đầy đủ!', 'info');
+
+  Swal.fire({ title: 'Đang xác thực...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  
+  // Dùng KEY và URL Mỹ đã cung cấp
+  const h = { 
+    'apikey': window.SB_CONFIG.KEY, 
+    'Authorization': `Bearer ${window.SB_CONFIG.KEY}` 
+  };
+
+  try {
+    // 1. Kiểm tra bảng DM_NhanVien (Cột: User, Password)
+    const resU = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?User=eq.${userVal}&Password=eq.${passVal}&select=*`, { headers: h });
+    const users = await resU.json();
+    
+    if (users.length === 0) {
+      return Swal.fire('Lỗi', 'Tài khoản hoặc mật khẩu không chính xác!', 'error');
+    }
+
+    const userData = users[0];
+    const roleName = userData.Vai_Tro; // 👈 FIX Ở ĐÂY: Dùng Vai_Tro thay vì Quyen
+
+    // 2. Lấy danh sách chức năng từ bảng Phan_Quyen theo Vai_Tro
+    const resQ = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Phan_Quyen?Vai_Tro=eq.${roleName}&select=Danh_Sach_Module`, { headers: h });
+    const quyens = await resQ.json();
+
+    if (quyens.length === 0) {
+      return Swal.fire('Lỗi phân quyền', 'Tài khoản này chưa được cấp quyền truy cập!', 'warning');
+    }
+
+    // 3. Lưu phiên đăng nhập
+    const session = {
+      name: userData.Ho_Ten,
+      role: roleName,
+      modules: quyens[0].Danh_Sach_Module || ""
+    };
+
+    localStorage.setItem('currentUser', JSON.stringify(session));
+    
+    Swal.fire({
+      icon: 'success',
+      title: 'Đăng nhập thành công',
+      text: 'Chào mừng ' + userData.Ho_Ten,
+      timer: 1500,
+      showConfirmButton: false
+    }).then(() => {
+      window.location.href = 'index.html'; // Chuyển về trang chủ
+    });
+
+  } catch (e) { 
+    console.error("Lỗi đăng nhập:", e);
+    Swal.fire('Lỗi kết nối', 'Không thể kết nối đến hệ thống!', 'error'); 
+  }
+}
+  </script>
+</body>
+</html>

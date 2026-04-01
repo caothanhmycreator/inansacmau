@@ -1,0 +1,24 @@
+<div class="sidebar-wrapper" style="width: 250px; background: #2D5A27; height: 100vh; color: white; position: fixed; left: 0; top: 0; overflow-y: auto;">
+  <div style="padding: 25px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 80px;">
+    <h3 style="margin: 15px 0 5px 0; font-size: 18px; letter-spacing: 1px;">SẮC MÀU</h3>
+    <div id="user-display" style="font-size: 12px; color: #a5d6a7; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 4px; margin-top: 10px;">...</div>
+  </div>
+  
+  <div id="dynamic-menu-container" style="padding: 10px 0;">
+    </div>
+
+  <div style="padding: 20px; margin-top: 20px;">
+    <button onclick="logout()" style="width: 100%; padding: 12px; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;">🚪 ĐĂNG XUẤT</button>
+  </div>
+</div>
+
+<style>
+  .menu-item { 
+    display: flex; align-items: center; padding: 12px 20px; color: white; 
+    text-decoration: none; transition: 0.3s; font-size: 14px; border-left: 4px solid transparent;
+  }
+  .menu-item:hover { background: rgba(255,255,255,0.1); border-left-color: #FF8C00; }
+  .menu-item.active { background: #1e3d1a; border-left-color: #FF8C00; font-weight: bold; color: #FF8C00; }
+  .menu-item i { margin-right: 12px; font-size: 18px; width: 25px; text-align: center; }
+</style>

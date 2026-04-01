@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gia công liên kết - Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+
+  <style>
+    :root { --primary-f6: #8e44ad; --header-gradient: linear-gradient(135deg, #8e44ad 0%, #732d91 100%); --bg-light: #f8fafc; --border-color: #e2e8f0; }
+    body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    .f6-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .f5-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .f6-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
+    .f6-table th { padding: 12px 15px; color: #64748b; font-size: 13px; text-transform: uppercase; text-align: left; }
+    .f6-row { background: white; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .f6-row td { padding: 15px; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    .f6-row td:first-child { border-left: 1px solid var(--border-color); border-radius: 10px 0 0 10px; }
+    .f6-row td:last-child { border-right: 1px solid var(--border-color); border-radius: 0 10px 10px 0; }
+    .badge { background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; margin: 2px; border: 1px solid #cbd5e1; }
+    .note-x { background: #f5f3ff; color: #5b21b6; padding: 8px; border-radius: 6px; border-left: 4px solid #8e44ad; font-size: 12px; margin-top: 8px; }
+    .img-container { width: 130px; height: 160px; border-radius: 8px; overflow: hidden; border: 2px dashed #cbd5e1; background: #f8fafc; display: flex; align-items: center; justify-content: center; margin: 0 auto; position: relative; }
+    .img-preview { max-width: 100%; max-height: 100%; object-fit: contain; cursor: pointer; }
+    .btn-group { display: flex; flex-direction: column; gap: 5px; }
+    .btn-copy { background: #34495e; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: bold; width: 100%; }
+    .btn-done { background: #27ae60; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%; transition: 0.2s; box-shadow: 0 4px 0 #1e8449; }
+    .btn-done:active { transform: translateY(2px); box-shadow: 0 2px 0 #1e8449; }
+    .swal2-container { z-index: 20000 !important; }
+    @media (max-width: 768px) { .main-content { margin-left: 0; } }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar-placeholder"></div>
+
+  <div class="main-content">
+    <div class="f6-container">
+      <div class="f5-header">
+        <div>
+          <h2 style="margin:0; font-size: 20px;">📦 QUẢN LÝ HÀNG GIA CÔNG LIÊN KẾT</h2>
+          <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Nhập kho hàng về & Ghi nhận chi phí gia công</p>
+        </div>
+        <button onclick="loadF6Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 LÀM MỚI</button>
+      </div>
+      
+      <div style="overflow-x: auto;">
+        <table class="f6-table">
+          <thead>
+            <tr><th>Đơn hàng</th><th>Khách hàng</th><th style="text-align:center;">Bản thảo</th><th>Chi tiết & Ghi chú</th><th>Thao tác</th></tr>
+          </thead>
+          <tbody id="f6-table-body">
+            <tr><td colspan="5" style="text-align:center; padding:50px; color:#64748b;">🔄 Đang nạp danh sách gia công...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => { loadF6Data(); }, 600);
+    });
+
+    async function loadF6Data() {
+      const tbody = document.getElementById('f6-table-body');
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=eq.Chờ gia công&select=*&order=id.desc`, { headers: h });
+        const data = await res.json();
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px;">✨ Hiện không có đơn nào đang gia công.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.map(item => {
+          const imgHtml = item.Link_Anh ? `<img src="${item.Link_Anh}" class="img-preview" onclick="window.open('${item.Link_Anh}', '_blank')" onerror="this.src='https://placehold.co/130x160?text=Lỗi+Ảnh';">` : `<div style="font-size:10px; color:#94a3b8; text-align:center">📂</div>`;
+          return `<tr class="f6-row">
+            <td><small>#${item.Ngay_Gio.split(' ')[0]}</small><br><b style="font-size:15px;">${item.Ma_Don}</b></td>
+            <td><b>${item.Ten_Khach_Hang}</b><br><small>${item.Ten_Hang}</small></td>
+            <td><div class="img-container">${imgHtml}</div></td>
+            <td>
+              <div class="badge">📏 ${item.Kich_Thuoc || 'N/A'}</div> <div class="badge">🧪 ${item.Chat_Lieu || 'N/A'}</div>
+              ${item.Ghi_Chu_San_Xuat ? `<div class="note-x">💬 ${item.Ghi_Chu_San_Xuat}</div>` : ''}
+            </td>
+            <td>
+              <div class="btn-group">
+                <button class="btn-copy" style="background:#2980b9;" onclick="window.open('${item.Link_File}', '_blank')">📥 TẢI FILE</button>
+                <button class="btn-copy" onclick="handleCopy('${item.Link_File}')">🔗 COPY LINK</button>
+                <button class="btn-done" onclick="openConfirmForm('${encodeURIComponent(JSON.stringify(item))}')">✅ ĐÃ VỀ KHO</button>
+              </div>
+            </td></tr>`;
+        }).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    function handleCopy(path) {
+      if (!path) return Swal.fire('Thông báo', 'Không có link!', 'warning');
+      const el = document.createElement('textarea'); el.value = path; document.body.appendChild(el); el.select();
+      document.execCommand('copy'); document.body.removeChild(el);
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã copy link!', showConfirmButton: false, timer: 1500 });
+    }
+
+    /** 3. FORM XÁC NHẬN NHẬP KHO (ĐÃ THÊM ĐỊNH DẠNG SỐ) */
+    function openConfirmForm(itemStr) {
+      const item = JSON.parse(decodeURIComponent(itemStr));
+      Swal.fire({
+        title: 'XÁC NHẬN NHẬP HÀNG GIA CÔNG',
+        html: `
+          <div style="text-align:left; font-size:13px; padding:10px; background:#f5f3ff; border-radius:6px; margin-bottom:15px;">
+            📌 Đơn: <b>${item.Ma_Don}</b> - SP: <b>${item.Ten_Hang}</b>
+          </div>
+          <div style="text-align:left; font-size:13px;">
+            <label><b>Đơn vị liên kết (Tên xưởng):</b></label>
+            <input id="sw-dv" class="swal2-input" style="margin:8px 0; width:100%" placeholder="Tên xưởng...">
+            <label><b>Giá vốn gia công:</b></label>
+            <input id="sw-gia" class="swal2-input" style="margin:8px 0; width:100%" placeholder="Nhập số tiền...">
+          </div>
+        `,
+        showCancelButton: true, confirmButtonText: '🚀 NHẬP KHO', confirmButtonColor: '#27ae60',
+        didOpen: () => {
+          const inputGia = document.getElementById('sw-gia');
+          // Lắng nghe sự kiện gõ phím để định dạng dấu chấm
+          inputGia.addEventListener('input', function(e) {
+            let value = this.value.replace(/\D/g, ''); // Chỉ giữ lại số, chặn ký tự đặc biệt và dấu trừ
+            if (value !== "") {
+              this.value = Number(value).toLocaleString('vi-VN'); // Thêm dấu chấm phân cách
+            }
+          });
+        },
+        preConfirm: () => {
+          const dv = document.getElementById('sw-dv').value.trim();
+          const giaDisplay = document.getElementById('sw-gia').value.trim();
+          
+          // Làm sạch dữ liệu: Bỏ hết dấu chấm trước khi lưu
+          const giaClean = giaDisplay.replace(/\./g, '');
+          
+          if (!dv || !giaClean) { Swal.showValidationMessage('Vui lòng nhập đủ thông tin!'); return false; }
+          if (parseInt(giaClean) < 0) { Swal.showValidationMessage('Giá vốn không được là số âm!'); return false; }
+          
+          return { dvLK: dv, giaVon: giaClean };
+        }
+      }).then((r) => { if (r.isConfirmed) processCompleteOutsource(item, r.value); });
+    }
+
+    /** 4. THỰC THI CẬP NHẬT 3 BẢNG */
+    async function processCompleteOutsource(item, gcData) {
+      Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+      const cleanNow = window.formatDateTimeVN();
+      const sttMoi = "Chờ giao hàng";
+
+      try {
+        const gcLog = {
+          Ngay_Gio: cleanNow,
+          Ma_Don: item.Ma_Don,
+          Khach_Hang: item.Ten_Khach_Hang,
+          San_Pham: item.Ten_Hang,
+          So_Luong: item.So_Luong || 0,
+          Thanh_Tien: item.Thanh_Tien || 0,
+          Don_Vi_Lien_Ket: gcData.dvLK,
+          Gia_Von: parseInt(gcData.giaVon), // Ghi xuống dạng số nguyên sạch
+          id: Date.now()
+        };
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_giacong`, { method: 'POST', headers: h, body: JSON.stringify(gcLog) });
+
+        const formattedGia = Number(gcData.giaVon).toLocaleString('vi-VN');
+        const noteUpdate = `XƯỞNG: ${gcData.dvLK} | VỐN: ${formattedGia}đ`;
+        
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${item.id}`, {
+          method: 'PATCH', headers: h, 
+          body: JSON.stringify({ 
+            Trang_Thai: sttMoi,
+            Ghi_Chu_San_Xuat: item.Ghi_Chu_San_Xuat ? item.Ghi_Chu_San_Xuat + " | " + noteUpdate : noteUpdate
+          })
+        });
+
+        const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${item.Ma_Don}&San_Pham=eq.${encodeURIComponent(item.Ten_Hang)}&select=id`, { headers: h });
+        const rowLog = await resLog.json();
+        if (rowLog.length > 0) {
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
+            method: 'PATCH', headers: h,
+            body: JSON.stringify({ Trang_Thai: sttMoi, Gio_Giao_Hang: cleanNow, Nguoi_Thuc_Hien: "Gia công (Hàng về)" })
+          });
+        }
+
+        Swal.fire({ icon: 'success', title: 'Đã nhập kho xong!', timer: 1500, showConfirmButton: false });
+        loadF6Data();
+      } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giao hàng - Tiệm In Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+
+  <style>
+    :root { --primary-f8: #2980b9; --header-gradient: linear-gradient(135deg, #2980b9 0%, #3498db 100%); --bg-light: #f8fafc; --border-color: #e2e8f0; }
+    body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
+    
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    .f8-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .f8-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
+    
+    .f8-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
+    .f8-table th { padding: 12px 15px; color: #64748b; font-size: 13px; text-transform: uppercase; text-align: left; }
+    .f8-row { background: white; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .f8-row td { padding: 15px; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); vertical-align: middle; cursor: pointer; }
+    
+    .btn-action { border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; color: white; transition: 0.2s; text-transform: uppercase; }
+    .btn-giao { background: #27ae60; box-shadow: 0 3px 0 #1e8449; }
+    
+    .popup-row { display: grid; grid-template-columns: 2fr 0.8fr 1.2fr 1fr; gap: 8px; padding: 12px; border-bottom: 1px solid #eee; align-items: center; font-size: 13px; }
+
+    /* VÙNG IN */
+    #vung-in-f8 { display: none; }
+    @media print {
+      body * { visibility: hidden; }
+      #vung-in-f8, #vung-in-f8 * { visibility: visible; }
+      #vung-in-f8 { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+      @page { size: A4; margin: 10mm; }
+    }
+    
+    .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .print-table th { background: #2980b9 !important; color: #fff !important; padding: 12px; text-align: left; border: 2px solid #2980b9; font-size: 22px; -webkit-print-color-adjust: exact; }
+    .print-table td { padding: 15px 12px; border: 2px solid #2980b9; font-size: 26px; font-weight: bold; color: #000; }
+
+    .swal2-container { z-index: 20000 !important; }
+    @media (max-width: 768px) { .main-content { margin-left: 0; } }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar-placeholder"></div>
+
+  <div class="main-content">
+    <div class="f8-container">
+      <div class="f8-header">
+        <div>
+          <h2 style="margin:0; font-size: 20px;">🚚 KIỂM SOÁT ĐƠN CHỜ GIAO</h2>
+          <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Tách biệt Lưu hệ thống & In phiếu vận chuyển Sắc Màu</p>
+        </div>
+        <button onclick="loadF8Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 LÀM MỚI</button>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="f8-table">
+          <thead>
+            <tr>
+              <th style="width: 120px;">Mã đơn</th>
+              <th>Khách hàng</th>
+              <th>Tên hàng (Tích hợp)</th>
+              <th>Tổng / Đã trả</th>
+              <th>Còn nợ</th>
+              <th style="text-align: center;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="f8-table-body">
+            <tr><td colspan="6" style="text-align:center; padding:50px; color:#64748b;">🔄 Đang nạp danh sách chờ giao...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="vung-in-f8"></div>
+
+  <script>
+    window.listF8 = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => { loadF8Data(); }, 600);
+    });
+
+    /** 1. TẢI DỮ LIỆU & GOM NHÓM */
+    async function loadF8Data() {
+      const tbody = document.getElementById('f8-table-body');
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*&order=id.desc`, { headers: h });
+        const rawData = await res.json();
+
+        const grouped = {};
+        rawData.forEach(row => {
+          const maDon = row.Ma_Don;
+          if (!maDon) return;
+          if (!grouped[maDon]) {
+            grouped[maDon] = {
+              maDon: maDon, khachHang: row.Ten_Khach_Hang, sdt: row.So_Dien_Thoai || "",
+              diachi: row.Dia_Chi || "Tại cửa hàng", ngay: row.Ngay_Gio ? row.Ngay_Gio.split(' ')[0] : "",
+              cacMon: [], tongDon: 0, tongDaTra: row.Da_Tra || 0, tatCaReady: true, coMonChoGiao: false
+            };
+          }
+          grouped[maDon].cacMon.push(row);
+          grouped[maDon].tongDon += (row.Thanh_Tien || 0);
+          if (row.Trang_Thai === "Chờ giao hàng") grouped[maDon].coMonChoGiao = true;
+          if (!["Chờ giao hàng", "Hoàn tất", "Đã giao lẻ", "Chờ thanh toán", "Công nợ"].includes(row.Trang_Thai)) {
+            grouped[maDon].tatCaReady = false;
+          }
+        });
+
+        window.listF8 = Object.values(grouped).filter(g => g.coMonChoGiao);
+        if (window.listF8.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px;">✨ Hiện không có đơn nào chờ giao.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = window.listF8.map((item, index) => {
+          const dsMon = item.cacMon.map(m => m.Ten_Hang).join(", ");
+          return `<tr class="f8-row">
+            <td onclick="openDetail(${index})"><b>${item.maDon}</b><br><small>${item.ngay}</small></td>
+            <td onclick="openDetail(${index})"><b>${item.khachHang}</b><br><small>${item.sdt}</small></td>
+            <td onclick="openDetail(${index})" style="color:#2980b9;">${dsMon}</td>
+            <td>T: ${item.tongDon.toLocaleString()}<br><small style="color:green">Đ: ${item.tongDaTra.toLocaleString()}</small></td>
+            <td style="color:red; font-weight:bold;">${(item.tongDon - item.tongDaTra).toLocaleString()}</td>
+            <td style="text-align:center"><button class="btn-action btn-giao" onclick="handleGiaoMain(${index})">XỬ LÝ ĐƠN</button></td>
+          </tr>`;
+        }).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    /** 2. XỬ LÝ GIAO TOÀN BỘ */
+    function handleGiaoMain(idx) {
+      const it = window.listF8[idx];
+      if (!it.tatCaReady) { openDetail(idx, "Có món chưa in xong!"); return; }
+      
+      Swal.fire({
+        title: 'XỬ LÝ GIAO HÀNG',
+        text: `Đơn hàng: ${it.maDon}`,
+        icon: 'question',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: '💾 XÁC NHẬN LƯU',
+        denyButtonText: '🖨️ CHỈ IN PHIẾU',
+        cancelButtonText: 'ĐÓNG',
+        confirmButtonColor: '#27ae60',
+        denyButtonColor: '#2980b9'
+      }).then(r => {
+        if (r.isConfirmed) processUpdate(it, "ALL");
+        else if (r.isDenied) showPreviewFull(it);
+      });
+    }
+
+    /** 3. CHI TIẾT & GIAO LẺ */
+    function openDetail(idx, warning = "") {
+      const it = window.listF8[idx];
+      let header = `<div class="popup-row" style="font-weight:bold; background:#f2f2f2;"><div>Tên món</div><div>SL</div><div>Thành tiền</div><div>Thao tác</div></div>`;
+      const rows = it.cacMon.map((m, mIdx) => {
+        const isReady = m.Trang_Thai === "Chờ giao hàng";
+        return `<div class="popup-row">
+          <div>${m.Ten_Hang}<br><small>${m.Trang_Thai}</small></div>
+          <div style="text-align:center">${m.So_Luong}</div>
+          <div style="text-align:right">${(m.Thanh_Tien || 0).toLocaleString()}</div>
+          <div style="text-align:right">${isReady ? `<button class="btn-action btn-giao" onclick="execLe(${idx}, ${mIdx})">XỬ LÝ LẺ</button>` : '⌛'}</div>
+        </div>`;
+      }).join('');
+      Swal.fire({ title: warning || 'CHI TIẾT ĐƠN HÀNG', html: `<div style="text-align:left;">${header}${rows}</div>`, showConfirmButton: false, showCloseButton: true, width: '750px' });
+    }
+
+    function execLe(idx, mIdx) {
+      const it = window.listF8[idx];
+      const m = it.cacMon[mIdx];
+      Swal.fire({
+        title: 'XỬ LÝ GIAO LẺ',
+        text: m.Ten_Hang,
+        icon: 'info',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: '💾 XÁC NHẬN LƯU',
+        denyButtonText: '🖨️ CHỈ IN PHIẾU',
+        confirmButtonColor: '#27ae60',
+        denyButtonColor: '#2980b9'
+      }).then(r => {
+        if (r.isConfirmed) processUpdate(it, "LE", { mIdx });
+        else if (r.isDenied) showPreviewLe(it, mIdx);
+      });
+    }
+
+    /** 4. CẬP NHẬT CƠ SỞ DỮ LIỆU */
+    async function processUpdate(it, type, extra = {}) {
+      Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+      const cleanNow = window.formatDateTimeVN();
+
+      try {
+        let itemsToUpdate = type === "ALL" ? it.cacMon.filter(m => m.Trang_Thai === "Chờ giao hàng") : [it.cacMon[extra.mIdx]];
+        let statusMoi = type === "ALL" ? "Chờ thanh toán" : "Đã giao lẻ";
+
+        for (let m of itemsToUpdate) {
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${m.id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ Trang_Thai: statusMoi }) });
+          const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${it.maDon}&San_Pham=eq.${encodeURIComponent(m.Ten_Hang)}&select=id`, { headers: h });
+          const rowLog = await resLog.json();
+          if (rowLog.length > 0) {
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
+              method: 'PATCH', headers: h, body: JSON.stringify({ Trang_Thai: statusMoi, Gio_Giao_Hang: cleanNow, Nguoi_Thuc_Hien: "Giao hàng" })
+            });
+          }
+        }
+        Swal.fire({ icon: 'success', title: 'Đã lưu hệ thống!', timer: 1000, showConfirmButton: false });
+        loadF8Data();
+      } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
+    }
+
+    /** 5. THIẾT KẾ PHIẾU IN CẢI TIẾN: TÊN KHÁCH MÀU XANH SIÊU TO */
+    function getPrintHTML(it, rows, footer) {
+      return `
+        <div style="padding:20px; font-family:Arial, sans-serif; color:#000;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #2980b9; padding-bottom: 10px;">
+            <div style="flex: 1;">
+              <h1 style="color: #2980b9; margin: 0; font-size: 24px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1>
+              <p style="margin: 3px 0; font-size: 13px;">📍 27 Nguyễn Văn Cừ, P. Cao Lãnh, Đồng Tháp</p>
+              <p style="margin: 3px 0; font-size: 13px;">📞 0399.221.753 - 0337.663.113</p>
+              <p style="margin: 3px 0; font-size: 13px;">🌐 www.inansacmaudongthap.com</p>
+            </div>
+            <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 100px; height: auto;">
+          </div>
+
+          <div style="text-align: center; margin: 15px 0;">
+            <h2 style="color: #2980b9; margin: 0; letter-spacing: 2px; text-transform: uppercase; font-size: 26px;">PHIẾU GIAO HÀNG</h2>
+            <p style="margin: 5px 0; font-weight: bold; font-size: 16px;">Mã đơn: <span>${it.maDon}</span></p>
+          </div>
+
+          <div style="margin-top:20px;">
+            <div style="font-size:42px; font-weight:bold; margin-bottom:12px; text-transform:uppercase; color:#2980b9;">KHÁCH: ${it.khachHang}</div>
+            <div style="font-size:32px; font-weight:bold; margin-bottom:10px; background:#f1f5f9; padding:12px; border-radius:8px; border: 2px solid #2980b9; -webkit-print-color-adjust: exact;">Đ/C: ${it.diachi}</div>
+            <div style="font-size:35px; font-weight:bold; margin-bottom:10px;">SĐT: ${it.sdt || '--- --- ---'}</div>
+          </div>
+
+          <table class="print-table">
+            <thead>
+              <tr><th>SẢN PHẨM SẢN XUẤT</th><th style="width:100px; text-align:center;">SL</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+
+          <div style="margin-top:30px; display:flex; justify-content:space-between; align-items:flex-end;">
+            <div style="font-size:14px; color:#555;">Ngày in: ${new Date().toLocaleString('vi-VN')}</div>
+            <div style="text-align:right; border:2px solid #2980b9; padding:12px; border-radius:8px; background:#f0f9ff; -webkit-print-color-adjust: exact;">
+              <div style="font-size:11px; color:#2980b9; font-weight:bold;">THÔNG TIN TÀI CHÍNH</div>
+              ${footer}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function showPreviewFull(it) {
+      const rows = it.cacMon.map(m => `<tr><td>${m.Ten_Hang}</td><td style="text-align:center;">${m.So_Luong}</td></tr>`).join('');
+      const footer = `<div style="font-size:12px;">Tổng: ${it.tongDon.toLocaleString()} | Đã trả: ${it.tongDaTra.toLocaleString()}</div><div style="font-size:16px; font-weight:bold; color:red;">CÒN NỢ: ${(it.tongDon - it.tongDaTra).toLocaleString()}đ</div>`;
+      renderAndPrint(getPrintHTML(it, rows, footer));
+    }
+
+    function showPreviewLe(it, mIdx) {
+      const m = it.cacMon[mIdx];
+      const rows = `<tr><td>${m.Ten_Hang} (GIAO LẺ)</td><td style="text-align:center;">${m.So_Luong}</td></tr>`;
+      const footer = `<div style="font-size:12px; font-weight:bold;">Đơn còn nợ tổng: ${(it.tongDon - it.tongDaTra).toLocaleString()}đ</div>`;
+      renderAndPrint(getPrintHTML(it, rows, footer));
+    }
+
+    function renderAndPrint(html) {
+      Swal.fire({
+        title: 'XEM PHIẾU VẬN CHUYỂN',
+        html: `<div id="p-area" style="border:1px solid #2980b9; background:#fff; text-align:left;">${html}</div>`,
+        showCancelButton: true, confirmButtonText: '🖨️ IN PHIẾU', cancelButtonText: 'ĐÓNG', confirmButtonColor: '#2980b9', width: '850px'
+      }).then(r => {
+        if (r.isConfirmed) {
+          document.getElementById('vung-in-f8').innerHTML = html;
+          setTimeout(() => { window.print(); }, 500);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

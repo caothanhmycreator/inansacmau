@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xử lý đơn hàng - Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+
+  <style>
+    :root { --primary-f2: #2D5A27; --bg-light: #f4f7f6; }
+    body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
+    
+    /* Layout MPA */
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+
+    .f2-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .f2-header { background: linear-gradient(135deg, #2D5A27 0%, #3e7a36 100%); padding: 15px 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
+    
+    .f2-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
+    .f2-table th { padding: 12px; color: #64748b; font-size: 12px; text-transform: uppercase; text-align: left; }
+    .f2-row { background: #fff; transition: 0.2s; }
+    .f2-row td { padding: 15px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; vertical-align: middle; }
+    .f2-row td:first-child { border-left: 1px solid #eee; border-radius: 10px 0 0 10px; }
+    .f2-row td:last-child { border-right: 1px solid #eee; border-radius: 0 10px 10px 0; }
+    .f2-row:hover { background: #fdfdfd; transform: scale(1.002); }
+
+    .action-wrapper { display: flex; flex-wrap: nowrap; gap: 5px; justify-content: center; min-width: 400px; }
+    .btn-stt { border: none; color: white; padding: 10px 8px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 10px; white-space: nowrap; flex: 1; max-width: 110px; transition: 0.2s; }
+    .btn-tk { background: #3498db; } 
+    .btn-in { background: #e67e22; } 
+    .btn-gc { background: #9b59b6; } 
+    .btn-ready { background: #27ae60; } 
+    .btn-stt:hover { filter: brightness(90%); transform: translateY(-1px); }
+    
+    .note-warning { background: #fff5f5; color: #c53030; padding: 5px; border-radius: 4px; font-size: 11px; margin-top: 5px; border-left: 3px solid #ef4444; }
+    
+    /* CSS cho Form trong Swal */
+    .f2-form-group { text-align: left; margin-bottom: 10px; }
+    .f2-form-group label { font-size: 11px; font-weight: bold; color: #2D5A27; display: block; margin-bottom: 3px; }
+    .f2-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+
+    .swal2-container { z-index: 20000 !important; }
+
+    @media (max-width: 768px) { .main-content { margin-left: 0; } }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar-placeholder"></div>
+
+  <div class="main-content">
+    <div class="f2-container">
+      <div class="f2-header">
+        <h2 style="margin:0; font-size: 18px;">⏳ ĐƠN CHỜ ĐIỀU PHỐI XỬ LÝ</h2>
+        <button onclick="loadF2Data()" style="background:#FF8C00; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">🔄 LÀM MỚI</button>
+      </div>
+      
+      <div style="overflow-x: auto;"> 
+        <table class="f2-table">
+          <thead>
+            <tr>
+              <th style="width: 15%">Mã/Ngày</th>
+              <th style="width: 20%">Khách hàng</th>
+              <th style="width: 30%">Sản phẩm/SL</th>
+              <th style="text-align: center;">Thao tác chuyển quy trình</th>
+            </tr>
+          </thead>
+          <tbody id="f2-table-body">
+            <tr><td colspan="4" style="text-align:center; padding:30px;">☕ Đang quét danh sách mới...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tự động tải khi trang sẵn sàng
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => { loadF2Data(); }, 600);
+    });
+
+    /** 🚀 HÀM HỖ TRỢ XỬ LÝ ĐƯỜNG DẪN FILE (EVERYTHING) */
+    function autoFormatEverythingLink(input) {
+      let val = input.value.trim().replace(/"/g, ""); // Xóa ngoặc kép
+      if (val.includes(":\\")) {
+        // Biến D:\abc thành http://192.168.1.6/D%3A/abc
+        input.value = "http://192.168.1.6/" + val.replace(":", "%3A").replace(/\\/g, "/");
+      }
+    }
+
+    /** 1. TẢI DANH SÁCH ĐƠN CHỜ XỬ LÝ */
+    async function loadF2Data() {
+      const tbody = document.getElementById('f2-table-body');
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=eq.Chờ xử lý&select=*&order=id.desc`, { headers: h });
+        const data = await res.json();
+
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px;">✨ Tuyệt vời! Hiện tại không còn đơn nào chờ điều phối.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.map(item => `
+          <tr class="f2-row">
+            <td><small>${item.Ngay_Gio.split(' ')[0]}</small><br><b>${item.Ma_Don}</b></td>
+            <td><b>${item.Ten_Khach_Hang}</b></td>
+            <td>
+              <b style="color:#2c3e50">${item.Ten_Hang}</b><br>
+              <small>${item.So_Luong} ${item.Don_Vi_Tinh || ''}</small>
+              ${item.Ghi_Chu ? `<div class="note-warning">⚠️ Ghi chú đơn: ${item.Ghi_Chu}</div>` : ''}
+            </td>
+            <td>
+              <div class="action-wrapper">
+                <button class="btn-stt btn-tk" onclick="updateStatus('${item.Ma_Don}', '${item.Ten_Hang}', 'Chờ thiết kế')">🎨 THIẾT KẾ</button>
+                <button class="btn-stt btn-in" onclick="updateStatus('${item.Ma_Don}', '${item.Ten_Hang}', 'Chờ in')">🖨️ IN ẤN</button>
+                <button class="btn-stt btn-gc" onclick="updateStatus('${item.Ma_Don}', '${item.Ten_Hang}', 'Chờ gia công')">🛠️ GIA CÔNG</button>
+                <button class="btn-stt btn-ready" onclick="updateStatus('${item.Ma_Don}', '${item.Ten_Hang}', 'Chờ giao hàng')">📦 CÓ SẴN</button>
+              </div>
+            </td>
+          </tr>`).join('');
+      } catch (e) { 
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
+      }
+    }
+
+    /** 2. HÀM HIỂN THỊ FORM ĐIỀU PHỐI */
+    function updateStatus(ma, sp, stt) {
+      if (stt === 'Chờ in' || stt === 'Chờ gia công') {
+        Swal.fire({
+          title: 'HỒ SƠ SẢN XUẤT',
+          html: `
+            <div style="text-align:left; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px; font-size:13px;">
+              Mã đơn: <b>${ma}</b> | SP: <b>${sp}</b><br>
+              Điều phối đến: <b style="color:#2D5A27">${stt.toUpperCase()}</b>
+            </div>
+            <div class="f2-form-group"><label>KÍCH THƯỚC:</label><input type="text" id="f2_kt" class="f2-input" placeholder="Vd: 60x160cm"></div>
+            <div class="f2-form-group"><label>CHẤT LIỆU:</label><input type="text" id="f2_cl" class="f2-input" placeholder="Vd: Bạt Hiflex 3.2"></div>
+            <div class="f2-form-group"><label>GIA CÔNG:</label><input type="text" id="f2_gc" class="f2-input" placeholder="Vd: Đóng khoen, dán biên"></div>
+            <div class="f2-form-group"><label>🔗 LINK HỒ SƠ ẢNH (Dán đường dẫn ổ đĩa):</label><input type="text" id="f2_link_anh" class="f2-input" placeholder="D:\App_SacMau\file\view\..."></div>
+            <div class="f2-form-group"><label>🔗 LINK FILE IN (Dán đường dẫn ổ đĩa):</label><input type="text" id="f2_link_file" class="f2-input" placeholder="D:\App_SacMau\file\cdr\..."></div>
+            <div class="f2-form-group"><label>📝 GHI CHÚ SẢN XUẤT:</label><textarea id="f2_note" class="f2-input" style="height:60px" placeholder="Dặn dò kỹ thuật viên..."></textarea></div>`,
+          showCancelButton: true, confirmButtonColor: '#2D5A27', confirmButtonText: 'XÁC NHẬN CHUYỂN', cancelButtonText: 'HỦY',
+          didOpen: () => {
+            // Lắng nghe sự kiện dán/nhập để tự chuyển đổi đường dẫn ổ đĩa sang Link Everything
+            ['f2_link_anh', 'f2_link_file'].forEach(id => {
+              document.getElementById(id).addEventListener('input', (e) => autoFormatEverythingLink(e.target));
+            });
+          },
+          preConfirm: () => {
+            return {
+              maDon: ma, tenSP: sp, newStatus: stt,
+              kt: document.getElementById('f2_kt').value, 
+              cl: document.getElementById('f2_cl').value,
+              gc: document.getElementById('f2_gc').value, 
+              linkAnh: document.getElementById('f2_link_anh').value,
+              linkFile: document.getElementById('f2_link_file').value,
+              note: document.getElementById('f2_note').value
+            };
+          }
+        }).then((result) => { if (result.isConfirmed) thuc_thi_cap_nhat(result.value); });
+      } 
+      else {
+        Swal.fire({
+          title: 'CHUYỂN QUY TRÌNH',
+          html: `<div style="text-align:left; font-size:14px;">Đơn: <b>${ma}</b><br>Chuyển đến: <b style="color:#3498db">${stt.toUpperCase()}</b></div>`,
+          input: 'textarea',
+          inputLabel: 'Ghi chú sản xuất (Dặn dò):',
+          inputPlaceholder: 'Nhập nội dung cần lưu ý cho bộ phận tiếp theo...',
+          showCancelButton: true, confirmButtonColor: '#3498db', confirmButtonText: 'ĐỒNG Ý', cancelButtonText: 'HỦY'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            thuc_thi_cap_nhat({ 
+              maDon: ma, tenSP: sp, newStatus: stt, note: result.value, 
+              kt: "", cl: "", gc: "", linkAnh: "", linkFile: "" 
+            });
+          }
+        });
+      }
+    }
+
+    /** 3. THỰC THI LƯU VÀO SUPABASE */
+    async function thuc_thi_cap_nhat(p) {
+      Swal.fire({ title: 'Đang điều phối...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+      const cleanNow = window.formatDateTimeVN();
+
+      try {
+        const searchBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.tenSP)}&select=id`, { headers: h });
+        const rowBH = await searchBH.json();
+
+        if (rowBH.length > 0) {
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${rowBH[0].id}`, {
+            method: 'PATCH', headers: h,
+            body: JSON.stringify({
+              Trang_Thai: p.newStatus, Kich_Thuoc: p.kt, Chat_Lieu: p.cl, Gia_Cong: p.gc, Link_Anh: p.linkAnh, Link_File: p.linkFile, Ghi_Chu_San_Xuat: p.note
+            })
+          });
+        }
+
+        const searchLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${p.maDon}&San_Pham=eq.${encodeURIComponent(p.tenSP)}&select=id`, { headers: h });
+        const rowLog = await searchLog.json();
+
+        if (rowLog.length > 0) {
+          let updateData = { Trang_Thai: p.newStatus, Gio_Xu_Ly: cleanNow, Nguoi_Thuc_Hien: "Điều phối" };
+          if (p.newStatus === "Chờ thiết kế") updateData.Gio_Thiet_Ke = cleanNow;
+          else if (p.newStatus === "Chờ in") updateData.Gio_In = cleanNow;
+          else if (p.newStatus === "Chờ gia công") updateData.Gio_Gia_Cong = cleanNow;
+          else if (p.newStatus === "Chờ giao hàng") updateData.Gio_Giao_Hang = cleanNow;
+
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
+            method: 'PATCH', headers: h, body: JSON.stringify(updateData)
+          });
+        }
+
+        Swal.fire({ icon: 'success', title: 'Thành công!', timer: 800, showConfirmButton: false });
+        loadF2Data();
+      } catch (e) {
+        Swal.fire('Lỗi hệ thống', e.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>

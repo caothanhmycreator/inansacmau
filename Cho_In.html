@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Máy in - Tiệm In Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+
+  <style>
+    :root { --primary-f5: #e67e22; --header-gradient: linear-gradient(135deg, #e67e22 0%, #d35400 100%); --bg-light: #f8fafc; --border-color: #e2e8f0; }
+    body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
+    
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+
+    .f5-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .f5-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    
+    .f5-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
+    .f5-table th { padding: 12px 15px; color: #64748b; font-size: 13px; text-transform: uppercase; text-align: left; }
+    .f5-row { background: white; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .f5-row td { padding: 15px; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    .f5-row td:first-child { border-left: 1px solid var(--border-color); border-radius: 10px 0 0 10px; }
+    .f5-row td:last-child { border-right: 1px solid var(--border-color); border-radius: 0 10px 10px 0; }
+
+    .badge { background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; margin: 2px; border: 1px solid #cbd5e1; }
+    .note-x { background: #fff7ed; color: #9a3412; padding: 8px; border-radius: 6px; border-left: 4px solid #f97316; font-size: 12px; margin-top: 8px; }
+    
+    .img-container { width: 130px; height: 180px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); background: #f1f5f9; display: flex; align-items: center; justify-content: center; margin: 0 auto; position: relative; }
+    .img-preview { max-width: 100%; max-height: 100%; object-fit: contain; cursor: pointer; }
+
+    .btn-action { border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.2s; width: 100%; margin-bottom: 5px; text-transform: uppercase; }
+    .btn-done { background: #27ae60; color: white; height: 50px; font-size: 13px; }
+    .btn-file { background: #f1f5f9; color: #2563eb; border: 1px solid #cbd5e1; }
+
+    .nl-row { display: grid; grid-template-columns: 1fr 1.5fr 1fr 0.8fr 1fr 40px; gap: 5px; margin-bottom: 8px; align-items: center; }
+    .nl-input { padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; width: 100%; box-sizing: border-box; }
+
+    .swal2-container { z-index: 20000 !important; }
+    @media (max-width: 768px) { .main-content { margin-left: 0; } }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar-placeholder"></div>
+
+  <div class="main-content">
+    <div class="f5-container">
+      <div class="f5-header">
+        <div>
+          <h2 style="margin:0; font-size: 20px;">🖨️ MÁY IN: ĐƠN CHỜ IN TẠI TIỆM</h2>
+          <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Xuất kho vật tư & Hoàn tất lệnh sản xuất</p>
+        </div>
+        <button onclick="loadF5Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 LÀM MỚI</button>
+      </div>
+      
+      <div style="overflow-x: auto;">
+        <table class="f5-table">
+          <thead>
+            <tr><th>Đơn hàng</th><th>Khách hàng</th><th style="text-align:center;">Bản thảo</th><th>Quy cách kỹ thuật</th><th>Thao tác</th></tr>
+          </thead>
+          <tbody id="f5-table-body">
+            <tr><td colspan="5" style="text-align:center; padding:50px; color:#64748b;">🔄 Đang nạp danh sách chờ in...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => { loadF5Data(); }, 600);
+    });
+
+    /** 1. TẢI DANH SÁCH CHỜ IN */
+    async function loadF5Data() {
+      const tbody = document.getElementById('f5-table-body');
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=eq.Chờ in&select=*&order=id.desc`, { headers: h });
+        const data = await res.json();
+
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px;">✨ Hiện không có đơn nào chờ in.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.map(item => {
+          const imgHtml = item.Link_Anh ? `
+              <img src="${item.Link_Anh}" class="img-preview" 
+                   onclick="window.open('${item.Link_Anh}', '_blank')" 
+                   onerror="this.src='https://placehold.co/130x180?text=Lỗi+Ảnh';">
+            ` : `<div style="font-size:10px; color:#94a3b8; text-align:center">📂 Ổ Z:/</div>`;
+
+          return `<tr class="f5-row">
+            <td><small>#${item.Ngay_Gio.split(' ')[0]}</small><br><b style="font-size:15px;">${item.Ma_Don}</b></td>
+            <td><b>${item.Ten_Khach_Hang}</b><br><small>${item.Ten_Hang}</small></td>
+            <td><div class="img-container">${imgHtml}</div></td>
+            <td>
+              <div style="margin-bottom:5px;">
+                <span class="badge">📏 KT: ${item.Kich_Thuoc || 'N/A'}</span>
+                <span class="badge">🧪 CL: ${item.Chat_Lieu || 'N/A'}</span>
+                <span class="badge">🛠️ GC: ${item.Gia_Cong || 'N/A'}</span>
+              </div>
+              ${item.Ghi_Chu_San_Xuat ? `<div class="note-x">💬 ${item.Ghi_Chu_San_Xuat}</div>` : ''}
+            </td>
+            <td>
+              <button class="btn-action btn-file" onclick="handleDownload('${item.Link_File}')">📥 TẢI FILE IN</button>
+              <button class="btn-action btn-done" onclick="openMaterialForm('${encodeURIComponent(JSON.stringify(item))}')">✅ HOÀN TẤT IN</button>
+            </td></tr>`;
+        }).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    /** 2. XỬ LÝ TẢI FILE */
+    function handleDownload(path) {
+      if (!path) return Swal.fire('Thông báo', 'Không có đường dẫn file!', 'warning');
+      if (path.startsWith('http')) { window.open(path, '_blank'); } 
+      else {
+        const el = document.createElement('textarea'); el.value = path; document.body.appendChild(el); el.select();
+        document.execCommand('copy'); document.body.removeChild(el);
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã copy đường dẫn!', showConfirmButton: false, timer: 1500 });
+      }
+    }
+
+    /** 3. MỞ FORM VẬT TƯ */
+    function openMaterialForm(itemStr) {
+      const item = JSON.parse(decodeURIComponent(itemStr));
+      Swal.fire({
+        title: 'XÁC NHẬN HOÀN TẤT & XUẤT KHO',
+        width: '850px',
+        html: `
+          <div style="text-align:left; font-size:13px; margin-bottom:15px; padding:10px; background:#f8fafc; border-radius:6px; border-left:4px solid #e67e22;">
+            📌 Đơn: <b>${item.Ma_Don}</b> - SP: <b>${item.Ten_Hang}</b>
+          </div>
+          <div id="material-list">
+            <div class="nl-row" style="font-weight:bold; font-size:11px; border-bottom:2px solid #e2e8f0; padding-bottom:5px; margin-bottom:10px;">
+              <div>Mã NL</div><div>Tên Nguyên Liệu</div><div>Phân loại</div><div>SL</div><div>Ghi chú</div><div></div>
+            </div>
+            <div class="nl-row item-row">
+              <input class="nl-input m-ma" placeholder="Mã"><input class="nl-input m-ten" placeholder="Tên vật tư"><input class="nl-input m-loai" placeholder="Cuộn/Tấm"><input class="nl-input m-sl" type="number" placeholder="SL"><input class="nl-input m-note" placeholder="Ghi chú">
+              <button onclick="this.parentElement.remove()" style="border:none; color:red; background:none; cursor:pointer; font-size:16px;">✕</button>
+            </div>
+          </div>
+          <button onclick="window.addNLRow()" style="margin-top:15px; background:#34495e; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">+ THÊM VẬT TƯ</button>
+        `,
+        showCancelButton: true, confirmButtonText: '🚀 XÁC NHẬN HOÀN TẤT', confirmButtonColor: '#27ae60',
+        preConfirm: () => {
+          const rows = document.querySelectorAll('.item-row');
+          const materials = [];
+          rows.forEach(row => {
+            const ten = row.querySelector('.m-ten').value.trim();
+            if(ten) {
+              materials.push({
+                maNL: row.querySelector('.m-ma').value,
+                tenNL: ten,
+                loaiNL: row.querySelector('.m-loai').value,
+                slNL: row.querySelector('.m-sl').value,
+                noteNL: row.querySelector('.m-note').value
+              });
+            }
+          });
+          if(materials.length === 0) { Swal.showValidationMessage('Nhập ít nhất 1 loại vật tư!'); return false; }
+          return materials;
+        }
+      }).then((r) => { if (r.isConfirmed) processCompleteIn(item, r.value); });
+    }
+
+    /** 4. THỰC THI CẬP NHẬT 3 BẢNG */
+    async function processCompleteIn(item, materials) {
+      Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+      const cleanNow = window.formatDateTimeVN();
+      const statusMoi = "Chờ giao hàng";
+
+      try {
+        // --- BƯỚC 1: LƯU NHẬT KÝ NGUYÊN LIỆU (KHỚP 10 CỘT THEO ẢNH) ---
+        const materialData = materials.map(m => ({
+          Ngay_Gio: cleanNow,
+          Ma_Don: item.Ma_Don,
+          Khach_Hang: item.Ten_Khach_Hang,
+          San_Pham: item.Ten_Hang,
+          Ma_Nguyen_Lieu: m.maNL,
+          Ten_Nguyen_Lieu: m.tenNL,
+          Phan_Loai: m.loaiNL,
+          So_Luong: m.slNL,
+          Ghi_Chu: m.noteNL,
+          id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000) // Tạo id số nguyên
+        }));
+
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, { 
+          method: 'POST', headers: h, body: JSON.stringify(materialData) 
+        });
+
+        // --- BƯỚC 2: CẬP NHẬT TRẠNG THÁI NHẬT KÝ BÁN HÀNG ---
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${item.id}`, {
+          method: 'PATCH', headers: h, body: JSON.stringify({ Trang_Thai: statusMoi })
+        });
+
+        // --- BƯỚC 3: CẬP NHẬT LOG TIẾN ĐỘ ---
+        const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${item.Ma_Don}&San_Pham=eq.${encodeURIComponent(item.Ten_Hang)}&select=id`, { headers: h });
+        const rowLog = await resLog.json();
+
+        if (rowLog.length > 0) {
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
+            method: 'PATCH', headers: h,
+            body: JSON.stringify({
+              Trang_Thai: statusMoi,
+              Gio_Giao_Hang: cleanNow, // Cột J: Giờ bàn giao sang kho/giao hàng
+              Nguoi_Thuc_Hien: "Máy in"
+            })
+          });
+        }
+
+        Swal.fire({ icon: 'success', title: 'Hoàn tất in!', timer: 1000, showConfirmButton: false });
+        loadF5Data();
+      } catch (e) {
+        Swal.fire('Lỗi', e.message, 'error');
+      }
+    }
+
+    window.addNLRow = function() {
+      const div = document.createElement('div'); div.className = 'nl-row item-row';
+      div.innerHTML = `<input class="nl-input m-ma" placeholder="Mã"><input class="nl-input m-ten" placeholder="Tên vật tư"><input class="nl-input m-loai" placeholder="Cuộn/Tấm"><input class="nl-input m-sl" type="number" placeholder="SL"><input class="nl-input m-note" placeholder="Ghi chú"><button onclick="this.parentElement.remove()" style="border:none; color:red; background:none; cursor:pointer; font-size:16px;">✕</button>`;
+      document.getElementById('material-list').appendChild(div);
+    };
+  </script>
+</body>
+</html>

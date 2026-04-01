@@ -1,0 +1,336 @@
+<style>
+/* ==========================
+   1. RESET & BIẾN TOÀN CỤC
+========================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+
+/* Hiệu ứng vòng xoay nhỏ nhẹ nhàng */
+.spinner-nho {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+:root {
+  --primary: #1a331d;        /* Xanh đậm Sidebar */
+  --primary-light: #2D5A27;  /* Xanh Sắc Màu */
+  --secondary: #FF8C00;      /* Cam Sắc Màu */
+  --bg: #f4f7f6;
+  --text-light: #bdc3c7;
+  --sidebar-width: 260px;
+}
+
+body {
+  background: var(--bg);
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Fix lỗi màu link */
+a, a:visited, a:hover, a:active {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ==========================
+   2. SIDEBAR & MENU 2 CẤP
+========================== */
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  background-color: var(--primary);
+  color: white;
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+}
+
+.brand {
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.brand img {
+  width: 85px; 
+  height: auto;
+  margin-bottom: 10px;
+}
+
+.brand-text {
+  color: var(--secondary);
+  font-weight: bold;
+  font-size: 14px;
+  text-transform: uppercase;
+  display: block;
+  letter-spacing: 1px;
+}
+
+/* --- MENU CHA --- */
+.nav-item {
+  width: 100%;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.nav-link {
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-light);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.nav-link:hover, .nav-item.active .nav-link {
+  background: rgba(255,255,255,0.05);
+  color: var(--secondary);
+}
+
+.arrow {
+  font-size: 10px;
+  transition: transform 0.3s;
+}
+
+.nav-item.active .arrow {
+  transform: rotate(180deg); /* Xoay mũi tên khi mở */
+}
+
+/* --- SUBMENU (MENU CẤP 2) --- */
+.submenu {
+  display: none;             /* Ẩn mặc định */
+  background-color: rgba(0, 0, 0, 0.2); 
+  list-style: none;
+  width: 100%;
+}
+
+/* Ép hiển thị khi menu cha active */
+.nav-item.active .submenu {
+  display: block !important;
+}
+
+.submenu-item, .submenu a {
+  display: block !important;  /* Ép xuống dòng */
+  padding: 12px 15px 12px 50px !important; /* Thụt lề sâu vào trong 50px */
+  color: #ecf0f1;
+  font-size: 13.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: all 0.2s ease;
+  cursor: pointer !important; /* Hiện bàn tay khi rê chuột */
+  text-align: left;
+  white-space: nowrap;
+}
+
+.submenu-item:hover, .submenu a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding-left: 60px !important; /* Hiệu ứng nhích nhẹ khi hover */
+  color: var(--secondary);
+}
+
+/* ==========================
+   3. MAIN CONTENT & TOP BAR
+========================== */
+.main {
+  margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-bar {
+  height: 60px;
+  padding: 0 25px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
+.view-container {
+  padding: 20px;
+  flex: 1;
+}
+
+/* ==========================
+   4. CHỐNG XUNG ĐỘT KHI IN
+========================== */
+@media print {
+  .sidebar, .top-bar, .nav-item, .brand, .no-print {
+    display: none !important;
+  }
+  .main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  :root { --sidebar-width: 200px; }
+  .submenu-item, .submenu a { padding-left: 35px !important; }
+}
+
+
+
+/* ==========================
+   CSS MÀN HÌNH LÀM VIỆC - GIỮ NGUYÊN
+   ========================== */
+.sacmau-container { background: #fff; max-width: 900px; margin: 0 auto 40px auto; padding: 25px; border-radius: 15px; border-top: 6px solid var(--secondary); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+.sacmau-row { display: flex; gap: 15px; margin-bottom: 15px; align-items: flex-end; }
+.sacmau-item-box { border: 1px solid #eee; padding: 15px; border-radius: 12px; background: #fffdfb; margin-bottom: 15px; }
+.sacmau-label { display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 6px; }
+.sacmau-input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; outline: none; }
+.sacmau-table { width: 100%; border-collapse: collapse; }
+.sacmau-table th { background: var(--primary-light); color: white; padding: 12px; font-size: 13px; text-align: left; }
+.sacmau-table td { padding: 12px; border-bottom: 1px solid #eee; }
+.sacmau-payment-box { background: #e7f3e6; border: 1px solid var(--primary-light); padding: 15px 20px; border-radius: 10px; display: flex; gap: 15px; align-items: center; }
+.sacmau-btn-save { background: var(--primary-light); color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+#vung-in-sacmau { display: none !important; }
+
+/* ==========================================
+   CSS PHIẾU IN A4 (HIỆU CHỈNH FONT NHỎ 50% & BỎ VIỀN)
+   ========================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 5mm !important;
+  }
+
+  html, body, .main, .view-container, .sacmau-wrapper {
+    visibility: visible !important;
+    overflow: visible !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    width: 100% !important;
+    height: auto !important;
+    background: #fff !important;
+  }
+
+  .sidebar, .top-bar, .sacmau-container, .sacmau-btn-save, .sacmau-btn-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  #vung-in-sacmau {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 200mm !important;
+    margin: 0 auto !important;
+    padding: 10px !important;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Logo chìm giữa phiếu */
+  #vung-in-sacmau::after {
+    content: "";
+    position: fixed;
+    top: 55%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80mm; height: 80mm;
+    background-image: url('https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    opacity: 0.08 !important;
+    z-index: -1;
+  }
+
+  /* Header thông tin tiệm */
+  .p-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #FF8C00 !important; /* Giảm độ dày viền cam */
+    padding-bottom: 3mm;
+    margin-bottom: 3mm;
+    margin-top: 3mm;
+  }
+  .p-logo { width: 60px; height: auto; border-radius: 5px; }
+  .p-info-tiem { text-align: left; }
+  .p-info-tiem h1 { color: #244228 !important; font-size: 13pt !important; margin: 0; font-weight: 800; }
+  .p-info-tiem p { margin: 1px 0; font-size: 8pt !important; color: #333 !important; font-weight: 500;}
+
+  /* Tiêu đề Phiếu (GIẢM 50% & BỎ KHUNG VIỀN) */
+  .p-title {
+    text-align: center;
+    color: #244228 !important;
+    padding: 2mm;
+    margin: 5mm 0;
+    text-transform: uppercase;
+    font-size: 14pt !important; /* Giảm cỡ chữ */
+    font-weight: bold;
+    border: none !important; /* BỎ KHUNG VIỀN */
+  }
+
+  /* Thông tin khách hàng */
+  .p-customer-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    padding: 4mm;
+    border: 1px solid #eee !important;
+    border-left: 5px solid #FF8C00 !important;
+    border-radius: 8px;
+  }
+  .p-customer-info p { margin: 0; font-size: 9pt !important; line-height: 1.4;}
+
+  /* Bảng hàng hóa */
+  .table-in { width: 100%; border-collapse: collapse; margin-top: 5px; border: 1px solid #244228 !important; }
+  .table-in th { background: #244228 !important; color: #fff !important; padding: 8px; font-size: 9pt !important; }
+  .table-in td { border: 1px solid #eee !important; padding: 6px; text-align: center; font-size: 9pt !important; color: #000 !important; }
+
+  /* Tổng thanh toán */
+  .p-footer-total {
+    margin-top: 5px;
+    padding: 4mm;
+    background: #e7f3e6 !important;
+    border-radius: 8px;
+    border: 1px solid #244228 !important;
+    line-height: 1.6;
+  }
+  .p-footer-total div { font-size: 9pt !important; }
+  #p-no-in { color: #FF0000 !important; font-size: 11pt !important; font-weight: bold; }
+
+  /* Chữ ký */
+  .p-signature {
+    margin-top: 10mm;
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+    font-size: 9pt !important;
+  }
+}
+
+</style>

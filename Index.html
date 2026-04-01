@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard - Sắc Màu</title>
+  <meta charset="UTF-8">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script> <style>
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; }
+    .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; }
+    .header { margin-bottom: 30px; border-bottom: 2px solid #2D5A27; padding-bottom: 10px; }
+    
+    /* Lưới các ô chức năng */
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+    .module-card { 
+      background: white; padding: 25px; border-radius: 15px; text-align: center; 
+      text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      transition: 0.3s; border: 1px solid #eee; display: flex; flex-direction: column; align-items: center;
+    }
+    .module-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); border-color: #2D5A27; }
+    .module-card i { font-size: 40px; margin-bottom: 15px; }
+    .module-card span { font-weight: bold; font-size: 15px; color: #2D5A27; }
+
+    @media (max-width: 768px) { .main-content { margin-left: 0; } }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar-placeholder"></div>
+
+  <div class="main-content">
+    <div class="header">
+      <h2 style="color: #2D5A27; margin: 0;">🏠 BẢNG ĐIỀU KHIỂN CHÍNH</h2>
+      <p style="color: #666; margin: 5px 0;">Chào mừng trở lại, <b id="welcome-name">...</b>!</p>
+    </div>
+
+    <div id="dashboard-menu" class="dashboard-grid">
+      </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const user = JSON.parse(localStorage.getItem('currentUser'));
+      if(!user) return;
+
+      document.getElementById('welcome-name').innerText = user.name;
+      const menuContainer = document.getElementById('dashboard-menu');
+      const userModules = user.modules.split(',').map(s => s.trim());
+
+      let html = "";
+      window.APP_MODULES.forEach(m => {
+        if (userModules.includes(m.id)) {
+          html += `
+            <a href="${m.file}" class="module-card">
+              <i>${m.icon}</i>
+              <span>${m.label}</span>
+            </a>
+          `;
+        }
+      });
+      menuContainer.innerHTML = html;
+    });
+  </script>
+</body>
+</html>
