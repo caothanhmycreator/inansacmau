@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   const sidebarBox = document.getElementById('sidebar-placeholder');
   if (sidebarBox) {
     try {
-      const resp = await fetch('Index_SideBar.html');
+      const resp = await fetch('sidebar.html');
       sidebarBox.innerHTML = await resp.text();
       
       const menuContainer = document.getElementById('dynamic-menu-container');
