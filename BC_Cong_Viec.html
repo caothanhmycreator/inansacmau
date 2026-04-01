@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Báo cáo công việc - Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+
+  <style>
+    .f11-container { background: #f4f7f6; padding: 15px; border-radius: 8px; font-family: sans-serif; }
+    .filter-box { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .report-card { background: white; padding: 12px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-top: 5px solid #3498db; }
+    .card-value { font-size: 18px; font-weight: bold; margin: 5px 0; color: #2c3e50; }
+    
+    .detail-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+    .detail-table th { background: #2c3e50; color: white; padding: 10px; text-align: left; font-size: 13px; }
+    .detail-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+    
+    .status-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
+    .status-item { 
+      display: flex; justify-content: space-between; align-items: center; 
+      padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #34495e; 
+      cursor: pointer; transition: 0.2s; 
+    }
+    .status-item:hover { background: #e2e8f0; transform: translateX(5px); }
+    .status-badge { background: #2c3e50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+    
+    .clickable-row { cursor: pointer; transition: 0.2s; }
+    .clickable-row:hover { background: #f1f5f9; color: #27ae60; }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar-placeholder"></div>
+
+  <div class="main-content">
+    <div class="f11-container">
+      <div class="filter-box">
+        <b>📅 Báo cáo ngày:</b>
+        <input type="date" id="report-date">
+        <button onclick="loadF11Data()" style="padding:8px 15px; background:#2c3e50; color:white; border:none; border-radius:5px; cursor:pointer;">XEM DỮ LIỆU</button>
+      </div>
+
+      <div class="report-grid">
+        <div class="report-card"><div style="font-size:11px; color:#7f8c8d;">SỐ ĐƠN MỚI</div><div class="card-value" id="val-tongDon">0</div></div>
+        <div class="report-card" style="border-top-color: #9b59b6;"><div style="font-size:11px; color:#7f8c8d;">DOANH THU ẨN</div><div class="card-value" id="val-doanhThuAn">0 đ</div></div>
+        <div class="report-card" style="border-top-color: #e74c3c;"><div style="font-size:11px; color:#7f8c8d;">CÔNG NỢ MỚI</div><div class="card-value" id="val-congNoMoi" style="color:#e74c3c;">0 đ</div></div>
+        <div class="report-card" style="border-top-color: #27ae60;"><div style="font-size:11px; color:#7f8c8d;">TỔNG THỰC THU</div><div class="card-value" id="val-tongThu" style="color:#27ae60;">0 đ</div></div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; margin-top: 20px;">
+        <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+          <h3 style="margin:0 0 10px 0; font-size:14px; color:#c0392b;">📊 TRẠNG THÁI SẢN XUẤT (Click để xem)</h3>
+          <div class="status-grid">
+            <div class="status-item" id="item-choxuly"><span>⌛ Chờ xử lý</span> <span class="status-badge" id="st-choxuly">0</span></div>
+            <div class="status-item" id="item-chothietke"><span>🎨 Chờ thiết kế</span> <span class="status-badge" id="st-chothietke">0</span></div>
+            <div class="status-item" id="item-duyetfile"><span>✅ Cần duyệt file</span> <span class="status-badge" id="st-duyetfile">0</span></div>
+            <div class="status-item" id="item-choin"><span>🖨️ Chờ in</span> <span class="status-badge" id="st-choin">0</span></div>
+            <div class="status-item" id="item-giacong"><span>⚙️ Đang gia công</span> <span class="status-badge" id="st-giacong">0</span></div>
+            <div class="status-item" id="item-chogiao"><span>🚚 Chờ giao hàng</span> <span class="status-badge" id="st-chogiao">0</span></div>
+            <div class="status-item" id="item-chothanhtoan"><span>💳 Chờ thanh toán</span> <span class="status-badge" id="st-chothanhtoan">0</span></div>
+            <div class="status-item" id="item-hoantat" style="border-left-color: #27ae60; background: #eafaf1;">
+              <span style="font-weight:bold; color:#27ae60;">🎉 Hoàn tất hôm nay</span> 
+              <span class="status-badge" id="st-hoantat" style="background:#27ae60;">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+          <h3 style="margin:0 0 10px 0; font-size:14px; color:#2c3e50;">💰 CHI TIẾT THU TRONG NGÀY</h3>
+          <table class="detail-table">
+            <thead><tr><th>Khách hàng</th><th>Nội dung</th><th style="text-align:right;">Số tiền</th></tr></thead>
+            <tbody id="f11-detail-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.reportCache = { tonDong: {} };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById('report-date').value = new Date().toISOString().split('T')[0];
+      setTimeout(() => { loadF11Data(); }, 600);
+    });
+
+    /** 🚀 1. TẢI DỮ LIỆU BÁO CÁO */
+    async function loadF11Data() {
+      const rawDate = document.getElementById('report-date').value;
+      const [y, m, d] = rawDate.split('-');
+      const dateStr = `${d}/${m}/${y}`; // Định dạng DD/MM/YYYY
+
+      Swal.fire({ title: 'Đang trích xuất...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+
+      try {
+        // Lấy dữ liệu từ 2 bảng chính
+        const [resBH, resTN] = await Promise.all([
+          fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*`, { headers: h }),
+          fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?select=*`, { headers: h })
+        ]);
+
+        const dataBH = await resBH.json();
+        const dataTN = await resTN.json();
+
+        // Khởi tạo các biến tính toán
+        let report = {
+          thuMoi: 0, thuNoCu: 0, tongDonMoi: 0, doanhThuAn: 0,
+          chiTietThu: [],
+          tonDong: {
+            "Chờ xử lý": [], "Chờ thiết kế": [], "Chờ duyệt file": [],
+            "Chờ in": [], "Đang gia công": [], "Chờ giao hàng": [], 
+            "Chờ thanh toán": [], "Hoàn tất": []
+          }
+        };
+
+        const maDonProcessed = new Set();
+
+        // Xử lý Nhật ký bán hàng
+        dataBH.forEach(row => {
+          const ngayDon = row.Ngay_Gio ? row.Ngay_Gio.split(' ')[0] : "";
+          const maDon = String(row.Ma_Don || "");
+          const trangThai = String(row.Trang_Thai || "").trim();
+          
+          const monHang = { maDon, khách: row.Ten_Khach_Hang, sp: row.Ten_Hang, sl: row.So_Luong, tiền: row.Thanh_Tien || 0 };
+
+          // Phân loại tồn đọng (Trạng thái)
+          let keyTT = trangThai;
+          if (keyTT === "Cần duyệt file") keyTT = "Chờ duyệt file"; // Chuẩn hóa tên khâu
+          if (report.tonDong.hasOwnProperty(keyTT)) {
+            // "Hoàn tất" chỉ lấy trong ngày báo cáo, các trạng thái khác lấy tất cả (tồn đọng)
+            if (keyTT === "Hoàn tất") {
+              if (ngayDon === dateStr) report.tonDong[keyTT].push(monHang);
+            } else {
+              report.tonDong[keyTT].push(monHang);
+            }
+          }
+
+          // Tính toán metrics cho ngày được chọn
+          if (ngayDon === dateStr) {
+            report.doanhThuAn += (row.Thanh_Tien || 0);
+            if (!maDonProcessed.has(maDon)) {
+              report.tongDonMoi++;
+              report.thuMoi += (row.Khach_Da_Tra || 0);
+              maDonProcessed.add(maDon);
+
+              if ((row.Khach_Da_Tra || 0) > 0) {
+                const loaiThu = (row.Con_No || 0) <= 10 ? "Thanh toán đơn " : "Cọc đơn ";
+                report.chiTietThu.push({ khach: row.Ten_Khach_Hang, noiDung: loaiThu + maDon, soTien: row.Khach_Da_Tra, maDon });
+              }
+            }
+          }
+        });
+
+        // Xử lý Nhật ký thu nợ
+        dataTN.forEach(row => {
+          const ngayThu = row.Ngay_Gio ? row.Ngay_Gio.split(' ')[0] : "";
+          if (ngayThu === dateStr) {
+            report.thuNoCu += (row.So_Tien_Thu || 0);
+            report.chiTietThu.push({ khach: row.Khach_Hang, noiDung: "Thu nợ đơn " + row.Ma_Don, soTien: row.So_Tien_Thu, maDon: row.Ma_Don });
+          }
+        });
+
+        window.reportCache = report;
+        renderReportUI(report);
+        Swal.close();
+
+      } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
+    }
+
+    /** 🚀 2. HIỂN THỊ DỮ LIỆU LÊN GIAO DIỆN */
+    function renderReportUI(res) {
+      document.getElementById('val-tongDon').innerText = res.tongDonMoi;
+      document.getElementById('val-doanhThuAn').innerText = res.doanhThuAn.toLocaleString() + ' đ';
+      document.getElementById('val-congNoMoi').innerText = (res.doanhThuAn - res.thuMoi).toLocaleString() + ' đ';
+      document.getElementById('val-tongThu').innerText = (res.thuMoi + res.thuNoCu).toLocaleString() + ' đ';
+
+      const statusMap = {
+        "Chờ xử lý": "st-choxuly", "Chờ thiết kế": "st-chothietke", "Chờ duyệt file": "st-duyetfile",
+        "Chờ in": "st-choin", "Đang gia công": "st-giacong", "Chờ giao hàng": "st-chogiao", 
+        "Chờ thanh toán": "st-chothanhtoan", "Hoàn tất": "st-hoantat"
+      };
+
+      for (let key in statusMap) {
+        const id = statusMap[key];
+        const items = res.tonDong[key] || [];
+        document.getElementById(id).innerText = items.length;
+        document.getElementById('item-' + key.replace(/ /g, '').toLowerCase()).onclick = () => showStatusDetail(key);
+      }
+
+      let htmlDetail = res.chiTietThu.map(item => `
+        <tr class="clickable-row" onclick="showOrderInDaily('${item.maDon}')">
+          <td><b>${item.khach}</b></td>
+          <td>${item.noiDung}</td>
+          <td style="text-align:right; font-weight:bold; color:#27ae60;">${item.soTien.toLocaleString()}</td>
+        </tr>`).join('');
+      
+      document.getElementById('f11-detail-body').innerHTML = htmlDetail || '<tr><td colspan="3" style="text-align:center;">Không có phát sinh thu nợ</td></tr>';
+    }
+
+    /** 🚀 3. POPUP CHI TIẾT THEO TRẠNG THÁI */
+    window.showStatusDetail = function(statusName) {
+      const items = window.reportCache.tonDong[statusName];
+      if (!items || items.length === 0) return;
+
+      let tableHtml = `
+        <div style="max-height:400px; overflow-y:auto;">
+          <table class="detail-table" style="width:100%; font-size:12px;">
+            <thead style="position:sticky; top:0; z-index:10;"><tr style="background:#edf2f7"><th>Mã đơn</th><th>Khách hàng</th><th>Sản phẩm</th><th>SL</th></tr></thead>
+            <tbody>
+              ${items.map(i => `<tr><td><b>${i.maDon}</b></td><td>${i.khách}</td><td>${i.sp}</td><td style="text-align:center">${i.sl}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+
+      Swal.fire({ title: `DANH SÁCH: ${statusName.toUpperCase()}`, html: tableHtml, width: '800px', confirmButtonColor: '#2c3e50' });
+    };
+
+    /** 🚀 4. POPUP CHI TIẾT ĐƠN HÀNG KHI CLICK VÀO DÒNG TIỀN */
+    window.showOrderInDaily = function(maDon) {
+      // Tìm mã đơn trong toàn bộ các khâu sản xuất để hiện chi tiết
+      let allItems = [];
+      for (let key in window.reportCache.tonDong) { allItems = allItems.concat(window.reportCache.tonDong[key]); }
+      const orderItems = allItems.filter(i => i.maDon === maDon);
+      
+      if (orderItems.length === 0) {
+        Swal.fire('Thông báo', 'Chi tiết đơn hàng đã được lưu trữ hoặc hoàn tất từ trước.', 'info');
+        return;
+      }
+
+      let html = `
+        <div style="text-align:left; font-size:13px;">
+          <p>👤 <b>Khách hàng:</b> ${orderItems[0].khách}</p>
+          <table class="detail-table" style="width:100%">
+            <tr style="background:#f8f9fa"><th>Sản phẩm</th><th style="width:40px;">SL</th><th style="width:100px;">Thành tiền</th></tr>
+            ${orderItems.map(i => `<tr><td>${i.sp}</td><td style="text-align:center">${i.sl}</td><td style="text-align:right">${i.tiền.toLocaleString()}</td></tr>`).join('')}
+          </table>
+        </div>`;
+
+      Swal.fire({ title: `CHI TIẾT ĐƠN: ${maDon}`, html: html, width: '600px', confirmButtonColor: '#27ae60' });
+    };
+  </script>
+</body>
+</html>
