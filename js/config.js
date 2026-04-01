@@ -18,7 +18,7 @@ window.APP_MODULES = [
   { id: "Quan_Tri_Don_Hang",   label: "Quản trị đơn hàng",      icon: "🗂️", file: "Quan_Tri.html" },
   { id: "Bao_Cao_Cong_Viec",   label: "Báo cáo công việc",      icon: "📝", file: "BC_Cong_Viec.html" },
   { id: "Quan_Ly_Tien_Do",     label: "Quản lý tiến độ",        icon: "🛰️", file: "Tien_Do.html" },
-  { id: "Thu_Chi",             label: "Thu chi",               icon: "💰", file: "Thu_Chi.html" },
+  { id: "Thu_Chi",             label: "Tiền mặt đầu ngày & Chi", icon: "💰", file: "Thu_Chi.html" },
   { id: "Bao_Cao_Thu_Chi",     label: "Báo cáo thu chi",        icon: "📊", file: "BC_Thu_Chi.html" }
 ];
 
