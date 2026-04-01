@@ -17,14 +17,12 @@
     .radar-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .radar-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
     
-    /* Stats Box */
     .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 15px 0; }
     .stat-card { padding: 12px; border-radius: 10px; text-align: center; font-weight: 800; border: 1px solid rgba(0,0,0,0.05); }
     .stat-xanh { background: #f1f8f4; color: #28a745; border-color: #d4edda; }
     .stat-cam { background: #fffdf5; color: #ffc107; border-color: #ffeeba; }
     .stat-do { background: #fff5f5; color: #dc3545; border-color: #f8d7da; }
 
-    /* Radar Items */
     .radar-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
     .radar-card { background: white; border-radius: 8px; padding: 12px 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-left: 6px solid #eee; transition: 0.2s; }
     .radar-card:hover { transform: translateX(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -52,9 +50,9 @@
       </div>
 
       <div class="stats-grid" id="radar-stats">
-        <div class="stat-card stat-xanh">🟢 --</div>
-        <div class="stat-card stat-cam">🟠 --</div>
-        <div class="stat-card stat-do">🔴 --</div>
+        <div class="stat-card stat-xanh">🟢 AN TOÀN: --</div>
+        <div class="stat-card stat-cam">🟠 CẢNH BÁO: --</div>
+        <div class="stat-card stat-do">🔴 CẦN GẤP: --</div>
       </div>
 
       <div id="radar-list" class="radar-list">
@@ -75,11 +73,17 @@
       "Đã giao lẻ":     { icon: "📦", color: "#2980b9" }
     };
 
-    // SLA theo phút: Đỏ khi vượt ngưỡng này
     const SLA_CONFIG = {
       "Chờ xử lý": 30, "Chờ duyệt file": 60, "Chờ thiết kế": 180, 
       "Chờ in": 120, "Chờ gia công": 240, "Chờ giao hàng": 60, 
       "Chờ thanh toán": 1440, "Đã giao lẻ": 1440
+    };
+
+    /** 🚀 MAPPING TRẠNG THÁI VỚI CỘT GIỜ TRONG LOG_TIENDO */
+    const COL_MAP = { 
+      "Chờ xử lý": "Gio_Xu_Ly", "Chờ thiết kế": "Gio_Thiet_Ke", "Chờ duyệt file": "Gio_Duyet_File", 
+      "Chờ in": "Gio_In", "Chờ gia công": "Gio_Gia_Cong", "Chờ giao hàng": "Gio_Giao_Hang", 
+      "Chờ thanh toán": "Gio_Thanh_Toan", "Đã giao lẻ": "Gio_Giao_Hang"
     };
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -89,8 +93,8 @@
     async function loadRadarData() {
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
       try {
-        // Chỉ lấy những đơn chưa Hoàn tất và chưa vào Công nợ
-        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=not.in.("Hoàn tất","Công nợ")&order=id.desc`, { headers: h });
+        /** 🚀 LẤY DỮ LIỆU TỪ BẢNG LOG_TIENDO THAY VÌ NHATKY_BANHANG */
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Trang_Thai=not.in.("Hoàn tất","Công nợ")&order=id.desc`, { headers: h });
         const data = await res.json();
         processRadar(data);
       } catch (e) { console.error(e); }
@@ -102,10 +106,15 @@
 
       data.forEach(item => {
         const now = new Date();
-        const startTime = parseVNTime(item.Ngay_Gio);
-        const diffMins = Math.floor((now - startTime) / (1000 * 60));
         
+        /** 🚀 LẤY MỐC GIỜ CHÍNH XÁC CỦA TRẠNG THÁI HIỆN TẠI */
+        const colName = COL_MAP[item.Trang_Thai];
+        const timeVal = item[colName] || item.Ngay_Gio; // Nếu cột giờ trống thì lấy giờ tạo đơn
+        const startTime = parseVNTime(timeVal);
+        
+        const diffMins = Math.floor((now - startTime) / (1000 * 60));
         const limit = SLA_CONFIG[item.Trang_Thai] || 120;
+        
         let level = "xanh";
         let alertColor = "#28a745";
 
@@ -123,8 +132,10 @@
         items.push({ ...item, level, alertColor, percent, displayTime });
       });
 
-      // Sắp xếp Đỏ lên đầu
-      items.sort((a, b) => (a.level === 'do' ? -1 : 1) - (b.level === 'do' ? -1 : 1));
+      items.sort((a, b) => {
+        const priority = { 'do': 1, 'cam': 2, 'xanh': 3 };
+        return priority[a.level] - priority[b.level];
+      });
 
       renderRadar(items, stats);
     }
@@ -146,7 +157,7 @@
         return `
           <div class="radar-card" style="border-left-color: ${it.alertColor}">
             <div style="flex: 1.5; min-width: 150px;">
-              <div style="font-size: 13px; font-weight: 800; color: #1e293b;">${it.Ten_Khach_Hang}</div>
+              <div style="font-size: 13px; font-weight: 800; color: #1e293b;">${it.Khach_Hang}</div>
               <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Mã: #${it.Ma_Don}</div>
               <div class="progress-track">
                 <div class="progress-bar" style="width: ${it.percent}%; background: ${it.alertColor};"></div>
@@ -171,17 +182,16 @@
       }).join('');
     }
 
-    /** HELPER: Chuyển đổi DD/MM/YYYY HH:mm:ss sang Date Object */
     function parseVNTime(vnStr) {
-      if (!vnStr) return new Date();
+      if (!vnStr || vnStr === "EMPTY") return new Date();
       const parts = vnStr.split(' ');
       const dateParts = parts[0].split('/');
       const timeParts = parts[1].split(':');
       return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
     }
 
-    /** HELPER: Định dạng thời gian trôi qua */
     function formatDuration(mins) {
+      if (mins < 0) return "0 phút";
       if (mins < 60) return `${mins} phút`;
       const hours = Math.floor(mins / 60);
       const m = mins % 60;
