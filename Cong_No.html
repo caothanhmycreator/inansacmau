@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Công nợ - Tiệm In Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+
+  <style>
+    :root { --primary-f9: #c0392b; --header-gradient: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); --bg-light: #f8fafc; }
+    body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    .f9-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .f9-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
+    
+    .f9-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
+    .f9-table th { padding: 12px 15px; color: #64748b; font-size: 13px; text-transform: uppercase; text-align: left; }
+    .f9-row { background: white; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer; }
+    .f9-row:hover { background: #fff5f5; }
+    .f9-row td { padding: 15px; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    
+    .btn-debt { background: #c0392b; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; box-shadow: 0 3px 0 #962d22; }
+    
+    /* Toggle TM/CK */
+    .pay-toggle-f9 { display: flex; background: #eee; padding: 2px; border-radius: 6px; width: 140px; position: relative; border: 1px solid #ddd; height: 32px; align-items: center; margin-top: 5px; }
+    .pay-opt-f9 { flex: 1; text-align: center; font-size: 10px; font-weight: bold; color: #999; cursor: pointer; z-index: 2; transition: 0.3s; }
+    .pay-opt-f9.active { color: white; }
+    .pay-sld-f9 { position: absolute; width: 33.33%; height: calc(100% - 4px); top: 2px; left: 33.33%; background: #bbb; border-radius: 4px; transition: 0.3s; z-index: 1; }
+    .pay-sld-f9.tm { left: 2px; background: #c0392b; }
+    .pay-sld-f9.ck { left: calc(66.66% - 2px); background: #2980b9; }
+
+    /* Form đẹp */
+    .f9-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; padding: 10px; }
+    .f9-input-group { display: flex; flex-direction: column; }
+    .f9-input-group label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 5px; }
+    .f9-input-group input { padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; }
+    .f9-input-group input:focus { border-color: #c0392b; }
+    .f9-input-group input[readonly] { background: #f8fafc; color: #c0392b; font-weight: bold; border-style: dashed; }
+
+    #vung-in-f9 { display: none; }
+    @media print {
+      body * { visibility: hidden; }
+      #vung-in-f9, #vung-in-f9 * { visibility: visible; }
+      #vung-in-f9 { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+    }
+    .print-table-f9 { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    .print-table-f9 th { background: #c0392b !important; color: white !important; padding: 10px; text-align: left; -webkit-print-color-adjust: exact; }
+    .print-table-f9 td { padding: 8px; border: 1px solid #ccc; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar-placeholder"></div>
+
+  <div class="main-content">
+    <div class="f9-container">
+      <div class="f9-header">
+        <div>
+          <h2 style="margin:0; font-size: 20px;">💰 QUẢN LÝ CÔNG NỢ</h2>
+          <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Danh sách nợ cũ & Nhập nợ mới</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button onclick="openAddDebtPopup()" style="background:#fff; color:#c0392b; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:700;">➕ NHẬP CÔNG NỢ</button>
+          <button onclick="loadF9Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 LÀM MỚI</button>
+        </div>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="f9-table">
+          <thead>
+            <tr>
+              <th style="width: 150px;">Mã đơn</th>
+              <th>Khách hàng</th>
+              <th>Ngày nợ</th>
+              <th>Tổng nợ / Đã trả</th>
+              <th style="color: #c0392b;">Còn nợ</th>
+              <th style="text-align: center;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="f9-table-body">
+            <tr><td colspan="6" style="text-align:center; padding:50px; color:#64748b;">🔍 Đang lọc danh sách nợ...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="vung-in-f9"></div>
+
+  <script>
+    window.listF9 = [];
+    let currentPayF9 = "";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => { loadF9Data(); }, 600);
+    });
+
+    /** 1. TẢI DỮ LIỆU CÔNG NỢ */
+    async function loadF9Data() {
+      const tbody = document.getElementById('f9-table-body');
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?order=id.desc`, { headers: h });
+        const data = await res.json();
+        window.listF9 = data.filter(row => parseFloat(row.Con_Lai) > 0);
+
+        if (window.listF9.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px;">🎉 Không có nợ tồn đọng.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = window.listF9.map((it, idx) => `
+          <tr class="f9-row">
+            <td onclick="viewOrderDetails('${it.Ma_Don}')"><b>${it.Ma_Don}</b></td>
+            <td onclick="viewOrderDetails('${it.Ma_Don}')"><b>${it.Khach_Hang}</b></td>
+            <td>${it.Ngay_Gio}</td>
+            <td>${parseFloat(it.Tong_Don).toLocaleString()}<br><small style="color:green">Đã trả: ${parseFloat(it.Da_Tra).toLocaleString()}</small></td>
+            <td style="color:red; font-weight:bold;">${parseFloat(it.Con_Lai).toLocaleString()}</td>
+            <td style="text-align:center"><button class="btn-debt" onclick="openDebtPopup(${idx})">💵 THU NỢ</button></td>
+          </tr>`).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    /** 2. XEM CHI TIẾT ĐƠN HÀNG (Gom nhóm từ NhatKy_BanHang) */
+    async function viewOrderDetails(maDon) {
+      Swal.fire({ title: 'Đang tải chi tiết...', didOpen: () => Swal.showLoading() });
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${maDon}`, { headers: h });
+        const items = await res.json();
+        
+        if (items.length === 0) return Swal.fire('Thông báo', 'Không tìm thấy chi tiết sản phẩm cho mã này (có thể là nợ nhập tay).', 'info');
+
+        let rowsHtml = items.map(m => `
+          <div style="display:grid; grid-template-columns: 2fr 0.5fr 1fr 1fr; gap:10px; padding:8px; border-bottom:1px dashed #eee; font-size:13px;">
+            <div style="text-align:left;">${m.Ten_Hang}</div>
+            <div>${m.So_Luong}</div>
+            <div style="text-align:right;">${(m.Don_Gia || 0).toLocaleString()}</div>
+            <div style="text-align:right; font-weight:bold;">${(m.Thanh_Tien || 0).toLocaleString()}</div>
+          </div>`).join('');
+
+        Swal.fire({
+          title: `CHI TIẾT ĐƠN: ${maDon}`,
+          width: '700px',
+          html: `
+            <div style="background:#f9f9f9; padding:10px; font-weight:bold; display:grid; grid-template-columns: 2fr 0.5fr 1fr 1fr; gap:10px; font-size:12px; color:#666; border-bottom:2px solid #ddd;">
+              <div style="text-align:left;">SẢN PHẨM</div><div>SL</div><div style="text-align:right;">ĐƠN GIÁ</div><div style="text-align:right;">T.TIỀN</div>
+            </div>
+            ${rowsHtml}`,
+          confirmButtonText: 'ĐÓNG', confirmButtonColor: '#34495e'
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    /** 3. FORM NHẬP CÔNG NỢ MỚI (ĐẸP & AUTO TRỪ) */
+    function openAddDebtPopup() {
+      Swal.fire({
+        title: 'NHẬP CÔNG NỢ MỚI',
+        width: '600px',
+        html: `
+          <div class="f9-form-grid">
+            <div class="f9-input-group" style="grid-column: span 2;">
+              <label>Mã đơn / Nội dung nợ</label>
+              <input id="add_ma" placeholder="VD: HD-0104 hoặc NO-CU">
+            </div>
+            <div class="f9-input-group" style="grid-column: span 2;">
+              <label>Tên khách hàng</label>
+              <input id="add_kh" placeholder="Nhập tên khách hàng">
+            </div>
+            <div class="f9-input-group">
+              <label>Tổng nợ gốc (đ)</label>
+              <input id="add_tong" type="text" value="0" oninput="handleF9MoneyInput(this); calcF9Remain();">
+            </div>
+            <div class="f9-input-group">
+              <label>Đã trả trước (đ)</label>
+              <input id="add_datra" type="text" value="0" oninput="handleF9MoneyInput(this); calcF9Remain();">
+            </div>
+            <div class="f9-input-group" style="grid-column: span 2;">
+              <label>Số nợ còn lại (Tự động)</label>
+              <input id="add_conlai" value="0" readonly>
+            </div>
+          </div>`,
+        showCancelButton: true, confirmButtonText: '💾 LƯU NỢ', confirmButtonColor: '#c0392b',
+        preConfirm: () => {
+          const ma = document.getElementById('add_ma').value;
+          const kh = document.getElementById('add_kh').value;
+          const tong = cleanF9Money(document.getElementById('add_tong').value);
+          const datra = cleanF9Money(document.getElementById('add_datra').value);
+          const conlai = tong - datra;
+
+          if (!ma || !kh || tong <= 0) return Swal.showValidationMessage('Vui lòng điền mã, tên khách và tổng nợ > 0!');
+          if (datra > tong) return Swal.showValidationMessage('Số đã trả không được lớn hơn tổng nợ!');
+          
+          return { ma, kh, tong, datra, conlai };
+        }
+      }).then(async (r) => {
+        if (r.isConfirmed) {
+          saveDebtToDB(r.value);
+        }
+      });
+    }
+
+    async function saveDebtToDB(data) {
+      Swal.fire({ title: 'Đang lưu...', didOpen: () => Swal.showLoading() });
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+      const nowFull = window.formatDateTimeVN(); // Lấy đủ Ngày & Giờ
+
+      try {
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No`, {
+          method: 'POST', headers: h,
+          body: JSON.stringify({
+            Ngay_Gio: nowFull,
+            Ma_Don: data.ma, Khach_Hang: data.kh,
+            Tong_Don: String(data.tong), Da_Tra: String(data.datra), Con_Lai: String(data.conlai),
+            id: Math.floor(Date.now() / 1000)
+          })
+        });
+        Swal.fire({ icon: 'success', title: 'Đã lưu nợ!', timer: 1000, showConfirmButton: false });
+        loadF9Data();
+      } catch (e) { console.error(e); }
+    }
+
+    /** 4. THU NỢ & GHI NHẬT KÝ THU NỢ (FIX LỖI) */
+    window.openDebtPopup = function(idx) {
+      const it = window.listF9[idx];
+      const nợHiệnTại = parseFloat(it.Con_Lai);
+      currentPayF9 = "";
+
+      Swal.fire({
+        title: `THU NỢ: ${it.Ma_Don}`,
+        html: `
+          <div style="text-align:left; border:1px solid #ddd; padding:15px; border-radius:8px;">
+            <p>👤 <b>Khách hàng:</b> ${it.Khach_Hang}</p>
+            <p style="color:red; font-weight:bold; font-size:18px;">Nợ tồn: ${nợHiệnTại.toLocaleString()} đ</p>
+            <div style="background:#fff5f5; padding:15px; border-radius:8px; border:1px solid #fecaca; margin-top:10px;">
+               <label style="font-weight:bold; color:#c0392b; font-size:11px;">SỐ TIỀN THU LẦN NÀY:</label>
+               <input type="text" id="pay_f9" class="swal2-input" style="margin:5px 0; width:100%; font-size:24px; border:2px solid #c0392b; text-align:right; font-weight:bold; color:#c0392b;" value="${nợHiệnTại.toLocaleString('vi-VN')}">
+               
+               <label style="font-weight:bold; color:#c0392b; font-size:11px; display:block; margin-top:10px;">HÌNH THỨC THANH TOÁN:</label>
+               <div class="pay-toggle-f9">
+                  <div id="f9-slider" class="pay-sld-f9 mid"></div>
+                  <div class="pay-opt-f9" id="f9-opt-tm" onclick="setPayF9('TM')">TM</div>
+                  <div class="pay-opt-f9 active" id="f9-opt-mid" onclick="setPayF9('')">--</div>
+                  <div class="pay-opt-f9" id="f9-opt-ck" onclick="setPayF9('CK')">CK</div>
+               </div>
+            </div>
+          </div>`,
+        showCancelButton: true, confirmButtonText: 'XÁC NHẬN THU', confirmButtonColor: '#27ae60',
+        didOpen: () => {
+          const inp = document.getElementById('pay_f9');
+          inp.addEventListener('input', function() {
+            let v = cleanF9Money(this.value);
+            if (v > nợHiệnTại) v = nợHiệnTại;
+            this.value = v.toLocaleString('vi-VN');
+          });
+        },
+        preConfirm: () => {
+          const val = cleanF9Money(document.getElementById('pay_f9').value);
+          if (val <= 0 || currentPayF9 === "") return Swal.showValidationMessage('Vui lòng nhập tiền > 0 và chọn TM/CK!');
+          return val;
+        }
+      }).then(r => { if(r.isConfirmed) executeDebtPayment(idx, r.value, currentPayF9); });
+    };
+
+    async function executeDebtPayment(idx, soTienThu, hinhThuc) {
+      const it = window.listF9[idx];
+      Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+      const nowFull = window.formatDateTimeVN();
+
+      try {
+        const moiDaTra = parseFloat(it.Da_Tra) + soTienThu;
+        const moiConLai = parseFloat(it.Con_Lai) - soTienThu;
+
+        // 1. Cập nhật bảng Cong_No
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?id=eq.${it.id}`, {
+          method: 'PATCH', headers: h,
+          body: JSON.stringify({ Da_Tra: String(moiDaTra), Con_Lai: String(moiConLai < 0 ? 0 : moiConLai) })
+        });
+
+        // 2. Ghi Nhật ký thu nợ (KHỚP THEO ẢNH ab482d)
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, {
+          method: 'POST', headers: h,
+          body: JSON.stringify({
+            Ngay_Gio: nowFull,
+            Ma_Don: it.Ma_Don,
+            Khach_Hang: it.Khach_Hang,
+            San_Pham: "Thu nợ đơn: " + it.Ma_Don,
+            So_Tien_Thu: soTienThu, // Cột trong ảnh ab482d
+            Hinh_Thuc_Thanh_Toan: hinhThuc, // Cột trong ảnh ab482d
+            id: Math.floor(Date.now() / 1000)
+          })
+        });
+
+        Swal.close();
+        showPrintPreviewF9(it, soTienThu, (moiConLai < 0 ? 0 : moiConLai));
+        loadF9Data();
+      } catch (e) { console.error(e); }
+    }
+
+    /** HÀM TIỆN ÍCH */
+    function handleF9MoneyInput(el) {
+      let v = cleanF9Money(el.value);
+      if (v < 0) v = 0;
+      el.value = v.toLocaleString('vi-VN');
+    }
+    function cleanF9Money(val) { return parseFloat(String(val).replace(/\./g, '')) || 0; }
+    function calcF9Remain() {
+      const t = cleanF9Money(document.getElementById('add_tong').value);
+      const d = cleanF9Money(document.getElementById('add_datra').value);
+      document.getElementById('add_conlai').value = (t - d).toLocaleString('vi-VN');
+    }
+    function setPayF9(val) {
+      currentPayF9 = val;
+      const s = document.getElementById('f9-slider');
+      document.querySelectorAll('.pay-opt-f9').forEach(e => e.classList.remove('active'));
+      s.className = 'pay-sld-f9 ' + (val === 'TM' ? 'tm' : (val === 'CK' ? 'ck' : 'mid'));
+      if (val) document.getElementById('f9-opt-' + val.toLowerCase()).classList.add('active');
+    }
+
+    /** PHIẾU IN (GIỮ TÔNG ĐỎ ĐÔ) */
+    function showPrintPreviewF9(it, soTienThu, conLai) {
+      const isCleared = conLai <= 10;
+      const billHtml = `
+        <div style="padding:20px; font-family:Arial, sans-serif;">
+          <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #c0392b; padding-bottom: 10px;">
+            <div><h1 style="color: #c0392b; margin: 0; font-size: 22px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1><p style="font-size:12px;">📞 0399.221.753 - 0337.663.113</p></div>
+            <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 80px;">
+          </div>
+          <div style="text-align: center; margin: 15px 0;"><h2 style="color: #c0392b; text-transform: uppercase;">PHIẾU THU TIỀN NỢ</h2><p>Mã nợ: ${it.Ma_Don}</p></div>
+          <div style="background:#fdf2f2; padding:10px; border-radius:8px; border:1px solid #fecaca; margin-bottom:15px;">
+            <p>👤 <b>Khách hàng:</b> ${it.Khach_Hang}</p>
+            <p>📅 <b>Ngày thu:</b> ${new Date().toLocaleString('vi-VN')}</p>
+          </div>
+          <div style="margin-left: auto; width: 300px; background: #fff5f5; padding: 15px; border-radius: 8px; border: 1px solid #fecaca; position: relative;">
+            ${isCleared ? '<div style="position:absolute; left:-120px; top:10px; color:#c0392b; border:3px double #c0392b; padding:5px; font-weight:bold; transform:rotate(-15deg);">ĐÃ TẤT TOÁN</div>' : ''}
+            <div style="display:flex; justify-content:space-between;"><span>Nợ cũ:</span><b>${parseFloat(it.Con_Lai).toLocaleString()} đ</b></div>
+            <div style="display:flex; justify-content:space-between; color:#c0392b;"><span>Thu thêm:</span><b>-${soTienThu.toLocaleString()} đ</b></div>
+            <div style="display:flex; justify-content:space-between; border-top:1px dashed #c0392b; margin-top:10px; padding-top:10px;">
+              <span><b>CÒN LẠI:</b></span><b style="color:red; font-size:16px;">${conLai.toLocaleString()} đ</b>
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('vung-in-f9').innerHTML = billHtml;
+      Swal.fire({ title: 'XEM TRƯỚC PHIẾU', html: `<div style="text-align:left;">${billHtml}</div>`, confirmButtonText: '🖨️ IN PHIẾU' }).then(r => { if(r.isConfirmed) window.print(); });
+    }
+  </script>
+</body>
+</html>
