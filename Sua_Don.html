@@ -288,7 +288,7 @@ function inHoaDonSua() {
   window.print();
 }
 
-/** 🚀 HÀM LƯU TỔNG THỂ (CẬP NHẬT 3 BẢNG: BÁN HÀNG, THU NỢ, TIẾN ĐỘ) */
+/** 🚀 CẬP NHẬT TỔNG ĐƠN VÀO DÒNG ĐẦU TIÊN KHI LƯU */
 async function f12_saveFinal() {
   const extraDeposit = Number(document.getElementById('view-inp-extra').value.replace(/\./g, "")) || 0;
   var tongMoi = 0;
@@ -310,14 +310,19 @@ async function f12_saveFinal() {
     const inpSp = tr.querySelector('.f12-edit-sp'); const dbId = inpSp.getAttribute('data-id');
     const gia = Number(tr.querySelector('.f12-edit-dg').value.replace(/\./g, "")) || 0;
     const sl = Number(tr.querySelector('.f12-edit-sl').value) || 0;
-    const obj = { Ma_Don: maDon, Ten_Hang: inpSp.value, So_Luong: sl, Don_Gia: gia, Thanh_Tien: sl * gia, Don_Vi_Tinh: tr.querySelector('.f12-edit-dvt').value, Trang_Thai: "Chờ xử lý", Ten_Khach_Hang: tenKH, So_Dien_Thoai: window.f12_current_info.sdt, Dia_Chi: window.f12_current_info.dc, Ngay_Gio: cleanNow, Khach_Da_Tra: 0, Con_No: 0 };
+    const obj = { Ma_Don: maDon, Ten_Hang: inpSp.value, So_Luong: sl, Don_Gia: gia, Thanh_Tien: sl * gia, Don_Vi_Tinh: tr.querySelector('.f12-edit-dvt').value, Trang_Thai: "Chờ xử lý", Ten_Khach_Hang: tenKH, So_Dien_Thoai: window.f12_current_info.sdt, Dia_Chi: window.f12_current_info.dc, Ngay_Gio: cleanNow, Khach_Da_Tra: 0, Con_No: 0, Tong_Don: 0 };
     if (dbId === "new") itemsToCreate.push(obj); else { obj.id = dbId; itemsToUpdate.push(obj); }
   });
 
   try {
     const totalPaidMoi = window.f12_current_info.datCocCu + extraDeposit;
     let targetRow = itemsToUpdate.find(x => x.id == f12_id_money_row) || itemsToUpdate[0] || itemsToCreate[0];
-    if (targetRow) { targetRow.Khach_Da_Tra = totalPaidMoi; targetRow.Con_No = tongMoi - totalPaidMoi; targetRow.Hinh_Thuc_Thanh_Toan = f12_hinhThuc || ""; }
+    if (targetRow) { 
+      targetRow.Khach_Da_Tra = totalPaidMoi; 
+      targetRow.Con_No = tongMoi - totalPaidMoi; 
+      targetRow.Hinh_Thuc_Thanh_Toan = f12_hinhThuc || ""; 
+      targetRow.Tong_Don = tongMoi; // CHỈ GHI TỔNG ĐƠN VÀO DÒNG NÀY
+    }
 
     // 1. NHẬT KÝ BÁN HÀNG
     for (let item of itemsToUpdate) {
@@ -335,21 +340,15 @@ async function f12_saveFinal() {
       }) });
     }
 
-    // 🎯 3. LOG TIẾN ĐỘ (Cập nhật đúng cấu hình bảng của Mỹ)
+    // 3. LOG TIẾN ĐỘ
     const allItems = [...itemsToUpdate, ...itemsToCreate];
     for (let item of allItems) {
       const checkLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${maDon}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { headers });
       const logData = await checkLog.json();
       
       const logBody = { 
-        Ngay_Gio: cleanNow,
-        Ma_Don: maDon, 
-        Ten_Hang: item.Ten_Hang, 
-        Khach_Hang: tenKH, 
-        Gio_Tao_Don: cleanNow, 
-        Gio_Xu_Ly: cleanNow, 
-        Trang_Thai: "Chờ xử lý", 
-        Nguoi_Thuc_Hien: "Quản trị (Sửa)" 
+        Ngay_Gio: cleanNow, Ma_Don: maDon, Ten_Hang: item.Ten_Hang, Khach_Hang: tenKH, 
+        Gio_Tao_Don: cleanNow, Gio_Xu_Ly: cleanNow, Trang_Thai: "Chờ xử lý", Nguoi_Thuc_Hien: "Quản trị (Sửa)" 
       };
 
       if (logData.length > 0) {
