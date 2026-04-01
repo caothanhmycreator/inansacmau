@@ -10,27 +10,38 @@
   <script src="js/auth_guard.js"></script>
 
   <style>
-    .f11-container { background: #f4f7f6; padding: 15px; border-radius: 8px; font-family: sans-serif; }
-    .filter-box { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
-    .report-card { background: white; padding: 12px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-top: 5px solid #3498db; }
-    .card-value { font-size: 18px; font-weight: bold; margin: 5px 0; color: #2c3e50; }
+    :root { --primary: #2c3e50; --accent: #27ae60; --bg: #f1f5f9; }
+    body { margin: 0; background: var(--bg); display: flex; font-family: 'Segoe UI', sans-serif; }
     
-    .detail-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; margin-top: 10px; }
-    .detail-table th { background: #2c3e50; color: white; padding: 10px; text-align: left; font-size: 13px; }
-    .detail-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+    /* 1. SỬA LỖI TRÀN SIDEBAR */
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+
+    .bc-container { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; }
+    .bc-header { background: white; padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
     
-    .status-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
-    .status-item { 
-      display: flex; justify-content: space-between; align-items: center; 
-      padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #34495e; 
-      cursor: pointer; transition: 0.2s; 
-    }
-    .status-item:hover { background: #e2e8f0; transform: translateX(5px); }
-    .status-badge { background: #2c3e50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+    .filter-group { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .filter-group input { border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; outline: none; }
+    .btn-view { background: var(--primary); color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+
+    /* Stats Overview */
+    .overview-grid { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 20px; }
+    .main-stat-card { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; padding: 25px; border-radius: 12px; text-align: center; }
+    .main-stat-value { font-size: 32px; font-weight: 800; margin: 5px 0; }
+
+    /* Productivity Table */
+    .prod-section { padding: 0 20px 20px 20px; }
+    .prod-table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+    .prod-table th { background: #f8fafc; padding: 15px; text-align: left; color: #64748b; font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+    .prod-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
     
-    .clickable-row { cursor: pointer; transition: 0.2s; }
-    .clickable-row:hover { background: #f1f5f9; color: #27ae60; }
+    .step-name { display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1e293b; }
+    .step-icon { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: #f1f5f9; }
+    
+    .count-badge { background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; }
+    .btn-check { background: none; border: 1px solid #e2e8f0; padding: 5px 12px; border-radius: 6px; cursor: pointer; color: #64748b; font-size: 12px; transition: 0.2s; }
+    .btn-check:hover { background: var(--primary); color: white; }
+
+    @media (max-width: 768px) { .main-content { margin-left: 0; } }
   </style>
 </head>
 <body>
@@ -38,211 +49,163 @@
   <div id="sidebar-placeholder"></div>
 
   <div class="main-content">
-    <div class="f11-container">
-      <div class="filter-box">
-        <b>📅 Báo cáo ngày:</b>
-        <input type="date" id="report-date">
-        <button onclick="loadF11Data()" style="padding:8px 15px; background:#2c3e50; color:white; border:none; border-radius:5px; cursor:pointer;">XEM DỮ LIỆU</button>
+    <div class="bc-container">
+      <div class="bc-header">
+        <h2 style="margin:0; font-size: 20px; color: var(--primary);">📋 BÁO CÁO NĂNG SUẤT</h2>
+        <div class="filter-group">
+          <label style="font-size: 13px; font-weight: 600;">Chọn ngày:</label>
+          <input type="date" id="report-date">
+          <button class="btn-view" onclick="loadReportData()">XEM DỮ LIỆU</button>
+        </div>
       </div>
 
-      <div class="report-grid">
-        <div class="report-card"><div style="font-size:11px; color:#7f8c8d;">SỐ ĐƠN MỚI</div><div class="card-value" id="val-tongDon">0</div></div>
-        <div class="report-card" style="border-top-color: #9b59b6;"><div style="font-size:11px; color:#7f8c8d;">DOANH THU ẨN</div><div class="card-value" id="val-doanhThuAn">0 đ</div></div>
-        <div class="report-card" style="border-top-color: #e74c3c;"><div style="font-size:11px; color:#7f8c8d;">CÔNG NỢ MỚI</div><div class="card-value" id="val-congNoMoi" style="color:#e74c3c;">0 đ</div></div>
-        <div class="report-card" style="border-top-color: #27ae60;"><div style="font-size:11px; color:#7f8c8d;">TỔNG THỰC THU</div><div class="card-value" id="val-tongThu" style="color:#27ae60;">0 đ</div></div>
+      <div class="overview-grid">
+        <div class="main-stat-card">
+          <div style="font-size: 13px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px;">Tổng số đơn nhận trong ngày</div>
+          <div class="main-stat-value" id="val-tongDon">0</div>
+          <div style="font-size: 12px; opacity: 0.7;">Đơn hàng mới được khởi tạo</div>
+        </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; margin-top: 20px;">
-        <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-          <h3 style="margin:0 0 10px 0; font-size:14px; color:#c0392b;">📊 TRẠNG THÁI SẢN XUẤT (Click để xem)</h3>
-          <div class="status-grid">
-            <div class="status-item" id="item-choxuly"><span>⌛ Chờ xử lý</span> <span class="status-badge" id="st-choxuly">0</span></div>
-            <div class="status-item" id="item-chothietke"><span>🎨 Chờ thiết kế</span> <span class="status-badge" id="st-chothietke">0</span></div>
-            <div class="status-item" id="item-duyetfile"><span>✅ Cần duyệt file</span> <span class="status-badge" id="st-duyetfile">0</span></div>
-            <div class="status-item" id="item-choin"><span>🖨️ Chờ in</span> <span class="status-badge" id="st-choin">0</span></div>
-            <div class="status-item" id="item-giacong"><span>⚙️ Đang gia công</span> <span class="status-badge" id="st-giacong">0</span></div>
-            <div class="status-item" id="item-chogiao"><span>🚚 Chờ giao hàng</span> <span class="status-badge" id="st-chogiao">0</span></div>
-            <div class="status-item" id="item-chothanhtoan"><span>💳 Chờ thanh toán</span> <span class="status-badge" id="st-chothanhtoan">0</span></div>
-            <div class="status-item" id="item-hoantat" style="border-left-color: #27ae60; background: #eafaf1;">
-              <span style="font-weight:bold; color:#27ae60;">🎉 Hoàn tất hôm nay</span> 
-              <span class="status-badge" id="st-hoantat" style="background:#27ae60;">0</span>
-            </div>
-          </div>
-        </div>
-
-        <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-          <h3 style="margin:0 0 10px 0; font-size:14px; color:#2c3e50;">💰 CHI TIẾT THU TRONG NGÀY</h3>
-          <table class="detail-table">
-            <thead><tr><th>Khách hàng</th><th>Nội dung</th><th style="text-align:right;">Số tiền</th></tr></thead>
-            <tbody id="f11-detail-body"></tbody>
-          </table>
-        </div>
+      <div class="prod-section">
+        <h3 style="font-size: 15px; color: #475569; margin-bottom: 15px;">🚀 TIẾN ĐỘ THỰC HIỆN TRONG NGÀY</h3>
+        <table class="prod-table">
+          <thead>
+            <tr>
+              <th>Công đoạn sản xuất</th>
+              <th style="text-align: center;">Số lượng đã xong</th>
+              <th style="text-align: right;">Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="prod-body">
+            </tbody>
+        </table>
       </div>
     </div>
   </div>
 
   <script>
-    window.reportCache = { tonDong: {} };
+    // Cấu hình các khâu cần theo dõi (Khớp với cột trong Log_TienDo)
+    const STEPS = [
+      { label: "Xử lý đơn", col: "Gio_Xu_Ly", icon: "⏳", color: "#64748b" },
+      { label: "Thiết kế", col: "Gio_Thiet_Ke", icon: "🎨", color: "#3b82f6" },
+      { label: "Duyệt file", col: "Gio_Duyet_File", icon: "✅", color: "#8b5cf6" },
+      { label: "In ấn", col: "Gio_In", icon: "🖨️", color: "#10b981" },
+      { label: "Gia công", col: "Gio_Gia_Cong", icon: "⚙️", color: "#f59e0b" },
+      { label: "Giao hàng/Thanh toán", col: "Gio_Thanh_Toan", icon: "🚚", color: "#ef4444" },
+      { label: "Hoàn tất đơn", col: "Gio_Hoan_Tat", icon: "🎉", color: "#22c55e" }
+    ];
+
+    window.reportData = {};
 
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('report-date').value = new Date().toISOString().split('T')[0];
-      setTimeout(() => { loadF11Data(); }, 600);
+      setTimeout(() => { loadReportData(); }, 600);
     });
 
-    /** 🚀 1. TẢI DỮ LIỆU BÁO CÁO */
-    async function loadF11Data() {
+    /** 🚀 2. TẢI DỮ LIỆU CHÍNH XÁC TỪ LOG_TIENDO */
+    async function loadReportData() {
       const rawDate = document.getElementById('report-date').value;
       const [y, m, d] = rawDate.split('-');
-      const dateStr = `${d}/${m}/${y}`; // Định dạng DD/MM/YYYY
+      const dateStr = `${d}/${m}/${y}`; // Định dạng chuẩn Database
 
-      Swal.fire({ title: 'Đang trích xuất...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      Swal.fire({ title: 'Đang phân tích...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
 
       try {
-        // Lấy dữ liệu từ 2 bảng chính
-        const [resBH, resTN] = await Promise.all([
-          fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*`, { headers: h }),
-          fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?select=*`, { headers: h })
+        const [resBH, resLog] = await Promise.all([
+          fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ngay_Gio=like.*${dateStr}*`, { headers: h }),
+          fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?select=*`, { headers: h })
         ]);
 
         const dataBH = await resBH.json();
-        const dataTN = await resTN.json();
+        const dataLog = await resLog.json();
 
-        // Khởi tạo các biến tính toán
-        let report = {
-          thuMoi: 0, thuNoCu: 0, tongDonMoi: 0, doanhThuAn: 0,
-          chiTietThu: [],
-          tonDong: {
-            "Chờ xử lý": [], "Chờ thiết kế": [], "Chờ duyệt file": [],
-            "Chờ in": [], "Đang gia công": [], "Chờ giao hàng": [], 
-            "Chờ thanh toán": [], "Hoàn tất": []
-          }
-        };
+        // 1. Tính tổng đơn mới (Gom nhóm theo Ma_Don)
+        const newOrders = new Set(dataBH.map(it => it.Ma_Don));
+        document.getElementById('val-tongDon').innerText = newOrders.size;
 
-        const maDonProcessed = new Set();
+        // 2. Tính số lượng thực hiện từng giai đoạn (Dựa trên Log_TienDo)
+        let stats = {};
+        STEPS.forEach(s => stats[s.col] = []);
 
-        // Xử lý Nhật ký bán hàng
-        dataBH.forEach(row => {
-          const ngayDon = row.Ngay_Gio ? row.Ngay_Gio.split(' ')[0] : "";
-          const maDon = String(row.Ma_Don || "");
-          const trangThai = String(row.Trang_Thai || "").trim();
-          
-          const monHang = { maDon, khách: row.Ten_Khach_Hang, sp: row.Ten_Hang, sl: row.So_Luong, tiền: row.Thanh_Tien || 0 };
-
-          // Phân loại tồn đọng (Trạng thái)
-          let keyTT = trangThai;
-          if (keyTT === "Cần duyệt file") keyTT = "Chờ duyệt file"; // Chuẩn hóa tên khâu
-          if (report.tonDong.hasOwnProperty(keyTT)) {
-            // "Hoàn tất" chỉ lấy trong ngày báo cáo, các trạng thái khác lấy tất cả (tồn đọng)
-            if (keyTT === "Hoàn tất") {
-              if (ngayDon === dateStr) report.tonDong[keyTT].push(monHang);
-            } else {
-              report.tonDong[keyTT].push(monHang);
+        dataLog.forEach(row => {
+          STEPS.forEach(step => {
+            const timeVal = row[step.col];
+            if (timeVal && timeVal.includes(dateStr)) {
+              stats[step.col].push(row);
             }
-          }
-
-          // Tính toán metrics cho ngày được chọn
-          if (ngayDon === dateStr) {
-            report.doanhThuAn += (row.Thanh_Tien || 0);
-            if (!maDonProcessed.has(maDon)) {
-              report.tongDonMoi++;
-              report.thuMoi += (row.Khach_Da_Tra || 0);
-              maDonProcessed.add(maDon);
-
-              if ((row.Khach_Da_Tra || 0) > 0) {
-                const loaiThu = (row.Con_No || 0) <= 10 ? "Thanh toán đơn " : "Cọc đơn ";
-                report.chiTietThu.push({ khach: row.Ten_Khach_Hang, noiDung: loaiThu + maDon, soTien: row.Khach_Da_Tra, maDon });
-              }
-            }
-          }
+          });
         });
 
-        // Xử lý Nhật ký thu nợ
-        dataTN.forEach(row => {
-          const ngayThu = row.Ngay_Gio ? row.Ngay_Gio.split(' ')[0] : "";
-          if (ngayThu === dateStr) {
-            report.thuNoCu += (row.So_Tien_Thu || 0);
-            report.chiTietThu.push({ khach: row.Khach_Hang, noiDung: "Thu nợ đơn " + row.Ma_Don, soTien: row.So_Tien_Thu, maDon: row.Ma_Don });
-          }
-        });
-
-        window.reportCache = report;
-        renderReportUI(report);
+        window.reportData = stats;
+        renderProductivityTable(stats);
         Swal.close();
 
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
-    /** 🚀 2. HIỂN THỊ DỮ LIỆU LÊN GIAO DIỆN */
-    function renderReportUI(res) {
-      document.getElementById('val-tongDon').innerText = res.tongDonMoi;
-      document.getElementById('val-doanhThuAn').innerText = res.doanhThuAn.toLocaleString() + ' đ';
-      document.getElementById('val-congNoMoi').innerText = (res.doanhThuAn - res.thuMoi).toLocaleString() + ' đ';
-      document.getElementById('val-tongThu').innerText = (res.thuMoi + res.thuNoCu).toLocaleString() + ' đ';
-
-      const statusMap = {
-        "Chờ xử lý": "st-choxuly", "Chờ thiết kế": "st-chothietke", "Chờ duyệt file": "st-duyetfile",
-        "Chờ in": "st-choin", "Đang gia công": "st-giacong", "Chờ giao hàng": "st-chogiao", 
-        "Chờ thanh toán": "st-chothanhtoan", "Hoàn tất": "st-hoantat"
-      };
-
-      for (let key in statusMap) {
-        const id = statusMap[key];
-        const items = res.tonDong[key] || [];
-        document.getElementById(id).innerText = items.length;
-        document.getElementById('item-' + key.replace(/ /g, '').toLowerCase()).onclick = () => showStatusDetail(key);
-      }
-
-      let htmlDetail = res.chiTietThu.map(item => `
-        <tr class="clickable-row" onclick="showOrderInDaily('${item.maDon}')">
-          <td><b>${item.khach}</b></td>
-          <td>${item.noiDung}</td>
-          <td style="text-align:right; font-weight:bold; color:#27ae60;">${item.soTien.toLocaleString()}</td>
-        </tr>`).join('');
+    /** 🚀 3. HIỂN THỊ BẢNG NĂNG SUẤT */
+    function renderProductivityTable(stats) {
+      const tbody = document.getElementById('prod-body');
       
-      document.getElementById('f11-detail-body').innerHTML = htmlDetail || '<tr><td colspan="3" style="text-align:center;">Không có phát sinh thu nợ</td></tr>';
+      tbody.innerHTML = STEPS.map(step => {
+        const count = stats[step.col].length;
+        return `
+          <tr>
+            <td>
+              <div class="step-name">
+                <div class="step-icon" style="color: ${step.color}">${step.icon}</div>
+                ${step.label}
+              </div>
+            </td>
+            <td style="text-align: center;">
+              <span class="count-badge">${count} món</span>
+            </td>
+            <td style="text-align: right;">
+              <button class="btn-check" onclick="showStepDetail('${step.col}', '${step.label}')">Xem chi tiết</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
-    /** 🚀 3. POPUP CHI TIẾT THEO TRẠNG THÁI */
-    window.showStatusDetail = function(statusName) {
-      const items = window.reportCache.tonDong[statusName];
-      if (!items || items.length === 0) return;
+    /** 🚀 4. POPUP XEM DANH SÁCH MÓN HÀNG THEO CÔNG ĐOẠN */
+    window.showStepDetail = function(col, label) {
+      const items = window.reportData[col];
+      if (!items || items.length === 0) {
+        return Swal.fire('Thông báo', 'Không có sản phẩm nào hoàn thành khâu này trong ngày.', 'info');
+      }
 
-      let tableHtml = `
+      let html = `
         <div style="max-height:400px; overflow-y:auto;">
-          <table class="detail-table" style="width:100%; font-size:12px;">
-            <thead style="position:sticky; top:0; z-index:10;"><tr style="background:#edf2f7"><th>Mã đơn</th><th>Khách hàng</th><th>Sản phẩm</th><th>SL</th></tr></thead>
+          <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th style="padding:10px;">Mã đơn</th>
+                <th style="padding:10px;">Khách hàng</th>
+                <th style="padding:10px;">Sản phẩm</th>
+              </tr>
+            </thead>
             <tbody>
-              ${items.map(i => `<tr><td><b>${i.maDon}</b></td><td>${i.khách}</td><td>${i.sp}</td><td style="text-align:center">${i.sl}</td></tr>`).join('')}
+              ${items.map(i => `
+                <tr style="border-bottom:1px solid #eee;">
+                  <td style="padding:10px;"><b>${i.Ma_Don}</b></td>
+                  <td style="padding:10px;">${i.Khach_Hang}</td>
+                  <td style="padding:10px;">${i.Ten_Hang}</td>
+                </tr>
+              `).join('')}
             </tbody>
           </table>
         </div>`;
 
-      Swal.fire({ title: `DANH SÁCH: ${statusName.toUpperCase()}`, html: tableHtml, width: '800px', confirmButtonColor: '#2c3e50' });
-    };
-
-    /** 🚀 4. POPUP CHI TIẾT ĐƠN HÀNG KHI CLICK VÀO DÒNG TIỀN */
-    window.showOrderInDaily = function(maDon) {
-      // Tìm mã đơn trong toàn bộ các khâu sản xuất để hiện chi tiết
-      let allItems = [];
-      for (let key in window.reportCache.tonDong) { allItems = allItems.concat(window.reportCache.tonDong[key]); }
-      const orderItems = allItems.filter(i => i.maDon === maDon);
-      
-      if (orderItems.length === 0) {
-        Swal.fire('Thông báo', 'Chi tiết đơn hàng đã được lưu trữ hoặc hoàn tất từ trước.', 'info');
-        return;
-      }
-
-      let html = `
-        <div style="text-align:left; font-size:13px;">
-          <p>👤 <b>Khách hàng:</b> ${orderItems[0].khách}</p>
-          <table class="detail-table" style="width:100%">
-            <tr style="background:#f8f9fa"><th>Sản phẩm</th><th style="width:40px;">SL</th><th style="width:100px;">Thành tiền</th></tr>
-            ${orderItems.map(i => `<tr><td>${i.sp}</td><td style="text-align:center">${i.sl}</td><td style="text-align:right">${i.tiền.toLocaleString()}</td></tr>`).join('')}
-          </table>
-        </div>`;
-
-      Swal.fire({ title: `CHI TIẾT ĐƠN: ${maDon}`, html: html, width: '600px', confirmButtonColor: '#27ae60' });
+      Swal.fire({
+        title: `DANH SÁCH: ${label.toUpperCase()}`,
+        html: html,
+        width: '700px',
+        confirmButtonColor: '#2c3e50',
+        confirmButtonText: 'ĐÓNG'
+      });
     };
   </script>
 </body>
