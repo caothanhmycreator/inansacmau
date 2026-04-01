@@ -42,7 +42,6 @@
     document.addEventListener("DOMContentLoaded", function() {
       const user = JSON.parse(localStorage.getItem('currentUser'));
       if(!user) return;
-
       document.getElementById('welcome-name').innerText = user.name;
       const menuContainer = document.getElementById('dashboard-menu');
       const userModules = user.modules.split(',').map(s => s.trim());
