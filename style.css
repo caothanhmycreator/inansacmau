@@ -1,33 +1,5 @@
 <style>
-/* PC: Sidebar đứng im bên trái, chừa sẵn 250px */
-#sidebar-frame {
-  width: 250px;
-  height: 100vh;
-  position: fixed;
-  left: 0; top: 0;
-  border: none;
-  z-index: 9999;
-  transition: 0.3s;
-}
 
-.main-content {
-  margin-left: 250px; /* Luôn chừa lề để trang không bị giật */
-  padding: 20px;
-}
-
-/* Mobile: Sidebar ẩn vào nách */
-@media (max-width: 768px) {
-  #sidebar-frame { left: -250px; }
-  .main-content { margin-left: 0 !important; }
-  
-  body.sidebar-open #sidebar-frame { left: 0; }
-  
-  .mobile-nav {
-    display: flex; background: #2D5A27; color: white; padding: 10px; align-items: center; gap: 10px;
-  }
-}
-
-@media (min-width: 769px) { .mobile-nav { display: none; } }
 /* ==========================
    1. RESET & BIẾN TOÀN CỤC
 ========================== */
