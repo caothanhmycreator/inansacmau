@@ -3,311 +3,216 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tạo đơn hàng - Sắc Màu</title>
+  <title>Thu Chi Phát Sinh - Sắc Màu</title>
+  
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
 
   <style>
-    /* 1. GIAO DIỆN TRÊN MÀN HÌNH */
-    body { margin: 0; background: #f4f7f6; display: flex; font-family: 'Segoe UI', sans-serif; }
+    /* --- PHẦN GIAO DIỆN CHUNG (ĐỂ CHẠY SIDEBAR) --- */
+    body { margin: 0; background: #f4f7f6; display: flex; font-family: sans-serif; }
     .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
 
-    .pay-toggle-container { display: flex; background: #fffdfb; padding: 3px; border-radius: 8px; width: 160px; position: relative; margin-left: 10px; }
-    .pay-option { flex: 1; text-align: center; padding: 6px 0; font-size: 11px; font-weight: bold; color: #999; cursor: pointer; z-index: 2; transition: 0.3s; }
-    .pay-option.active { color: white; }
-    .pay-slider { position: absolute; width: 33.33%; height: calc(100% - 6px); top: 3px; left: 33.33%; background: #bbb; border-radius: 6px; transition: 0.3s; z-index: 1; }
-    .pay-slider.tm { left: 3px; background: #2D5A27; width: calc(33.33% - 3px); }
-    .pay-slider.ck { left: 66.66%; background: #2980b9; width: calc(33.33% - 3px); }
-    .pay-slider.mid { left: 33.33%; background: #bbb; }
-
-    .sacmau-wrapper { max-width: 1000px; margin: auto; }
-    .sacmau-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-    .sacmau-input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-    .sacmau-label { display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 4px; }
-    .sacmau-row { display: flex; gap: 10px; margin-bottom: 10px; }
-    .sacmau-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-    .sacmau-table th { background: #2D5A27; color: white; padding: 10px; }
-    .sacmau-table td { padding: 8px; border-bottom: 1px solid #eee; }
-    .sacmau-payment-box { display: flex; align-items: center; gap: 15px; padding: 15px; background: #f9f9f9; border-radius: 8px; }
-
-    /* 2. CẤU HÌNH PHIẾU IN */
-    #vung-in-sacmau { display: none; }
-
-    @media print {
-      @page { size: A4; margin: 0; }
-      body * { visibility: hidden; }
-      #vung-in-sacmau, #vung-in-sacmau * { visibility: visible; }
-      #vung-in-sacmau { 
-        display: block !important; 
-        position: absolute; 
-        left: 0; 
-        top: 0; 
-        width: 210mm; 
-        min-height: 297mm;
-        padding: 15mm; 
-        box-sizing: border-box;
-        background: white;
-        color: #000;
-      }
-      .no-print { display: none !important; }
-      .p-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-      .p-table th { background: #2D5A27 !important; color: white !important; padding: 10px; text-align: left; -webkit-print-color-adjust: exact; border: 1px solid #2D5A27; }
-      .p-table td { padding: 8px; border: 1px solid #ccc; font-size: 14px; }
-    }
+    /* --- PHẦN NỘI DUNG THU CHI (GIỮ NGUYÊN STYLE CỦA MỸ) --- */
+    .f14-wrapper { font-family: 'Segoe UI', sans-serif; max-width: 500px; margin: auto; padding: 15px; }
+    .f14-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 5px solid #2D5A27; }
+    .f14-title { color: #2D5A27; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+    .f14-label { display: block; font-size: 13px; font-weight: bold; color: #555; margin-bottom: 4px; }
+    .f14-input { width: 100%; padding: 10px; border: 2px solid #eee; border-radius: 8px; font-size: 15px; box-sizing: border-box; transition: 0.3s; }
+    .f14-input:focus { border-color: #2D5A27; outline: none; }
+    .btn-save-ket { width: 100%; padding: 12px; background: #2D5A27; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+    .btn-save-chi { width: 100%; padding: 12px; background: #FF8C00; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+    .f14-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    .f14-table td { padding: 8px 4px; border-bottom: 1px solid #eee; vertical-align: top; }
+    .money-text { color: #d35400; font-weight: bold; font-size: 14px; }
+    .btn-del { color: #e74c3c; border: none; background: none; cursor: pointer; font-size: 16px; padding: 0 5px; }
 
     @media (max-width: 768px) { .main-content { margin-left: 0; } }
   </style>
 </head>
 <body>
 
-  <div id="sidebar-placeholder"></div>
+<div id="sidebar-placeholder"></div>
 
-  <div class="main-content">
-    <div class="sacmau-wrapper">
-      <div class="sacmau-container no-print">
-        <h2 style="color: #2D5A27; margin-bottom: 15px;">🧾 TẠO ĐƠN HÀNG MỚI</h2>
+<div class="main-content">
+  <div class="f14-wrapper">
+    <div class="f14-card">
+      <div class="f14-title">💰 MỞ SỔ: KÉT ĐẦU NGÀY</div>
+      <label class="f14-label">Số tiền mặt trong két:</label>
+      <input type="text" id="ket_dau_ngay" class="f14-input" placeholder="0" oninput="f14_fm(this)">
+      <button class="btn-save-ket" onclick="saveKetF14()">✅ XÁC NHẬN ĐẦU NGÀY</button>
+    </div>
 
-        <div class="sacmau-item-box" style="padding: 10px; background: #fdfdfd; border: 1px solid #eee; border-radius: 8px;">
-          <div class="sacmau-row">
-            <div style="flex: 2;">
-              <label class="sacmau-label">Tên khách hàng</label>
-              <input id="tenKhach" list="khachList" class="sacmau-input" placeholder="Gõ tên khách..." oninput="autoFillKhach(this.value)">
-              <datalist id="khachList"></datalist>
-            </div>
-            <div style="flex: 1;">
-              <label class="sacmau-label">Số điện thoại</label>
-              <input id="sdt" class="sacmau-input" placeholder="0xxx...">
-            </div>
-          </div>
-          <div style="margin-top: 5px;">
-            <label class="sacmau-label">Địa chỉ</label>
-            <input id="diaChi" class="sacmau-input" placeholder="Địa chỉ giao hàng...">
-          </div>
+    <div class="f14-card" style="border-top-color: #FF8C00;">
+      <div class="f14-title">💸 NHẬP KHOẢN CHI TIỀN MẶT</div>
+      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <div style="flex: 1.5;">
+          <label class="f14-label">Nội dung chi:</label>
+          <input type="text" id="chi_noi_dung" class="f14-input" placeholder="Vill, Băng keo...">
         </div>
-
-        <div class="sacmau-item-box" style="padding: 10px; margin-top: 10px; border-left: 4px solid #FF8C00; background: #fffaf5;">
-          <div class="sacmau-row">
-            <div style="flex: 2.5;">
-              <label class="sacmau-label">Sản phẩm</label>
-              <input id="sanPham" list="spList" class="sacmau-input" placeholder="Tìm sản phẩm..." oninput="autoFillSP(this.value)">
-              <datalist id="spList"></datalist>
-            </div>
-            <div style="flex: 1;">
-              <label class="sacmau-label">ĐVT</label>
-              <input id="dvt" class="sacmau-input">
-            </div>
-          </div>
-          <div class="sacmau-row" style="margin-top: 10px; align-items: flex-end;">
-            <div style="flex: 1.2;">
-              <label class="sacmau-label">Số lượng</label>
-              <div style="display: flex;">
-                <button onclick="changeSL(-10)" style="width: 35px; height: 38px; border: 1px solid #ddd; border-radius: 6px 0 0 6px;">-</button>
-                <input id="sl" type="text" class="sacmau-input" value="0" style="text-align:center; border-radius: 0; border-left: none; border-right: none; height: 38px;" oninput="formatInput(this); updateTmpTotal()">
-                <button onclick="changeSL(10)" style="width: 35px; height: 38px; border: 1px solid #ddd; border-radius: 0 6px 6px 0;">+</button>
-              </div>
-            </div>
-            <div style="flex: 1.2;">
-              <label class="sacmau-label">Đơn giá</label>
-              <input id="gia" type="text" class="sacmau-input" placeholder="0" oninput="formatInput(this); updateTmpTotal()">
-            </div>
-            <div style="flex: 1.5;">
-              <label class="sacmau-label">Tạm tính</label>
-              <input id="tmpTotal" class="sacmau-input" readonly style="background:#fff3cd; color:#d35400" value="0">
-            </div>
-            <button class="sacmau-btn-add" onclick="addItem()" style="height:38px; padding:0 15px; background:#FF8C00; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">+ THÊM</button>
-          </div>
-        </div>
-
-        <div style="max-height: 180px; overflow-y: auto; margin-top: 10px; border: 1px solid #eee; border-radius: 8px;">
-          <table class="sacmau-table">
-            <thead>
-              <tr><th>Sản phẩm</th><th style="width:60px;">ĐVT</th><th style="width:50px;">SL</th><th style="width:90px;">Giá</th><th style="width:100px;">T.Tiền</th><th style="width:40px;"></th></tr>
-            </thead>
-            <tbody id="cart-body"></tbody>
-          </table>
-        </div>
-
-        <div class="sacmau-payment-box" style="justify-content: space-between; align-items: flex-end;">
-          <div style="display: flex; gap: 20px;">
-            <div style="width: 150px;">
-              <label class="sacmau-label">Khách cọc</label>
-              <input id="tra" type="text" class="sacmau-input" style="font-weight: bold; color: #2D5A27;" placeholder="0" oninput="formatInput(this); calc()">
-            </div>
-            <div>
-              <label class="sacmau-label">Hình thức</label>
-              <div class="pay-toggle-container" style="height: 38px;">
-                <div id="slider" class="pay-slider mid"></div>
-                <div class="pay-option" id="opt-tm" onclick="setPayMethod('TM')">TM</div>
-                <div class="pay-option active" id="opt-mid" onclick="setPayMethod('')">--</div>
-                <div class="pay-option" id="opt-ck" onclick="setPayMethod('CK')">CK</div>
-              </div>
-            </div>
-          </div>
-          <div style="text-align: right; min-width: 250px;">
-            <div style="margin-bottom: 5px;">
-              <span style="font-weight: bold; color: #555; font-size: 13px;">TỔNG GIÁ TRỊ:</span>
-              <span id="tong" style="color: red; font-size: 22px; font-weight: 900; margin-left: 10px;">0</span>đ
-            </div>
-            <div style="border-top: 1px dashed #ccc; padding-top: 5px;">
-              <span style="font-weight: bold; color: #555; font-size: 13px;">CÒN LẠI PHẢI THU:</span>
-              <span id="no-display" style="color: red; font-size: 22px; font-weight: 900; margin-left: 10px;">0</span>đ
-            </div>
-          </div>
-        </div>
-
-        <div class="sacmau-row" style="margin-top:15px;">
-          <button style="flex:1; padding:12px; background:#666; color:white; border:none; border-radius:8px; cursor:pointer;" onclick="inHoaDon()">🖨️ IN PHIẾU</button>
-          <button id="saveBtn" style="flex:1.5; padding:12px; background:#2D5A27; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="saveOrder()">🚀 LƯU & SẢN XUẤT</button>
+        <div style="flex: 1;">
+          <label class="f14-label">Chi cho ai:</label>
+          <input type="text" id="chi_doi_tuong" class="f14-input" placeholder="Tên người nhận">
         </div>
       </div>
-
-      <div id="vung-in-sacmau">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #2D5A27; padding-bottom: 10px;">
-          <div style="flex: 1;">
-            <h1 style="color: #2D5A27; margin: 0; font-size: 22px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1>
-            <p style="margin: 3px 0; font-size: 13px;">📍 27 Nguyễn Văn Cừ, P. Cao Lãnh, Đồng Tháp</p>
-            <p style="margin: 3px 0; font-size: 13px;">📞 0399.221.753 - 0337.663.113</p>
-          </div>
-          <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 100px; height: auto;">
-        </div>
-        <div style="text-align: center; margin: 20px 0;">
-          <h2 style="color: #2D5A27; margin: 0; letter-spacing: 2px;">PHIẾU ĐẶT HÀNG</h2>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; margin-bottom: 20px; font-size: 14px; background: #f9f9f9; padding: 15px; border-radius: 8px;">
-          <p>👤 <b>Khách hàng:</b> <span id="p-ten"></span></p>
-          <p>📱 <b>SĐT:</b> <span id="p-sdt"></span></p>
-          <p style="grid-column: span 2;">🏠 <b>Địa chỉ:</b> <span id="p-diachi"></span></p>
-          <p style="grid-column: span 2;">📅 <b>Ngày đặt:</b> <span id="p-ngay"></span></p>
-        </div>
-        <table class="p-table">
-          <thead><tr><th>Sản phẩm</th><th style="width:70px;">ĐVT</th><th style="width:50px;">SL</th><th style="width:110px;">Đơn giá</th><th style="width:110px; text-align:right;">T.Tiền</th></tr></thead>
-          <tbody id="p-body"></tbody>
-        </table>
-        <div style="margin-left: auto; width: 320px; font-size: 14px; background: #fff3cd; padding: 15px; border-radius: 8px;">
-          <div style="display: flex; justify-content: space-between;"><span>Tổng giá trị đơn:</span><b id="p-tong-in"></b></div>
-          <div style="display: flex; justify-content: space-between; color: #2D5A27; border-bottom: 1px dashed #2D5A27; padding-bottom: 5px;"><span>Đã cọc:</span><b id="p-coc-in"></b></div>
-          <div style="display: flex; justify-content: space-between; padding-top: 10px;"><span><b>CÒN LẠI:</b></span><b id="p-no-in" style="color: red; font-size: 18px;"></b></div>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; text-align: center; margin-top: 50px; font-size: 14px;">
-          <div><p><b>KHÁCH HÀNG</b></p><br><br><br><i>(Ký tên)</i></div>
-          <div><p><b>NGƯỜI LẬP PHIẾU</b></p><br><br><br><p><b>Nguyễn Thị Trúc Ly</b></p></div>
-        </div>
+      <div style="margin-bottom: 15px;">
+        <label class="f14-label">Số tiền chi:</label>
+        <input type="text" id="chi_so_tien" class="f14-input" placeholder="0" oninput="f14_fm(this)">
       </div>
+      <button class="btn-save-chi" onclick="saveChiF14()">🚀 LƯU KHOẢN CHI</button>
+    </div>
+
+    <div class="f14-card" style="border-top: none; background: #fdfdfd;">
+      <div style="font-weight: bold; font-size: 13px; color: #888; margin-bottom: 10px;">🕒 Lịch sử nhập (Xóa nếu sai):</div>
+      <table class="f14-table">
+          <tbody id="f14_history_body">
+              <tr><td colspan="3" style="text-align:center">Đang tải lịch sử...</td></tr>
+          </tbody>
+      </table>
     </div>
   </div>
+</div>
 
-  <script>
-    var cart = []; var dsK = []; var dsS = []; var currentPayMethod = "";
+<script>
+  // 🚀 TẢI DỮ LIỆU KHI TRANG SẴN SÀNG
+  document.addEventListener("DOMContentLoaded", function() {
+    loadHistoryF14();
+  });
 
-    // 🚀 FIX: HÀM LẤY THỜI GIAN VN (BỊ THIẾU)
-    function formatDateTimeVN() {
-        const d = new Date();
-        const pad = (n) => n.toString().padStart(2, '0');
-        return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    }
+  function f14_fm(input) {
+    var v = input.value.replace(/\D/g, "");
+    input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
 
-    async function napDuLieuTrang() {
-      const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
-      try {
-        const [resK, resS] = await Promise.all([
-          fetch(`${SB_CONFIG.URL}/rest/v1/DM_KhachHang?select=*`, { headers: h }),
-          fetch(`${SB_CONFIG.URL}/rest/v1/DM_SanPham?select=*`, { headers: h })
-        ]);
-        dsK = await resK.json(); dsS = await resS.json();
-        document.getElementById("khachList").innerHTML = dsK.map(k => `<option value="${k.Ten_Khach_Hang}">`).join("");
-        document.getElementById("spList").innerHTML = dsS.map(s => `<option value="${s.Ten_Hang}">`).join("");
-      } catch (e) { console.error("Lỗi nạp danh mục:", e); }
-    }
+  function getRaw(id) { return Number(document.getElementById(id).value.replace(/\./g, "")) || 0; }
 
-    function autoFillKhach(v) {
-      let m = dsK.find(k => k.Ten_Khach_Hang && k.Ten_Khach_Hang.toLowerCase() === v.toLowerCase().trim());
-      if (m) { document.getElementById("sdt").value = m.So_Dien_Thoai || ""; document.getElementById("diaChi").value = m.Dia_Chi || ""; }
-    }
-    function autoFillSP(v) {
-      let m = dsS.find(s => s.Ten_Hang && s.Ten_Hang.toLowerCase() === v.toLowerCase().trim());
-      if (m) { document.getElementById("gia").value = Number(m.Gia_Le || 0).toLocaleString("vi-VN"); document.getElementById("dvt").value = m.DVT || ""; updateTmpTotal(); }
-    }
+  function getCleanVNTime() {
+    const d = new Date();
+    const pad = (n) => n.toString().padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
 
-    async function saveOrder() {
-      if (cart.length === 0) return Swal.fire('Lỗi', 'Chưa có sản phẩm!', 'error');
-      const totalBill = cart.reduce((s, item) => s + (item.sl * item.dg), 0);
-      const daTra = getRaw("tra");
+  function saveKetF14() {
+    const tien = getRaw("ket_dau_ngay");
+    if (tien <= 0) return Swal.fire("Lỗi", "Vui lòng nhập số tiền", "error");
+    executeSaveF14({ loai: "Két đầu ngày", noiDung: "Mở sổ đầu ngày", doiTuong: "Nhân viên trực", soTien: tien });
+  }
 
-      if (daTra < 0) return Swal.fire('Lỗi', 'Tiền cọc không thể âm!', 'error');
-      if (daTra > totalBill) return Swal.fire('Lỗi', 'Tiền cọc vượt quá tổng đơn!', 'warning');
-      if (daTra > 0 && currentPayMethod === "") return Swal.fire('Lỗi', 'Vui lòng chọn TM hoặc CK!', 'warning');
+  function saveChiF14() {
+    const nd = document.getElementById("chi_noi_dung").value.trim();
+    const dt = document.getElementById("chi_doi_tuong").value.trim();
+    const tien = getRaw("chi_so_tien");
+    if (!nd || tien <= 0) return Swal.fire("Lỗi", "Nhập đủ nội dung và tiền", "error");
+    executeSaveF14({ loai: "Chi TM", noiDung: nd, doiTuong: dt, soTien: tien });
+  }
 
-      Swal.fire({ title: '⚡ Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-      const cleanTime = formatDateTimeVN();
-      const ma = `HD-${new Date().getDate().toString().padStart(2, '0')}${(new Date().getMonth() + 1).toString().padStart(2, '0')}-${new Date().getHours()}${new Date().getMinutes()}${new Date().getSeconds()}`;
-      const tenKH = document.getElementById("tenKhach").value.trim() || "Khách lẻ";
-      const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
-
-      try {
-        const rowsBH = cart.map((i, idx) => ({ 
-          Ngay_Gio: cleanTime, 
-          Ma_Don: ma, 
-          So_Dien_Thoai: document.getElementById("sdt").value, 
-          Ten_Khach_Hang: tenKH, 
-          Ten_Hang: i.sp, 
-          So_Luong: i.sl, 
-          Don_Gia: i.dg, 
-          Thanh_Tien: (i.sl * i.dg), 
-          Trang_Thai: "Chờ xử lý", 
-          Don_Vi_Tinh: i.dvt, 
-          Khach_Da_Tra: (idx === 0 ? daTra : 0), 
-          Con_No: (idx === 0 ? (totalBill - daTra) : 0), 
-          Dia_Chi: document.getElementById("diaChi").value, 
-          Hinh_Thuc_Thanh_Toan: (idx === 0 ? currentPayMethod : ""),
-          Tong_Don: (idx === 0 ? totalBill : 0) 
-        }));
-        
-        const rowsLog = cart.map(i => ({ Ngay_Gio: cleanTime, Ma_Don: ma, Ten_Hang: i.sp, Khach_Hang: tenKH, Gio_Tao_Don: cleanTime, Gio_Xu_Ly: cleanTime, Trang_Thai: "Chờ xử lý", Nguoi_Thuc_Hien: "Hệ thống" }));
-        
-        await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_BanHang`, { method: 'POST', headers: h, body: JSON.stringify(rowsBH) });
-        await fetch(`${SB_CONFIG.URL}/rest/v1/Log_TienDo`, { method: 'POST', headers: h, body: JSON.stringify(rowsLog) });
-        if (daTra > 0) { await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers: h, body: JSON.stringify({ Ngay_Gio: cleanTime, Ma_Don: ma, Khach_Hang: tenKH, Ten_Hang: cart.map(x => x.sp).join(", "), So_Tien_Thu: daTra, Hinh_Thuc_Thanh_Toan: currentPayMethod }) }); }
-
-        Swal.fire('Thành công', 'Đã lưu đơn: ' + ma, 'success').then(() => { location.reload(); });
-      } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
-    }
-
-    function changeSL(s) { let el = document.getElementById("sl"); let v = Math.max(0, getRaw("sl") + s); el.value = v.toLocaleString("vi-VN"); updateTmpTotal(); }
-    function formatInput(el) { let v = el.value.replace(/\D/g, ""); if (v !== "") el.value = Number(v).toLocaleString("vi-VN"); }
-    function getRaw(id) { return Number(document.getElementById(id).value.replace(/\./g, "")) || 0; }
-    function updateTmpTotal() { document.getElementById("tmpTotal").value = (getRaw("sl") * getRaw("gia")).toLocaleString("vi-VN"); }
-    function addItem() { let sp = document.getElementById("sanPham").value; let sl = getRaw("sl"); let gia = getRaw("gia"); let dvt = document.getElementById("dvt").value; if (!sp || sl <= 0) return Swal.fire('Lỗi', 'Chọn SP và SL > 0', 'error'); cart.push({sp, sl, dg: gia, dvt}); render(); ["sanPham","dvt","gia","sl","tmpTotal"].forEach(id => document.getElementById(id).value = (id=="sl"||id=="tmpTotal"?"0":"")); }
-    function render() { document.getElementById("cart-body").innerHTML = cart.map((i, idx) => `<tr><td><b>${i.sp}</b></td><td style="text-align:center">${i.dvt}</td><td style="text-align:center">${i.sl.toLocaleString()}</td><td style="text-align:right">${i.dg.toLocaleString()}</td><td style="text-align:right; font-weight:bold">${(i.sl*i.dg).toLocaleString()}</td><td onclick="cart.splice(${idx},1);render()" style="color:red; cursor:pointer; text-align:center">✕</td></tr>`).join(""); calc(); }
+  async function executeSaveF14(payload) {
+    Swal.fire({ title: 'Đang lưu...', didOpen: () => Swal.showLoading() });
     
-    function calc() { 
-      let t = cart.reduce((s, i) => s + (i.sl * i.dg), 0); 
-      let c = getRaw("tra"); 
-      document.getElementById("tong").innerText = t.toLocaleString("vi-VN"); 
-      document.getElementById("no-display").innerText = (t - c).toLocaleString("vi-VN"); 
-    }
+    const headers = { 
+        'apikey': window.SB_CONFIG.KEY, 
+        'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+    };
 
-    function setPayMethod(v) { currentPayMethod = v; const s = document.getElementById('slider'); ['opt-tm', 'opt-mid', 'opt-ck'].forEach(id => document.getElementById(id).classList.remove('active')); if (v === 'TM') { s.className = 'pay-slider tm'; document.getElementById('opt-tm').classList.add('active'); } else if (v === 'CK') { s.className = 'pay-slider ck'; document.getElementById('opt-ck').classList.add('active'); } else { s.className = 'pay-slider mid'; document.getElementById('opt-mid').classList.add('active'); } }
-    function inHoaDon() {
-      if (cart.length === 0) return Swal.fire('Lỗi', 'Chưa có sản phẩm!', 'warning');
-      document.getElementById("p-ten").innerText = document.getElementById("tenKhach").value || "Khách lẻ";
-      document.getElementById("p-sdt").innerText = document.getElementById("sdt").value || "---";
-      document.getElementById("p-diachi").innerText = document.getElementById("diaChi").value || "---";
-      document.getElementById("p-ngay").innerText = formatDateTimeVN();
-      let h = ""; cart.forEach(i => { h += `<tr><td><b>${i.sp}</b></td><td style="text-align:center;">${i.dvt}</td><td style="text-align:center;">${i.sl.toLocaleString()}</td><td style="text-align:right;">${i.dg.toLocaleString()}</td><td style="text-align:right; font-weight:bold;">${(i.sl*i.dg).toLocaleString()}</td></tr>`; });
-      document.getElementById("p-body").innerHTML = h;
-      let t = cart.reduce((s, i) => s + (i.sl * i.dg), 0);
-      let c = getRaw("tra");
-      document.getElementById("p-tong-in").innerText = t.toLocaleString() + " đ";
-      document.getElementById("p-coc-in").innerText = c.toLocaleString() + " đ";
-      document.getElementById("p-no-in").innerText = (t - c).toLocaleString() + " đ";
-      window.print();
-    }
+    const bodyData = {
+        Ngay_Gio: getCleanVNTime(),
+        Loai: payload.loai,
+        Noi_Dung: payload.noiDung,
+        So_Tien: payload.soTien,
+        Nhan_Vien: payload.doiTuong
+    };
 
-    // 🚀 KHỞI TẠO KHI TRANG SẴN SÀNG
-    document.addEventListener("DOMContentLoaded", function() {
-        napDuLieuTrang();
+    try {
+        const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NK_ThuChi_PhatSinh`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(bodyData)
+        });
+
+        Swal.close();
+        if (response.ok) {
+            document.getElementById("chi_noi_dung").value = "";
+            document.getElementById("chi_so_tien").value = "";
+            document.getElementById("chi_doi_tuong").value = "";
+            document.getElementById("ket_dau_ngay").value = "";
+            loadHistoryF14();
+        } else {
+            const err = await response.json();
+            Swal.fire("Lỗi", err.message || "Không thể lưu", "error");
+        }
+    } catch (e) {
+        Swal.fire("Lỗi kết nối", e.message, "error");
+    }
+  }
+
+  async function loadHistoryF14() {
+    const tbody = document.getElementById("f14_history_body");
+    const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+
+    try {
+        const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NK_ThuChi_PhatSinh?select=*&order=id.desc&limit=15`, { headers });
+        const data = await response.json();
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='3' style='text-align:center'>Trống.</td></tr>";
+            return;
+        }
+
+        tbody.innerHTML = data.map(item => `
+            <tr>
+              <td>
+                <small style="color:#999">${item.Ngay_Gio}</small><br>
+                <b>${item.Noi_Dung}</b><br>
+                <small>👤 ${item.Nhan_Vien || ""}</small>
+              </td>
+              <td style="text-align:right">
+                <span class="money-text">${Number(item.So_Tien).toLocaleString()}</span><br>
+                <small style="color:#666">${item.Loai === "Chi TM" ? "💸 Chi" : "💰 Két"}</small>
+              </td>
+              <td style="text-align:center; width:30px">
+                <button class="btn-del" onclick="deleteItemF14('${item.id}', '${item.Noi_Dung}')">🗑️</button>
+              </td>
+            </tr>
+        `).join("");
+    } catch (e) {
+        tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:red;'>Lỗi tải dữ liệu.</td></tr>";
+    }
+  }
+
+  async function deleteItemF14(id, content) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Xóa khoản này?',
+      text: content,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'XÓA NGAY',
+      confirmButtonColor: '#d33'
     });
-  </script>
+
+    if (isConfirmed) {
+      Swal.fire({ title: 'Đang xóa...', didOpen: () => Swal.showLoading() });
+      const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+
+      try {
+        const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NK_ThuChi_PhatSinh?id=eq.${id}`, {
+            method: 'DELETE',
+            headers: headers
+        });
+
+        Swal.close();
+        if (response.ok) {
+            loadHistoryF14();
+        } else {
+            Swal.fire("Lỗi", "Không thể xóa dòng này", "error");
+        }
+      } catch (e) {
+        Swal.fire("Lỗi kết nối", e.message, "error");
+      }
+    }
+  }
+</script>
 </body>
 </html>
