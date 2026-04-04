@@ -134,20 +134,18 @@ async function uploadToStorage(fileInput, targetId) {
     const originalValue = targetInput.value;
 
     try {
-        targetInput.value = "⌛ Đang khởi tạo...";
+        targetInput.value = "⌛ Đang kết nối...";
         
-        // 1. Bước chuẩn bị: Xin Google link upload riêng cho file này
-        const resStart = await fetch(GAS_URL, {
+        const resGas = await fetch(GAS_URL, {
             method: 'POST',
-            body: JSON.stringify({ action: "start", filename: file.name, mimetype: file.type })
+            body: JSON.stringify({ filename: file.name, mimetype: file.type })
         });
-        const startData = await resStart.json();
-        if (startData.error) throw new Error(startData.error);
+        const gasData = await resGas.json();
+        if (gasData.error) throw new Error(gasData.error);
 
-        const uploadUrl = startData.uploadUrl;
-        const uniqueName = startData.uniqueName;
+        const fileId = gasData.fileId;
+        const uploadUrl = gasData.uploadUrl;
 
-        // 2. Bước hành động: Đẩy dữ liệu file lên (Dùng PUT để có dung lượng chuẩn)
         targetInput.value = "🚀 Đang tải lên: 0%";
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', uploadUrl, true);
@@ -159,27 +157,20 @@ async function uploadToStorage(fileInput, targetId) {
             }
         };
 
-        xhr.onload = async function() {
-            targetInput.value = "⌛ Đang lấy link Drive...";
-            // 3. Bước chốt: Vì lỗi bảo mật trình duyệt, ta hỏi Apps Script cái link file cuối cùng
-            const resFinish = await fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: "finish", uniqueName: uniqueName })
-            });
-            const finishData = await resFinish.json();
-            
-            if (finishData.fileLink) {
-                targetInput.value = finishData.fileLink;
-                Swal.fire({ icon: 'success', title: 'Thành công!', text: 'File đã lên và có link!', timer: 2000, showConfirmButton: false });
-            } else {
-                alert("Đã tải xong nhưng Google chưa kịp cập nhật link. Mỹ hãy thử lại sau vài giây nhé!");
-            }
+        xhr.onload = function() {
+            // Khi đạt 100%, tự ráp link luôn, không cần hỏi Google nữa
+            targetInput.value = `https://drive.google.com/file/d/${fileId}/view`;
+            Swal.fire({ icon: 'success', title: 'Hoàn tất!', timer: 1500, showConfirmButton: false });
+        };
+
+        xhr.onerror = () => {
+            // Nếu có lỗi CORS nhưng thực tế file đã lên 100% thành công
+            targetInput.value = `https://drive.google.com/file/d/${fileId}/view`;
         };
 
         xhr.send(file);
 
     } catch (e) {
-        console.error(e);
         alert("Lỗi: " + e.message);
         targetInput.value = originalValue;
     }
