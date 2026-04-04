@@ -125,56 +125,60 @@
 
     /** 📤 HÀM SIÊU UPLOAD LÊN GOOGLE DRIVE (SHARED DRIVE) */
     async function uploadToStorage(fileInput, targetId) {
-        const file = fileInput.files[0];
-        if (!file) return;
+    const file = fileInput.files[0];
+    if (!file) return;
 
-        const targetInput = document.getElementById(targetId);
-        const originalValue = targetInput.value;
+    const targetInput = document.getElementById(targetId);
+    const originalValue = targetInput.value;
 
-        try {
-            targetInput.value = "⌛ Đang xin quyền Google...";
-            
-            // Bước 1: Xin Google cái link upload trực tiếp qua Apps Script
-            const resGas = await fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify({ filename: file.name, mimetype: file.type })
-            });
-            const gasData = await resGas.json();
-            
-            if (!gasData.uploadUrl) throw new Error("Không lấy được URL upload");
-
-            // Bước 2: Đẩy file trực tiếp từ máy thợ lên Google (Không giới hạn dung lượng)
-            targetInput.value = "🚀 Đang tải lên: 0%";
-            
-            const xhr = new XMLHttpRequest();
-            xhr.open('PUT', gasData.uploadUrl, true);
-            
-            xhr.upload.onprogress = (e) => {
-                if (e.lengthComputable) {
-                    const percent = Math.round((e.loaded / e.total) * 100);
-                    targetInput.value = `🚀 Đang tải lên: ${percent}%`;
-                }
-            };
-
-            xhr.onload = function() {
-                if (xhr.status === 200 || xhr.status === 201) {
-                    const result = JSON.parse(xhr.responseText);
-                    const finalLink = `https://drive.google.com/file/d/${result.id}/view`;
-                    targetInput.value = finalLink;
-                } else {
-                    alert("Lỗi khi đẩy file lên Google.");
-                    targetInput.value = originalValue;
-                }
-            };
-
-            xhr.send(file);
-
-        } catch (e) {
-            console.error(e);
-            alert("Lỗi kết nối. Mỹ hãy kiểm tra lại bản Triển khai Apps Script nhé!");
+    try {
+        targetInput.value = "⌛ Đang xin quyền Google...";
+        
+        const resGas = await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ filename: file.name, mimetype: file.type })
+        });
+        const gasData = await resGas.json();
+        
+        // NẾU CÓ LỖI, HIỆN THẲNG THÔNG BÁO CỦA GOOGLE LÊN
+        if (gasData.error) {
+            alert("LỖI TỪ GOOGLE: " + gasData.error);
             targetInput.value = originalValue;
+            return;
         }
+
+        if (!gasData.uploadUrl) throw new Error("Không lấy được URL upload");
+
+        targetInput.value = "🚀 Đang tải lên: 0%";
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', gasData.uploadUrl, true);
+        
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                targetInput.value = `🚀 Đang tải lên: ${percent}%`;
+            }
+        };
+
+        xhr.onload = function() {
+            if (xhr.status === 200 || xhr.status === 201) {
+                const result = JSON.parse(xhr.responseText);
+                const finalLink = `https://drive.google.com/file/d/${result.id}/view`;
+                targetInput.value = finalLink;
+                Swal.fire('Thành công', 'File đã lên Drive!', 'success');
+            } else {
+                alert("Lỗi tải file: " + xhr.status);
+                targetInput.value = originalValue;
+            }
+        };
+        xhr.send(file);
+
+    } catch (e) {
+        console.error(e);
+        alert("Lỗi kết nối: " + e.message);
+        targetInput.value = originalValue;
     }
+}
 
     /** 1. TẢI DANH SÁCH CHỜ THIẾT KẾ */
     async function loadF3Data() {
