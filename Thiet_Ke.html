@@ -107,7 +107,7 @@
   </div>
 
   <script>
-    // DÁN LINK GOOGLE APPS SCRIPT CỦA MỸ VÀO ĐÂY
+    // LINK GOOGLE APPS SCRIPT CỦA MỸ
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxhiN9AbfUIt1cH-eEOmPUKn_CWRWQumyJPJpVOU90Gq9B9cJtvQRNLoECafmLaIi9f/exec";
 
     // Tự động tải dữ liệu khi vào trang
@@ -115,67 +115,83 @@
       setTimeout(() => { loadF3Data(); }, 600);
     });
 
-async function uploadToStorage(fileInput, targetId) {
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    const targetInput = document.getElementById(targetId);
-    const originalValue = targetInput.value;
-
-    try {
-        targetInput.value = "⌛ Đang kết nối Google...";
-        
-        // 1. Xin link upload và ID file từ Apps Script
-        const resGas = await fetch(GAS_URL, {
-            method: 'POST',
-            body: JSON.stringify({ filename: file.name, mimetype: file.type })
-        });
-        const gasData = await resGas.json();
-        
-        if (gasData.error) {
-            alert("LỖI GOOGLE: " + gasData.error);
-            targetInput.value = originalValue;
-            return;
-        }
-
-        const fileId = gasData.fileId;
-        const uploadUrl = gasData.uploadUrl;
-
-        // 2. Bắt đầu đẩy dữ liệu (XMLHttpRequest để bypass lỗi CORS của fetch)
-        targetInput.value = "🚀 Đang tải lên: 0%";
-        const xhr = new XMLHttpRequest();
-        xhr.open('PUT', uploadUrl, true);
-        
-        xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-                const percent = Math.round((e.loaded / e.total) * 100);
-                targetInput.value = `🚀 Đang tải lên: ${percent}%`;
-            }
-        };
-
-        xhr.onload = function() {
-            // Khi thanh % chạy xong 100%, tự ráp link luôn
-            const finalLink = `https://drive.google.com/file/d/${fileId}/view`;
-            targetInput.value = finalLink;
-            Swal.fire({ icon: 'success', title: 'Thành công!', text: 'Đã lưu link Drive.', timer: 2000, showConfirmButton: false });
-        };
-
-        xhr.onerror = () => {
-            // Đề phòng trường hợp hiếm hoi lỗi mạng, vẫn trả link vì ID đã có
-            targetInput.value = `https://drive.google.com/file/d/${fileId}/view`;
-            alert("Tải hoàn tất!");
-        };
-
-        xhr.send(file);
-
-    } catch (e) {
-        console.error(e);
-        alert("Lỗi kết nối: " + e.message);
-        targetInput.value = originalValue;
+    /** 🚀 HÀM TỰ CHUYỂN ĐỔI ĐƯỜNG DẪN Ổ ĐĨA */
+    function autoFormatEverythingLink(input) {
+      let val = input.value.trim().replace(/"/g, ""); 
+      if (val.includes(":\\")) {
+        input.value = "http://192.168.1.6/" + val.replace(":", "%3A").replace(/\\/g, "/");
+      }
     }
-}
 
-// GIỮ NGUYÊN TOÀN BỘ CÁC HÀM KHÁC (loadF3Data, openDesignForm, submitDesignProduction...)
+    /** 📤 HÀM UPLOAD GOOGLE DRIVE (CHỐT PHƯƠNG ÁN TỰ ĐIỀN LINK) */
+    async function uploadToStorage(fileInput, targetId) {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const targetInput = document.getElementById(targetId);
+        const originalValue = targetInput.value;
+
+        try {
+            targetInput.value = "⌛ Đang kết nối Google...";
+            
+            // 1. Gọi Apps Script xin link upload và lấy ID file trước
+            const resGas = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ filename: file.name, mimetype: file.type })
+            });
+            const gasData = await resGas.json();
+            
+            if (gasData.error) {
+                alert("LỖI GOOGLE: " + gasData.error);
+                targetInput.value = originalValue;
+                return;
+            }
+
+            const fileId = gasData.fileId;
+            const uploadUrl = gasData.uploadUrl;
+
+            // 2. Bắt đầu đẩy dữ liệu (Dùng XMLHttpRequest để bypass CORS và theo dõi %)
+            targetInput.value = "🚀 Đang tải lên: 0%";
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', uploadUrl, true);
+            
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    targetInput.value = `🚀 Đang tải lên: ${percent}%`;
+                }
+            };
+
+            xhr.onload = function() {
+                // Ngay khi đạt 100%, tự ráp link Drive từ ID đã có sẵn ở Bước 1
+                const finalLink = `https://drive.google.com/file/d/${fileId}/view`;
+                targetInput.value = finalLink;
+                
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Thành công!', 
+                    text: 'Link Drive đã được cập nhật tự động.', 
+                    timer: 2000, 
+                    showConfirmButton: false 
+                });
+            };
+
+            xhr.onerror = () => {
+                // Đề phòng trường hợp hiếm hoi lỗi mạng, vẫn trả link vì ID đã có
+                const finalLink = `https://drive.google.com/file/d/${fileId}/view`;
+                targetInput.value = finalLink;
+                alert("Tải lên hoàn tất!");
+            };
+
+            xhr.send(file);
+
+        } catch (e) {
+            console.error(e);
+            alert("Lỗi kết nối: " + e.message);
+            targetInput.value = originalValue;
+        }
+    }
+
     /** 1. TẢI DANH SÁCH CHỜ THIẾT KẾ */
     async function loadF3Data() {
       const tbody = document.getElementById('f3-table-body');
