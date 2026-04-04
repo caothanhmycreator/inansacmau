@@ -20,7 +20,7 @@
     .f8-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
     .f8-table th { padding: 12px 15px; color: #64748b; font-size: 13px; text-transform: uppercase; text-align: left; }
     .f8-row { background: white; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .f8-row td { padding: 15px; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); vertical-align: middle; cursor: pointer; }
+    .f8-row td { padding: 15px; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); vertical-align: middle; }
     
     .btn-action { border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; color: white; transition: 0.2s; text-transform: uppercase; }
     .btn-giao { background: #27ae60; box-shadow: 0 3px 0 #1e8449; }
@@ -133,15 +133,12 @@
             grouped[maDon] = {
               maDon: maDon, khachHang: row.Ten_Khach_Hang, sdt: row.So_Dien_Thoai || "",
               diachi: row.Dia_Chi || "Tại cửa hàng", ngay: row.Ngay_Gio ? row.Ngay_Gio.split(' ')[0] : "",
-              cacMon: [], tongDon: 0, tongDaTra: row.Da_Tra || 0, tatCaReady: true, coMonChoGiao: false
+              cacMon: [], tongDon: 0, tongDaTra: row.Khach_Da_Tra || 0, coMonChoGiao: false
             };
           }
           grouped[maDon].cacMon.push(row);
           grouped[maDon].tongDon += (row.Thanh_Tien || 0);
           if (row.Trang_Thai === "Chờ giao hàng") grouped[maDon].coMonChoGiao = true;
-          if (!["Chờ giao hàng", "Hoàn tất", "Đã giao lẻ", "Chờ thanh toán", "Công nợ"].includes(row.Trang_Thai)) {
-            grouped[maDon].tatCaReady = false;
-          }
         });
 
         window.listF8 = Object.values(grouped).filter(g => g.coMonChoGiao);
@@ -151,11 +148,11 @@
         }
 
         tbody.innerHTML = window.listF8.map((item, index) => {
-          const dsMon = item.cacMon.map(m => m.Ten_Hang).join(", ");
+          const dsMon = item.cacMon.filter(m => m.Trang_Thai === "Chờ giao hàng").map(m => m.Ten_Hang).join(", ");
           return `<tr class="f8-row">
-            <td onclick="openDetail(${index})"><b>${item.maDon}</b><br><small>${item.ngay}</small></td>
-            <td onclick="openDetail(${index})"><b>${item.khachHang}</b><br><small>${item.sdt}</small></td>
-            <td onclick="openDetail(${index})" style="color:#2980b9;">${dsMon}</td>
+            <td><b>${item.maDon}</b><br><small>${item.ngay}</small></td>
+            <td><b>${item.khachHang}</b><br><small>${item.sdt}</small></td>
+            <td style="color:#2980b9;">${dsMon}</td>
             <td>T: ${item.tongDon.toLocaleString()}<br><small style="color:green">Đ: ${item.tongDaTra.toLocaleString()}</small></td>
             <td style="color:red; font-weight:bold;">${(item.tongDon - item.tongDaTra).toLocaleString()}</td>
             <td style="text-align:center"><button class="btn-action btn-giao" onclick="handleGiaoMain(${index})">XỬ LÝ ĐƠN</button></td>
@@ -164,14 +161,13 @@
       } catch (e) { console.error(e); }
     }
 
-    /** 2. XỬ LÝ GIAO TOÀN BỘ */
+    /** 2. XỬ LÝ GIAO HÀNG (CHUYỂN SANG HOÀN TẤT) */
     function handleGiaoMain(idx) {
       const it = window.listF8[idx];
-      if (!it.tatCaReady) { openDetail(idx, "Có món chưa in xong!"); return; }
       
       Swal.fire({
         title: 'XỬ LÝ GIAO HÀNG',
-        text: `Đơn hàng: ${it.maDon}`,
+        text: `Chuyển trạng thái đơn ${it.maDon} sang HOÀN TẤT?`,
         icon: 'question',
         showDenyButton: true,
         showCancelButton: true,
@@ -181,83 +177,50 @@
         confirmButtonColor: '#27ae60',
         denyButtonColor: '#2980b9'
       }).then(r => {
-        if (r.isConfirmed) processUpdate(it, "ALL");
+        if (r.isConfirmed) processUpdate(it);
         else if (r.isDenied) showPreviewFull(it);
       });
     }
 
-    /** 3. CHI TIẾT & GIAO LẺ */
-    function openDetail(idx, warning = "") {
-      const it = window.listF8[idx];
-      let header = `<div class="popup-row" style="font-weight:bold; background:#f2f2f2;"><div>Tên món</div><div>SL</div><div>Thành tiền</div><div>Thao tác</div></div>`;
-      const rows = it.cacMon.map((m, mIdx) => {
-        const isReady = m.Trang_Thai === "Chờ giao hàng";
-        return `<div class="popup-row">
-          <div>${m.Ten_Hang}<br><small>${m.Trang_Thai}</small></div>
-          <div style="text-align:center">${m.So_Luong}</div>
-          <div style="text-align:right">${(m.Thanh_Tien || 0).toLocaleString()}</div>
-          <div style="text-align:right">${isReady ? `<button class="btn-action btn-giao" onclick="execLe(${idx}, ${mIdx})">XỬ LÝ LẺ</button>` : '⌛'}</div>
-        </div>`;
-      }).join('');
-      Swal.fire({ title: warning || 'CHI TIẾT ĐƠN HÀNG', html: `<div style="text-align:left;">${header}${rows}</div>`, showConfirmButton: false, showCloseButton: true, width: '750px' });
-    }
-
-    function execLe(idx, mIdx) {
-      const it = window.listF8[idx];
-      const m = it.cacMon[mIdx];
-      Swal.fire({
-        title: 'XỬ LÝ GIAO LẺ',
-        text: m.Ten_Hang,
-        icon: 'info',
-        showDenyButton: true,
-        showCancelButton: true,
-        confirmButtonText: '💾 XÁC NHẬN LƯU',
-        denyButtonText: '🖨️ CHỈ IN PHIẾU',
-        confirmButtonColor: '#27ae60',
-        denyButtonColor: '#2980b9'
-      }).then(r => {
-        if (r.isConfirmed) processUpdate(it, "LE", { mIdx });
-        else if (r.isDenied) showPreviewLe(it, mIdx);
-      });
-    }
-
-    /** 4. CẬP NHẬT CƠ SỞ DỮ LIỆU (CHỈ GHI VÀO GIO_THANH_TOAN) */
-    async function processUpdate(it, type, extra = {}) {
+    /** 3. CẬP NHẬT CƠ SỞ DỮ LIỆU */
+    async function processUpdate(it) {
       Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const cleanNow = window.formatDateTimeVN();
 
       try {
-        let itemsToUpdate = type === "ALL" ? it.cacMon.filter(m => m.Trang_Thai === "Chờ giao hàng") : [it.cacMon[extra.mIdx]];
-        let statusMoi = type === "ALL" ? "Chờ thanh toán" : "Đã giao lẻ";
+        let itemsToUpdate = it.cacMon.filter(m => m.Trang_Thai === "Chờ giao hàng");
 
         for (let m of itemsToUpdate) {
-          // Cập nhật Nhật ký bán hàng
-          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${m.id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ Trang_Thai: statusMoi }) });
+          // Cập nhật Nhật ký bán hàng sang Hoàn tất
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${m.id}`, { 
+            method: 'PATCH', 
+            headers: h, 
+            body: JSON.stringify({ Trang_Thai: "Hoàn tất" }) 
+          });
           
-          // Tìm dòng tương ứng trong Log_TienDo
+          // Tìm dòng tương ứng trong Log_TienDo để cập nhật giờ hoàn tất
           const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${it.maDon}&Ten_Hang=eq.${encodeURIComponent(m.Ten_Hang)}&select=id`, { headers: h });
           const rowLog = await resLog.json();
           
           if (rowLog.length > 0) {
-            // CHỈ CẬP NHẬT GIO_THANH_TOAN
             await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
               method: 'PATCH', 
               headers: h, 
               body: JSON.stringify({ 
-                Trang_Thai: statusMoi, 
-                Gio_Thanh_Toan: cleanNow, 
+                Trang_Thai: "Hoàn tất", 
+                Gio_Hoan_Tat: cleanNow, 
                 Nguoi_Thuc_Hien: "Giao hàng" 
               })
             });
           }
         }
-        Swal.fire({ icon: 'success', title: 'Đã lưu hệ thống!', timer: 1000, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Đơn hàng đã hoàn tất!', timer: 1000, showConfirmButton: false });
         loadF8Data();
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
-    /** 5. THIẾT KẾ PHIẾU IN CẢI TIẾN */
+    /** 4. THIẾT KẾ PHIẾU IN */
     function getPrintHTML(it, rows, footer) {
       return `
         <div style="padding:20px; font-family:Arial, sans-serif; color:#000;">
@@ -266,7 +229,6 @@
               <h1 style="color: #2980b9; margin: 0; font-size: 24px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1>
               <p style="margin: 3px 0; font-size: 13px;">📍 27 Nguyễn Văn Cừ, P. Cao Lãnh, Đồng Tháp</p>
               <p style="margin: 3px 0; font-size: 13px;">📞 0399.221.753 - 0337.663.113</p>
-              <p style="margin: 3px 0; font-size: 13px;">🌐 www.inansacmaudongthap.com</p>
             </div>
             <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 100px; height: auto;">
           </div>
@@ -300,15 +262,8 @@
     }
 
     function showPreviewFull(it) {
-      const rows = it.cacMon.map(m => `<tr><td>${m.Ten_Hang}</td><td style="text-align:center;">${m.So_Luong}</td></tr>`).join('');
+      const rows = it.cacMon.filter(m => m.Trang_Thai === "Chờ giao hàng").map(m => `<tr><td>${m.Ten_Hang}</td><td style="text-align:center;">${m.So_Luong}</td></tr>`).join('');
       const footer = `<div style="font-size:12px;">Tổng: ${it.tongDon.toLocaleString()} | Đã trả: ${it.tongDaTra.toLocaleString()}</div><div style="font-size:16px; font-weight:bold; color:red;">CÒN NỢ: ${(it.tongDon - it.tongDaTra).toLocaleString()}đ</div>`;
-      renderAndPrint(getPrintHTML(it, rows, footer));
-    }
-
-    function showPreviewLe(it, mIdx) {
-      const m = it.cacMon[mIdx];
-      const rows = `<tr><td>${m.Ten_Hang} (GIAO LẺ)</td><td style="text-align:center;">${m.So_Luong}</td></tr>`;
-      const footer = `<div style="font-size:12px; font-weight:bold;">Đơn còn nợ tổng: ${(it.tongDon - it.tongDaTra).toLocaleString()}đ</div>`;
       renderAndPrint(getPrintHTML(it, rows, footer));
     }
 
