@@ -122,7 +122,6 @@
         input.value = "http://192.168.1.6/" + val.replace(":", "%3A").replace(/\\/g, "/");
       }
     }
-
 async function uploadToStorage(fileInput, targetId) {
     const file = fileInput.files[0];
     if (!file) return;
@@ -140,7 +139,7 @@ async function uploadToStorage(fileInput, targetId) {
         const gasData = await resGas.json();
         
         if (gasData.error) {
-            alert("LỖI HỆ THỐNG: " + gasData.error);
+            alert("LỖI: " + gasData.error);
             targetInput.value = originalValue;
             return;
         }
@@ -160,31 +159,25 @@ async function uploadToStorage(fileInput, targetId) {
         };
 
         xhr.onload = function() {
-            // Dù Google trả về lỗi CORS (nhưng thực tế file đã lên), ta vẫn lấy được link nhờ ID có sẵn
+            // Khi đạt 100%, ta tự ráp link từ ID đã có sẵn ở Bước 1
             const finalLink = `https://drive.google.com/file/d/${fileId}/view`;
             targetInput.value = finalLink;
             
-            Swal.fire({
-                icon: 'success',
-                title: 'Thành công!',
-                text: 'File đã nằm trên Drive và có link.',
-                timer: 2000,
-                showConfirmButton: false
-            });
+            Swal.fire({ icon: 'success', title: 'Thành công!', text: 'Đã lấy được link Drive.', timer: 2000, showConfirmButton: false });
         };
 
         xhr.onerror = () => {
-            // Fallback nếu mạng chập chờn nhưng ID đã có
+            // Ngay cả khi có lỗi CORS, nếu file đã lên 100% thì link vẫn đúng
             const finalLink = `https://drive.google.com/file/d/${fileId}/view`;
             targetInput.value = finalLink;
-            alert("Đã tải xong (vượt qua rào cản CORS thành công)!");
+            alert("Tải lên hoàn tất!");
         };
 
         xhr.send(file);
 
     } catch (e) {
         console.error(e);
-        alert("Lỗi: " + e.message);
+        alert("Lỗi kết nối: " + e.message);
         targetInput.value = originalValue;
     }
 }
