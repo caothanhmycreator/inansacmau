@@ -22,7 +22,6 @@
     .btn-pay { background: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; box-shadow: 0 3px 0 #1e8449; }
     .btn-pay:active { transform: translateY(2px); box-shadow: 0 1px 0 #1e8449; }
     .popup-mon-row { display: grid; grid-template-columns: 2fr 0.5fr 1fr; gap: 10px; padding: 10px; border-bottom: 1px dashed #ccc; font-size: 13px; }
-    
     .pay-toggle-f7 { display: flex; background: #eee; padding: 2px; border-radius: 6px; width: 150px; position: relative; border: 1px solid #ddd; height: 35px; align-items: center; margin-top: 5px; }
     .pay-opt-f7 { flex: 1; text-align: center; font-size: 11px; font-weight: bold; color: #999; cursor: pointer; z-index: 2; transition: 0.3s; }
     .pay-opt-f7.active { color: white; }
@@ -30,307 +29,352 @@
     .pay-sld-f7.tm, .pay-sld-f7.giao { left: 2px; background: #2D5A27; }
     .pay-sld-f7.ck, .pay-sld-f7.chua { left: calc(66.66% - 2px); background: #2980b9; }
     .pay-sld-f7.mid { left: 33.33%; background: #bbb; }
-
     #vung-in-f7 { display: none; }
     @media print {
       body * { visibility: hidden; }
       #vung-in-f7, #vung-in-f7 * { visibility: visible; }
       #vung-in-f7 { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
-      @page { size: auto; margin: 10mm; }
     }
-    .print-table-f7 { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    .print-table-f7 th { background: #2D5A27 !important; color: white !important; padding: 12px; text-align: left; -webkit-print-color-adjust: exact; border: 2px solid #2D5A27; font-size: 18px; }
-    .print-table-f7 td { padding: 12px; border: 2px solid #2D5A27; font-size: 20px; font-weight: bold; color: #000; }
+    .print-table-f7 { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    .print-table-f7 th { background: #2D5A27 !important; color: white !important; padding: 10px; text-align: left; -webkit-print-color-adjust: exact; }
+    .print-table-f7 td { padding: 8px; border: 1px solid #ccc; font-size: 13px; }
     .swal2-container { z-index: 20000 !important; }
+    @media (max-width: 768px) { .main-content { margin-left: 0; } }
+  
+    /* PC: Chừa lề 250px cố định */
+#sidebar-frame { 
+    width: 250px; height: 100vh; position: fixed; 
+    left: 0; top: 0; z-index: 9999; border: none; 
+}
 
-    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
-    .main-content { margin-left: 250px; transition: 0.3s; padding: 20px; }
+.main-content { 
+    margin-left: 250px; /* Giữ lề cố định */
+    transition: 0.3s; 
+    padding: 20px; 
+}
 
-    @media (max-width: 768px) {
-        #sidebar-frame { left: -250px; }
-        .main-content { margin-left: 0 !important; }
-        body.sidebar-open #sidebar-frame { left: 0; }
-        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: #2D5A27; color: white; padding: 8px 12px; border: none; border-radius: 4px; }
+/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
+@media (max-width: 768px) {
+    #sidebar-frame { left: -250px; }
+    .main-content { margin-left: 0 !important; }
+    body.sidebar-open #sidebar-frame { left: 0; }
+    
+    .mobile-nav-btn {
+        display: block; position: fixed; top: 10px; left: 10px; 
+        z-index: 1000; background: #2D5A27; color: white; 
+        padding: 8px 12px; border: none; border-radius: 4px;
     }
-    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+}
+
+@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
-<button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
+ <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
+
 <iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
 
-<div class="main-content">
-  <div class="f7-container">
-    <div class="f7-header">
-      <div>
-        <h2 style="margin:0; font-size: 20px;">💰 QUẢN LÝ THANH TOÁN</h2>
-        <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Chốt sổ đơn hàng & Ghi nhận công nợ</p>
+  <div class="main-content">
+    <div class="f7-container">
+      <div class="f7-header">
+        <div>
+          <h2 style="margin:0; font-size: 20px;">💰 QUẢN LÝ THANH TOÁN</h2>
+          <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Chốt sổ đơn hàng & Ghi nhận công nợ</p>
+        </div>
+        <button onclick="loadF7Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 LÀM MỚI</button>
       </div>
-      <button onclick="loadF7Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 LÀM MỚI</button>
-    </div>
 
-    <div style="overflow-x: auto;">
-      <table class="f7-table">
-        <thead>
-          <tr>
-            <th style="width: 120px;">Mã đơn</th>
-            <th style="width: 200px;">Khách hàng</th>
-            <th>Tên hàng (Tích hợp)</th>
-            <th>Tổng / Đã trả</th>
-            <th>Còn nợ</th>
-            <th style="text-align: center;">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody id="f7-table-body">
-          <tr><td colspan="6" style="text-align:center; padding:50px; color:#64748b;">🔄 Đang quét danh sách thanh toán...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<div id="vung-in-f7"></div>
-
-<script>
-  window.listF7 = [];
-  let currentPayF7 = ""; 
-  let currentDeliveryF7 = "";
-
-  document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(() => { loadF7Data(); }, 600);
-  });
-
-  async function loadF7Data() {
-    const tbody = document.getElementById('f7-table-body');
-    const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-    
-    try {
-      const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*&order=id.desc`, { headers: h });
-      const rawData = await res.json();
-      const grouped = {};
-      
-      rawData.forEach(row => {
-        const maDon = row.Ma_Don;
-        if (!maDon) return;
-        if (!grouped[maDon]) {
-          grouped[maDon] = { maDon, khachHang: row.Ten_Khach_Hang, sdt: row.So_Dien_Thoai || "", ngay: row.Ngay_Gio ? row.Ngay_Gio.split(' ')[0] : "", cacMon: [], tongDon: 0, tongDaTra: 0, allReady: true };
-        }
-        if (row.Trang_Thai !== "Chờ thanh toán") grouped[maDon].allReady = false;
-        grouped[maDon].cacMon.push({ tenMon: row.Ten_Hang, sl: row.So_Luong, thanhTien: row.Thanh_Tien || 0, id: row.id });
-        grouped[maDon].tongDon += (row.Thanh_Tien || 0);
-        if (row.Khach_Da_Tra > grouped[maDon].tongDaTra) grouped[maDon].tongDaTra = row.Khach_Da_Tra;
-      });
-
-      window.listF7 = Object.values(grouped).filter(g => g.allReady);
-      if (window.listF7.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px;">✅ Không có đơn chờ thanh toán.</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = window.listF7.map((item, index) => {
-        const conNo = item.tongDon - item.tongDaTra;
-        return `<tr class="f7-row">
-          <td><b>${item.maDon}</b><br><small>${item.ngay}</small></td>
-          <td><b>${item.khachHang}</b><br><small>${item.sdt}</small></td>
-          <td style="color:#27ae60;">${item.cacMon.map(m => m.tenMon).join(", ")}</td>
-          <td>T: ${item.tongDon.toLocaleString()}<br><small style="color:#27ae60">Đ: ${item.tongDaTra.toLocaleString()}</small></td>
-          <td style="color:red; font-weight:bold;">${conNo.toLocaleString()}</td>
-          <td style="text-align:center"><button class="btn-pay" onclick="openPayPopup(${index})">THANH TOÁN & IN</button></td>
-        </tr>`;
-      }).join('');
-    } catch (e) { console.error(e); }
-  }
-
-  window.openPayPopup = function(idx) {
-    const it = window.listF7[idx];
-    const conNoHienTai = it.tongDon - it.tongDaTra;
-    currentPayF7 = ""; currentDeliveryF7 = "";
-
-    let monHtml = `<div class="popup-mon-row" style="font-weight:bold; background:#f9f9f9;"><div>Sản phẩm</div><div>SL</div><div style="text-align:right">Tiền</div></div>` +
-      it.cacMon.map(m => `<div class="popup-mon-row"><div>${m.tenMon}</div><div>${m.sl}</div><div style="text-align:right">${(m.thanhTien || 0).toLocaleString()}</div></div>`).join('');
-
-    Swal.fire({
-      title: `THANH TOÁN: ${it.maDon}`, width: '650px',
-      html: `<div style="text-align:left; border:1px solid #ddd; padding:15px; border-radius:8px;">
-          <p>👤 <b>Khách:</b> ${it.khachHang}</p>
-          ${monHtml}
-          <div style="margin-top:15px; background:#f4f9f4; padding:12px; border-radius:5px; border: 1px solid #dcfce7;">
-             <div style="display:flex; justify-content:space-between; color:red; font-weight:bold; font-size:16px; border-bottom: 1px dashed #27ae60; padding-bottom:5px; margin-bottom:10px;">
-                <span>NỢ CẦN THU:</span><span>${conNoHienTai.toLocaleString()} đ</span>
-             </div>
-             <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; align-items:end;">
-                <div>
-                  <label style="font-weight:bold; color:#27ae60; font-size:11px;">THU THÊM:</label>
-                  <input type="text" id="pay_more_f7" class="swal2-input" style="margin:0; width:100%; font-size:18px; border:2px solid #27ae60; text-align:right; font-weight:bold; color:#27ae60; height:35px;" value="${conNoHienTai.toLocaleString('vi-VN')}">
-                </div>
-                <div>
-                  <label style="font-weight:bold; color:#27ae60; font-size:11px;">HÌNH THỨC:</label>
-                  <div class="pay-toggle-f7">
-                    <div id="f7-slider-pay" class="pay-sld-f7 mid"></div>
-                    <div class="pay-opt-f7" onclick="setPayF7('TM')">TM</div>
-                    <div class="pay-opt-f7 active" onclick="setPayF7('')">--</div>
-                    <div class="pay-opt-f7" onclick="setPayF7('CK')">CK</div>
-                  </div>
-                </div>
-                <div>
-                  <label style="font-weight:bold; color:#e67e22; font-size:11px;">GIAO HÀNG:</label>
-                  <div class="pay-toggle-f7" style="border-color:#e67e22">
-                    <div id="f7-slider-dev" class="pay-sld-f7 mid"></div>
-                    <div class="pay-opt-f7" onclick="setDeliveryF7('Giao')">ĐÃ GIAO</div>
-                    <div class="pay-opt-f7 active" onclick="setDeliveryF7('')">--</div>
-                    <div class="pay-opt-f7" onclick="setDeliveryF7('Chua')">CHƯA</div>
-                  </div>
-                </div>
-             </div>
-          </div>
-        </div>`,
-      showCancelButton: true, showDenyButton: true, confirmButtonText: '🚀 LƯU & IN', confirmButtonColor: '#27ae60', denyButtonText: '🖨️ CHỈ IN PHIẾU', denyButtonColor: '#3498db', cancelButtonText: 'ĐÓNG',
-      didOpen: () => {
-        const input = document.getElementById('pay_more_f7');
-        input.addEventListener('input', function() {
-          let val = this.value.replace(/\D/g, '');
-          if (val) { if (parseInt(val) > conNoHienTai) val = conNoHienTai.toString(); this.value = Number(val).toLocaleString('vi-VN'); }
-        });
-      },
-      preConfirm: () => {
-        const valClean = document.getElementById('pay_more_f7').value.replace(/\./g, '');
-        const payVal = parseFloat(valClean) || 0;
-        if (payVal > 0 && currentPayF7 === "") { Swal.showValidationMessage('Chọn TM hoặc CK!'); return false; }
-        if (currentDeliveryF7 === "") { Swal.showValidationMessage('Chọn trạng thái Giao hàng!'); return false; }
-        return payVal;
-      }
-    }).then(r => {
-      const payVal = parseFloat(document.getElementById('pay_more_f7').value.replace(/\./g, '')) || 0;
-      if (r.isConfirmed) executePayment(idx, payVal, currentPayF7, currentDeliveryF7);
-      else if (r.isDenied) renderBill(idx, payVal, true);
-    });
-  };
-
-  function setPayF7(v) {
-    currentPayF7 = v; const s = document.getElementById('f7-slider-pay'); const opts = s.parentElement.querySelectorAll('.pay-opt-f7');
-    opts.forEach(e => e.classList.remove('active')); s.className = 'pay-sld-f7 ' + (v === 'TM' ? 'tm' : (v === 'CK' ? 'ck' : 'mid'));
-    if (v === 'TM') opts[0].classList.add('active'); else if (v === 'CK') opts[2].classList.add('active'); else opts[1].classList.add('active');
-  }
-
-  function setDeliveryF7(v) {
-    currentDeliveryF7 = v; const s = document.getElementById('f7-slider-dev'); const opts = s.parentElement.querySelectorAll('.pay-opt-f7');
-    opts.forEach(e => e.classList.remove('active')); s.className = 'pay-sld-f7 ' + (v === 'Giao' ? 'giao' : (v === 'Chua' ? 'chua' : 'mid'));
-    if (v === 'Giao') opts[0].classList.add('active'); else if (v === 'Chua') opts[2].classList.add('active'); else opts[1].classList.add('active');
-  }
-
-  async function executePayment(idx, payMore, hinhThuc, devStt) {
-    const it = window.listF7[idx]; Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
-    const cleanNow = window.formatDateTimeVN();
-
-    try {
-      const newPaid = it.tongDaTra + payMore; const debt = it.tongDon - newPaid; const isFull = debt <= 500;
-      let statusBH = isFull ? (devStt === 'Giao' ? "Hoàn tất" : "Chờ giao hàng") : (devStt === 'Giao' ? "Công nợ" : "Chờ thanh toán");
-
-      for (let i = 0; i < it.cacMon.length; i++) {
-        const m = it.cacMon[i]; let bhData = { Trang_Thai: statusBH };
-        if (i === 0) { bhData.Khach_Da_Tra = newPaid; bhData.Con_No = debt < 0 ? 0 : debt; }
-        await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${m.id}`, { method: 'PATCH', headers: h, body: JSON.stringify(bhData) });
-
-        const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${it.maDon}&Ten_Hang=eq.${encodeURIComponent(m.tenMon)}&select=id`, { headers: h });
-        const rowLog = await resLog.json();
-        if (rowLog.length > 0) {
-          let logData = { Trang_Thai: "Hoàn tất", Gio_Hoan_Tat: cleanNow, Nguoi_Thuc_Hien: "Kế toán" };
-          if (!isFull) logData.Cong_No = cleanNow;
-          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, { method: 'PATCH', headers: h, body: JSON.stringify(logData) });
-        }
-      }
-
-      if (!isFull) {
-        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No`, { method: 'POST', headers: h, body: JSON.stringify({ Ngay_Gio: cleanNow, Ma_Don: it.maDon, Khach_Hang: it.khachHang, Tong_Don: String(it.tongDon), Da_Tra: String(newPaid), Con_Lai: String(debt), id: Math.floor(Date.now() / 1000) }) });
-      }
-      if (payMore > 0) {
-        await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers: h, body: JSON.stringify({ Ngay_Gio: cleanNow, Ma_Don: it.maDon, Khach_Hang: it.khachHang, Ten_Hang: "Thanh toán đơn: " + it.maDon, So_Tien_Thu: payMore, Hinh_Thuc_Thanh_Toan: hinhThuc, id: Math.floor(Date.now() / 1000) + 1 }) });
-      }
-      Swal.close(); renderBill(idx, payMore, true); loadF7Data();
-    } catch (e) { console.error(e); Swal.fire('Lỗi', 'Lưu thất bại!', 'error'); }
-  }
-
-  /** 🚀 HÀM RENDER PHIẾU THANH TOÁN THEO PHONG CÁCH "GIAO HÀNG" ĐẸP */
-  function renderBill(idx, payMore, isDirect = false) {
-    const it = window.listF7[idx]; 
-    const debtRemain = it.tongDon - it.tongDaTra - payMore;
-    const isFull = debtRemain <= 500;
-    
-    const rows = it.cacMon.map(m => `
-      <tr>
-        <td style="font-size: 24px; line-height: 1.2;">• ${m.tenMon}</td>
-        <td style="text-align:center; font-size: 24px;">${m.sl}</td>
-        <td style="text-align:right; font-size: 24px;">${(m.thanhTien || 0).toLocaleString()}</td>
-      </tr>`).join('');
-
-    const bill = `
-      <div style="padding:20px; font-family:Arial, sans-serif; color:#000; border: 1px solid #ccc; max-width: 850px; margin: auto; background: #fff;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #2D5A27; padding-bottom: 10px;">
-          <div style="flex: 1;">
-            <h1 style="color: #2D5A27; margin: 0; font-size: 26px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1>
-            <p style="margin: 5px 0; font-size: 14px;">📍 27 Nguyễn Văn Cừ, P. Cao Lãnh, Đồng Tháp</p>
-            <p style="margin: 5px 0; font-size: 14px; font-weight: bold;">📞 0399.221.753 - 0337.663.113</p>
-          </div>
-          <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 110px; height: auto;">
-        </div>
-
-        <div style="text-align: center; margin: 25px 0;">
-          <h2 style="color: #2D5A27; margin: 0; letter-spacing: 2px; text-transform: uppercase; font-size: 32px; font-weight: 900;">HÓA ĐƠN THANH TOÁN</h2>
-          <p style="margin: 10px 0; font-weight: bold; font-size: 18px;">Mã đơn: <span style="background:#eee; padding: 2px 10px; border-radius: 4px;">${it.maDon}</span></p>
-        </div>
-
-        <div style="margin-top:20px; border: 3px solid #2D5A27; padding: 15px; border-radius: 12px; position: relative;">
-          ${isFull ? `
-            <div style="position:absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-15deg); color:#2D5A27; border:6px double #2D5A27; padding:15px 30px; font-weight:900; background:rgba(255,255,255,0.9); font-size:40px; z-index:10; opacity: 0.8; letter-spacing: 5px;">
-              ĐÃ HOÀN TẤT
-            </div>` : ''}
-
-          <div style="font-size:40px; font-weight:900; margin-bottom:10px; text-transform:uppercase; color:#000; border-bottom: 4px solid #2D5A27; padding-bottom:10px;">
-            KHÁCH: ${it.khachHang}
-          </div>
-          <div style="font-size:35px; font-weight:900; color: #d32f2f;">SĐT: ${it.sdt || '--- --- ---'}</div>
-        </div>
-
-        <table class="print-table-f7">
+      <div style="overflow-x: auto;">
+        <table class="f7-table">
           <thead>
             <tr>
-              <th style="font-size: 22px; padding: 12px;">CHI TIẾT SẢN PHẨM</th>
-              <th style="width:80px; text-align:center; font-size: 22px; padding: 12px;">SL</th>
-              <th style="width:180px; text-align:right; font-size: 22px; padding: 12px;">TỔNG</th>
+              <th style="width: 120px;">Mã đơn</th>
+              <th style="width: 200px;">Khách hàng</th>
+              <th>Tên hàng (Tích hợp)</th>
+              <th>Tổng / Đã trả</th>
+              <th>Còn nợ</th>
+              <th style="text-align: center;">Thao tác</th>
             </tr>
           </thead>
-          <tbody>${rows}</tbody>
+          <tbody id="f7-table-body">
+            <tr><td colspan="6" style="text-align:center; padding:50px; color:#64748b;">🔄 Đang quét danh sách thanh toán...</td></tr>
+          </tbody>
         </table>
+      </div>
+    </div>
+  </div>
 
-        <div style="margin-top:30px; display:flex; justify-content:space-between; align-items:flex-end;">
-          <div style="font-size:14px; color:#666; font-style: italic;">Thời gian: ${new Date().toLocaleString('vi-VN')}</div>
-          <div style="text-align:right; border:3px solid #2D5A27; padding:15px; border-radius:12px; background:#f4f9f4; min-width: 380px; -webkit-print-color-adjust: exact;">
-            <div style="font-size:18px; margin-bottom: 5px;">Tổng đơn: <b>${it.tongDon.toLocaleString()} đ</b></div>
-            <div style="font-size:18px; margin-bottom: 5px;">Đã tạm ứng: <b>-${it.tongDaTra.toLocaleString()} đ</b></div>
-            <div style="font-size:18px; margin-bottom: 5px; color:#d35400;">Thu thêm đợt này: <b>-${payMore.toLocaleString()} đ</b></div>
-            <div style="font-size:28px; font-weight:900; color:#d32f2f; margin-top: 10px; border-top: 2px dashed #2D5A27; padding-top: 8px;">
-               CÒN NỢ: ${(debtRemain < 0 ? 0 : debtRemain).toLocaleString()} đ
-            </div>
-          </div>
-        </div>
-      </div>`;
+  <div id="vung-in-f7"></div>
 
-    document.getElementById('vung-in-f7').innerHTML = bill;
-    if (isDirect) {
-      setTimeout(() => window.print(), 500);
-    } else {
-      Swal.fire({ 
-        title: 'XEM TRƯỚC PHIẾU IN', 
-        html: `<div style="text-align:left; background:#eee; padding:10px; overflow:auto; max-height:80vh;">${bill}</div>`, 
-        showCancelButton: true, 
-        confirmButtonText: '🖨️ IN PHIẾU', 
-        confirmButtonColor: '#2D5A27',
-        width: '900px' 
-      }).then(r => { if (r.isConfirmed) window.print(); });
+  <script>
+    window.listF7 = [];
+    let currentPayF7 = "";
+    let currentDeliveryF7 = ""; // Lưu trạng thái giao hàng
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => { loadF7Data(); }, 600);
+    });
+
+    async function loadF7Data() {
+      const tbody = document.getElementById('f7-table-body');
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*&order=id.desc`, { headers: h });
+        const rawData = await res.json();
+
+        const grouped = {};
+
+        rawData.forEach(row => {
+          const maDon = row.Ma_Don;
+          if (!maDon) return;
+          if (!grouped[maDon]) {
+            grouped[maDon] = {
+              maDon: maDon, khachHang: row.Ten_Khach_Hang, sdt: row.So_Dien_Thoai || "",
+              ngay: row.Ngay_Gio ? row.Ngay_Gio.split(' ')[0] : "",
+              cacMon: [], tongDon: 0, tongDaTra: 0, 
+              allInWaitPay: true // Mặc định là true để kiểm tra
+            };
+          }
+          
+          // YÊU CẦU 1: Kiểm tra tất cả món phải ở trạng thái "Chờ thanh toán"
+          if (row.Trang_Thai !== "Chờ thanh toán") {
+            grouped[maDon].allInWaitPay = false;
+          }
+
+          grouped[maDon].cacMon.push({ tenMon: row.Ten_Hang, sl: row.So_Luong, thanhTien: row.Thanh_Tien || 0, trangThai: row.Trang_Thai, id: row.id });
+          grouped[maDon].tongDon += (row.Thanh_Tien || 0);
+          if (row.Khach_Da_Tra > grouped[maDon].tongDaTra) grouped[maDon].tongDaTra = row.Khach_Da_Tra;
+        });
+
+        // Chỉ lọc những đơn mà toàn bộ các món đều là "Chờ thanh toán"
+        window.listF7 = Object.values(grouped).filter(g => g.allInWaitPay && g.cacMon.length > 0);
+
+        if (window.listF7.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px;">✅ Không có đơn cần thanh toán.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = window.listF7.map((item, index) => {
+          const conNo = item.tongDon - item.tongDaTra;
+          return `<tr class="f7-row">
+            <td><b>${item.maDon}</b><br><small>${item.ngay}</small></td>
+            <td><b>${item.khachHang}</b><br><small>${item.sdt}</small></td>
+            <td style="color:#27ae60;">${item.cacMon.map(m => m.tenMon).join(", ")}</td>
+            <td>T: ${item.tongDon.toLocaleString()}<br><small style="color:#27ae60">Đ: ${item.tongDaTra.toLocaleString()}</small></td>
+            <td style="color:red; font-weight:bold;">${conNo.toLocaleString()}</td>
+            <td style="text-align:center"><button class="btn-pay" onclick="openPayPopup(${index})">THANH TOÁN & IN</button></td>
+          </tr>`;
+        }).join('');
+      } catch (e) { console.error(e); }
     }
-  }
-</script>
+
+    window.openPayPopup = function(idx) {
+      const it = window.listF7[idx];
+      const conNoHienTai = it.tongDon - it.tongDaTra;
+      currentPayF7 = ""; 
+      currentDeliveryF7 = ""; // Reset trạng thái giao hàng
+
+      let monHtml = `<div class="popup-mon-row" style="font-weight:bold; background:#f9f9f9;"><div>Sản phẩm</div><div>SL</div><div style="text-align:right">Tiền</div></div>` +
+        it.cacMon.map(m => `<div class="popup-mon-row"><div>${m.tenMon}</div><div>${m.sl}</div><div style="text-align:right">${(m.thanhTien || 0).toLocaleString()}</div></div>`).join('');
+
+      Swal.fire({
+        title: `THANH TOÁN: ${it.maDon}`,
+        width: '650px',
+        html: `<div style="text-align:left; border:1px solid #ddd; padding:15px; border-radius:8px;">
+            <p>👤 <b>Khách:</b> ${it.khachHang}</p>
+            ${monHtml}
+            <div style="margin-top:15px; background:#f4f9f4; padding:12px; border-radius:5px; border: 1px solid #dcfce7;">
+               <div style="display:flex; justify-content:space-between; color:red; font-weight:bold; font-size:16px; border-bottom: 1px dashed #27ae60; padding-bottom:5px; margin-bottom:10px;">
+                  <span>NỢ CẦN THU:</span><span>${conNoHienTai.toLocaleString()} đ</span>
+               </div>
+               <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; align-items:end;">
+                  <div style="flex:1">
+                    <label style="font-weight:bold; color:#27ae60; font-size:11px;">SỐ TIỀN THU THÊM:</label>
+                    <input type="text" id="pay_more_f7" class="swal2-input" style="margin:0; width:100%; font-size:18px; border:2px solid #27ae60; text-align:right; font-weight:bold; color:#27ae60; height:35px;" value="${conNoHienTai.toLocaleString('vi-VN')}">
+                  </div>
+                  <div>
+                    <label style="font-weight:bold; color:#27ae60; font-size:11px;">HÌNH THỨC:</label>
+                    <div class="pay-toggle-f7">
+                      <div id="f7-slider" class="pay-sld-f7 mid"></div>
+                      <div class="pay-opt-f7" onclick="setPayF7('TM')">TM</div>
+                      <div class="pay-opt-f7 active" id="f8-opt-mid" onclick="setPayF7('')">--</div>
+                      <div class="pay-opt-f7" onclick="setPayF7('CK')">CK</div>
+                    </div>
+                  </div>
+                  <div>
+                    <label style="font-weight:bold; color:#e67e22; font-size:11px;">GIAO HÀNG:</label>
+                    <div class="pay-toggle-f7" style="border-color:#e67e22">
+                      <div id="f7-slider-dev" class="pay-sld-f7 mid"></div>
+                      <div class="pay-opt-f7" onclick="setDeliveryF7('Giao')">ĐÃ GIAO</div>
+                      <div class="pay-opt-f7 active" id="f7-opt-dev-mid" onclick="setDeliveryF7('')">--</div>
+                      <div class="pay-opt-f7" onclick="setDeliveryF7('Chua')">CHƯA</div>
+                    </div>
+                  </div>
+               </div>
+            </div>
+          </div>`,
+        showCancelButton: true, showDenyButton: true,
+        confirmButtonText: '🚀 LƯU & IN', confirmButtonColor: '#27ae60',
+        denyButtonText: '🖨️ CHỈ IN PHIẾU', denyButtonColor: '#3498db',
+        cancelButtonText: 'ĐÓNG',
+        didOpen: () => {
+          const input = document.getElementById('pay_more_f7');
+          input.addEventListener('input', function() {
+            let val = this.value.replace(/\D/g, '');
+            if (val) {
+              if (parseInt(val) > conNoHienTai) val = conNoHienTai.toString();
+              this.value = Number(val).toLocaleString('vi-VN');
+            }
+          });
+        },
+        preConfirm: () => {
+          const valClean = document.getElementById('pay_more_f7').value.replace(/\./g, '');
+          const payVal = parseFloat(valClean) || 0;
+          
+          // YÊU CẦU 2: Chặn nếu chưa chọn hình thức hoặc trạng thái giao hàng
+          if (payVal > 0 && currentPayF7 === "") { Swal.showValidationMessage('Vui lòng chọn TM hoặc CK!'); return false; }
+          if (currentDeliveryF7 === "") { Swal.showValidationMessage('Vui lòng chọn trạng thái Giao hàng!'); return false; }
+          
+          return payVal;
+        }
+      }).then(r => {
+        const valClean = document.getElementById('pay_more_f7').value.replace(/\./g, '');
+        const payAmount = parseFloat(valClean) || 0;
+        if (r.isConfirmed) { executePayment(idx, payAmount, currentPayF7, currentDeliveryF7); } 
+        else if (r.isDenied) { renderBill(idx, payAmount, true); }
+      });
+    };
+
+    /** 3. THỰC THI LƯU DỮ LIỆU (CẬP NHẬT LOGIC 4 TRƯỜNG HỢP) */
+    async function executePayment(idx, payMore, hinhThuc, giaoStatus) {
+      const it = window.listF7[idx];
+      Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+      const cleanNow = window.formatDateTimeVN();
+
+      try {
+        const newPaid = it.tongDaTra + payMore;
+        const remainingDebt = it.tongDon - newPaid;
+        const isFullPay = remainingDebt <= 500; // Thanh toán đủ
+        
+        // YÊU CẦU 3: Xác định trạng thái mới dựa trên Tiền + Giao hàng
+        let finalStatusBH = "";
+        if (isFullPay) {
+          finalStatusBH = (giaoStatus === 'Giao') ? "Hoàn tất" : "Chờ giao hàng";
+        } else {
+          finalStatusBH = (giaoStatus === 'Giao') ? "Công nợ" : "Chờ thanh toán";
+        }
+
+        for (let i = 0; i < it.cacMon.length; i++) {
+          const m = it.cacMon[i];
+          
+          // --- BƯỚC 1: CẬP NHẬT NHẬT KÝ BÁN HÀNG ---
+          let bhData = { Trang_Thai: finalStatusBH };
+          if (i === 0) { 
+            bhData.Khach_Da_Tra = newPaid; 
+            bhData.Con_No = remainingDebt < 0 ? 0 : remainingDebt;
+          }
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${m.id}`, { method: 'PATCH', headers: h, body: JSON.stringify(bhData) });
+
+          // --- BƯỚC 2: CẬP NHẬT LOG TIẾN ĐỘ ---
+          const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${it.maDon}&Ten_Hang=eq.${encodeURIComponent(m.tenMon)}&select=id`, { headers: h });
+          const rowLog = await resLog.json();
+          if (rowLog.length > 0) {
+            let logData = { 
+              Trang_Thai: "Hoàn tất", // Quy ước Log_TienDo luôn ghi Hoàn tất khi kế toán xử lý
+              Gio_Hoan_Tat: cleanNow,
+              Nguoi_Thuc_Hien: "Kế toán"
+            };
+            if (!isFullPay) { logData.Cong_No = cleanNow; }
+
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, { method: 'PATCH', headers: h, body: JSON.stringify(logData) });
+          }
+        }
+
+        // --- BƯỚC 3: GHI VÀO BẢNG CONG_NO NẾU CÒN NỢ ---
+        if (!isFullPay) {
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No`, {
+            method: 'POST', headers: h,
+            body: JSON.stringify({
+              Ngay_Gio: cleanNow,
+              Ma_Don: it.maDon,
+              Khach_Hang: it.khachHang,
+              Tong_Don: String(it.tongDon),
+              Da_Tra: String(newPaid),
+              Con_Lai: String(remainingDebt),
+              id: Math.floor(Date.now() / 1000)
+            })
+          });
+        }
+
+        // --- BƯỚC 4: GHI NHẬT KÝ THU NỢ ---
+        if (payMore > 0) {
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, {
+            method: 'POST', headers: h,
+            body: JSON.stringify({
+              Ngay_Gio: cleanNow, Ma_Don: it.maDon, Khach_Hang: it.khachHang,
+              Ten_Hang: "Thanh toán đơn: " + it.maDon, So_Tien_Thu: payMore,
+              Hinh_Thuc_Thanh_Toan: hinhThuc, id: Math.floor(Date.now() / 1000) + 1
+            })
+          });
+        }
+
+        Swal.close();
+        renderBill(idx, payMore, true);
+        loadF7Data();
+      } catch (e) { console.error(e); Swal.fire('Lỗi', 'Lưu thất bại!', 'error'); }
+    }
+
+    // GIỮ NGUYÊN PHIẾU IN CỦA MỸ (HÀM RENDERBILL)
+    function renderBill(idx, payMore, isDirect = false) {
+      const it = window.listF7[idx]; 
+      const debtRemain = it.tongDon - it.tongDaTra - payMore;
+      const isFull = debtRemain <= 500;
+      const rows = it.cacMon.map(m => `<tr><td><b>${m.tenMon}</b></td><td style="text-align:center;">${m.sl}</td><td style="text-align:right; font-weight:bold;">${(m.thanhTien || 0).toLocaleString()}</td></tr>`).join('');
+      const bill = `
+        <div style="background:#fff; padding:10px; font-family:Arial, sans-serif;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #2D5A27; padding-bottom: 10px;">
+            <div><h1 style="color: #2D5A27; margin: 0; font-size: 22px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1><p style="margin: 3px 0; font-size: 13px;">📍 27 Nguyễn Văn Cừ, P. Cao Lãnh, Đồng Tháp</p></div>
+            <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 100px;">
+          </div>
+          <div style="text-align: center; margin: 20px 0;"><h2 style="color: #2D5A27; margin: 0; text-transform: uppercase;">HÓA ĐƠN THANH TOÁN</h2><p style="font-weight: bold;">Mã đơn: ${it.maDon}</p></div>
+          <div style="background: #f4f9f4; padding: 15px; border-radius: 8px; border: 1px solid #dcfce7; font-size: 14px; margin-bottom:15px;"><p>👤 <b>Khách hàng:</b> ${it.khachHang}</p><p>📱 <b>SĐT:</b> ${it.sdt || '---'}</p></div>
+          <table class="print-table-f7"><thead><tr><th>Sản phẩm</th><th style="width:60px;">SL</th><th style="width:120px; text-align:right;">Tiền</th></tr></thead><tbody>${rows}</tbody></table>
+          <div style="margin-left: auto; width: 340px; background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; position: relative;">
+            ${isFull ? '<div style="position:absolute; left:-140px; top:10px; color:#2D5A27; border:4px double #2D5A27; padding:5px 10px; font-weight:bold; transform:rotate(-15deg); background:rgba(255,255,255,0.8);">ĐÃ HOÀN TẤT</div>' : ''}
+            <div style="display:flex; justify-content:space-between;"><span>Tổng đơn:</span><b>${it.tongDon.toLocaleString()} đ</b></div>
+            <div style="display:flex; justify-content:space-between;"><span>Cọc cũ:</span><b>-${it.tongDaTra.toLocaleString()} đ</b></div>
+            <div style="display:flex; justify-content:space-between; color:#d35400;"><span>Thu thêm:</span><b>-${payMore.toLocaleString()} đ</b></div>
+            <div style="display:flex; justify-content:space-between; border-top:1px dashed #FF8C00; margin-top:10px; padding-top:10px;"><span><b>CÒN NỢ:</b></span><b style="color:red; font-size:18px;">${(debtRemain < 0 ? 0 : debtRemain).toLocaleString()} đ</b></div>
+          </div>
+        </div>`;
+      document.getElementById('vung-in-f7').innerHTML = bill;
+      if (isDirect) { setTimeout(() => window.print(), 500); } 
+      else { Swal.fire({ title: 'XEM PHIẾU', html: `<div style="text-align:left;">${bill}</div>`, showCancelButton: true, confirmButtonText: '🖨️ IN PHIẾU', width: '750px' }).then(r => { if (r.isConfirmed) window.print(); }); }
+    }
+
+    function setPayF7(val) {
+      currentPayF7 = val;
+      const s = document.getElementById('f7-slider');
+      document.querySelectorAll('.pay-opt-f7').forEach(e => e.classList.remove('active'));
+      s.className = 'pay-sld-f7 ' + (val === 'TM' ? 'tm' : (val === 'CK' ? 'ck' : 'mid'));
+      if (val) document.getElementById('f8-opt-' + val.toLowerCase()).classList.add('active');
+      else document.getElementById('f8-opt-mid').classList.add('active');
+    }
+
+    function setDeliveryF7(val) {
+      currentDeliveryF7 = val;
+      const s = document.getElementById('f7-slider-dev');
+      const container = s.parentElement;
+      container.querySelectorAll('.pay-opt-f7').forEach(e => e.classList.remove('active'));
+      s.className = 'pay-sld-f7 ' + (val === 'Giao' ? 'giao' : (val === 'Chua' ? 'chua' : 'mid'));
+      
+      if (val === 'Giao') container.children[1].classList.add('active');
+      else if (val === '') container.children[2].classList.add('active');
+      else if (val === 'Chua') container.children[3].classList.add('active');
+    }
+  </script>
 </body>
 </html>
