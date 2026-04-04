@@ -107,21 +107,10 @@
   </div>
 
   <script>
-    // DÁN LINK GOOGLE APPS SCRIPT CỦA MỸ VÀO ĐÂY
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxhiN9AbfUIt1cH-eEOmPUKn_CWRWQumyJPJpVOU90Gq9B9cJtvQRNLoECafmLaIi9f/exec";
+  
+  // DÁN LINK APPS SCRIPT MỚI CỦA MỸ VÀO ĐÂY
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxhiN9AbfUIt1cH-eEOmPUKn_CWRWQumyJPJpVOU90Gq9B9cJtvQRNLoECafmLaIi9f/exec";
 
-    // Tự động tải dữ liệu khi vào trang
-    document.addEventListener("DOMContentLoaded", () => {
-      setTimeout(() => { loadF3Data(); }, 600);
-    });
-
-    /** 🚀 HÀM TỰ CHUYỂN ĐỔI ĐƯỜNG DẪN Ổ ĐĨA */
-    function autoFormatEverythingLink(input) {
-      let val = input.value.trim().replace(/"/g, ""); 
-      if (val.includes(":\\")) {
-        input.value = "http://192.168.1.6/" + val.replace(":", "%3A").replace(/\\/g, "/");
-      }
-    }
 async function uploadToStorage(fileInput, targetId) {
     const file = fileInput.files[0];
     if (!file) return;
@@ -130,8 +119,9 @@ async function uploadToStorage(fileInput, targetId) {
     const originalValue = targetInput.value;
 
     try {
-        targetInput.value = "⌛ Đang xin quyền Google...";
+        targetInput.value = "⌛ Đang kết nối Google...";
         
+        // 1. Xin link upload và ID file từ Apps Script
         const resGas = await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({ filename: file.name, mimetype: file.type })
@@ -139,7 +129,7 @@ async function uploadToStorage(fileInput, targetId) {
         const gasData = await resGas.json();
         
         if (gasData.error) {
-            alert("LỖI: " + gasData.error);
+            alert("LỖI GOOGLE: " + gasData.error);
             targetInput.value = originalValue;
             return;
         }
@@ -147,6 +137,7 @@ async function uploadToStorage(fileInput, targetId) {
         const fileId = gasData.fileId;
         const uploadUrl = gasData.uploadUrl;
 
+        // 2. Bắt đầu đẩy dữ liệu (XMLHttpRequest để bypass lỗi CORS của fetch)
         targetInput.value = "🚀 Đang tải lên: 0%";
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', uploadUrl, true);
@@ -159,18 +150,16 @@ async function uploadToStorage(fileInput, targetId) {
         };
 
         xhr.onload = function() {
-            // Khi đạt 100%, ta tự ráp link từ ID đã có sẵn ở Bước 1
+            // Khi thanh % chạy xong 100%, tự ráp link luôn
             const finalLink = `https://drive.google.com/file/d/${fileId}/view`;
             targetInput.value = finalLink;
-            
-            Swal.fire({ icon: 'success', title: 'Thành công!', text: 'Đã lấy được link Drive.', timer: 2000, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Thành công!', text: 'Đã lưu link Drive.', timer: 2000, showConfirmButton: false });
         };
 
         xhr.onerror = () => {
-            // Ngay cả khi có lỗi CORS, nếu file đã lên 100% thì link vẫn đúng
-            const finalLink = `https://drive.google.com/file/d/${fileId}/view`;
-            targetInput.value = finalLink;
-            alert("Tải lên hoàn tất!");
+            // Đề phòng trường hợp hiếm hoi lỗi mạng, vẫn trả link vì ID đã có
+            targetInput.value = `https://drive.google.com/file/d/${fileId}/view`;
+            alert("Tải hoàn tất!");
         };
 
         xhr.send(file);
