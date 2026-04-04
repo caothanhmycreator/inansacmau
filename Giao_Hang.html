@@ -11,7 +11,7 @@
 
   <style>
     :root { --primary-f8: #2980b9; --header-gradient: linear-gradient(135deg, #2980b9 0%, #3498db 100%); --bg-light: #f8fafc; --border-color: #e2e8f0; }
-    body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
+    body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', Tahoma, sans-serif; }
     
     .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
     .f8-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -32,11 +32,11 @@
     @media print {
       body * { visibility: hidden; }
       #vung-in-f8, #vung-in-f8 * { visibility: visible; }
-      #vung-in-f8 { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+      #vung-in-f8 { display: block !important; position: absolute; left: 0; top: 0; width: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; }
       @page { size: A4; margin: 10mm; }
     }
     
-    .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-family: 'Segoe UI', Tahoma, sans-serif; }
     .print-table th { background: #2980b9 !important; color: #fff !important; padding: 12px; text-align: left; border: 2px solid #2980b9; font-size: 22px; -webkit-print-color-adjust: exact; }
     .print-table td { padding: 15px 12px; border: 2px solid #2980b9; font-size: 26px; font-weight: bold; color: #000; }
 
@@ -192,14 +192,12 @@
         let itemsToUpdate = it.cacMon.filter(m => m.Trang_Thai === "Chờ giao hàng");
 
         for (let m of itemsToUpdate) {
-          // Cập nhật Nhật ký bán hàng sang Hoàn tất
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${m.id}`, { 
             method: 'PATCH', 
             headers: h, 
             body: JSON.stringify({ Trang_Thai: "Hoàn tất" }) 
           });
           
-          // Tìm dòng tương ứng trong Log_TienDo để cập nhật giờ hoàn tất
           const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${it.maDon}&Ten_Hang=eq.${encodeURIComponent(m.Ten_Hang)}&select=id`, { headers: h });
           const rowLog = await resLog.json();
           
@@ -220,15 +218,14 @@
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
-    /** 4. THIẾT KẾ PHIẾU IN (CẬP NHẬT THẨM MỸ & XỬ LÝ ĐỊA CHỈ) */
+    /** 4. THIẾT KẾ PHIẾU IN (ĐÃ SỬA FONT) */
     function getPrintHTML(it, rows, footer) {
-      // Xử lý không hiển thị nếu địa chỉ là "Tại cửa hàng"
       const diachiIn = (it.diachi && it.diachi !== "Tại cửa hàng") 
         ? `<div style="font-size:30px; font-weight:bold; margin-bottom:10px; border-bottom: 2px dashed #2980b9; padding-bottom:5px;">Đ/C: ${it.diachi}</div>` 
         : '';
 
       return `
-        <div style="padding:20px; font-family:Arial, sans-serif; color:#000; border: 1px solid #ccc;">
+        <div style="padding:20px; font-family: 'Segoe UI', Tahoma, sans-serif; color:#000; border: 1px solid #ccc;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #2980b9; padding-bottom: 10px;">
             <div style="flex: 1;">
               <h1 style="color: #2980b9; margin: 0; font-size: 26px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1>
@@ -251,7 +248,7 @@
             <div style="font-size:40px; font-weight:900; color: #d32f2f;">SĐT: ${it.sdt || '--- --- ---'}</div>
           </div>
 
-          <table class="print-table">
+          <table class="print-table" style="font-family: 'Segoe UI', Tahoma, sans-serif;">
             <thead>
               <tr>
                 <th style="font-size: 24px; padding: 15px;">DANH MỤC SẢN PHẨM SẢN XUẤT</th>
