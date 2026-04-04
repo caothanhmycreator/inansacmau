@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
+  <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
 
   <style>
     :root { --primary-f2: #2D5A27; --bg-light: #f4f7f6; }
@@ -41,51 +42,41 @@
     .f2-form-group { text-align: left; margin-bottom: 10px; }
     .f2-form-group label { font-size: 11px; font-weight: bold; color: #2D5A27; display: block; margin-bottom: 3px; }
     .f2-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+    .input-link-modern { font-family: monospace; font-size: 11px; color: #2980b9; }
+
+    /* Nút upload Google Drive */
+    .btn-drive-up { background: #1e73be; color: white; border: none; padding: 0 12px; border-radius: 4px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+    .btn-drive-up:hover { background: #155a94; }
 
     .swal2-container { z-index: 20000 !important; }
 
     @media (max-width: 768px) { .main-content { margin-left: 0; } }
- 
-    /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
+  
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
+    .main-content { margin-left: 250px; transition: 0.3s; padding: 20px; }
 
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
-
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
-    
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: #2D5A27; color: white; padding: 8px 12px; border: none; border-radius: 4px; }
     }
-}
-
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
  <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
-
-<iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
-
+ <iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
 
   <div class="main-content">
     <div class="f2-container">
       <div class="f2-header">
         <h2 style="margin:0; font-size: 18px;">⏳ ĐƠN CHỜ ĐIỀU PHỐI XỬ LÝ</h2>
-        <button onclick="loadF2Data()" style="background:#FF8C00; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">🔄 LÀM MỚI</button>
+        <div style="display: flex; gap: 10px;">
+          <button onclick="getToken()" style="background:transparent; border:1px solid white; color:white; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 12px;">🔐 KẾT NỐI DRIVE</button>
+          <button onclick="loadF2Data()" style="background:#FF8C00; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">🔄 LÀM MỚI</button>
+        </div>
       </div>
       
       <div style="overflow-x: auto;"> 
@@ -107,25 +98,98 @@
   </div>
 
   <script>
-    // Tự động tải khi trang sẵn sàng
+    // 1. CẤU HÌNH DRIVE API
+    const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
+    const FOLDER_ID = "1Cn8AyIJvMxkEC4-UQnBdZOS_vhvkrnF_";
+    let accessToken = null;
+    let tokenClient;
+
+    function initTokenClient() {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: 'https://www.googleapis.com/auth/drive.file',
+            callback: (tokenResponse) => {
+                accessToken = tokenResponse.access_token;
+                localStorage.setItem('drive_access_token', accessToken);
+                Swal.fire({ icon: 'success', title: 'Drive đã kết nối!', timer: 1000, showConfirmButton: false });
+            },
+        });
+        accessToken = localStorage.getItem('drive_access_token');
+    }
+
+    function getToken() {
+        tokenClient.requestAccessToken();
+    }
+
+    /** 🚀 HÀM UPLOAD TỰ ĐIỀN LINK - KHÔNG TẮT POPUP */
+    async function uploadToStorage(fileInput, targetId) {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        if (!accessToken) {
+            getToken();
+            return;
+        }
+
+        const targetInput = document.getElementById(targetId);
+        const originalValue = targetInput.value;
+
+        try {
+            targetInput.value = "⌛ Đang khởi tạo...";
+            const metadata = { name: file.name, parents: [FOLDER_ID] };
+            const resInit = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(metadata)
+            });
+
+            if (resInit.status === 401) { 
+                accessToken = null; 
+                localStorage.removeItem('drive_access_token');
+                getToken(); 
+                return; 
+            }
+            const uploadUrl = resInit.headers.get('Location');
+
+            targetInput.value = "🚀 0%";
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', uploadUrl, true);
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    targetInput.value = `🚀 Đang tải: ${percent}%`;
+                }
+            };
+            xhr.onload = function() {
+                if (xhr.status === 200 || xhr.status === 201) {
+                    const result = JSON.parse(xhr.responseText);
+                    targetInput.value = `https://drive.google.com/file/d/${result.id}/view`;
+                } else {
+                    alert("Lỗi upload: " + xhr.status);
+                    targetInput.value = originalValue;
+                }
+            };
+            xhr.send(file);
+        } catch (e) {
+            alert("Lỗi: " + e.message);
+            targetInput.value = originalValue;
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => { loadF2Data(); }, 600);
     });
 
-    /** 1. TẢI DANH SÁCH ĐƠN CHỜ XỬ LÝ */
     async function loadF2Data() {
       const tbody = document.getElementById('f2-table-body');
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-      
       try {
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=eq.Chờ xử lý&select=*&order=id.desc`, { headers: h });
         const data = await res.json();
-
         if (!data || data.length === 0) {
           tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px;">✨ Tuyệt vời! Hiện tại không còn đơn nào chờ điều phối.</td></tr>';
           return;
         }
-
         tbody.innerHTML = data.map(item => `
           <tr class="f2-row">
             <td><small>${item.Ngay_Gio.split(' ')[0]}</small><br><b>${item.Ma_Don}</b></td>
@@ -144,38 +208,48 @@
               </div>
             </td>
           </tr>`).join('');
-      } catch (e) { 
-        console.error(e);
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
-      }
+      } catch (e) { console.error(e); }
     }
 
-    /** 2. HÀM HIỂN THỊ FORM ĐIỀU PHỐI */
     function updateStatus(ma, sp, stt) {
       if (stt === 'Chờ in' || stt === 'Chờ gia công') {
         Swal.fire({
           title: 'HỒ SƠ SẢN XUẤT',
           html: `
             <div style="text-align:left; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px; font-size:13px;">
-              Mã đơn: <b>${ma}</b> | SP: <b>${sp}</b><br>
-              Điều phối đến: <b style="color:#2D5A27">${stt.toUpperCase()}</b>
+              Mã đơn: <b>${ma}</b> | SP: <b>${sp}</b><br>Điều phối đến: <b style="color:#2D5A27">${stt.toUpperCase()}</b>
             </div>
             <div class="f2-form-group"><label>KÍCH THƯỚC:</label><input type="text" id="f2_kt" class="f2-input" placeholder="Vd: 60x160cm"></div>
             <div class="f2-form-group"><label>CHẤT LIỆU:</label><input type="text" id="f2_cl" class="f2-input" placeholder="Vd: Bạt Hiflex 3.2"></div>
             <div class="f2-form-group"><label>GIA CÔNG:</label><input type="text" id="f2_gc" class="f2-input" placeholder="Vd: Đóng khoen, dán biên"></div>
-            <div class="f2-form-group"><label>🔗 LINK HỒ SƠ ẢNH (Dán đường dẫn ổ đĩa):</label><input type="text" id="f2_link_anh" class="f2-input" placeholder="Copy link Drive hoặc tại ổ đĩa"></div>
-            <div class="f2-form-group"><label>🔗 LINK FILE IN (Dán đường dẫn ổ đĩa):</label><input type="text" id="f2_link_file" class="f2-input" placeholder="Copy link Drive hoặc tại ổ đĩa"></div>
+            
+            <div class="f2-form-group">
+              <label>🔗 LINK HỒ SƠ ẢNH:</label>
+              <div style="display:flex; gap:5px;">
+                <input type="text" id="f2_link_anh" class="f2-input input-link-modern" placeholder="Dán link hoặc bấm nút upload">
+                <button type="button" class="btn-drive-up" onclick="document.getElementById('up-anh-f2').click()">📤</button>
+                <input type="file" id="up-anh-f2" style="display:none" onchange="uploadToStorage(this, 'f2_link_anh')">
+              </div>
+            </div>
+
+            <div class="f2-form-group">
+              <label>🔗 LINK FILE IN (CDR/AI/PDF):</label>
+              <div style="display:flex; gap:5px;">
+                <input type="text" id="f2_link_file" class="f2-input input-link-modern" placeholder="Dán link hoặc bấm nút upload">
+                <button type="button" class="btn-drive-up" onclick="document.getElementById('up-file-f2').click()">📤</button>
+                <input type="file" id="up-file-f2" style="display:none" onchange="uploadToStorage(this, 'f2_link_file')">
+              </div>
+            </div>
+
             <div class="f2-form-group"><label>📝 GHI CHÚ SẢN XUẤT:</label><textarea id="f2_note" class="f2-input" style="height:60px" placeholder="Dặn dò kỹ thuật viên..."></textarea></div>`,
+          allowOutsideClick: false,
           showCancelButton: true, confirmButtonColor: '#2D5A27', confirmButtonText: 'XÁC NHẬN CHUYỂN', cancelButtonText: 'HỦY',
           preConfirm: () => {
             return {
               maDon: ma, tenSP: sp, newStatus: stt,
-              kt: document.getElementById('f2_kt').value, 
-              cl: document.getElementById('f2_cl').value,
-              gc: document.getElementById('f2_gc').value, 
-              linkAnh: document.getElementById('f2_link_anh').value,
-              linkFile: document.getElementById('f2_link_file').value,
-              note: document.getElementById('f2_note').value
+              kt: document.getElementById('f2_kt').value, cl: document.getElementById('f2_cl').value,
+              gc: document.getElementById('f2_gc').value, linkAnh: document.getElementById('f2_link_anh').value,
+              linkFile: document.getElementById('f2_link_file').value, note: document.getElementById('f2_note').value
             };
           }
         }).then((result) => { if (result.isConfirmed) thuc_thi_cap_nhat(result.value); });
@@ -187,57 +261,42 @@
           input: 'textarea',
           inputLabel: 'Ghi chú sản xuất (Dặn dò):',
           inputPlaceholder: 'Nhập nội dung cần lưu ý cho bộ phận tiếp theo...',
+          allowOutsideClick: false,
           showCancelButton: true, confirmButtonColor: '#3498db', confirmButtonText: 'ĐỒNG Ý', cancelButtonText: 'HỦY'
         }).then((result) => {
           if (result.isConfirmed) {
-            thuc_thi_cap_nhat({ 
-              maDon: ma, tenSP: sp, newStatus: stt, note: result.value, 
-              kt: "", cl: "", gc: "", linkAnh: "", linkFile: "" 
-            });
+            thuc_thi_cap_nhat({ maDon: ma, tenSP: sp, newStatus: stt, note: result.value, kt: "", cl: "", gc: "", linkAnh: "", linkFile: "" });
           }
         });
       }
     }
 
-    /** 3. THỰC THI LƯU VÀO SUPABASE */
     async function thuc_thi_cap_nhat(p) {
       Swal.fire({ title: 'Đang điều phối...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const cleanNow = window.formatDateTimeVN();
-
       try {
         const searchBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.tenSP)}&select=id`, { headers: h });
         const rowBH = await searchBH.json();
-
         if (rowBH.length > 0) {
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${rowBH[0].id}`, {
             method: 'PATCH', headers: h,
-            body: JSON.stringify({
-              Trang_Thai: p.newStatus, Kich_Thuoc: p.kt, Chat_Lieu: p.cl, Gia_Cong: p.gc, Link_Anh: p.linkAnh, Link_File: p.linkFile, Ghi_Chu_San_Xuat: p.note
-            })
+            body: JSON.stringify({ Trang_Thai: p.newStatus, Kich_Thuoc: p.kt, Chat_Lieu: p.cl, Gia_Cong: p.gc, Link_Anh: p.linkAnh, Link_File: p.linkFile, Ghi_Chu_San_Xuat: p.note })
           });
         }
-
         const searchLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.tenSP)}&select=id`, { headers: h });
         const rowLog = await searchLog.json();
-
         if (rowLog.length > 0) {
           let updateData = { Trang_Thai: p.newStatus, Gio_Xu_Ly: cleanNow, Nguoi_Thuc_Hien: "Điều phối" };
           if (p.newStatus === "Chờ thiết kế") updateData.Gio_Thiet_Ke = cleanNow;
           else if (p.newStatus === "Chờ in") updateData.Gio_In = cleanNow;
           else if (p.newStatus === "Chờ gia công") updateData.Gio_Gia_Cong = cleanNow;
           else if (p.newStatus === "Chờ thanh toán") updateData.Gio_Giao_Hang = cleanNow;
-
-          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
-            method: 'PATCH', headers: h, body: JSON.stringify(updateData)
-          });
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, { method: 'PATCH', headers: h, body: JSON.stringify(updateData) });
         }
-
         Swal.fire({ icon: 'success', title: 'Thành công!', timer: 800, showConfirmButton: false });
         loadF2Data();
-      } catch (e) {
-        Swal.fire('Lỗi hệ thống', e.message, 'error');
-      }
+      } catch (e) { Swal.fire('Lỗi hệ thống', e.message, 'error'); }
     }
   </script>
 </body>
