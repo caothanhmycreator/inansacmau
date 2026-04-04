@@ -44,31 +44,31 @@
     @media (max-width: 768px) { .main-content { margin-left: 0; } }
   
     /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
-
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
-
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
-    
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
+    #sidebar-frame { 
+        width: 250px; height: 100vh; position: fixed; 
+        left: 0; top: 0; z-index: 9999; border: none; 
     }
-}
 
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    .main-content { 
+        margin-left: 250px; /* Giữ lề cố định */
+        transition: 0.3s; 
+        padding: 20px; 
+    }
+
+    /* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        
+        .mobile-nav-btn {
+            display: block; position: fixed; top: 10px; left: 10px; 
+            z-index: 1000; background: #2D5A27; color: white; 
+            padding: 8px 12px; border: none; border-radius: 4px;
+        }
+    }
+
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
@@ -220,58 +220,82 @@
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
-    /** 4. THIẾT KẾ PHIẾU IN */
+    /** 4. THIẾT KẾ PHIẾU IN (CẬP NHẬT THẨM MỸ & XỬ LÝ ĐỊA CHỈ) */
     function getPrintHTML(it, rows, footer) {
+      // Xử lý không hiển thị nếu địa chỉ là "Tại cửa hàng"
+      const diachiIn = (it.diachi && it.diachi !== "Tại cửa hàng") 
+        ? `<div style="font-size:30px; font-weight:bold; margin-bottom:10px; border-bottom: 2px dashed #2980b9; padding-bottom:5px;">Đ/C: ${it.diachi}</div>` 
+        : '';
+
       return `
-        <div style="padding:20px; font-family:Arial, sans-serif; color:#000;">
+        <div style="padding:20px; font-family:Arial, sans-serif; color:#000; border: 1px solid #ccc;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #2980b9; padding-bottom: 10px;">
             <div style="flex: 1;">
-              <h1 style="color: #2980b9; margin: 0; font-size: 24px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1>
-              <p style="margin: 3px 0; font-size: 13px;">📍 27 Nguyễn Văn Cừ, P. Cao Lãnh, Đồng Tháp</p>
-              <p style="margin: 3px 0; font-size: 13px;">📞 0399.221.753 - 0337.663.113</p>
+              <h1 style="color: #2980b9; margin: 0; font-size: 26px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1>
+              <p style="margin: 5px 0; font-size: 14px;">📍 27 Nguyễn Văn Cừ, P. Cao Lãnh, Đồng Tháp</p>
+              <p style="margin: 5px 0; font-size: 14px; font-weight: bold;">📞 0399.221.753 - 0337.663.113</p>
             </div>
-            <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 100px; height: auto;">
+            <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 110px; height: auto;">
           </div>
 
-          <div style="text-align: center; margin: 15px 0;">
-            <h2 style="color: #2980b9; margin: 0; letter-spacing: 2px; text-transform: uppercase; font-size: 26px;">PHIẾU GIAO HÀNG</h2>
-            <p style="margin: 5px 0; font-weight: bold; font-size: 16px;">Mã đơn: <span>${it.maDon}</span></p>
+          <div style="text-align: center; margin: 25px 0;">
+            <h2 style="color: #2980b9; margin: 0; letter-spacing: 2px; text-transform: uppercase; font-size: 32px; font-weight: 900;">PHIẾU GIAO HÀNG</h2>
+            <p style="margin: 10px 0; font-weight: bold; font-size: 18px;">Mã vận đơn: <span style="background:#eee; padding: 2px 10px; border-radius: 4px;">${it.maDon}</span></p>
           </div>
 
-          <div style="margin-top:20px;">
-            <div style="font-size:42px; font-weight:bold; margin-bottom:12px; text-transform:uppercase; color:#2980b9;">KHÁCH: ${it.khachHang}</div>
-            <div style="font-size:32px; font-weight:bold; margin-bottom:10px; background:#f1f5f9; padding:12px; border-radius:8px; border: 2px solid #2980b9; -webkit-print-color-adjust: exact;">Đ/C: ${it.diachi}</div>
-            <div style="font-size:35px; font-weight:bold; margin-bottom:10px;">SĐT: ${it.sdt || '--- --- ---'}</div>
+          <div style="margin-top:20px; border: 3px solid #2980b9; padding: 15px; border-radius: 12px;">
+            <div style="font-size:48px; font-weight:900; margin-bottom:15px; text-transform:uppercase; color:#000; border-bottom: 4px solid #2980b9; padding-bottom:10px;">
+              KHÁCH: ${it.khachHang}
+            </div>
+            ${diachiIn}
+            <div style="font-size:40px; font-weight:900; color: #d32f2f;">SĐT: ${it.sdt || '--- --- ---'}</div>
           </div>
 
           <table class="print-table">
             <thead>
-              <tr><th>SẢN PHẨM SẢN XUẤT</th><th style="width:100px; text-align:center;">SL</th></tr>
+              <tr>
+                <th style="font-size: 24px; padding: 15px;">DANH MỤC SẢN PHẨM SẢN XUẤT</th>
+                <th style="width:120px; text-align:center; font-size: 24px; padding: 15px;">SL</th>
+              </tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
 
-          <div style="margin-top:30px; display:flex; justify-content:space-between; align-items:flex-end;">
-            <div style="font-size:14px; color:#555;">Ngày in: ${new Date().toLocaleString('vi-VN')}</div>
-            <div style="text-align:right; border:2px solid #2980b9; padding:12px; border-radius:8px; background:#f0f9ff; -webkit-print-color-adjust: exact;">
-              <div style="font-size:11px; color:#2980b9; font-weight:bold;">THÔNG TIN TÀI CHÍNH</div>
+          <div style="margin-top:40px; display:flex; justify-content:space-between; align-items:flex-end;">
+            <div style="font-size:16px; color:#666; font-style: italic;">Thời gian in: ${new Date().toLocaleString('vi-VN')}</div>
+            <div style="text-align:right; border:3px solid #2980b9; padding:15px; border-radius:12px; background:#f0f7ff; min-width: 320px; -webkit-print-color-adjust: exact;">
+              <div style="font-size:14px; color:#2980b9; font-weight:bold; text-decoration: underline; margin-bottom: 8px;">XÁC NHẬN TÀI CHÍNH</div>
               ${footer}
             </div>
+          </div>
+          
+          <div style="margin-top: 50px; text-align: center; border-top: 1px dashed #bbb; padding-top: 20px;">
+             <p style="font-size: 14px; font-weight: bold; color: #2980b9;">Cảm ơn Quý khách đã tin tưởng Sắc Màu Đồng Tháp!</p>
           </div>
         </div>`;
     }
 
     function showPreviewFull(it) {
-      const rows = it.cacMon.filter(m => m.Trang_Thai === "Chờ giao hàng").map(m => `<tr><td>${m.Ten_Hang}</td><td style="text-align:center;">${m.So_Luong}</td></tr>`).join('');
-      const footer = `<div style="font-size:12px;">Tổng: ${it.tongDon.toLocaleString()} | Đã trả: ${it.tongDaTra.toLocaleString()}</div><div style="font-size:16px; font-weight:bold; color:red;">CÒN NỢ: ${(it.tongDon - it.tongDaTra).toLocaleString()}đ</div>`;
+      const rows = it.cacMon.filter(m => m.Trang_Thai === "Chờ giao hàng").map(m => `
+        <tr>
+          <td style="font-size: 28px; line-height: 1.2;">• ${m.Ten_Hang}</td>
+          <td style="text-align:center; font-size: 28px;">${m.So_Luong}</td>
+        </tr>`).join('');
+        
+      const footer = `
+        <div style="font-size:16px; margin-bottom: 5px;">Tổng đơn: ${it.tongDon.toLocaleString()} đ</div>
+        <div style="font-size:16px; margin-bottom: 5px;">Khách đã trả: ${it.tongDaTra.toLocaleString()} đ</div>
+        <div style="font-size:24px; font-weight:bold; color:#d32f2f; margin-top: 10px; border-top: 1px solid #2980b9; padding-top: 5px;">
+           CÒN NỢ: ${(it.tongDon - it.tongDaTra).toLocaleString()} đ
+        </div>`;
       renderAndPrint(getPrintHTML(it, rows, footer));
     }
 
     function renderAndPrint(html) {
       Swal.fire({
         title: 'XEM PHIẾU VẬN CHUYỂN',
-        html: `<div id="p-area" style="border:1px solid #2980b9; background:#fff; text-align:left;">${html}</div>`,
-        showCancelButton: true, confirmButtonText: '🖨️ IN PHIẾU', cancelButtonText: 'ĐÓNG', confirmButtonColor: '#2980b9', width: '850px'
+        html: `<div id="p-area" style="border:1px solid #2980b9; background:#fff; text-align:left; overflow: auto; max-height: 70vh;">${html}</div>`,
+        showCancelButton: true, confirmButtonText: '🖨️ IN PHIẾU', cancelButtonText: 'ĐÓNG', confirmButtonColor: '#2980b9', width: '900px'
       }).then(r => {
         if (r.isConfirmed) {
           document.getElementById('vung-in-f8').innerHTML = html;
