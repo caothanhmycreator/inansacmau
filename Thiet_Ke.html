@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
+  <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
 
   <style>
     :root { --primary-f3: #2980b9; --accent-f3: #8e44ad; --danger: #e74c3c; --success: #27ae60; --bg-gray: #f8fafc; }
@@ -34,7 +35,6 @@
     .input-modern { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; }
     .input-link-modern { background: #ffffff !important; font-family: monospace; font-size: 11px; color: #2980b9; }
 
-    /* Nút upload Google Drive */
     .btn-drive-up { background: #1e73be; color: white; border: none; padding: 0 15px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
     .btn-drive-up:hover { background: #155a94; }
 
@@ -42,40 +42,22 @@
 
     @media (max-width: 768px) { .main-content { margin-left: 0; } }
   
-    /* PC: Chừa lề 250px cố định */
-    #sidebar-frame { 
-        width: 250px; height: 100vh; position: fixed; 
-        left: 0; top: 0; z-index: 9999; border: none; 
-    }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
+    .main-content { margin-left: 250px; transition: 0.3s; padding: 20px; }
 
-    .main-content { 
-        margin-left: 250px; /* Giữ lề cố định */
-        transition: 0.3s; 
-        padding: 20px; 
-    }
-
-    /* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
         .main-content { margin-left: 0 !important; }
         body.sidebar-open #sidebar-frame { left: 0; }
-        
-        .mobile-nav-btn {
-            display: block; position: fixed; top: 10px; left: 10px; 
-            z-index: 1000; background: #2D5A27; color: white; 
-            padding: 8px 12px; border: none; border-radius: 4px;
-        }
+        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: #2D5A27; color: white; padding: 8px 12px; border: none; border-radius: 4px; }
     }
-
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
  <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
-
-<iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
-
+ <iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
 
   <div class="main-content">
     <div class="f3-container">
@@ -84,7 +66,10 @@
           <h2 style="margin:0; font-size: 22px;">🎨 BỘ PHẬN THIẾT KẾ</h2>
           <small style="opacity:0.9">Xử lý yêu cầu & Xuất file sản xuất</small>
         </div>
-        <button onclick="loadF3Data()" style="padding:10px 20px; cursor:pointer; font-weight:bold; border-radius:8px; border:none; background:white; color:#2980b9;">🔄 LÀM MỚI</button>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="getToken()" style="padding:10px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid white; background:transparent; color:white;">🔐 KẾT NỐI DRIVE</button>
+            <button onclick="loadF3Data()" style="padding:10px 20px; cursor:pointer; font-weight:bold; border-radius:8px; border:none; background:white; color:#2980b9;">🔄 LÀM MỚI</button>
+        </div>
       </div>
       
       <div style="overflow-x: auto;">
@@ -107,13 +92,93 @@
   </div>
 
   <script>
-   
+    // 1. CẤU HÌNH DRIVE API TRỰC TIẾP
+    const CLIENT_ID = "725979686157-30gtd594p497leobbq29rof4b425boo5.apps.googleusercontent.com";
+    const FOLDER_ID = "1Cn8AyIJvMxkEC4-UQnBdZOS_vhvkrnF_";
+    let accessToken = null;
+    let tokenClient;
+
+    function initTokenClient() {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: 'https://www.googleapis.com/auth/drive.file',
+            callback: (tokenResponse) => {
+                accessToken = tokenResponse.access_token;
+                Swal.fire({ icon: 'success', title: 'Drive đã kết nối!', timer: 1000, showConfirmButton: false });
+            },
+        });
+    }
+
+    function getToken() {
+        tokenClient.requestAccessToken();
+    }
+
+    /** 📤 HÀM UPLOAD DRIVE API V3 (RESUMABLE) */
+    async function uploadToStorage(fileInput, targetId) {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        // Nếu chưa có Token, yêu cầu đăng nhập trước
+        if (!accessToken) {
+            Swal.fire('Chú ý', 'Vui lòng nhấn nút "KẾT NỐI DRIVE" ở góc trên trước khi upload!', 'warning');
+            return;
+        }
+
+        const targetInput = document.getElementById(targetId);
+        const originalValue = targetInput.value;
+
+        try {
+            targetInput.value = "⌛ Đang khởi tạo phiên...";
+            
+            // Bước 1: Khởi tạo phiên Resumable
+            const metadata = { name: file.name, parents: [FOLDER_ID] };
+            const resInit = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(metadata)
+            });
+
+            if (resInit.status === 401) { accessToken = null; getToken(); return; }
+            const uploadUrl = resInit.headers.get('Location');
+
+            // Bước 2: Đẩy dữ liệu file bằng XHR để theo dõi %
+            targetInput.value = "🚀 Đang tải lên: 0%";
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', uploadUrl, true);
+            
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    targetInput.value = `🚀 Đang tải lên: ${percent}%`;
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status === 200 || xhr.status === 201) {
+                    const result = JSON.parse(xhr.responseText);
+                    targetInput.value = `https://drive.google.com/file/d/${result.id}/view`;
+                    Swal.fire({ icon: 'success', title: 'Thành công!', timer: 1500, showConfirmButton: false });
+                } else {
+                    alert("Lỗi upload: " + xhr.status);
+                    targetInput.value = originalValue;
+                }
+            };
+            xhr.send(file);
+
+        } catch (e) {
+            alert("Lỗi: " + e.message);
+            targetInput.value = originalValue;
+        }
+    }
+
     // Tự động tải dữ liệu khi vào trang
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => { loadF3Data(); }, 600);
     });
 
-    /** 🚀 HÀM TỰ CHUYỂN ĐỔI ĐƯỜNG DẪN Ổ ĐĨA */
     function autoFormatEverythingLink(input) {
       let val = input.value.trim().replace(/"/g, ""); 
       if (val.includes(":\\")) {
@@ -121,75 +186,16 @@
       }
     }
 
-    /** 📤 HÀM UPLOAD GOOGLE DRIVE (CHỐT PHƯƠNG ÁN TỰ ĐIỀN LINK) */
-// DÁN LINK APPS SCRIPT MỚI CỦA MỸ VÀO ĐÂY
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxhiN9AbfUIt1cH-eEOmPUKn_CWRWQumyJPJpVOU90Gq9B9cJtvQRNLoECafmLaIi9f/exec";
-
-/** 📤 SIÊU HÀM UPLOAD: KHÔNG GIỚI HẠN - TỰ ĐỘNG LẤY LINK */
-async function uploadToStorage(fileInput, targetId) {
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    const targetInput = document.getElementById(targetId);
-    const originalValue = targetInput.value;
-
-    try {
-        targetInput.value = "⌛ Đang kết nối...";
-        
-        const resGas = await fetch(GAS_URL, {
-            method: 'POST',
-            body: JSON.stringify({ filename: file.name, mimetype: file.type })
-        });
-        const gasData = await resGas.json();
-        if (gasData.error) throw new Error(gasData.error);
-
-        const fileId = gasData.fileId;
-        const uploadUrl = gasData.uploadUrl;
-
-        targetInput.value = "🚀 Đang tải lên: 0%";
-        const xhr = new XMLHttpRequest();
-        xhr.open('PUT', uploadUrl, true);
-        
-        xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-                const percent = Math.round((e.loaded / e.total) * 100);
-                targetInput.value = `🚀 Đang tải lên: ${percent}%`;
-            }
-        };
-
-        xhr.onload = function() {
-            // Khi đạt 100%, tự ráp link luôn, không cần hỏi Google nữa
-            targetInput.value = `https://drive.google.com/file/d/${fileId}/view`;
-            Swal.fire({ icon: 'success', title: 'Hoàn tất!', timer: 1500, showConfirmButton: false });
-        };
-
-        xhr.onerror = () => {
-            // Nếu có lỗi CORS nhưng thực tế file đã lên 100% thành công
-            targetInput.value = `https://drive.google.com/file/d/${fileId}/view`;
-        };
-
-        xhr.send(file);
-
-    } catch (e) {
-        alert("Lỗi: " + e.message);
-        targetInput.value = originalValue;
-    }
-}
-
-    /** 1. TẢI DANH SÁCH CHỜ THIẾT KẾ */
     async function loadF3Data() {
       const tbody = document.getElementById('f3-table-body');
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-      
       try {
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=eq.Chờ thiết kế&select=*&order=id.desc`, { headers: h });
         const data = await res.json();
-
         if (!data || data.length === 0) {
           tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; color:#64748b;">✨ Tuyệt vời! Bạn đã hoàn thành tất cả thiết kế.</td></tr>';
           return;
         }
-
         tbody.innerHTML = data.map(item => `
           <tr class="f3-row">
             <td><b style="font-size:15px;">${item.Ma_Don}</b><br><small style="color:#94a3b8;">${item.Ngay_Gio.split(' ')[0]}</small></td>
@@ -206,10 +212,8 @@ async function uploadToStorage(fileInput, targetId) {
       } catch (e) { console.error(e); }
     }
 
-    /** 2. FORM XUẤT FILE (CÓ NÚT UPLOAD GOOGLE DRIVE) */
     function openDesignForm(itemJson) {
       const item = JSON.parse(decodeURIComponent(itemJson));
-      
       Swal.fire({
         title: `<span style="color:#2c3e50; font-size:20px;">HỒ SƠ XUẤT FILE: ${item.Ma_Don}</span>`,
         width: '750px',
@@ -228,7 +232,7 @@ async function uploadToStorage(fileInput, targetId) {
               <div style="margin-bottom:12px;">
                 <label style="font-size:11px; font-weight:bold;">🔗 LINK ẢNH (VIEW):</label>
                 <div style="display:flex; gap:5px;">
-                  <input id="sw-linkanh" class="input-modern input-link-modern" value="${item.Link_Anh || ''}" placeholder="Dán link hoặc bấm nút upload" oninput="autoFormatEverythingLink(this)">
+                  <input id="sw-linkanh" class="input-modern input-link-modern" value="${item.Link_Anh || ''}" placeholder="Bấm nút upload bên cạnh" oninput="autoFormatEverythingLink(this)">
                   <button type="button" class="btn-drive-up" onclick="document.getElementById('up-anh-hidden').click()">📤</button>
                   <input type="file" id="up-anh-hidden" style="display:none" onchange="uploadToStorage(this, 'sw-linkanh')">
                 </div>
@@ -236,7 +240,7 @@ async function uploadToStorage(fileInput, targetId) {
               <div>
                 <label style="font-size:11px; font-weight:bold;">📂 LINK FILE IN (CDR/AI/PDF):</label>
                 <div style="display:flex; gap:5px;">
-                  <input id="sw-linkfile" class="input-modern input-link-modern" value="${item.Link_File || ''}" placeholder="Dán link hoặc bấm nút upload" oninput="autoFormatEverythingLink(this)">
+                  <input id="sw-linkfile" class="input-modern input-link-modern" value="${item.Link_File || ''}" placeholder="Bấm nút upload bên cạnh" oninput="autoFormatEverythingLink(this)">
                   <button type="button" class="btn-drive-up" onclick="document.getElementById('up-file-hidden').click()">📤</button>
                   <input type="file" id="up-file-hidden" style="display:none" onchange="uploadToStorage(this, 'sw-linkfile')">
                 </div>
@@ -262,46 +266,31 @@ async function uploadToStorage(fileInput, targetId) {
           if(!p.kt || !p.cl || !p.linkAnh || !p.linkFile) { Swal.showValidationMessage('Vui lòng hoàn thiện hồ sơ thiết kế!'); return false; }
           return p;
         }
-      }).then((r) => {
-        if (r.isConfirmed) submitDesignProduction(r.value);
-      });
+      }).then((r) => { if (r.isConfirmed) submitDesignProduction(r.value); });
     }
 
-    /** 3. THỰC THI GỬI DUYỆT FILE */
     async function submitDesignProduction(p) {
       Swal.fire({title:'Đang đồng bộ...', allowOutsideClick: false, didOpen:()=>Swal.showLoading()});
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const status = "Chờ duyệt file";
       const cleanNow = window.formatDateTimeVN();
-
       try {
         const resBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.sanPham)}&select=id`, { headers: h });
         const rowBH = await resBH.json();
-
         if (rowBH.length > 0) {
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${rowBH[0].id}`, {
             method: 'PATCH', headers: h,
-            body: JSON.stringify({
-              Trang_Thai: status, Kich_Thuoc: p.kt, Chat_Lieu: p.cl, Gia_Cong: p.gc, Link_Anh: p.linkAnh, Link_File: p.linkFile, Ghi_Chu_San_Xuat: p.note
-            })
+            body: JSON.stringify({ Trang_Thai: status, Kich_Thuoc: p.kt, Chat_Lieu: p.cl, Gia_Cong: p.gc, Link_Anh: p.linkAnh, Link_File: p.linkFile, Ghi_Chu_San_Xuat: p.note })
           });
         }
-
         const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.sanPham)}&select=id`, { headers: h });
         const rowLog = await resLog.json();
-
         if (rowLog.length > 0) {
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
             method: 'PATCH', headers: h,
-            body: JSON.stringify({
-              Trang_Thai: status, 
-              Gio_Xu_Ly: cleanNow,
-              Nguoi_Thuc_Hien: "Thiết kế",
-              Gio_Duyet_File: cleanNow 
-            })
+            body: JSON.stringify({ Trang_Thai: status, Gio_Xu_Ly: cleanNow, Nguoi_Thuc_Hien: "Thiết kế", Gio_Duyet_File: cleanNow })
           });
         }
-
         Swal.fire({icon:'success', title:'Thành công!', timer:1500, showConfirmButton:false});
         loadF3Data();
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
