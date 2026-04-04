@@ -93,7 +93,7 @@
 
   <script>
     // 1. CẤU HÌNH DRIVE API TRỰC TIẾP
-    const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
+    const CLIENT_ID = "725979686157-30gtd594p497leobbq29rof4b425boo5.apps.googleusercontent.com";
     const FOLDER_ID = "1Cn8AyIJvMxkEC4-UQnBdZOS_vhvkrnF_";
     let accessToken = null;
     let tokenClient;
@@ -113,12 +113,11 @@
         tokenClient.requestAccessToken();
     }
 
-    /** 📤 HÀM UPLOAD DRIVE API V3 (RESUMABLE) */
+    /** 📤 HÀM UPLOAD DRIVE API V3 (RESUMABLE) - ĐÃ CẬP NHẬT ĐIỀN LINK TỰ ĐỘNG */
     async function uploadToStorage(fileInput, targetId) {
         const file = fileInput.files[0];
         if (!file) return;
 
-        // Nếu chưa có Token, yêu cầu đăng nhập trước
         if (!accessToken) {
             Swal.fire('Chú ý', 'Vui lòng nhấn nút "KẾT NỐI DRIVE" ở góc trên trước khi upload!', 'warning');
             return;
@@ -130,7 +129,6 @@
         try {
             targetInput.value = "⌛ Đang khởi tạo phiên...";
             
-            // Bước 1: Khởi tạo phiên Resumable
             const metadata = { name: file.name, parents: [FOLDER_ID] };
             const resInit = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true', {
                 method: 'POST',
@@ -144,7 +142,6 @@
             if (resInit.status === 401) { accessToken = null; getToken(); return; }
             const uploadUrl = resInit.headers.get('Location');
 
-            // Bước 2: Đẩy dữ liệu file bằng XHR để theo dõi %
             targetInput.value = "🚀 Đang tải lên: 0%";
             const xhr = new XMLHttpRequest();
             xhr.open('PUT', uploadUrl, true);
@@ -159,8 +156,11 @@
             xhr.onload = function() {
                 if (xhr.status === 200 || xhr.status === 201) {
                     const result = JSON.parse(xhr.responseText);
-                    targetInput.value = `https://drive.google.com/file/d/${result.id}/view`;
-                    Swal.fire({ icon: 'success', title: 'Thành công!', timer: 1500, showConfirmButton: false });
+                    // ĐIỀN LINK VÀO Ô NHẬP LIỆU
+                    const fileLink = `https://drive.google.com/file/d/${result.id}/view`;
+                    targetInput.value = fileLink; 
+                    
+                    Swal.fire({ icon: 'success', title: 'Thành công!', text: 'Link đã được tự động điền.', timer: 1500, showConfirmButton: false });
                 } else {
                     alert("Lỗi upload: " + xhr.status);
                     targetInput.value = originalValue;
@@ -174,7 +174,6 @@
         }
     }
 
-    // Tự động tải dữ liệu khi vào trang
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => { loadF3Data(); }, 600);
     });
