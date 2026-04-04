@@ -41,40 +41,23 @@
     .swal2-container { z-index: 20000 !important; }
 
     @media (max-width: 768px) { .main-content { margin-left: 0; } }
- 
-    /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
+  
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
+    .main-content { margin-left: 250px; transition: 0.3s; padding: 20px; }
 
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
-
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
-    
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: #2D5A27; color: white; padding: 8px 12px; border: none; border-radius: 4px; }
     }
-}
-
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
  <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
-
-<iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
+ <iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
 
   <div class="main-content">
     <div class="f4-container">
@@ -119,12 +102,24 @@
         }
 
         tbody.innerHTML = data.map(item => {
-          // Sử dụng thẻ <img> để hiển thị trực tiếp từ Everything Server (Link nội bộ)
-          const imgHtml = item.Link_Anh ? `
-              <img src="${item.Link_Anh}" class="img-preview" 
-                   onclick="window.open('${item.Link_Anh}', '_blank')" 
-                   onerror="this.src='https://placehold.co/130x160?text=Lỗi+Ảnh';">
-            ` : `<div style="font-size:10px; color:#94a3b8; text-align:center">Chưa có ảnh</div>`;
+          // --- XỬ LÝ HIỂN THỊ FILE TỪ LINK DRIVE ---
+          const link = item.Link_Anh || "";
+          let imgHtml = "";
+
+          if (!link) {
+            imgHtml = `<div style="font-size:10px; color:#94a3b8; text-align:center">Chưa có ảnh</div>`;
+          } else if (link.toLowerCase().includes('pdf')) {
+            // Trường hợp file PDF
+            imgHtml = `<div onclick="window.open('${link}', '_blank')" style="cursor:pointer; color:#27ae60; font-weight:bold; font-size:11px; text-align:center; padding: 10px;">📄 Click để xem PDF</div>`;
+          } else {
+            // Trường hợp Ảnh (JPG/PNG...) - Chuyển ID Drive sang link xem trực tiếp
+            const driveIdMatch = link.match(/[-\w]{25,}/);
+            const previewUrl = driveIdMatch ? `https://lh3.googleusercontent.com/d/${driveIdMatch[0]}` : link;
+            
+            imgHtml = `<img src="${previewUrl}" class="img-preview" 
+                        onclick="window.open('${link}', '_blank')" 
+                        onerror="this.parentElement.innerHTML='🖼️ Click xem ảnh';">`;
+          }
 
           return `<tr class="f4-row">
             <td><small>#${item.Ngay_Gio.split(' ')[0]}</small><br><b style="font-size:15px;">${item.Ma_Don}</b></td>
@@ -186,38 +181,26 @@
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const cleanNow = window.formatDateTimeVN();
       
-      // Chuẩn bị nội dung ghi chú (Tiền tố theo yêu cầu cũ của Mỹ)
       const fullNote = stt === 'Chờ thiết kế' ? "LÝ DO SỬA: " + feedback : "DẶN DÒ: " + feedback;
 
       try {
-        // --- Cập nhật Nhật ký bán hàng ---
         const resBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${ma}&Ten_Hang=eq.${encodeURIComponent(sp)}&select=id`, { headers: h });
         const rowBH = await resBH.json();
 
         if (rowBH.length > 0) {
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${rowBH[0].id}`, {
             method: 'PATCH', headers: h,
-            body: JSON.stringify({
-              Trang_Thai: stt,
-              Ghi_Chu_San_Xuat: fullNote
-            })
+            body: JSON.stringify({ Trang_Thai: stt, Ghi_Chu_San_Xuat: fullNote })
           });
 
-          // --- Cập nhật Log Tiến độ (Ghi vào đúng các cột thời gian) ---
           const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${ma}&Ten_Hang=eq.${encodeURIComponent(sp)}&select=id`, { headers: h });
           const rowLog = await resLog.json();
 
           if (rowLog.length > 0) {
-            let logData = { 
-              Trang_Thai: stt, 
-              Gio_Xu_Ly: cleanNow,
-              Nguoi_Thuc_Hien: "Kiểm duyệt" 
-            };
-
-            // Phân phối cột mốc (Khớp với logic GAS cũ của Mỹ)
-            if (stt === "Chờ thiết kế") logData.Gio_Thiet_Ke = cleanNow;   // Cột F
-            else if (stt === "Chờ in") logData.Gio_In = cleanNow;          // Cột H
-            else if (stt === "Chờ gia công") logData.Gio_Gia_Cong = cleanNow; // Cột I
+            let logData = { Trang_Thai: stt, Gio_Xu_Ly: cleanNow, Nguoi_Thuc_Hien: "Kiểm duyệt" };
+            if (stt === "Chờ thiết kế") logData.Gio_Thiet_Ke = cleanNow;
+            else if (stt === "Chờ in") logData.Gio_In = cleanNow;
+            else if (stt === "Chờ gia công") logData.Gio_Gia_Cong = cleanNow;
 
             await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
               method: 'PATCH', headers: h, body: JSON.stringify(logData)
@@ -227,9 +210,7 @@
 
         Swal.fire({ icon: 'success', title: 'Đã hoàn tất!', timer: 1000, showConfirmButton: false });
         loadF4Data();
-      } catch (e) {
-        Swal.fire('Lỗi', e.message, 'error');
-      }
+      } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
   </script>
 </body>
