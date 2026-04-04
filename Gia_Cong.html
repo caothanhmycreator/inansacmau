@@ -180,7 +180,7 @@
       Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const cleanNow = window.formatDateTimeVN();
-      const sttMoi = "Chờ giao hàng";
+      const sttMoi = "Chờ thanh toán";
 
       try {
         const gcLog = {

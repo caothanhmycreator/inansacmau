@@ -204,7 +204,7 @@
       Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const cleanNow = window.formatDateTimeVN();
-      const statusMoi = "Chờ giao hàng";
+      const statusMoi = "Chờ thanh toán";
 
       try {
         // --- BƯỚC 1: LƯU NHẬT KÝ NGUYÊN LIỆU (KHỚP 10 CỘT THEO ẢNH) ---

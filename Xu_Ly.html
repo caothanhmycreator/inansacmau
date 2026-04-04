@@ -112,15 +112,6 @@
       setTimeout(() => { loadF2Data(); }, 600);
     });
 
-    /** 🚀 HÀM HỖ TRỢ XỬ LÝ ĐƯỜNG DẪN FILE (EVERYTHING) */
-    function autoFormatEverythingLink(input) {
-      let val = input.value.trim().replace(/"/g, ""); // Xóa ngoặc kép
-      if (val.includes(":\\")) {
-        // Biến D:\abc thành http://192.168.1.6/D%3A/abc
-        input.value = "http://192.168.1.6/" + val.replace(":", "%3A").replace(/\\/g, "/");
-      }
-    }
-
     /** 1. TẢI DANH SÁCH ĐƠN CHỜ XỬ LÝ */
     async function loadF2Data() {
       const tbody = document.getElementById('f2-table-body');
@@ -149,7 +140,7 @@
                 <button class="btn-stt btn-tk" onclick="updateStatus('${item.Ma_Don}', '${item.Ten_Hang}', 'Chờ thiết kế')">🎨 THIẾT KẾ</button>
                 <button class="btn-stt btn-in" onclick="updateStatus('${item.Ma_Don}', '${item.Ten_Hang}', 'Chờ in')">🖨️ IN ẤN</button>
                 <button class="btn-stt btn-gc" onclick="updateStatus('${item.Ma_Don}', '${item.Ten_Hang}', 'Chờ gia công')">🛠️ GIA CÔNG</button>
-                <button class="btn-stt btn-ready" onclick="updateStatus('${item.Ma_Don}', '${item.Ten_Hang}', 'Chờ giao hàng')">📦 CÓ SẴN</button>
+                <button class="btn-stt btn-ready" onclick="updateStatus('${item.Ma_Don}', '${item.Ten_Hang}', 'Chờ thanh toán')">📦 CÓ SẴN</button>
               </div>
             </td>
           </tr>`).join('');
@@ -172,16 +163,10 @@
             <div class="f2-form-group"><label>KÍCH THƯỚC:</label><input type="text" id="f2_kt" class="f2-input" placeholder="Vd: 60x160cm"></div>
             <div class="f2-form-group"><label>CHẤT LIỆU:</label><input type="text" id="f2_cl" class="f2-input" placeholder="Vd: Bạt Hiflex 3.2"></div>
             <div class="f2-form-group"><label>GIA CÔNG:</label><input type="text" id="f2_gc" class="f2-input" placeholder="Vd: Đóng khoen, dán biên"></div>
-            <div class="f2-form-group"><label>🔗 LINK HỒ SƠ ẢNH (Dán đường dẫn ổ đĩa):</label><input type="text" id="f2_link_anh" class="f2-input" placeholder="D:\App_SacMau\file\view\..."></div>
-            <div class="f2-form-group"><label>🔗 LINK FILE IN (Dán đường dẫn ổ đĩa):</label><input type="text" id="f2_link_file" class="f2-input" placeholder="D:\App_SacMau\file\cdr\..."></div>
+            <div class="f2-form-group"><label>🔗 LINK HỒ SƠ ẢNH (Dán đường dẫn ổ đĩa):</label><input type="text" id="f2_link_anh" class="f2-input" placeholder="Copy link Drive hoặc tại ổ đĩa"></div>
+            <div class="f2-form-group"><label>🔗 LINK FILE IN (Dán đường dẫn ổ đĩa):</label><input type="text" id="f2_link_file" class="f2-input" placeholder="Copy link Drive hoặc tại ổ đĩa"></div>
             <div class="f2-form-group"><label>📝 GHI CHÚ SẢN XUẤT:</label><textarea id="f2_note" class="f2-input" style="height:60px" placeholder="Dặn dò kỹ thuật viên..."></textarea></div>`,
           showCancelButton: true, confirmButtonColor: '#2D5A27', confirmButtonText: 'XÁC NHẬN CHUYỂN', cancelButtonText: 'HỦY',
-          didOpen: () => {
-            // Lắng nghe sự kiện dán/nhập để tự chuyển đổi đường dẫn ổ đĩa sang Link Everything
-            ['f2_link_anh', 'f2_link_file'].forEach(id => {
-              document.getElementById(id).addEventListener('input', (e) => autoFormatEverythingLink(e.target));
-            });
-          },
           preConfirm: () => {
             return {
               maDon: ma, tenSP: sp, newStatus: stt,
@@ -241,7 +226,7 @@
           if (p.newStatus === "Chờ thiết kế") updateData.Gio_Thiet_Ke = cleanNow;
           else if (p.newStatus === "Chờ in") updateData.Gio_In = cleanNow;
           else if (p.newStatus === "Chờ gia công") updateData.Gio_Gia_Cong = cleanNow;
-          else if (p.newStatus === "Chờ giao hàng") updateData.Gio_Giao_Hang = cleanNow;
+          else if (p.newStatus === "Chờ thanh toán") updateData.Gio_Giao_Hang = cleanNow;
 
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
             method: 'PATCH', headers: h, body: JSON.stringify(updateData)
