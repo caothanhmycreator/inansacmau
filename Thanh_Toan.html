@@ -36,10 +36,11 @@
       body * { visibility: hidden; }
       #vung-in-f7, #vung-in-f7 * { visibility: visible; }
       #vung-in-f7 { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+      @page { size: auto; margin: 10mm; }
     }
-    .print-table-f7 { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-    .print-table-f7 th { background: #2D5A27 !important; color: white !important; padding: 10px; text-align: left; -webkit-print-color-adjust: exact; }
-    .print-table-f7 td { padding: 8px; border: 1px solid #ccc; font-size: 13px; }
+    .print-table-f7 { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .print-table-f7 th { background: #2D5A27 !important; color: white !important; padding: 12px; text-align: left; -webkit-print-color-adjust: exact; border: 2px solid #2D5A27; font-size: 18px; }
+    .print-table-f7 td { padding: 12px; border: 2px solid #2D5A27; font-size: 20px; font-weight: bold; color: #000; }
     .swal2-container { z-index: 20000 !important; }
 
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
@@ -251,31 +252,84 @@
     } catch (e) { console.error(e); Swal.fire('Lỗi', 'Lưu thất bại!', 'error'); }
   }
 
+  /** 🚀 HÀM RENDER PHIẾU THANH TOÁN THEO PHONG CÁCH "GIAO HÀNG" ĐẸP */
   function renderBill(idx, payMore, isDirect = false) {
     const it = window.listF7[idx]; 
     const debtRemain = it.tongDon - it.tongDaTra - payMore;
     const isFull = debtRemain <= 500;
-    const rows = it.cacMon.map(m => `<tr><td><b>${m.tenMon}</b></td><td style="text-align:center;">${m.sl}</td><td style="text-align:right; font-weight:bold;">${(m.thanhTien || 0).toLocaleString()}</td></tr>`).join('');
+    
+    const rows = it.cacMon.map(m => `
+      <tr>
+        <td style="font-size: 24px; line-height: 1.2;">• ${m.tenMon}</td>
+        <td style="text-align:center; font-size: 24px;">${m.sl}</td>
+        <td style="text-align:right; font-size: 24px;">${(m.thanhTien || 0).toLocaleString()}</td>
+      </tr>`).join('');
+
     const bill = `
-      <div style="background:#fff; padding:10px; font-family:Arial, sans-serif;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #2D5A27; padding-bottom: 10px;">
-          <div><h1 style="color: #2D5A27; margin: 0; font-size: 22px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1><p style="margin: 3px 0; font-size: 13px;">📍 27 Nguyễn Văn Cừ, P. Cao Lãnh, Đồng Tháp</p></div>
-          <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 100px;">
+      <div style="padding:20px; font-family:Arial, sans-serif; color:#000; border: 1px solid #ccc; max-width: 850px; margin: auto; background: #fff;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #2D5A27; padding-bottom: 10px;">
+          <div style="flex: 1;">
+            <h1 style="color: #2D5A27; margin: 0; font-size: 26px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1>
+            <p style="margin: 5px 0; font-size: 14px;">📍 27 Nguyễn Văn Cừ, P. Cao Lãnh, Đồng Tháp</p>
+            <p style="margin: 5px 0; font-size: 14px; font-weight: bold;">📞 0399.221.753 - 0337.663.113</p>
+          </div>
+          <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 110px; height: auto;">
         </div>
-        <div style="text-align: center; margin: 20px 0;"><h2 style="color: #2D5A27; margin: 0; text-transform: uppercase;">HÓA ĐƠN THANH TOÁN</h2><p style="font-weight: bold;">Mã đơn: ${it.maDon}</p></div>
-        <div style="background: #f4f9f4; padding: 15px; border-radius: 8px; border: 1px solid #dcfce7; font-size: 14px; margin-bottom:15px;"><p>👤 <b>Khách hàng:</b> ${it.khachHang}</p><p>📱 <b>SĐT:</b> ${it.sdt || '---'}</p></div>
-        <table class="print-table-f7"><thead><tr><th>Sản phẩm</th><th style="width:60px;">SL</th><th style="width:120px; text-align:right;">Tiền</th></tr></thead><tbody>${rows}</tbody></table>
-        <div style="margin-left: auto; width: 340px; background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; position: relative;">
-          ${isFull ? '<div style="position:absolute; left:-140px; top:10px; color:#2D5A27; border:4px double #2D5A27; padding:5px 10px; font-weight:bold; transform:rotate(-15deg); background:rgba(255,255,255,0.8);">ĐÃ HOÀN TẤT</div>' : ''}
-          <div style="display:flex; justify-content:space-between;"><span>Tổng đơn:</span><b>${it.tongDon.toLocaleString()} đ</b></div>
-          <div style="display:flex; justify-content:space-between;"><span>Cọc cũ:</span><b>-${it.tongDaTra.toLocaleString()} đ</b></div>
-          <div style="display:flex; justify-content:space-between; color:#d35400;"><span>Thu thêm:</span><b>-${payMore.toLocaleString()} đ</b></div>
-          <div style="display:flex; justify-content:space-between; border-top:1px dashed #FF8C00; margin-top:10px; padding-top:10px;"><span><b>CÒN NỢ:</b></span><b style="color:red; font-size:18px;">${(debtRemain < 0 ? 0 : debtRemain).toLocaleString()} đ</b></div>
+
+        <div style="text-align: center; margin: 25px 0;">
+          <h2 style="color: #2D5A27; margin: 0; letter-spacing: 2px; text-transform: uppercase; font-size: 32px; font-weight: 900;">HÓA ĐƠN THANH TOÁN</h2>
+          <p style="margin: 10px 0; font-weight: bold; font-size: 18px;">Mã đơn: <span style="background:#eee; padding: 2px 10px; border-radius: 4px;">${it.maDon}</span></p>
+        </div>
+
+        <div style="margin-top:20px; border: 3px solid #2D5A27; padding: 15px; border-radius: 12px; position: relative;">
+          ${isFull ? `
+            <div style="position:absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-15deg); color:#2D5A27; border:6px double #2D5A27; padding:15px 30px; font-weight:900; background:rgba(255,255,255,0.9); font-size:40px; z-index:10; opacity: 0.8; letter-spacing: 5px;">
+              ĐÃ HOÀN TẤT
+            </div>` : ''}
+
+          <div style="font-size:40px; font-weight:900; margin-bottom:10px; text-transform:uppercase; color:#000; border-bottom: 4px solid #2D5A27; padding-bottom:10px;">
+            KHÁCH: ${it.khachHang}
+          </div>
+          <div style="font-size:35px; font-weight:900; color: #d32f2f;">SĐT: ${it.sdt || '--- --- ---'}</div>
+        </div>
+
+        <table class="print-table-f7">
+          <thead>
+            <tr>
+              <th style="font-size: 22px; padding: 12px;">CHI TIẾT SẢN PHẨM</th>
+              <th style="width:80px; text-align:center; font-size: 22px; padding: 12px;">SL</th>
+              <th style="width:180px; text-align:right; font-size: 22px; padding: 12px;">TỔNG</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+
+        <div style="margin-top:30px; display:flex; justify-content:space-between; align-items:flex-end;">
+          <div style="font-size:14px; color:#666; font-style: italic;">Thời gian: ${new Date().toLocaleString('vi-VN')}</div>
+          <div style="text-align:right; border:3px solid #2D5A27; padding:15px; border-radius:12px; background:#f4f9f4; min-width: 380px; -webkit-print-color-adjust: exact;">
+            <div style="font-size:18px; margin-bottom: 5px;">Tổng đơn: <b>${it.tongDon.toLocaleString()} đ</b></div>
+            <div style="font-size:18px; margin-bottom: 5px;">Đã tạm ứng: <b>-${it.tongDaTra.toLocaleString()} đ</b></div>
+            <div style="font-size:18px; margin-bottom: 5px; color:#d35400;">Thu thêm đợt này: <b>-${payMore.toLocaleString()} đ</b></div>
+            <div style="font-size:28px; font-weight:900; color:#d32f2f; margin-top: 10px; border-top: 2px dashed #2D5A27; padding-top: 8px;">
+               CÒN NỢ: ${(debtRemain < 0 ? 0 : debtRemain).toLocaleString()} đ
+            </div>
+          </div>
         </div>
       </div>`;
+
     document.getElementById('vung-in-f7').innerHTML = bill;
-    if (isDirect) setTimeout(() => window.print(), 500);
-    else Swal.fire({ title: 'XEM PHIẾU', html: `<div style="text-align:left;">${bill}</div>`, showCancelButton: true, confirmButtonText: '🖨️ IN PHIẾU', width: '750px' }).then(r => { if (r.isConfirmed) window.print(); });
+    if (isDirect) {
+      setTimeout(() => window.print(), 500);
+    } else {
+      Swal.fire({ 
+        title: 'XEM TRƯỚC PHIẾU IN', 
+        html: `<div style="text-align:left; background:#eee; padding:10px; overflow:auto; max-height:80vh;">${bill}</div>`, 
+        showCancelButton: true, 
+        confirmButtonText: '🖨️ IN PHIẾU', 
+        confirmButtonColor: '#2D5A27',
+        width: '900px' 
+      }).then(r => { if (r.isConfirmed) window.print(); });
+    }
   }
 </script>
 </body>
