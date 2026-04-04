@@ -40,41 +40,23 @@
 
     .swal2-container { z-index: 20000 !important; }
     @media (max-width: 768px) { .main-content { margin-left: 0; } }
- 
-    /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
+  
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
+    .main-content { margin-left: 250px; transition: 0.3s; padding: 20px; }
 
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
-
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
-    
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: #2D5A27; color: white; padding: 8px 12px; border: none; border-radius: 4px; }
     }
-}
-
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
  <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
-
-<iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
-
+ <iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
 
   <div class="main-content">
     <div class="f5-container">
@@ -119,11 +101,24 @@
         }
 
         tbody.innerHTML = data.map(item => {
-          const imgHtml = item.Link_Anh ? `
-              <img src="${item.Link_Anh}" class="img-preview" 
-                   onclick="window.open('${item.Link_Anh}', '_blank')" 
-                   onerror="this.src='https://placehold.co/130x180?text=Lỗi+Ảnh';">
-            ` : `<div style="font-size:10px; color:#94a3b8; text-align:center">📂 Ổ Z:/</div>`;
+          // --- LOGIC HIỂN THỊ FILE TƯƠNG TỰ DUYET_FILE ---
+          const link = item.Link_Anh || "";
+          let imgHtml = "";
+
+          if (!link) {
+            imgHtml = `<div style="font-size:10px; color:#94a3b8; text-align:center">📂 Ổ Z:/</div>`;
+          } else if (link.toLowerCase().includes('pdf')) {
+            // Hiển thị nút PDF
+            imgHtml = `<div onclick="window.open('${link}', '_blank')" style="cursor:pointer; color:#27ae60; font-weight:bold; font-size:11px; text-align:center; padding: 10px;">📄 Click để xem PDF</div>`;
+          } else {
+            // Xử lý Ảnh Drive
+            const driveIdMatch = link.match(/[-\w]{25,}/);
+            const previewUrl = driveIdMatch ? `https://drive.google.com/thumbnail?id=${driveIdMatch[0]}&sz=w500` : link;
+            
+            imgHtml = `<img src="${previewUrl}" class="img-preview" 
+                        onclick="window.open('${link}', '_blank')" 
+                        onerror="this.parentElement.innerHTML='🖼️ Click xem ảnh';">`;
+          }
 
           return `<tr class="f5-row">
             <td><small>#${item.Ngay_Gio.split(' ')[0]}</small><br><b style="font-size:15px;">${item.Ma_Don}</b></td>
@@ -160,7 +155,7 @@
     function openMaterialForm(itemStr) {
       const item = JSON.parse(decodeURIComponent(itemStr));
       Swal.fire({
-        title: 'XÁC NHẬN HOÀN TẤT & XUẤT KHO',
+        title: 'XÁC NHẬN HOÀT TẤT & XUẤT KHO',
         width: '850px',
         html: `
           <div style="text-align:left; font-size:13px; margin-bottom:15px; padding:10px; background:#f8fafc; border-radius:6px; border-left:4px solid #e67e22;">
@@ -207,41 +202,27 @@
       const statusMoi = "Chờ thanh toán";
 
       try {
-        // --- BƯỚC 1: LƯU NHẬT KÝ NGUYÊN LIỆU (KHỚP 10 CỘT THEO ẢNH) ---
         const materialData = materials.map(m => ({
-          Ngay_Gio: cleanNow,
-          Ma_Don: item.Ma_Don,
-          Khach_Hang: item.Ten_Khach_Hang,
-          Ten_Hang: item.Ten_Hang,
-          Ma_Nguyen_Lieu: m.maNL,
-          Ten_Nguyen_Lieu: m.tenNL,
-          Phan_Loai: m.loaiNL,
-          So_Luong: m.slNL,
-          Ghi_Chu: m.noteNL,
-          id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000) // Tạo id số nguyên
+          Ngay_Gio: cleanNow, Ma_Don: item.Ma_Don, Khach_Hang: item.Ten_Khach_Hang, Ten_Hang: item.Ten_Hang,
+          Ma_Nguyen_Lieu: m.maNL, Ten_Nguyen_Lieu: m.tenNL, Phan_Loai: m.loaiNL, So_Luong: m.slNL, Ghi_Chu: m.noteNL,
+          id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000)
         }));
 
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, { 
           method: 'POST', headers: h, body: JSON.stringify(materialData) 
         });
 
-        // --- BƯỚC 2: CẬP NHẬT TRẠNG THÁI NHẬT KÝ BÁN HÀNG ---
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${item.id}`, {
           method: 'PATCH', headers: h, body: JSON.stringify({ Trang_Thai: statusMoi })
         });
 
-        // --- BƯỚC 3: CẬP NHẬT LOG TIẾN ĐỘ ---
         const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${item.Ma_Don}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}&select=id`, { headers: h });
         const rowLog = await resLog.json();
 
         if (rowLog.length > 0) {
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
             method: 'PATCH', headers: h,
-            body: JSON.stringify({
-              Trang_Thai: statusMoi,
-              Gio_Giao_Hang: cleanNow, // Cột J: Giờ bàn giao sang kho/giao hàng
-              Nguoi_Thuc_Hien: "Máy in"
-            })
+            body: JSON.stringify({ Trang_Thai: statusMoi, Gio_Giao_Hang: cleanNow, Nguoi_Thuc_Hien: "Máy in" })
           });
         }
 
