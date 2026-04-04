@@ -124,7 +124,8 @@
     }
 
     /** 📤 HÀM SIÊU UPLOAD LÊN GOOGLE DRIVE (SHARED DRIVE) */
-    async function uploadToStorage(fileInput, targetId) {
+    /** 🚀 HÀM UPLOAD - ĐÃ SỬA LỖI TRẢ LINK */
+async function uploadToStorage(fileInput, targetId) {
     const file = fileInput.files[0];
     if (!file) return;
 
@@ -134,22 +135,20 @@
     try {
         targetInput.value = "⌛ Đang xin quyền Google...";
         
+        // 1. Gọi Apps Script để lấy URL upload
         const resGas = await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({ filename: file.name, mimetype: file.type })
         });
         const gasData = await resGas.json();
         
-        // NẾU CÓ LỖI, HIỆN THẲNG THÔNG BÁO CỦA GOOGLE LÊN
         if (gasData.error) {
             alert("LỖI TỪ GOOGLE: " + gasData.error);
             targetInput.value = originalValue;
             return;
         }
 
-        if (!gasData.uploadUrl) throw new Error("Không lấy được URL upload");
-
-        targetInput.value = "🚀 Đang tải lên: 0%";
+        // 2. Thực hiện đẩy file qua XMLHttpRequest để theo dõi %
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', gasData.uploadUrl, true);
         
@@ -161,21 +160,40 @@
         };
 
         xhr.onload = function() {
+            // Google trả về 200 hoặc 201 khi hoàn tất
             if (xhr.status === 200 || xhr.status === 201) {
                 const result = JSON.parse(xhr.responseText);
-                const finalLink = `https://drive.google.com/file/d/${result.id}/view`;
-                targetInput.value = finalLink;
-                Swal.fire('Thành công', 'File đã lên Drive!', 'success');
+                
+                // LẤY ID VÀ TẠO LINK DRIVE
+                if (result.id) {
+                    const finalLink = `https://drive.google.com/file/d/${result.id}/view`;
+                    targetInput.value = finalLink; // Ghi link vào ô nhập
+                    
+                    // Thông báo thành công cho thợ phấn khởi
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Tải lên thành công!',
+                        text: 'Link đã được tự động điền.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
             } else {
-                alert("Lỗi tải file: " + xhr.status);
+                alert("Lỗi sau khi tải xong: " + xhr.status);
                 targetInput.value = originalValue;
             }
         };
+
+        xhr.onerror = () => {
+            alert("Lỗi kết nối mạng!");
+            targetInput.value = originalValue;
+        };
+
         xhr.send(file);
 
     } catch (e) {
         console.error(e);
-        alert("Lỗi kết nối: " + e.message);
+        alert("Lỗi: " + e.message);
         targetInput.value = originalValue;
     }
 }
