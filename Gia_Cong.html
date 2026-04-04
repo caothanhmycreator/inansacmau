@@ -32,40 +32,22 @@
     .swal2-container { z-index: 20000 !important; }
     @media (max-width: 768px) { .main-content { margin-left: 0; } }
   
-    /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
+    .main-content { margin-left: 250px; transition: 0.3s; padding: 20px; }
 
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
-
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
-    
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: #2D5A27; color: white; padding: 8px 12px; border: none; border-radius: 4px; }
     }
-}
-
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
  <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
-
-<iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
-
+ <iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
 
   <div class="main-content">
     <div class="f6-container">
@@ -95,6 +77,7 @@
       setTimeout(() => { loadF6Data(); }, 600);
     });
 
+    /** 1. TẢI DANH SÁCH CHỜ GIA CÔNG */
     async function loadF6Data() {
       const tbody = document.getElementById('f6-table-body');
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
@@ -106,7 +89,27 @@
           return;
         }
         tbody.innerHTML = data.map(item => {
-          const imgHtml = item.Link_Anh ? `<img src="${item.Link_Anh}" class="img-preview" onclick="window.open('${item.Link_Anh}', '_blank')" onerror="this.src='https://placehold.co/130x160?text=Lỗi+Ảnh';">` : `<div style="font-size:10px; color:#94a3b8; text-align:center">📂</div>`;
+          // --- LOGIC HIỂN THỊ FILE TỪ LINK DRIVE (GIỐNG DUYET_FILE) ---
+          const link = item.Link_Anh || "";
+          let imgHtml = "";
+
+          if (!link) {
+            imgHtml = `<div style="font-size:10px; color:#94a3b8; text-align:center">📂</div>`;
+          } else {
+            const driveIdMatch = link.match(/[-\w]{25,}/);
+            if (driveIdMatch) {
+              // Sử dụng link thumbnail hỗ trợ cả Ảnh và PDF
+              const thumbnailLink = `https://drive.google.com/thumbnail?id=${driveIdMatch[0]}&sz=w500`;
+              imgHtml = `<img src="${thumbnailLink}" class="img-preview" 
+                          onclick="window.open('${link}', '_blank')" 
+                          onerror="this.parentElement.innerHTML='📄 Xem File';">`;
+            } else {
+              imgHtml = `<img src="${link}" class="img-preview" 
+                          onclick="window.open('${link}', '_blank')" 
+                          onerror="this.parentElement.innerHTML='🖼️ Xem Ảnh';">`;
+            }
+          }
+
           return `<tr class="f6-row">
             <td><small>#${item.Ngay_Gio.split(' ')[0]}</small><br><b style="font-size:15px;">${item.Ma_Don}</b></td>
             <td><b>${item.Ten_Khach_Hang}</b><br><small>${item.Ten_Hang}</small></td>
@@ -133,7 +136,7 @@
       Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã copy link!', showConfirmButton: false, timer: 1500 });
     }
 
-    /** 3. FORM XÁC NHẬN NHẬP KHO (ĐÃ THÊM ĐỊNH DẠNG SỐ) */
+    /** 3. FORM XÁC NHẬN NHẬP KHO */
     function openConfirmForm(itemStr) {
       const item = JSON.parse(decodeURIComponent(itemStr));
       Swal.fire({
@@ -152,61 +155,42 @@
         showCancelButton: true, confirmButtonText: '🚀 NHẬP KHO', confirmButtonColor: '#27ae60',
         didOpen: () => {
           const inputGia = document.getElementById('sw-gia');
-          // Lắng nghe sự kiện gõ phím để định dạng dấu chấm
           inputGia.addEventListener('input', function(e) {
-            let value = this.value.replace(/\D/g, ''); // Chỉ giữ lại số, chặn ký tự đặc biệt và dấu trừ
+            let value = this.value.replace(/\D/g, ''); 
             if (value !== "") {
-              this.value = Number(value).toLocaleString('vi-VN'); // Thêm dấu chấm phân cách
+              this.value = Number(value).toLocaleString('vi-VN'); 
             }
           });
         },
         preConfirm: () => {
           const dv = document.getElementById('sw-dv').value.trim();
           const giaDisplay = document.getElementById('sw-gia').value.trim();
-          
-          // Làm sạch dữ liệu: Bỏ hết dấu chấm trước khi lưu
           const giaClean = giaDisplay.replace(/\./g, '');
-          
           if (!dv || !giaClean) { Swal.showValidationMessage('Vui lòng nhập đủ thông tin!'); return false; }
-          if (parseInt(giaClean) < 0) { Swal.showValidationMessage('Giá vốn không được là số âm!'); return false; }
-          
           return { dvLK: dv, giaVon: giaClean };
         }
       }).then((r) => { if (r.isConfirmed) processCompleteOutsource(item, r.value); });
     }
 
-    /** 4. THỰC THI CẬP NHẬT 3 BẢNG */
+    /** 4. THỰC THI CẬP NHẬT */
     async function processCompleteOutsource(item, gcData) {
       Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const cleanNow = window.formatDateTimeVN();
       const sttMoi = "Chờ thanh toán";
-
       try {
         const gcLog = {
-          Ngay_Gio: cleanNow,
-          Ma_Don: item.Ma_Don,
-          Khach_Hang: item.Ten_Khach_Hang,
-          Ten_Hang: item.Ten_Hang,
-          So_Luong: item.So_Luong || 0,
-          Thanh_Tien: item.Thanh_Tien || 0,
-          Don_Vi_Lien_Ket: gcData.dvLK,
-          Gia_Von: parseInt(gcData.giaVon), // Ghi xuống dạng số nguyên sạch
-          id: Date.now()
+          Ngay_Gio: cleanNow, Ma_Don: item.Ma_Don, Khach_Hang: item.Ten_Khach_Hang, Ten_Hang: item.Ten_Hang,
+          So_Luong: item.So_Luong || 0, Thanh_Tien: item.Thanh_Tien || 0, Don_Vi_Lien_Ket: gcData.dvLK,
+          Gia_Von: parseInt(gcData.giaVon), id: Date.now()
         };
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_giacong`, { method: 'POST', headers: h, body: JSON.stringify(gcLog) });
-
         const formattedGia = Number(gcData.giaVon).toLocaleString('vi-VN');
         const noteUpdate = `XƯỞNG: ${gcData.dvLK} | VỐN: ${formattedGia}đ`;
-        
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${item.id}`, {
           method: 'PATCH', headers: h, 
-          body: JSON.stringify({ 
-            Trang_Thai: sttMoi,
-            Ghi_Chu_San_Xuat: item.Ghi_Chu_San_Xuat ? item.Ghi_Chu_San_Xuat + " | " + noteUpdate : noteUpdate
-          })
+          body: JSON.stringify({ Trang_Thai: sttMoi, Ghi_Chu_San_Xuat: item.Ghi_Chu_San_Xuat ? item.Ghi_Chu_San_Xuat + " | " + noteUpdate : noteUpdate })
         });
-
         const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${item.Ma_Don}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}&select=id`, { headers: h });
         const rowLog = await resLog.json();
         if (rowLog.length > 0) {
@@ -215,7 +199,6 @@
             body: JSON.stringify({ Trang_Thai: sttMoi, Gio_Giao_Hang: cleanNow, Nguoi_Thuc_Hien: "Gia công (Hàng về)" })
           });
         }
-
         Swal.fire({ icon: 'success', title: 'Đã nhập kho xong!', timer: 1500, showConfirmButton: false });
         loadF6Data();
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
