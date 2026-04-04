@@ -93,7 +93,7 @@
 
   <script>
     // 1. CẤU HÌNH DRIVE API TRỰC TIẾP
-    const CLIENT_ID = "725979686157-30gtd594p497leobbq29rof4b425boo5.apps.googleusercontent.com";
+    const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
     const FOLDER_ID = "1Cn8AyIJvMxkEC4-UQnBdZOS_vhvkrnF_";
     let accessToken = null;
     let tokenClient;
@@ -113,7 +113,6 @@
         tokenClient.requestAccessToken();
     }
 
-    /** 📤 HÀM UPLOAD DRIVE API V3 (RESUMABLE) - ĐÃ CẬP NHẬT ĐIỀN LINK TỰ ĐỘNG */
     async function uploadToStorage(fileInput, targetId) {
         const file = fileInput.files[0];
         if (!file) return;
@@ -156,7 +155,6 @@
             xhr.onload = function() {
                 if (xhr.status === 200 || xhr.status === 201) {
                     const result = JSON.parse(xhr.responseText);
-                    // ĐIỀN LINK VÀO Ô NHẬP LIỆU
                     const fileLink = `https://drive.google.com/file/d/${result.id}/view`;
                     targetInput.value = fileLink; 
                     
@@ -248,6 +246,7 @@
             <div class="form-section" style="margin-bottom:0;"><span class="form-section-title">📝 Ghi chú sản xuất</span><textarea id="sw-note" class="input-modern" style="height:60px; resize:none;" placeholder="Dặn dò cho thợ in..."></textarea></div>
           </div>
         `,
+        allowOutsideClick: false, // KHÓA CLICK RA NGOÀI ĐỂ TRÁNH THOÁT KHI ĐANG TẢI
         showCancelButton: true,
         confirmButtonColor: '#8e44ad',
         confirmButtonText: '🚀 GỬI DUYỆT FILE',
