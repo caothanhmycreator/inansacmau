@@ -34,37 +34,40 @@
     .input-modern { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; }
     .input-link-modern { background: #ffffff !important; font-family: monospace; font-size: 11px; color: #2980b9; }
 
+    /* Nút upload Google Drive */
+    .btn-drive-up { background: #1e73be; color: white; border: none; padding: 0 15px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+    .btn-drive-up:hover { background: #155a94; }
+
     .swal2-container { z-index: 20000 !important; }
 
     @media (max-width: 768px) { .main-content { margin-left: 0; } }
   
-  
     /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
-
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
-
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
-    
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
+    #sidebar-frame { 
+        width: 250px; height: 100vh; position: fixed; 
+        left: 0; top: 0; z-index: 9999; border: none; 
     }
-}
 
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    .main-content { 
+        margin-left: 250px; /* Giữ lề cố định */
+        transition: 0.3s; 
+        padding: 20px; 
+    }
+
+    /* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        
+        .mobile-nav-btn {
+            display: block; position: fixed; top: 10px; left: 10px; 
+            z-index: 1000; background: #2D5A27; color: white; 
+            padding: 8px 12px; border: none; border-radius: 4px;
+        }
+    }
+
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
@@ -104,6 +107,9 @@
   </div>
 
   <script>
+    // DÁN LINK GOOGLE APPS SCRIPT CỦA MỸ VÀO ĐÂY
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxhiN9AbfUIt1cH-eEOmPUKn_CWRWQumyJPJpVOU90Gq9B9cJtvQRNLoECafmLaIi9f/exec";
+
     // Tự động tải dữ liệu khi vào trang
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => { loadF3Data(); }, 600);
@@ -115,6 +121,59 @@
       if (val.includes(":\\")) {
         input.value = "http://192.168.1.6/" + val.replace(":", "%3A").replace(/\\/g, "/");
       }
+    }
+
+    /** 📤 HÀM SIÊU UPLOAD LÊN GOOGLE DRIVE (SHARED DRIVE) */
+    async function uploadToStorage(fileInput, targetId) {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const targetInput = document.getElementById(targetId);
+        const originalValue = targetInput.value;
+
+        try {
+            targetInput.value = "⌛ Đang xin quyền Google...";
+            
+            // Bước 1: Xin Google cái link upload trực tiếp qua Apps Script
+            const resGas = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ filename: file.name, mimetype: file.type })
+            });
+            const gasData = await resGas.json();
+            
+            if (!gasData.uploadUrl) throw new Error("Không lấy được URL upload");
+
+            // Bước 2: Đẩy file trực tiếp từ máy thợ lên Google (Không giới hạn dung lượng)
+            targetInput.value = "🚀 Đang tải lên: 0%";
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', gasData.uploadUrl, true);
+            
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    targetInput.value = `🚀 Đang tải lên: ${percent}%`;
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status === 200 || xhr.status === 201) {
+                    const result = JSON.parse(xhr.responseText);
+                    const finalLink = `https://drive.google.com/file/d/${result.id}/view`;
+                    targetInput.value = finalLink;
+                } else {
+                    alert("Lỗi khi đẩy file lên Google.");
+                    targetInput.value = originalValue;
+                }
+            };
+
+            xhr.send(file);
+
+        } catch (e) {
+            console.error(e);
+            alert("Lỗi kết nối. Mỹ hãy kiểm tra lại bản Triển khai Apps Script nhé!");
+            targetInput.value = originalValue;
+        }
     }
 
     /** 1. TẢI DANH SÁCH CHỜ THIẾT KẾ */
@@ -147,7 +206,7 @@
       } catch (e) { console.error(e); }
     }
 
-    /** 2. FORM XUẤT FILE (DÙNG LINK NỘI BỘ) */
+    /** 2. FORM XUẤT FILE (CÓ NÚT UPLOAD GOOGLE DRIVE) */
     function openDesignForm(itemJson) {
       const item = JSON.parse(decodeURIComponent(itemJson));
       
@@ -165,14 +224,22 @@
               <div style="margin-top:10px;"><label style="font-size:11px; font-weight:bold;">Quy cách gia công *</label><input id="sw-gc" class="input-modern" value="${item.Gia_Cong || ''}" placeholder="Vd: Đóng khoen, cán bóng..."></div>
             </div>
             <div class="form-section">
-              <span class="form-section-title">📂 Quản lý tệp tin (Dán đường dẫn ổ đĩa)</span>
-              <div style="margin-bottom:10px;">
+              <span class="form-section-title">📂 Quản lý tệp tin (Dán link Drive hoặc Upload)</span>
+              <div style="margin-bottom:12px;">
                 <label style="font-size:11px; font-weight:bold;">🔗 LINK ẢNH (VIEW):</label>
-                <input id="sw-linkanh" class="input-modern input-link-modern" value="${item.Link_Anh || ''}" placeholder="D:\App_SacMau\file\view\..." oninput="autoFormatEverythingLink(this)">
+                <div style="display:flex; gap:5px;">
+                  <input id="sw-linkanh" class="input-modern input-link-modern" value="${item.Link_Anh || ''}" placeholder="Dán link hoặc bấm nút upload" oninput="autoFormatEverythingLink(this)">
+                  <button type="button" class="btn-drive-up" onclick="document.getElementById('up-anh-hidden').click()">📤</button>
+                  <input type="file" id="up-anh-hidden" style="display:none" onchange="uploadToStorage(this, 'sw-linkanh')">
+                </div>
               </div>
               <div>
-                <label style="font-size:11px; font-weight:bold;">📂 LINK FILE IN (CDR):</label>
-                <input id="sw-linkfile" class="input-modern input-link-modern" value="${item.Link_File || ''}" placeholder="D:\App_SacMau\file\cdr\..." oninput="autoFormatEverythingLink(this)">
+                <label style="font-size:11px; font-weight:bold;">📂 LINK FILE IN (CDR/AI/PDF):</label>
+                <div style="display:flex; gap:5px;">
+                  <input id="sw-linkfile" class="input-modern input-link-modern" value="${item.Link_File || ''}" placeholder="Dán link hoặc bấm nút upload" oninput="autoFormatEverythingLink(this)">
+                  <button type="button" class="btn-drive-up" onclick="document.getElementById('up-file-hidden').click()">📤</button>
+                  <input type="file" id="up-file-hidden" style="display:none" onchange="uploadToStorage(this, 'sw-linkfile')">
+                </div>
               </div>
             </div>
             <div class="form-section" style="margin-bottom:0;"><span class="form-section-title">📝 Ghi chú sản xuất</span><textarea id="sw-note" class="input-modern" style="height:60px; resize:none;" placeholder="Dặn dò cho thợ in..."></textarea></div>
@@ -208,7 +275,6 @@
       const cleanNow = window.formatDateTimeVN();
 
       try {
-        // 1. Cập nhật Nhật ký bán hàng
         const resBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.sanPham)}&select=id`, { headers: h });
         const rowBH = await resBH.json();
 
@@ -221,7 +287,6 @@
           });
         }
 
-        // 2. Cập nhật Log Tiến độ (Cột G - Giờ chờ duyệt)
         const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.sanPham)}&select=id`, { headers: h });
         const rowLog = await resLog.json();
 
@@ -232,7 +297,7 @@
               Trang_Thai: status, 
               Gio_Xu_Ly: cleanNow,
               Nguoi_Thuc_Hien: "Thiết kế",
-              Gio_Duyet_File: cleanNow // Đây là Cột G (Giờ chờ duyệt) trong bảng Log của Mỹ
+              Gio_Duyet_File: cleanNow 
             })
           });
         }
