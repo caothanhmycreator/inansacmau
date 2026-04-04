@@ -107,9 +107,13 @@
   </div>
 
   <script>
-  
-  // DÁN LINK APPS SCRIPT MỚI CỦA MỸ VÀO ĐÂY
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxhiN9AbfUIt1cH-eEOmPUKn_CWRWQumyJPJpVOU90Gq9B9cJtvQRNLoECafmLaIi9f/exec";
+    // DÁN LINK GOOGLE APPS SCRIPT CỦA MỸ VÀO ĐÂY
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxhiN9AbfUIt1cH-eEOmPUKn_CWRWQumyJPJpVOU90Gq9B9cJtvQRNLoECafmLaIi9f/exec";
+
+    // Tự động tải dữ liệu khi vào trang
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => { loadF3Data(); }, 600);
+    });
 
 async function uploadToStorage(fileInput, targetId) {
     const file = fileInput.files[0];
@@ -170,6 +174,8 @@ async function uploadToStorage(fileInput, targetId) {
         targetInput.value = originalValue;
     }
 }
+
+// GIỮ NGUYÊN TOÀN BỘ CÁC HÀM KHÁC (loadF3Data, openDesignForm, submitDesignProduction...)
     /** 1. TẢI DANH SÁCH CHỜ THIẾT KẾ */
     async function loadF3Data() {
       const tbody = document.getElementById('f3-table-body');
