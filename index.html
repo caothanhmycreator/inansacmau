@@ -112,14 +112,13 @@
         const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
         const today = now.toISOString().split('T')[0];
 
-        // A. Tính tổng doanh thu tháng này từ NhatKy_BanHang (Cột Thanh_Tien)
-        const resRev = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ngay_Gio=gte.${firstDay}&select=Thanh_Tien`, { headers: h });
+        // A. Tính tổng doanh thu tháng này từ NhatKy_BanHang (Sửa thành cột Tong_Don)
+        const resRev = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ngay_Gio=gte.${firstDay}&select=Tong_Don`, { headers: h });
         const revData = await resRev.json();
-        const total = revData.reduce((sum, item) => sum + (Number(item.Thanh_Tien) || 0), 0);
+        const total = revData.reduce((sum, item) => sum + (Number(item.Tong_Don) || 0), 0);
         document.getElementById('total-revenue').innerText = total.toLocaleString('vi-VN') + "đ";
 
         // B. Lấy danh sách nhân viên đang làm hôm nay
-        // Join với bảng DM_NhanVien thông qua User_ID để lấy tên
         const resCC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=eq.${today}&Status=eq.Đang làm&select=Gio_Vao,DM_NhanVien(Ho_Ten)`, { headers: h });
         const ccData = await resCC.json();
 
@@ -128,7 +127,7 @@
           document.getElementById('active-count').innerText = ccData.length;
           activeListContainer.innerHTML = ccData.map(item => `
             <div class="staff-tag">
-              ${item.DM_NhanVien.Ho_Ten} <small style="opacity:0.7; font-weight:normal;">(${item.Gio_Vao.substring(0,5)})</small>
+              ${item.DM_NhanVien ? item.DM_NhanVien.Ho_Ten : 'N/A'} <small style="opacity:0.7; font-weight:normal;">(${item.Gio_Vao.substring(0,5)})</small>
             </div>
           `).join('');
         } else {
