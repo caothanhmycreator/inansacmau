@@ -63,7 +63,7 @@
         <button class="btn-action btn-disabled">...</button>
       </div>
 
-      <div id="status-display" class="status-badge st-offline">CHƯA VÀO CA</div>
+      <div id="status-display" class="status-badge st-offline">...</div>
     </div>
   </div>
 
@@ -94,6 +94,7 @@
     document.getElementById('today-date').innerText = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' });
   }
 
+  /** 🟢 KIỂM TRA TRẠNG THÁI HÔM NAY */
   async function checkTodayStatus() {
     const now = new Date();
     const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
@@ -122,38 +123,41 @@
         }
       }
     } catch (e) { 
-      console.error("Lỗi đọc dữ liệu:", e);
-      document.getElementById('action-area').innerHTML = `<button class="btn-action btn-in" onclick="checkTodayStatus()">THỬ LẠI</button>`;
+      console.error("Lỗi:", e);
+      // Khi lỗi, vẫn hiện nút VÀO CA để người dùng thử lại
+      document.getElementById('action-area').innerHTML = `<button class="btn-action btn-in" onclick="checkTodayStatus()"><i>📍</i>VÀO CA</button>`;
     }
   }
 
+  /** 📍 HÀM VÀO CA */
   async function handleCheckIn() {
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-GB'); // HH:mm:ss
+    const timeStr = now.toLocaleTimeString('en-GB'); 
     const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
-    Swal.fire({ title: 'Xác nhận vào ca?', icon: 'question', showCancelButton: true, confirmButtonText: 'VÀO CA NGAY' })
+    Swal.fire({ title: 'Bắt đầu làm việc?', icon: 'question', showCancelButton: true, confirmButtonText: 'VÀO CA NGAY' })
     .then(async (r) => {
       if (r.isConfirmed) {
-        Swal.showLoading();
-        // CHỈ GỬI CÁC CỘT CẦN THIẾT, ID ĐỂ DATABASE TỰ TĂNG
+        Swal.fire({ title: 'Đang ghi dữ liệu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const body = { User_ID: currentUser.id, Ngay: dateStr, Gio_Vao: timeStr, Status: "Đang làm" };
         
-        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong`, {
-          method: 'POST', headers: h, body: JSON.stringify(body)
-        });
-
-        if (res.ok) {
-          Swal.fire({ icon: 'success', title: 'Đã vào ca!', timer: 1000, showConfirmButton: false });
-          checkTodayStatus();
-        } else {
-          const err = await res.json();
-          Swal.fire("Lỗi Database", err.message || "Không thể lưu dữ liệu!", "error");
-        }
+        try {
+          const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong`, {
+            method: 'POST', headers: h, body: JSON.stringify(body)
+          });
+          if (res.ok) {
+            Swal.fire({ icon: 'success', title: 'Đã vào ca thành công!', timer: 1500, showConfirmButton: false });
+            checkTodayStatus();
+          } else {
+            const err = await res.json();
+            Swal.fire("Lỗi Database", err.message || "Không thể lưu dữ liệu!", "error");
+          }
+        } catch (e) { Swal.fire("Lỗi kết nối", e.message, "error"); }
       }
     });
   }
 
+  /** 🚪 HÀM XÁC NHẬN VỀ */
   async function handleCheckOut() {
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-GB');
@@ -161,14 +165,19 @@
     Swal.fire({ title: 'Xác nhận ra ca?', icon: 'warning', showCancelButton: true, confirmButtonText: 'XÁC NHẬN VỀ' })
     .then(async (r) => {
       if (r.isConfirmed) {
-        Swal.showLoading();
-        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?id=eq.${todayLog.id}`, {
-          method: 'PATCH', headers: h, body: JSON.stringify({ Gio_Ra: timeStr, Status: "Đã về" })
-        });
-        if (res.ok) {
-          Swal.fire({ icon: 'success', title: 'Hẹn gặp lại!', timer: 1000, showConfirmButton: false });
-          checkTodayStatus();
-        }
+        Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+          const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?id=eq.${todayLog.id}`, {
+            method: 'PATCH', headers: h, body: JSON.stringify({ Gio_Ra: timeStr, Status: "Đã về" })
+          });
+          if (res.ok) {
+            Swal.fire({ icon: 'success', title: 'Hẹn gặp lại!', timer: 1500, showConfirmButton: false });
+            checkTodayStatus();
+          } else {
+             const err = await res.json();
+             Swal.fire("Lỗi khi về", err.message || "Không thể cập nhật!", "error");
+          }
+        } catch (e) { Swal.fire("Lỗi kết nối", e.message, "error"); }
       }
     });
   }
