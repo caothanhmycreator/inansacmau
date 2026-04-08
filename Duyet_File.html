@@ -102,19 +102,22 @@
         }
 
         tbody.innerHTML = data.map(item => {
-          // --- XỬ LÝ HIỂN THỊ FILE TỪ LINK DRIVE ---
+          // --- XỬ LÝ HIỂN THỊ THÔNG MINH: ẢNH / PDF / THƯ MỤC ---
           const link = item.Link_Anh || "";
           let imgHtml = "";
 
           if (!link) {
             imgHtml = `<div style="font-size:10px; color:#94a3b8; text-align:center">Chưa có ảnh</div>`;
-          } else if (link.toLowerCase().includes('pdf')) {
-            // Trường hợp file PDF
-            imgHtml = `<div onclick="window.open('${link}', '_blank')" style="cursor:pointer; color:#27ae60; font-weight:bold; font-size:11px; text-align:center; padding: 10px;">📄 Click để xem PDF</div>`;
+          } else if (link.toLowerCase().includes('/folders/')) {
+            // TRƯỜNG HỢP LINK THƯ MỤC
+            imgHtml = `<div onclick="window.open('${link}', '_blank')" style="cursor:pointer; color:#f39c12; font-weight:bold; font-size:11px; text-align:center; padding: 10px;">📁 Click xem Thư mục</div>`;
+          } else if (link.toLowerCase().includes('.pdf')) {
+            // TRƯỜNG HỢP FILE PDF
+            imgHtml = `<div onclick="window.open('${link}', '_blank')" style="cursor:pointer; color:#27ae60; font-weight:bold; font-size:11px; text-align:center; padding: 10px;">📄 Click xem PDF</div>`;
           } else {
-            // Trường hợp Ảnh (JPG/PNG...) - Chuyển ID Drive sang link xem trực tiếp
+            // TRƯỜNG HỢP FILE ẢNH
             const driveIdMatch = link.match(/[-\w]{25,}/);
-            const previewUrl = driveIdMatch ? `https://lh3.googleusercontent.com/d/${driveIdMatch[0]}` : link;
+            const previewUrl = driveIdMatch ? `https://drive.google.com/thumbnail?id=${driveIdMatch[0]}&sz=w500` : link;
             
             imgHtml = `<img src="${previewUrl}" class="img-preview" 
                         onclick="window.open('${link}', '_blank')" 
