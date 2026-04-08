@@ -35,7 +35,7 @@
     .input-modern { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; }
     .input-link-modern { background: #ffffff !important; font-family: monospace; font-size: 11px; color: #2980b9; }
 
-    .btn-drive-up { background: #1e73be; color: white; border: none; padding: 0 15px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+    .btn-drive-up { background: #1e73be; color: white; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
     .btn-drive-up:hover { background: #155a94; }
 
     .swal2-container { z-index: 20000 !important; }
@@ -93,7 +93,7 @@
 
   <script>
     // 1. CẤU HÌNH DRIVE API TRỰC TIẾP
-    const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
+    const CLIENT_ID = "725979686157-30gtd594p497leobbq29rof4b425boo5.apps.googleusercontent.com";
     const FOLDER_ID = "1Cn8AyIJvMxkEC4-UQnBdZOS_vhvkrnF_";
     let accessToken = null;
     let tokenClient;
@@ -104,12 +104,10 @@
             scope: 'https://www.googleapis.com/auth/drive.file',
             callback: (tokenResponse) => {
                 accessToken = tokenResponse.access_token;
-                // LƯU PHIÊN ĐĂNG NHẬP VÀO LOCALSTORAGE
                 localStorage.setItem('drive_access_token', accessToken);
                 Swal.fire({ icon: 'success', title: 'Drive đã kết nối!', timer: 1000, showConfirmButton: false });
             },
         });
-        // TỰ ĐỘNG LẤY LẠI PHIÊN NẾU CÒN TRONG LOCALSTORAGE
         accessToken = localStorage.getItem('drive_access_token');
     }
 
@@ -117,71 +115,99 @@
         tokenClient.requestAccessToken();
     }
 
-    /** 📤 HÀM UPLOAD DRIVE API V3 (RESUMABLE) */
+    /** 📤 HÀM UPLOAD FILE ĐƠN */
     async function uploadToStorage(fileInput, targetId) {
         const file = fileInput.files[0];
         if (!file) return;
-
-        // Tự động gọi kết nối nếu chưa có token
-        if (!accessToken) {
-            getToken();
-            return;
-        }
+        if (!accessToken) { getToken(); return; }
 
         const targetInput = document.getElementById(targetId);
         const originalValue = targetInput.value;
 
         try {
-            targetInput.value = "⌛ Đang khởi tạo phiên...";
-            
+            targetInput.value = "⌛ Đang khởi tạo...";
             const metadata = { name: file.name, parents: [FOLDER_ID] };
             const resInit = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(metadata)
             });
 
-            // Xử lý khi token hết hạn
-            if (resInit.status === 401) { 
-                accessToken = null; 
-                localStorage.removeItem('drive_access_token');
-                getToken(); 
-                return; 
-            }
-            
+            if (resInit.status === 401) { accessToken = null; localStorage.removeItem('drive_access_token'); getToken(); return; }
             const uploadUrl = resInit.headers.get('Location');
 
-            targetInput.value = "🚀 Đang tải lên: 0%";
             const xhr = new XMLHttpRequest();
             xhr.open('PUT', uploadUrl, true);
-            
             xhr.upload.onprogress = (e) => {
                 if (e.lengthComputable) {
                     const percent = Math.round((e.loaded / e.total) * 100);
-                    targetInput.value = `🚀 Đang tải lên: ${percent}%`;
+                    targetInput.value = `🚀 Tải lên: ${percent}%`;
                 }
             };
-
             xhr.onload = function() {
                 if (xhr.status === 200 || xhr.status === 201) {
                     const result = JSON.parse(xhr.responseText);
-                    const fileLink = `https://drive.google.com/file/d/${result.id}/view`;
-                    // CẬP NHẬT LINK VÀO Ô NHẬP LIỆU - KHÔNG HIỆN THÔNG BÁO THÀNH CÔNG ĐỂ TẢI TIẾP
-                    targetInput.value = fileLink; 
+                    targetInput.value = `https://drive.google.com/file/d/${result.id}/view`;
                 } else {
-                    alert("Lỗi upload: " + xhr.status);
+                    alert("Lỗi upload file!");
                     targetInput.value = originalValue;
                 }
             };
             xhr.send(file);
+        } catch (e) { targetInput.value = originalValue; }
+    }
 
-        } catch (e) {
+    /** 📁 HÀM UPLOAD NGUYÊN THƯ MỤC */
+    async function uploadFolderToStorage(folderInput, targetId) {
+        const files = folderInput.files;
+        if (!files || files.length === 0) return;
+        if (!accessToken) { getToken(); return; }
+
+        const targetInput = document.getElementById(targetId);
+        const originalValue = targetInput.value;
+        const folderName = files[0].webkitRelativePath.split('/')[0] || "Folder_Moi";
+
+        try {
+            targetInput.value = "⌛ Đang tạo thư mục...";
+            // 1. Tạo folder trên Drive
+            const folderMeta = { name: folderName, mimeType: 'application/vnd.google-apps.folder', parents: [FOLDER_ID] };
+            const resFolder = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(folderMeta)
+            });
+            const folderInfo = await resFolder.json();
+            const newFolderId = folderInfo.id;
+
+            // 2. Tải từng file vào folder đó
+            for (let i = 0; i < files.length; i++) {
+                targetInput.value = `🚀 Folder: ${i+1}/${files.length} file`;
+                await uploadSingleFileToFolder(files[i], newFolderId);
+            }
+
+            targetInput.value = `https://drive.google.com/drive/folders/${newFolderId}`;
+        } catch (e) { 
             alert("Lỗi: " + e.message);
-            targetInput.value = originalValue;
+            targetInput.value = originalValue; 
         }
+    }
+
+    /** HÀM BỔ TRỢ TẢI FILE VÀO THƯ MỤC */
+    async function uploadSingleFileToFolder(file, parentId) {
+        const metadata = { name: file.name, parents: [parentId] };
+        const resInit = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(metadata)
+        });
+        const uploadUrl = resInit.headers.get('Location');
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', uploadUrl, true);
+            xhr.onload = () => resolve();
+            xhr.onerror = () => reject();
+            xhr.send(file);
+        });
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -241,24 +267,28 @@
               <div style="margin-bottom:12px;">
                 <label style="font-size:11px; font-weight:bold;">🔗 LINK ẢNH (VIEW):</label>
                 <div style="display:flex; gap:5px;">
-                  <input id="sw-linkanh" class="input-modern input-link-modern" value="${item.Link_Anh || ''}" placeholder="Bấm nút upload bên cạnh" oninput="autoFormatEverythingLink(this)">
-                  <button type="button" class="btn-drive-up" onclick="document.getElementById('up-anh-hidden').click()">📤</button>
+                  <input id="sw-linkanh" class="input-modern input-link-modern" value="${item.Link_Anh || ''}" placeholder="Dán link hoặc bấm nút upload" oninput="autoFormatEverythingLink(this)">
+                  <button type="button" class="btn-drive-up" title="Tải file đơn" onclick="document.getElementById('up-anh-hidden').click()">📤</button>
+                  <button type="button" class="btn-drive-up" title="Tải thư mục" style="background:#e67e22" onclick="document.getElementById('up-anh-folder').click()">📁</button>
                   <input type="file" id="up-anh-hidden" style="display:none" onchange="uploadToStorage(this, 'sw-linkanh')">
+                  <input type="file" id="up-anh-folder" style="display:none" webkitdirectory directory onchange="uploadFolderToStorage(this, 'sw-linkanh')">
                 </div>
               </div>
               <div>
                 <label style="font-size:11px; font-weight:bold;">📂 LINK FILE IN (CDR/AI/PDF):</label>
                 <div style="display:flex; gap:5px;">
-                  <input id="sw-linkfile" class="input-modern input-link-modern" value="${item.Link_File || ''}" placeholder="Bấm nút upload bên cạnh" oninput="autoFormatEverythingLink(this)">
-                  <button type="button" class="btn-drive-up" onclick="document.getElementById('up-file-hidden').click()">📤</button>
+                  <input id="sw-linkfile" class="input-modern input-link-modern" value="${item.Link_File || ''}" placeholder="Dán link hoặc bấm nút upload" oninput="autoFormatEverythingLink(this)">
+                  <button type="button" class="btn-drive-up" title="Tải file đơn" onclick="document.getElementById('up-file-hidden').click()">📤</button>
+                  <button type="button" class="btn-drive-up" title="Tải thư mục" style="background:#e67e22" onclick="document.getElementById('up-file-folder').click()">📁</button>
                   <input type="file" id="up-file-hidden" style="display:none" onchange="uploadToStorage(this, 'sw-linkfile')">
+                  <input type="file" id="up-file-folder" style="display:none" webkitdirectory directory onchange="uploadFolderToStorage(this, 'sw-linkfile')">
                 </div>
               </div>
             </div>
             <div class="form-section" style="margin-bottom:0;"><span class="form-section-title">📝 Ghi chú sản xuất</span><textarea id="sw-note" class="input-modern" style="height:60px; resize:none;" placeholder="Dặn dò cho thợ in..."></textarea></div>
           </div>
         `,
-        allowOutsideClick: false, // KHÔNG CHO CLICK RA NGOÀI ĐỂ TRÁNH TẮT FORM
+        allowOutsideClick: false,
         showCancelButton: true,
         confirmButtonColor: '#8e44ad',
         confirmButtonText: '🚀 GỬI DUYỆT FILE',
@@ -273,7 +303,19 @@
             linkFile: document.getElementById('sw-linkfile').value.trim(),
             note: document.getElementById('sw-note').value.trim()
           };
-          if(!p.kt || !p.cl || !p.linkAnh || !p.linkFile) { Swal.showValidationMessage('Vui lòng hoàn thiện hồ sơ thiết kế!'); return false; }
+          // KIỂM TRA ĐIỀU KIỆN: PHẢI CÓ ĐỦ THÔNG TIN VÀ LINK DRIVE CHUẨN
+          if(!p.kt || !p.cl || !p.gc || !p.linkAnh || !p.linkFile) { 
+              Swal.showValidationMessage('Vui lòng hoàn thiện đủ hồ sơ & chờ tải file xong!'); 
+              return false; 
+          }
+          if(!p.linkAnh.includes('drive.google.com') && !p.linkAnh.includes('http')) {
+              Swal.showValidationMessage('Link Ảnh không hợp lệ hoặc đang tải!'); 
+              return false;
+          }
+          if(!p.linkFile.includes('drive.google.com') && !p.linkFile.includes('http')) {
+              Swal.showValidationMessage('Link File không hợp lệ hoặc đang tải!'); 
+              return false;
+          }
           return p;
         }
       }).then((r) => { if (r.isConfirmed) submitDesignProduction(r.value); });
