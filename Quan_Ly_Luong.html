@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Lương - Sắc Màu</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+  <style>
+    :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; }
+    .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; }
+    
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 25px; }
+    .header h2 { margin: 0; color: var(--primary); }
+    .month-picker { padding: 8px 15px; border-radius: 8px; border: 1px solid #ccc; font-weight: bold; }
+
+    .summary-box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #f39c12; display: inline-block; }
+    .summary-box p { margin: 0; color: #666; font-size: 13px; font-weight: bold; }
+    .summary-box h3 { margin: 5px 0 0 0; color: #d35400; font-size: 24px; }
+
+    .payroll-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+    .staff-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border: 1px solid var(--border); position: relative; }
+    .staff-name { font-size: 18px; font-weight: bold; color: var(--primary); margin: 0 0 5px 0; padding-bottom: 10px; border-bottom: 1px dashed #ccc; }
+    
+    .salary-row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 14px; }
+    .salary-row.total { font-size: 18px; font-weight: bold; color: #c0392b; border-top: 2px solid #eee; padding-top: 15px; margin-top: 15px; }
+    .val-plus { color: #27ae60; font-weight: bold; }
+    .val-minus { color: #e74c3c; font-weight: bold; }
+
+    .action-group { display: flex; gap: 10px; margin-top: 20px; }
+    .btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; }
+    .btn-finance { background: #3498db; color: white; }
+    .btn-finance:hover { background: #2980b9; }
+    .btn-edit-time { background: #e74c3c; color: white; }
+    .btn-edit-time:hover { background: #c0392b; }
+    
+    .badge { font-size: 11px; background: #e2e8f0; padding: 3px 8px; border-radius: 10px; margin-left: 5px; }
+
+    @media (max-width: 768px) {
+      .main-content { margin-left: 0; padding: 15px; }
+      #sidebar-frame { left: -250px; }
+    }
+  </style>
+</head>
+<body>
+
+  <iframe src="sidebar.html" id="sidebar-frame"></iframe>
+
+  <div class="main-content">
+    <div class="header">
+      <div>
+        <h2>💰 BẢNG LƯƠNG & PHỤ CẤP</h2>
+        <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">Quản lý công, doanh thu và tạm ứng</p>
+      </div>
+      <input type="month" id="month-selector" class="month-picker" onchange="loadPayroll()">
+    </div>
+
+    <div class="summary-box">
+      <p>TỔNG DOANH THU TRONG THÁNG</p>
+      <h3 id="lbl-doanh-thu">0đ</h3>
+    </div>
+
+    <div id="payroll-container" class="payroll-grid">
+      <h3 style="color:#888;">Đang tổng hợp số liệu...</h3>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    let totalRevenue = 0;
+    const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if(!currentUser) return window.location.href = 'login.html';
+      
+      // Mặc định chọn tháng hiện tại
+      const now = new Date();
+      document.getElementById('month-selector').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      
+      loadPayroll();
+    });
+
+    async function loadPayroll() {
+      const monthVal = document.getElementById('month-selector').value; // YYYY-MM
+      if (!monthVal) return;
+      const [year, month] = monthVal.split('-');
+      
+      const firstDay = `${year}-${month}-01`;
+      const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
+
+      Swal.fire({ title: 'Đang tính toán...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      try {
+        // 1. Lấy Tổng Doanh Thu
+        const resRev = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ngay_Gio=gte.${firstDay}&Ngay_Gio=lte.${lastDay} 23:59:59&select=Tong_Don`, { headers: h });
+        const revData = await resRev.json();
+        totalRevenue = revData.reduce((sum, item) => sum + (Number(item.Tong_Don) || 0), 0);
+        document.getElementById('lbl-doanh-thu').innerText = totalRevenue.toLocaleString('vi-VN') + 'đ';
+
+        // 2. Lấy Danh sách nhân viên
+        const resEmp = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?select=*`, { headers: h });
+        const empData = await resEmp.json();
+
+        // 3. Lấy Chấm Công
+        const resCC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=gte.${firstDay}&Ngay=lte.${lastDay}&select=*`, { headers: h });
+        const ccData = await resCC.json();
+
+        // 4. Lấy Biến Động Tài Chính (Phụ cấp, Tạm ứng)
+        const resTC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?Ngay_Ghi=gte.${firstDay}&Ngay_Ghi=lte.${lastDay} 23:59:59&select=*`, { headers: h });
+        const tcData = await resTC.json();
+
+        renderPayrollGrid(empData, ccData, tcData);
+        Swal.close();
+      } catch (e) {
+        Swal.fire('Lỗi', 'Không thể tải dữ liệu: ' + e.message, 'error');
+      }
+    }
+
+    function renderPayrollGrid(empData, ccData, tcData) {
+      const container = document.getElementById('payroll-container');
+      container.innerHTML = "";
+
+      empData.forEach(emp => {
+        // Lọc dữ liệu của người này
+        const myCC = ccData.filter(c => c.User_ID === emp.id);
+        const myTC = tcData.filter(t => t.User_ID === emp.id);
+
+        let luongCoBan = 0, soCong = 0, phuCapViec = 0, tamUng = 0, hoaHong = 0, tongNhan = 0;
+        let congText = "";
+
+        // Tính công cơ bản
+        if (emp.Loai_Luong === "Tháng") {
+          soCong = myCC.length; // Số ngày đi làm
+          luongCoBan = (emp.Luong_Co_Ban / 26) * soCong;
+          congText = `${soCong} ngày`;
+        } else if (emp.Loai_Luong === "Buổi") {
+          soCong = myCC.length;
+          luongCoBan = soCong * emp.Luong_Co_Ban;
+          congText = `${soCong} buổi`;
+        } else if (emp.Loai_Luong === "Giờ") {
+          let totalHours = 0;
+          myCC.forEach(c => {
+            if (c.Gio_Vao && c.Gio_Ra) {
+              const [h1, m1] = c.Gio_Vao.split(':');
+              const [h2, m2] = c.Gio_Ra.split(':');
+              totalHours += ((h2*60 + Number(m2)) - (h1*60 + Number(m1))) / 60;
+            }
+          });
+          soCong = totalHours;
+          luongCoBan = soCong * emp.Luong_Co_Ban;
+          congText = `${soCong.toFixed(1)} giờ`;
+        }
+
+        // Tính hoa hồng (1% doanh thu)
+        if (emp.Huong_Hoa_Hong) {
+          hoaHong = totalRevenue * 0.01;
+        }
+
+        // Tính phụ cấp & Tạm ứng
+        myTC.forEach(tc => {
+          if (tc.Loai === "Tạm ứng") tamUng += tc.So_Tien;
+          else phuCapViec += tc.So_Tien;
+        });
+
+        tongNhan = luongCoBan + hoaHong + phuCapViec - tamUng;
+
+        // Chỉ Admin (Mỹ) mới thấy nút Sửa chấm công
+        const editTimeBtn = currentUser.Vai_Tro === "Admin" 
+          ? `<button class="btn btn-edit-time" onclick="openEditTime('${emp.id}', '${emp.Ho_Ten}')">🕒 Sửa Giờ</button>` 
+          : '';
+
+        container.innerHTML += `
+          <div class="staff-card">
+            <h3 class="staff-name">${emp.Ho_Ten} <span class="badge">${emp.Loai_Luong}</span></h3>
+            
+            <div class="salary-row"><span>Công thực tế: (${congText})</span> <b>${Math.round(luongCoBan).toLocaleString('vi-VN')}đ</b></div>
+            ${emp.Huong_Hoa_Hong ? `<div class="salary-row"><span>Hoa hồng Doanh thu (1%):</span> <b class="val-plus">+ ${Math.round(hoaHong).toLocaleString('vi-VN')}đ</b></div>` : ''}
+            <div class="salary-row"><span>Phụ cấp công việc:</span> <b class="val-plus">+ ${phuCapViec.toLocaleString('vi-VN')}đ</b></div>
+            <div class="salary-row"><span>Tạm ứng:</span> <b class="val-minus">- ${tamUng.toLocaleString('vi-VN')}đ</b></div>
+            
+            <div class="salary-row total"><span>THỰC NHẬN:</span> <span>${Math.round(tongNhan).toLocaleString('vi-VN')}đ</span></div>
+            
+            <div class="action-group">
+              <button class="btn btn-finance" onclick="openFinanceModal('${emp.id}', '${emp.Ho_Ten}')">💰 Thêm Khoản</button>
+              ${editTimeBtn}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    /** MỞ FORM NHẬP PHỤ CẤP / TẠM ỨNG */
+    function openFinanceModal(empId, empName) {
+      Swal.fire({
+        title: `Nhập khoản tiền cho ${empName}`,
+        html: `
+          <select id="sw-loai" class="swal2-input" style="width:90%">
+            <option value="Giao hàng">Giao hàng (+20.000đ)</option>
+            <option value="Nhận hàng">Nhận hàng (+10.000đ)</option>
+            <option value="Khác">Phụ cấp khác</option>
+            <option value="Tạm ứng">Trừ Tạm ứng</option>
+          </select>
+          <input id="sw-tien" type="number" class="swal2-input" style="width:90%" placeholder="Nhập số tiền (VNĐ)...">
+        `,
+        showCancelButton: true, confirmButtonText: 'GHI NHẬN', confirmButtonColor: '#2D5A27',
+        preConfirm: () => {
+          const loai = document.getElementById('sw-loai').value;
+          let tien = document.getElementById('sw-tien').value;
+          if (loai === "Giao hàng" && !tien) tien = 20000;
+          if (loai === "Nhận hàng" && !tien) tien = 10000;
+          if (!tien) { Swal.showValidationMessage('Vui lòng nhập số tiền'); return false; }
+          return { User_ID: empId, Loai: loai, So_Tien: Number(tien) };
+        }
+      }).then(async (r) => {
+        if (r.isConfirmed) {
+          const body = { ...r.value, Ngay_Ghi: new Date().toISOString(), Nguoi_Xac_Nhan: currentUser.name };
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh`, { method: 'POST', headers: h, body: JSON.stringify(body) });
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã lưu!', showConfirmButton: false, timer: 1500 });
+          loadPayroll(); // Load lại bảng
+        }
+      });
+    }
+
+    /** MỞ FORM SỬA CHẤM CÔNG (CHỈ ADMIN) */
+    async function openEditTime(empId, empName) {
+      const today = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(new Date().getDate()).padStart(2, '0');
+      
+      // Tìm xem người này có dữ liệu hôm nay không
+      const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?User_ID=eq.${empId}&Ngay=eq.${today}&select=*`, { headers: h });
+      const data = await res.json();
+
+      if (data.length === 0) {
+        return Swal.fire('Thông báo', `${empName} chưa chấm công ngày hôm nay!`, 'info');
+      }
+
+      const log = data[0];
+      if (log.Status === "Đang làm") {
+        return Swal.fire('Thông báo', `Nhân viên đang trong ca làm, không cần sửa!`, 'info');
+      }
+
+      Swal.fire({
+        title: 'Sửa Giờ Chấm Công',
+        text: `${empName} đã RA CA lúc ${log.Gio_Ra}. Bạn có muốn khôi phục lại trạng thái VÀO CA không?`,
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'Khôi phục "Đang làm"'
+      }).then(async (r) => {
+        if (r.isConfirmed) {
+          // Xóa Giờ Ra và đổi Status thành Đang làm
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?id=eq.${log.id}`, {
+            method: 'PATCH', headers: h, body: JSON.stringify({ Gio_Ra: null, Status: 'Đang làm' })
+          });
+          Swal.fire('Thành công', 'Đã khôi phục trạng thái. Thợ có thể bấm RA CA lại.', 'success');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
