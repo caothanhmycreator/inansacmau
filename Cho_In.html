@@ -101,17 +101,20 @@
         }
 
         tbody.innerHTML = data.map(item => {
-          // --- LOGIC HIỂN THỊ FILE TƯƠNG TỰ DUYET_FILE ---
+          // --- CẬP NHẬT LOGIC NHẬN DIỆN THÔNG MINH (GIỐNG DUYỆT FILE) ---
           const link = item.Link_Anh || "";
           let imgHtml = "";
 
           if (!link) {
             imgHtml = `<div style="font-size:10px; color:#94a3b8; text-align:center">📂 Ổ Z:/</div>`;
-          } else if (link.toLowerCase().includes('pdf')) {
-            // Hiển thị nút PDF
+          } else if (link.toLowerCase().includes('/folders/')) {
+            // Trường hợp Link Thư mục
+            imgHtml = `<div onclick="window.open('${link}', '_blank')" style="cursor:pointer; color:#f39c12; font-weight:bold; font-size:11px; text-align:center; padding: 10px;">📁 Click xem Thư mục</div>`;
+          } else if (link.toLowerCase().includes('.pdf')) {
+            // Trường hợp File PDF
             imgHtml = `<div onclick="window.open('${link}', '_blank')" style="cursor:pointer; color:#27ae60; font-weight:bold; font-size:11px; text-align:center; padding: 10px;">📄 Click để xem PDF</div>`;
           } else {
-            // Xử lý Ảnh Drive
+            // Trường hợp Ảnh Drive (JPG/PNG...)
             const driveIdMatch = link.match(/[-\w]{25,}/);
             const previewUrl = driveIdMatch ? `https://drive.google.com/thumbnail?id=${driveIdMatch[0]}&sz=w500` : link;
             
@@ -155,7 +158,7 @@
     function openMaterialForm(itemStr) {
       const item = JSON.parse(decodeURIComponent(itemStr));
       Swal.fire({
-        title: 'XÁC NHẬN HOÀT TẤT & XUẤT KHO',
+        title: 'XÁC NHẬN HOÀN TẤT & XUẤT KHO',
         width: '850px',
         html: `
           <div style="text-align:left; font-size:13px; margin-bottom:15px; padding:10px; background:#f8fafc; border-radius:6px; border-left:4px solid #e67e22;">
