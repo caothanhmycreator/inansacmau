@@ -4,67 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chấm công - Sắc Màu</title>
-  
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
-
   <style>
     :root { --primary-cc: #2D5A27; --bg-light: #f4f7f6; }
     body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
-    
     .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-
     .cc-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
     .cc-header { margin-bottom: 25px; }
     .cc-header h2 { color: var(--primary-cc); margin: 0; font-size: 24px; }
     .cc-header p { color: #666; font-size: 14px; margin-top: 5px; }
-
-    .digital-clock { font-size: 36px; font-weight: bold; color: #333; margin-bottom: 25px; font-family: 'Courier New', Courier, monospace; background: #eee; padding: 10px; border-radius: 10px; }
-
-    /* Nút bấm to cho thợ */
+    .digital-clock { font-size: 36px; font-weight: bold; color: #333; margin-bottom: 25px; font-family: 'Courier New', monospace; background: #eee; padding: 10px; border-radius: 10px; }
     .btn-action { width: 200px; height: 200px; border-radius: 50%; border: none; color: white; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; margin: 0 auto; }
     .btn-in { background: linear-gradient(135deg, #27ae60, #2ecc71); }
     .btn-out { background: linear-gradient(135deg, #e67e22, #f39c12); }
     .btn-action:hover { transform: scale(1.05); }
-    .btn-action:active { transform: scale(0.95); }
-    .btn-action i { font-size: 40px; }
     .btn-disabled { background: #cbd5e1 !important; cursor: not-allowed; box-shadow: none; }
-
     .status-badge { display: inline-block; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; margin-top: 20px; }
     .st-offline { background: #fee2e2; color: #ef4444; }
     .st-online { background: #dcfce7; color: #15803d; }
-
-    @media (max-width: 768px) {
-        .main-content { margin-left: 0; padding: 15px; }
-        #sidebar-frame { left: -250px; }
-        body.sidebar-open #sidebar-frame { left: 0; }
-        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: var(--primary-cc); color: white; padding: 8px 12px; border: none; border-radius: 4px; }
-    }
-    
+    @media (max-width: 768px) { .main-content { margin-left: 0; } #sidebar-frame { left: -250px; } }
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
-    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
-
- <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
- <iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
-
+  <iframe src="sidebar.html" id="sidebar-frame" frameborder="0"></iframe>
   <div class="main-content">
     <div class="cc-card">
-      <div class="cc-header">
-        <h2 id="user-name">Đang tải...</h2>
-        <p id="today-date">Thứ 4, 08/04/2026</p>
-      </div>
-
+      <div class="cc-header"><h2 id="user-name">...</h2><p id="today-date">...</p></div>
       <div class="digital-clock" id="live-clock">00:00:00</div>
-
-      <div id="action-area">
-        <button class="btn-action btn-disabled">...</button>
-      </div>
-
-      <div id="status-display" class="status-badge st-offline">CHƯA VÀO CA</div>
+      <div id="action-area"><button class="btn-action btn-disabled">Đang nạp...</button></div>
+      <div id="status-display" class="status-badge st-offline">...</div>
     </div>
   </div>
 
@@ -74,17 +45,13 @@
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
     document.addEventListener("DOMContentLoaded", function() {
-      // 1. Lấy thông tin user từ localStorage (do login.html lưu)
       const userData = localStorage.getItem('currentUser');
       if(!userData) { window.location.href = 'login.html'; return; }
       currentUser = JSON.parse(userData);
       document.getElementById('user-name').innerText = currentUser.name;
       
-      // 2. Chạy đồng hồ
-      updateClock();
       setInterval(updateClock, 1000);
-
-      // 3. Kiểm tra trạng thái chấm công hôm nay
+      updateClock();
       checkTodayStatus();
     });
 
@@ -94,9 +61,11 @@
       document.getElementById('today-date').innerText = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' });
     }
 
-    /** 🟢 KIỂM TRA TRẠNG THÁI HÔM NAY */
     async function checkTodayStatus() {
-      const today = new Date().toISOString().split('T')[0];
+      // ÉP LẤY NGÀY HIỆN TẠI CHUẨN MÚI GIỜ VN
+      const vnTime = new Date(new Date().getTime() + (7 * 60 * 60 * 1000));
+      const today = vnTime.toISOString().split('T')[0];
+      
       try {
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?User_ID=eq.${currentUser.id}&Ngay=eq.${today}&select=*`, { headers: h });
         const data = await res.json();
@@ -105,63 +74,50 @@
         const badge = document.getElementById('status-display');
 
         if (data.length === 0) {
-          // Chưa chấm công
           area.innerHTML = `<button class="btn-action btn-in" onclick="handleCheckIn()"><i>📍</i>VÀO CA</button>`;
-          badge.className = "status-badge st-offline";
-          badge.innerText = "CHƯA VÀO CA";
+          badge.className = "status-badge st-offline"; badge.innerText = "CHƯA VÀO CA";
         } else {
           todayLog = data[0];
           if (todayLog.Status === "Đang làm") {
             area.innerHTML = `<button class="btn-action btn-out" onclick="handleCheckOut()"><i>🚪</i>XÁC NHẬN VỀ</button>`;
-            badge.className = "status-badge st-online";
-            badge.innerText = "ĐANG TRỰC TẠI TIỆM";
+            badge.className = "status-badge st-online"; badge.innerText = "ĐANG TRỰC TẠI TIỆM";
           } else {
-            area.innerHTML = `<button class="btn-action btn-disabled"><i>✅</i>ĐÃ HOÀN TẤT</button>`;
-            badge.className = "status-badge st-offline";
-            badge.innerText = `ĐÃ VỀ LÚC ${todayLog.Gio_Ra.substring(0,5)}`;
+            area.innerHTML = `<button class="btn-action btn-disabled"><i>✅</i>ĐÃ XONG</button>`;
+            badge.className = "status-badge st-offline"; badge.innerText = `ĐÃ VỀ LÚC ${todayLog.Gio_Ra.substring(0,5)}`;
           }
         }
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        // NẾU LỖI, VẪN PHẢI CHO HIỆN NÚT ĐỂ THỬ LẠI
+        document.getElementById('action-area').innerHTML = `<button class="btn-action btn-in" onclick="handleCheckIn()">THỬ LẠI</button>`;
+        console.error("Lỗi:", e);
+      }
     }
 
-    /** 📍 HÀM VÀO CA */
     async function handleCheckIn() {
-      const now = new Date();
-      const timeStr = now.toTimeString().split(' ')[0];
-      const dateStr = now.toISOString().split('T')[0];
+      const vnTime = new Date(new Date().getTime() + (7 * 60 * 60 * 1000));
+      const dateStr = vnTime.toISOString().split('T')[0];
+      const timeStr = vnTime.toISOString().split('T')[1].substring(0,8);
 
-      Swal.fire({ title: 'Bắt đầu làm việc?', icon: 'question', showCancelButton: true, confirmButtonText: 'VÀO CA NGAY' })
-      .then(async (r) => {
+      Swal.fire({ title: 'Xác nhận vào ca?', icon: 'question', showCancelButton: true, confirmButtonText: 'VÀO CA' }).then(async (r) => {
         if (r.isConfirmed) {
-          Swal.showLoading();
-          const body = { User_ID: currentUser.id, Ngay: dateStr, Gio_Vao: timeStr, Status: "Đang làm" };
           const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong`, {
-            method: 'POST', headers: h, body: JSON.stringify(body)
+            method: 'POST', headers: h, body: JSON.stringify({ User_ID: currentUser.id, Ngay: dateStr, Gio_Vao: timeStr, Status: "Đang làm" })
           });
-          if (res.ok) {
-            Swal.fire({ icon: 'success', title: 'Đã vào ca!', timer: 1500, showConfirmButton: false });
-            checkTodayStatus();
-          }
+          if (res.ok) { checkTodayStatus(); }
         }
       });
     }
 
-    /** 🚪 HÀM XÁC NHẬN VỀ */
     async function handleCheckOut() {
-      const now = new Date();
-      const timeStr = now.toTimeString().split(' ')[0];
+      const vnTime = new Date(new Date().getTime() + (7 * 60 * 60 * 1000));
+      const timeStr = vnTime.toISOString().split('T')[1].substring(0,8);
 
-      Swal.fire({ title: 'Xác nhận ra ca?', text: 'Kết thúc buổi làm việc của bạn.', icon: 'warning', showCancelButton: true, confirmButtonText: 'XÁC NHẬN VỀ' })
-      .then(async (r) => {
+      Swal.fire({ title: 'Xác nhận về?', icon: 'warning', showCancelButton: true, confirmButtonText: 'XÁC NHẬN' }).then(async (r) => {
         if (r.isConfirmed) {
-          Swal.showLoading();
           const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?id=eq.${todayLog.id}`, {
             method: 'PATCH', headers: h, body: JSON.stringify({ Gio_Ra: timeStr, Status: "Đã về" })
           });
-          if (res.ok) {
-            Swal.fire({ icon: 'success', title: 'Hẹn gặp lại!', timer: 1500, showConfirmButton: false });
-            checkTodayStatus();
-          }
+          if (res.ok) { checkTodayStatus(); }
         }
       });
     }
