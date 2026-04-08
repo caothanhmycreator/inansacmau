@@ -72,7 +72,7 @@
     <div class="staff-monitor">
       <h3>🟢 NHÂN VIÊN ĐANG TẠI TIỆM</h3>
       <div id="active-staff-list" class="staff-list">
-        <span class="no-staff">Đang kiểm tra dữ liệu...</span>
+        <span class="no-staff">Đang nạp dữ liệu...</span>
       </div>
     </div>
 
@@ -86,7 +86,7 @@
     document.addEventListener("DOMContentLoaded", function() {
       const user = JSON.parse(localStorage.getItem('currentUser'));
       if(!user) return;
-      document.getElementById('welcome-name').innerText = user.name;
+      document.getElementById('welcome-name').innerText = user.name || user.Ho_Ten;
       
       renderMenu(user);
       loadLiveStatistics();
@@ -95,7 +95,7 @@
     /** 1. Render Menu theo phân quyền */
     function renderMenu(user) {
       const menuContainer = document.getElementById('dashboard-menu');
-      const userModules = user.modules.split(',').map(s => s.trim());
+      const userModules = (user.modules || "").split(',').map(s => s.trim());
       let html = "";
       window.APP_MODULES.forEach(m => {
         if (userModules.includes(m.id)) {
@@ -109,33 +109,43 @@
     async function loadLiveStatistics() {
       try {
         const now = new Date();
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        const today = now.toISOString().split('T')[0];
+        // Lấy ngày đầu tháng và ngày hôm nay chuẩn theo giờ local
+        const firstDay = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+        const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
-        // A. Tính tổng doanh thu tháng này từ NhatKy_BanHang (Sửa thành cột Tong_Don)
+        // A. Tính tổng doanh thu tháng này
         const resRev = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ngay_Gio=gte.${firstDay}&select=Tong_Don`, { headers: h });
-        const revData = await resRev.json();
-        const total = revData.reduce((sum, item) => sum + (Number(item.Tong_Don) || 0), 0);
-        document.getElementById('total-revenue').innerText = total.toLocaleString('vi-VN') + "đ";
-
-        // B. Lấy danh sách nhân viên đang làm hôm nay
-        const resCC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=eq.${today}&Status=eq.Đang làm&select=Gio_Vao,DM_NhanVien(Ho_Ten)`, { headers: h });
-        const ccData = await resCC.json();
-
-        const activeListContainer = document.getElementById('active-staff-list');
-        if (ccData.length > 0) {
-          document.getElementById('active-count').innerText = ccData.length;
-          activeListContainer.innerHTML = ccData.map(item => `
-            <div class="staff-tag">
-              ${item.DM_NhanVien ? item.DM_NhanVien.Ho_Ten : 'N/A'} <small style="opacity:0.7; font-weight:normal;">(${item.Gio_Vao.substring(0,5)})</small>
-            </div>
-          `).join('');
-        } else {
-          document.getElementById('active-count').innerText = "0";
-          activeListContainer.innerHTML = '<span class="no-staff">Tiệm chưa có nhân viên nào chấm công hôm nay.</span>';
+        if (resRev.ok) {
+          const revData = await resRev.json();
+          const total = revData.reduce((sum, item) => sum + (Number(item.Tong_Don) || 0), 0);
+          document.getElementById('total-revenue').innerText = total.toLocaleString('vi-VN') + "đ";
         }
 
-      } catch (e) { console.error("Lỗi Dashboard:", e); }
+        // B. Lấy danh sách nhân viên đang làm hôm nay
+        // Mã hóa chữ "Đang làm" để URL không bị lỗi khoảng trắng hoặc dấu
+        const statusQuery = encodeURIComponent("Đang làm");
+        const resCC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=eq.${today}&Status=eq.${statusQuery}&select=Gio_Vao,DM_NhanVien(Ho_Ten)`, { headers: h });
+        
+        if (resCC.ok) {
+          const ccData = await resCC.json();
+          const activeListContainer = document.getElementById('active-staff-list');
+          
+          if (ccData.length > 0) {
+            document.getElementById('active-count').innerText = ccData.length;
+            activeListContainer.innerHTML = ccData.map(item => `
+              <div class="staff-tag">
+                ${item.DM_NhanVien ? item.DM_NhanVien.Ho_Ten : 'N/A'} <small style="opacity:0.7; font-weight:normal;">(${item.Gio_Vao.substring(0,5)})</small>
+              </div>
+            `).join('');
+          } else {
+            document.getElementById('active-count').innerText = "0";
+            activeListContainer.innerHTML = '<span class="no-staff">Tiệm chưa có nhân viên nào đang làm.</span>';
+          }
+        }
+      } catch (e) { 
+        console.error("Lỗi Dashboard:", e); 
+        document.getElementById('active-staff-list').innerHTML = '<span class="no-staff" style="color: red;">Lỗi tải dữ liệu.</span>';
+      }
     }
   </script>
 </body>

@@ -3,184 +3,196 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chấm công - Sắc Màu</title>
-  
+  <title>Chấm Công Sắc Màu</title>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
-
   <style>
-    :root { --primary-cc: #2D5A27; --bg-light: #f4f7f6; }
-    body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
+    :root { --primary: #2D5A27; --bg: #f0f2f5; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; border: none; z-index: 999; }
+    .main-content { flex: 1; margin-left: 250px; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
     
-    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+    .card { background: white; width: 100%; max-width: 400px; padding: 40px 20px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+    .user-info h2 { margin: 0; color: var(--primary); font-size: 22px; }
+    .user-info p { color: #666; margin: 5px 0 25px 0; }
+    
+    .clock { font-size: 42px; font-weight: 800; color: #1a1a1a; margin-bottom: 30px; letter-spacing: -1px; }
+    
+    .btn-main { width: 180px; height: 180px; border-radius: 50%; border: none; color: white; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 15px rgba(0,0,0,0.15); margin-bottom: 20px; }
+    .btn-vao { background: #27ae60; }
+    .btn-ra { background: #e67e22; }
+    .btn-done { background: #94a3b8; cursor: not-allowed; }
+    .btn-error { background: #e74c3c; } 
+    .btn-main:active { transform: scale(0.95); }
 
-    .cc-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-    .cc-header { margin-bottom: 25px; }
-    .cc-header h2 { color: var(--primary-cc); margin: 0; font-size: 24px; }
-    .cc-header p { color: #666; font-size: 14px; margin-top: 5px; }
-
-    .digital-clock { font-size: 36px; font-weight: bold; color: #333; margin-bottom: 25px; font-family: 'Courier New', Courier, monospace; background: #eee; padding: 10px; border-radius: 10px; }
-
-    .btn-action { width: 200px; height: 200px; border-radius: 50%; border: none; color: white; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; margin: 0 auto; }
-    .btn-in { background: linear-gradient(135deg, #27ae60, #2ecc71); }
-    .btn-out { background: linear-gradient(135deg, #e67e22, #f39c12); }
-    .btn-action:hover { transform: scale(1.05); }
-    .btn-action:active { transform: scale(0.95); }
-    .btn-action i { font-size: 40px; }
-    .btn-disabled { background: #cbd5e1 !important; cursor: not-allowed; box-shadow: none; }
-
-    .status-badge { display: inline-block; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; margin-top: 20px; }
-    .st-offline { background: #fee2e2; color: #ef4444; }
-    .st-online { background: #dcfce7; color: #15803d; }
+    .status-text { font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 20px; }
+    .status-working { background: #dcfce7; color: #15803d; }
+    .status-off { background: #f1f5f9; color: #64748b; }
+    .status-err { background: #fee2e2; color: #b91c1c; }
 
     @media (max-width: 768px) {
-        .main-content { margin-left: 0; padding: 15px; }
-        #sidebar-frame { left: -250px; }
-        body.sidebar-open #sidebar-frame { left: 0; }
-        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: var(--primary-cc); color: white; padding: 8px 12px; border: none; border-radius: 4px; }
+      .main-content { margin-left: 0; }
+      #sidebar-frame { left: -250px; }
+      body.sidebar-open #sidebar-frame { left: 0; }
     }
-    
-    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
-    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
- <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
- <iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
+  <iframe src="sidebar.html" id="sidebar-frame"></iframe>
 
   <div class="main-content">
-    <div class="cc-card">
-      <div class="cc-header">
-        <h2 id="user-name">Đang tải...</h2>
-        <p id="today-date">...</p>
+    <div class="card">
+      <div class="user-info">
+        <h2 id="display-name">Nhân viên</h2>
+        <p id="display-date">...</p>
       </div>
 
-      <div class="digital-clock" id="live-clock">00:00:00</div>
+      <div class="clock" id="display-clock">00:00:00</div>
 
-      <div id="action-area">
-        <button class="btn-action btn-disabled">...</button>
+      <div id="btn-container">
+        <button class="btn-main btn-done">Đang tải...</button>
       </div>
 
-      <div id="status-display" class="status-badge st-offline">...</div>
+      <div style="margin-top: 15px;">
+        <span id="status-label" class="status-text status-off">...</span>
+      </div>
     </div>
   </div>
 
-<script>
-  let currentUser = null;
-  let todayLog = null;
-  const h = { 
-    'apikey': window.SB_CONFIG.KEY, 
-    'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation' 
-  };
+  <script>
+    let user = JSON.parse(localStorage.getItem('currentUser'));
+    let currentLog = null;
+    let API_URL = "";
+    let headers = {};
 
-  document.addEventListener("DOMContentLoaded", function() {
-    const userData = localStorage.getItem('currentUser');
-    if(!userData) { window.location.href = 'login.html'; return; }
-    currentUser = JSON.parse(userData);
-    document.getElementById('user-name').innerText = currentUser.name;
-    
-    updateClock();
-    setInterval(updateClock, 1000);
-    checkTodayStatus();
-  });
-
-  function updateClock() {
-    const now = new Date();
-    document.getElementById('live-clock').innerText = now.toLocaleTimeString('vi-VN');
-    document.getElementById('today-date').innerText = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' });
-  }
-
-  /** 🟢 KIỂM TRA TRẠNG THÁI HÔM NAY */
-  async function checkTodayStatus() {
-    const now = new Date();
-    const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-    
-    try {
-      const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?User_ID=eq.${currentUser.id}&Ngay=eq.${today}&select=*`, { headers: h });
-      const data = await res.json();
+    document.addEventListener("DOMContentLoaded", async () => {
+      if(!user) return window.location.href = 'login.html';
       
-      const area = document.getElementById('action-area');
-      const badge = document.getElementById('status-display');
+      const employeeName = user.name || user.Ho_Ten || "Nhân viên";
+      document.getElementById('display-name').innerText = employeeName;
+      
+      API_URL = `${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong`;
+      headers = { 
+        'apikey': window.SB_CONFIG.KEY, 
+        'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      };
 
-      if (!data || data.length === 0) {
-        area.innerHTML = `<button class="btn-action btn-in" onclick="handleCheckIn()"><i>📍</i>VÀO CA</button>`;
-        badge.className = "status-badge st-offline";
-        badge.innerText = "CHƯA VÀO CA";
-      } else {
-        todayLog = data[0];
-        if (todayLog.Status === "Đang làm") {
-          area.innerHTML = `<button class="btn-action btn-out" onclick="handleCheckOut()"><i>🚪</i>XÁC NHẬN VỀ</button>`;
-          badge.className = "status-badge st-online";
-          badge.innerText = "ĐANG TRỰC TẠI TIỆM";
-        } else {
-          area.innerHTML = `<button class="btn-action btn-disabled"><i>✅</i>ĐÃ XONG</button>`;
-          badge.className = "status-badge st-offline";
-          badge.innerText = `ĐÃ VỀ LÚC ${todayLog.Gio_Ra.substring(0,5)}`;
+      // --- CƠ CHẾ TỰ ĐỘNG TÌM ID NẾU BỊ THIẾU ---
+      if (!user.id) {
+        try {
+          const resSearch = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?Ho_Ten=eq.${encodeURIComponent(employeeName)}&select=id`, { headers });
+          const dataSearch = await resSearch.json();
+          if (dataSearch && dataSearch.length > 0) {
+            user.id = dataSearch[0].id;
+            localStorage.setItem('currentUser', JSON.stringify(user)); // Lưu bù lại vào máy
+          } else {
+            Swal.fire('Lỗi Hệ Thống', 'Không tìm thấy ID của nhân viên này trong CSDL', 'error');
+            return;
+          }
+        } catch (e) {
+          console.error("Lỗi dò ID:", e);
         }
       }
-    } catch (e) { 
-      console.error("Lỗi:", e);
-      // Khi lỗi, vẫn hiện nút VÀO CA để người dùng thử lại
-      document.getElementById('action-area').innerHTML = `<button class="btn-action btn-in" onclick="checkTodayStatus()"><i>📍</i>VÀO CA</button>`;
+      // ------------------------------------------
+
+      startClock();
+      checkStatus();
+    });
+
+    function startClock() {
+      const update = () => {
+        const now = new Date();
+        document.getElementById('display-clock').innerText = now.toLocaleTimeString('vi-VN');
+        document.getElementById('display-date').innerText = now.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+      };
+      update();
+      setInterval(update, 1000);
     }
-  }
 
-  /** 📍 HÀM VÀO CA */
-  async function handleCheckIn() {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-GB'); 
-    const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    async function checkStatus() {
+      const now = new Date();
+      const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+      
+      const btnBox = document.getElementById('btn-container');
+      const label = document.getElementById('status-label');
 
-    Swal.fire({ title: 'Bắt đầu làm việc?', icon: 'question', showCancelButton: true, confirmButtonText: 'VÀO CA NGAY' })
-    .then(async (r) => {
-      if (r.isConfirmed) {
-        Swal.fire({ title: 'Đang ghi dữ liệu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const body = { User_ID: currentUser.id, Ngay: dateStr, Gio_Vao: timeStr, Status: "Đang làm" };
+      try {
+        const res = await fetch(`${API_URL}?User_ID=eq.${user.id}&Ngay=eq.${today}&select=*`, { headers });
         
-        try {
-          const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong`, {
-            method: 'POST', headers: h, body: JSON.stringify(body)
-          });
-          if (res.ok) {
-            Swal.fire({ icon: 'success', title: 'Đã vào ca thành công!', timer: 1500, showConfirmButton: false });
-            checkTodayStatus();
-          } else {
-            const err = await res.json();
-            Swal.fire("Lỗi Database", err.message || "Không thể lưu dữ liệu!", "error");
-          }
-        } catch (e) { Swal.fire("Lỗi kết nối", e.message, "error"); }
-      }
-    });
-  }
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || "Lỗi đọc dữ liệu");
+        }
 
-  /** 🚪 HÀM XÁC NHẬN VỀ */
-  async function handleCheckOut() {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-GB');
+        const data = await res.json();
 
-    Swal.fire({ title: 'Xác nhận ra ca?', icon: 'warning', showCancelButton: true, confirmButtonText: 'XÁC NHẬN VỀ' })
-    .then(async (r) => {
-      if (r.isConfirmed) {
-        Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        try {
-          const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?id=eq.${todayLog.id}`, {
-            method: 'PATCH', headers: h, body: JSON.stringify({ Gio_Ra: timeStr, Status: "Đã về" })
-          });
-          if (res.ok) {
-            Swal.fire({ icon: 'success', title: 'Hẹn gặp lại!', timer: 1500, showConfirmButton: false });
-            checkTodayStatus();
+        if (data.length === 0) {
+          btnBox.innerHTML = `<button class="btn-main btn-vao" onclick="doAction('IN')">VÀO CA</button>`;
+          label.innerText = "CHƯA BẮT ĐẦU";
+          label.className = "status-text status-off";
+        } else {
+          currentLog = data[0];
+          if (currentLog.Status === "Đang làm") {
+            btnBox.innerHTML = `<button class="btn-main btn-ra" onclick="doAction('OUT')">RA CA</button>`;
+            label.innerText = "ĐANG TRONG CA LÀM";
+            label.className = "status-text status-working";
           } else {
-             const err = await res.json();
-             Swal.fire("Lỗi khi về", err.message || "Không thể cập nhật!", "error");
+            btnBox.innerHTML = `<button class="btn-main btn-done">HOÀN TẤT</button>`;
+            label.innerText = `ĐÃ RA CA LÚC ${currentLog.Gio_Ra.substring(0,5)}`;
+            label.className = "status-text status-off";
           }
-        } catch (e) { Swal.fire("Lỗi kết nối", e.message, "error"); }
+        }
+      } catch (e) { 
+        console.error("Lỗi:", e);
+        btnBox.innerHTML = `<button class="btn-main btn-error" onclick="checkStatus()">LỖI TẢI<br><small style="font-size:12px; font-weight:normal">Bấm thử lại</small></button>`;
+        label.innerText = "LỖI KẾT NỐI DATABASE";
+        label.className = "status-text status-err";
+        Swal.fire('Lỗi kết nối', 'Hệ thống bị lỗi khi lấy dữ liệu: ' + e.message, 'error');
       }
-    });
-  }
-</script>
+    }
+
+    async function doAction(type) {
+      const now = new Date();
+      const time = now.toLocaleTimeString('en-GB'); 
+      const date = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+
+      const confirmText = type === 'IN' ? 'Bắt đầu ca làm việc?' : 'Kết thúc ca làm việc?';
+      const result = await Swal.fire({ title: confirmText, icon: 'question', showCancelButton: true, confirmButtonColor: '#2D5A27', confirmButtonText: 'Đồng ý' });
+      
+      if (!result.isConfirmed) return;
+      Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      try {
+        let res;
+        if (type === 'IN') {
+          res = await fetch(API_URL, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ User_ID: user.id, Ngay: date, Gio_Vao: time, Status: 'Đang làm' })
+          });
+        } else {
+          res = await fetch(`${API_URL}?id=eq.${currentLog.id}`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({ Gio_Ra: time, Status: 'Đã về' })
+          });
+        }
+
+        if (res.ok) {
+          Swal.fire({ icon: 'success', title: 'Thành công!', timer: 1000, showConfirmButton: false });
+          checkStatus();
+        } else {
+          const err = await res.json();
+          throw new Error(err.message || 'Lỗi không xác định từ Database');
+        }
+      } catch (e) { 
+        Swal.fire('Lỗi Ghi Dữ Liệu', e.message, 'error');
+      }
+    }
+  </script>
 </body>
 </html>
