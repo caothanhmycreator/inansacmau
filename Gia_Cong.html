@@ -89,25 +89,26 @@
           return;
         }
         tbody.innerHTML = data.map(item => {
-          // --- LOGIC HIỂN THỊ FILE TỪ LINK DRIVE (GIỐNG DUYET_FILE) ---
+          // --- CẬP NHẬT LOGIC NHẬN DIỆN THÔNG MINH (GIỐNG DUYỆT FILE VÀ CHỜ IN) ---
           const link = item.Link_Anh || "";
           let imgHtml = "";
 
           if (!link) {
             imgHtml = `<div style="font-size:10px; color:#94a3b8; text-align:center">📂</div>`;
+          } else if (link.toLowerCase().includes('/folders/')) {
+            // Nhận diện Thư mục
+            imgHtml = `<div onclick="window.open('${link}', '_blank')" style="cursor:pointer; color:#f39c12; font-weight:bold; font-size:11px; text-align:center; padding: 10px;">📁 Click xem Thư mục</div>`;
+          } else if (link.toLowerCase().includes('.pdf')) {
+            // Nhận diện PDF
+            imgHtml = `<div onclick="window.open('${link}', '_blank')" style="cursor:pointer; color:#27ae60; font-weight:bold; font-size:11px; text-align:center; padding: 10px;">📄 Click xem PDF</div>`;
           } else {
+            // Nhận diện Ảnh (Tối ưu Thumbnail Google Drive)
             const driveIdMatch = link.match(/[-\w]{25,}/);
-            if (driveIdMatch) {
-              // Sử dụng link thumbnail hỗ trợ cả Ảnh và PDF
-              const thumbnailLink = `https://drive.google.com/thumbnail?id=${driveIdMatch[0]}&sz=w500`;
-              imgHtml = `<img src="${thumbnailLink}" class="img-preview" 
-                          onclick="window.open('${link}', '_blank')" 
-                          onerror="this.parentElement.innerHTML='📄 Xem File';">`;
-            } else {
-              imgHtml = `<img src="${link}" class="img-preview" 
-                          onclick="window.open('${link}', '_blank')" 
-                          onerror="this.parentElement.innerHTML='🖼️ Xem Ảnh';">`;
-            }
+            const previewUrl = driveIdMatch ? `https://drive.google.com/thumbnail?id=${driveIdMatch[0]}&sz=w500` : link;
+            
+            imgHtml = `<img src="${previewUrl}" class="img-preview" 
+                        onclick="window.open('${link}', '_blank')" 
+                        onerror="this.parentElement.innerHTML='🖼️ Click xem ảnh';">`;
           }
 
           return `<tr class="f6-row">
