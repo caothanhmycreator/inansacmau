@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Giá Sản Phẩm - Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+  <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
+
+  <style>
+    :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; --accent: #d35400; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; }
+    .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; }
+
+    /* Form Nhập */
+    .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+    .input-group { display: flex; flex-direction: column; }
+    .input-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
+    .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; }
+    .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(211, 84, 0, 0.1); }
+
+    /* Bảng Giá */
+    .price-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .group-header { background: #f8fafc; padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 10px; transition: 0.2s; }
+    .group-header:hover { background: #edf2f7; color: var(--accent); }
+    .group-content { display: none; margin-top: 5px; overflow-x: auto; }
+    .group-content.show { display: block; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px; }
+    th, td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: left; }
+    th { background: #f1f5f9; color: #64748b; font-size: 11px; text-transform: uppercase; }
+    
+    .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
+    .img-preview:hover { transform: scale(1.1); }
+    .qr-preview { width: 40px; height: 40px; cursor: pointer; background: white; padding: 2px; border: 1px solid #eee; }
+    .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; font-size: 16px; transition: 0.3s; }
+    .btn-submit:hover { background: #a04000; transform: translateY(-2px); }
+
+    @media (max-width: 768px) { .main-content { margin-left: 0; padding: 15px; } #sidebar-frame { left: -250px; } }
+  </style>
+</head>
+<body>
+
+  <iframe src="sidebar.html" id="sidebar-frame"></iframe>
+
+  <div class="main-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div>
+        <h2 style="margin:0; color: var(--accent);">🏷️ QUẢN LÝ BẢNG GIÁ SẮC MÀU</h2>
+        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Cập nhật đơn giá & Mã tra cứu sản phẩm</p>
+      </div>
+      <button onclick="getToken()" style="padding:10px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid var(--accent); background:white; color:var(--accent);">🔐 KẾT NỐI DRIVE</button>
+    </div>
+
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="input-group">
+          <label>Nhóm hàng</label>
+          <input type="text" id="f-nhom" class="input-modern" placeholder="Vd: In Bạt, Decal...">
+        </div>
+        <div class="input-group">
+          <label>Tên sản phẩm *</label>
+          <input type="text" id="f-ten" class="input-modern" placeholder="Tên sản phẩm báo giá...">
+        </div>
+        <div class="input-group">
+          <label>Đơn vị tính</label>
+          <input type="text" id="f-dvt" class="input-modern" placeholder="Vd: m2, Cái, Mét...">
+        </div>
+        <div class="input-group">
+          <label>Giá bán lẻ (VNĐ)</label>
+          <input type="number" id="f-gia-ban" class="input-modern" value="0">
+        </div>
+        <div class="input-group">
+          <label>Giá sỉ / Thợ (VNĐ)</label>
+          <input type="number" id="f-gia-si" class="input-modern" value="0">
+        </div>
+        <div class="input-group">
+          <label>Mô tả / Quy cách</label>
+          <input type="text" id="f-mota" class="input-modern" placeholder="Ghi chú quy cách...">
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
+          <label>Hình ảnh mẫu (Drive)</label>
+          <input type="file" id="f-hinh" class="input-modern" accept="image/*">
+        </div>
+      </div>
+      <button class="btn-submit" onclick="submitPriceItem()">📤 LƯU VÀO BẢNG GIÁ</button>
+    </div>
+
+    <div class="price-card">
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin:0;">📊 CHI TIẾT ĐƠN GIÁ</h3>
+        <button onclick="loadPriceList()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">🔄 Làm mới bảng</button>
+      </div>
+      <div id="price-list">
+        <p style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu bảng giá...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
+    const FOLDER_ID = "1ao2E97b8YdawmGb23c8U_6u7N65hTrVN"; 
+    let accessToken = localStorage.getItem('drive_access_token');
+    let tokenClient;
+
+    function initTokenClient() {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: 'https://www.googleapis.com/auth/drive.file',
+            callback: (tokenResponse) => {
+                accessToken = tokenResponse.access_token;
+                localStorage.setItem('drive_access_token', accessToken);
+                Swal.fire({ icon: 'success', title: 'Drive đã sẵn sàng!', timer: 1000, showConfirmButton: false });
+            },
+        });
+    }
+
+    function getToken() { tokenClient.requestAccessToken(); }
+
+    document.addEventListener("DOMContentLoaded", () => { setTimeout(loadPriceList, 600); });
+
+    async function uploadFileToDrive(file) {
+        if (!accessToken) return null;
+        const metadata = { name: `GIA_${Date.now()}_${file.name}`, parents: [FOLDER_ID] };
+        const resInit = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(metadata)
+        });
+        if(resInit.status === 401) { getToken(); return null; }
+        const uploadUrl = resInit.headers.get('Location');
+        const resUpload = await fetch(uploadUrl, { method: 'PUT', body: file });
+        const result = await resUpload.json();
+        return `https://drive.google.com/file/d/${result.id}/view`;
+    }
+
+    async function submitPriceItem() {
+      const nhom = document.getElementById('f-nhom').value.trim() || "Chưa phân loại";
+      const ten = document.getElementById('f-ten').value.trim();
+      const file = document.getElementById('f-hinh').files[0];
+
+      if(!ten) return Swal.fire('Lỗi', 'Vui lòng nhập tên sản phẩm!', 'warning');
+      
+      Swal.fire({ title: 'Đang lưu sản phẩm...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      try {
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+        
+        // 1. CHỐNG TRÙNG MÃ QR (Dùng SMK- làm tiền tố)
+        let maQR = "";
+        let isDuplicate = true;
+        while (isDuplicate) {
+            maQR = "SMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(); // SMP = Sac Mau Price
+            const resCheck = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Ma_QR=eq.${maQR}&select=id`, { headers: h });
+            const dataCheck = await resCheck.json();
+            if (dataCheck.length === 0) isDuplicate = false;
+        }
+
+        let driveLink = "";
+        if (file) driveLink = await uploadFileToDrive(file);
+
+        const resDB = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham`, {
+          method: 'POST', headers: h, body: JSON.stringify({
+            Nhom_Hang: nhom, Ten_San_Pham: ten, 
+            Don_Vi_Tinh: document.getElementById('f-dvt').value,
+            Gia_Ban: Number(document.getElementById('f-gia-ban').value),
+            Gia_Si: Number(document.getElementById('f-gia-si').value),
+            Mo_Ta: document.getElementById('f-mota').value,
+            Hinh_Anh: driveLink,
+            Ma_QR: maQR
+          })
+        });
+
+        if(resDB.ok) {
+          Swal.fire('Thành công', `Đã thêm sản phẩm mã: ${maQR}`, 'success');
+          document.getElementById('f-ten').value = "";
+          document.getElementById('f-hinh').value = "";
+          loadPriceList();
+        }
+      } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
+    }
+
+    async function loadPriceList() {
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*&order=Nhom_Hang.asc`, { headers: h });
+        const data = await res.json();
+        const groups = {};
+        data.forEach(item => {
+          if (!groups[item.Nhom_Hang]) groups[item.Nhom_Hang] = [];
+          groups[item.Nhom_Hang].push(item);
+        });
+
+        const container = document.getElementById('price-list');
+        container.innerHTML = "";
+        if(data.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Trống.</p>'; return; }
+
+        for (let nhom in groups) {
+          let rows = groups[nhom].map(item => {
+            const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(item.Ma_QR || item.Ten_San_Pham)}`;
+            let thumb = '<span style="color:#ccc">N/A</span>';
+            if (item.Hinh_Anh && item.Hinh_Anh.includes('drive.google.com')) {
+                const fileId = item.Hinh_Anh.split('/d/')[1]?.split('/')[0] || item.Hinh_Anh.split('id=')[1]?.split('&')[0];
+                thumb = `<img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w200" class="img-preview" onclick="window.open('${item.Hinh_Anh}', '_blank')">`;
+            }
+
+            return `
+            <tr>
+              <td>
+                <img src="${qrImg}" class="qr-preview" onclick="Swal.fire({title: 'QR: ${item.Ma_QR}', imageUrl: '${qrImg}', imageWidth: 250})">
+                <div style="font-size:9px; color:#888;">${item.Ma_QR || ''}</div>
+              </td>
+              <td>${thumb}</td>
+              <td><b>${item.Ten_San_Pham}</b><br><small style="color:#888">${item.Mo_Ta || ''}</small></td>
+              <td>${item.Don_Vi_Tinh || ''}</td>
+              <td style="font-weight:bold; color:#c0392b;">${(item.Gia_Ban || 0).toLocaleString()}đ</td>
+              <td style="color:#27ae60; font-weight:bold;">${(item.Gia_Si || 0).toLocaleString()}đ</td>
+              <td>
+                <button onclick='editPrice(${JSON.stringify(item)})' style="color:#2980b9; border:none; background:none; cursor:pointer; font-weight:bold;">SỬA</button> | 
+                <button onclick="deletePrice(${item.id})" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold;">XÓA</button>
+              </td>
+            </tr>`}).join('');
+
+          container.innerHTML += `
+            <div class="group-header" onclick="toggleGroup('${nhom}')">
+              <span>➕ ${nhom.toUpperCase()} (${groups[nhom].length} món)</span>
+              <span>▼</span>
+            </div>
+            <div id="group-${nhom}" class="group-content">
+              <table>
+                <thead><tr><th>QR</th><th>Ảnh</th><th>Sản phẩm</th><th>ĐVT</th><th>Giá lẻ</th><th>Giá sỉ</th><th>Thao tác</th></tr></thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>`;
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function toggleGroup(id) { document.getElementById(`group-${id}`).classList.toggle('show'); }
+
+    async function editPrice(item) {
+      const { value: formValues } = await Swal.fire({
+        title: 'CẬP NHẬT GIÁ & THÔNG TIN',
+        width: '750px',
+        html: `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; font-size: 13px; padding: 10px;">
+            <div><label><b>Nhóm hàng:</b></label><input id="e-nhom" class="swal2-input" value="${item.Nhom_Hang}"></div>
+            <div><label><b>Tên SP:</b></label><input id="e-ten" class="swal2-input" value="${item.Ten_San_Pham}"></div>
+            <div><label><b>Giá bán lẻ:</b></label><input id="e-gia-ban" type="number" class="swal2-input" value="${item.Gia_Ban}"></div>
+            <div><label><b>Giá sỉ/thợ:</b></label><input id="e-gia-si" type="number" class="swal2-input" value="${item.Gia_Si}"></div>
+            <div><label><b>Đơn vị tính:</b></label><input id="e-dvt" class="swal2-input" value="${item.Don_Vi_Tinh || ''}"></div>
+            <div><label><b>Mô tả:</b></label><input id="e-mota" class="swal2-input" value="${item.Mo_Ta || ''}"></div>
+            <div style="grid-column: span 2;">
+                <label><b>Thay đổi hình ảnh (Nếu cần):</b></label>
+                <input type="file" id="e-hinh" class="swal2-file" accept="image/*" style="width:100%">
+            </div>
+          </div>`,
+        showCancelButton: true,
+        confirmButtonText: 'LƯU THAY ĐỔI',
+        confirmButtonColor: '#2D5A27',
+        preConfirm: async () => {
+          const newFile = document.getElementById('e-hinh').files[0];
+          let newLink = item.Hinh_Anh;
+          if (newFile) { Swal.showLoading(); newLink = await uploadFileToDrive(newFile); }
+          return {
+            Nhom_Hang: document.getElementById('e-nhom').value,
+            Ten_San_Pham: document.getElementById('e-ten').value,
+            Gia_Ban: Number(document.getElementById('e-gia-ban').value),
+            Gia_Si: Number(document.getElementById('e-gia-si').value),
+            Don_Vi_Tinh: document.getElementById('e-dvt').value,
+            Mo_Ta: document.getElementById('e-mota').value,
+            Hinh_Anh: newLink
+          }
+        }
+      });
+      if (formValues) {
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?id=eq.${item.id}`, { method: 'PATCH', headers: h, body: JSON.stringify(formValues) });
+        loadPriceList();
+        Swal.fire({icon:'success', title:'Đã cập nhật', timer:1000, showConfirmButton:false});
+      }
+    }
+
+    async function deletePrice(id) {
+      const r = await Swal.fire({ title: 'Xóa báo giá này?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
+      if (r.isConfirmed) {
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` } });
+        loadPriceList();
+      }
+    }
+  </script>
+</body>
+</html>
