@@ -33,7 +33,8 @@
     th, td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: left; }
     th { background: #f1f5f9; color: #64748b; font-size: 11px; text-transform: uppercase; }
     
-    .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #ddd; }
+    .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
+    .img-preview:hover { transform: scale(1.1); }
     .qr-preview { width: 40px; height: 40px; cursor: pointer; background: white; padding: 2px; border: 1px solid #eee; }
     .btn-submit { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; font-size: 16px; transition: 0.3s; }
     .btn-submit:hover { background: #1e3f1a; transform: translateY(-2px); }
@@ -51,7 +52,7 @@
         <h2 style="margin:0; color: var(--primary);">📦 KHO VẬT TƯ SẮC MÀU</h2>
         <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Quản lý kho & In mã QR Code vật tư</p>
       </div>
-      <button onclick="getToken()" style="padding:10px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid var(--primary); background:white; color:var(--primary);">🔐 KẾT NỐI DRIVE (inansacmau...)</button>
+      <button onclick="getToken()" style="padding:10px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid var(--primary); background:white; color:var(--primary);">🔐 KẾT NỐI DRIVE</button>
     </div>
 
     <div class="form-card">
@@ -112,7 +113,7 @@
             callback: (tokenResponse) => {
                 accessToken = tokenResponse.access_token;
                 localStorage.setItem('drive_access_token', accessToken);
-                Swal.fire({ icon: 'success', title: 'Drive inansacmau... đã sẵn sàng!', timer: 1000, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: 'Drive đã kết nối!', timer: 1000, showConfirmButton: false });
             },
         });
     }
@@ -130,9 +131,9 @@
       const file = document.getElementById('f-hinh').files[0];
 
       if(!ten) return Swal.fire('Lỗi', 'Vui lòng nhập tên hàng hóa!', 'warning');
-      if(!accessToken) { Swal.fire('Drive chưa kết nối', 'Vui lòng kết nối với mail inansacmau...', 'info'); return; }
+      if(!accessToken) { Swal.fire('Drive chưa kết nối', 'Vui lòng bấm nút Kết nối Drive phía trên!', 'info'); return; }
 
-      Swal.fire({ title: 'Đang tải lên và lưu kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      Swal.fire({ title: 'Đang tải lên...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
       let driveLink = "";
       try {
@@ -147,7 +148,7 @@
             const uploadUrl = resInit.headers.get('Location');
             const resUpload = await fetch(uploadUrl, { method: 'PUT', body: file });
             const result = await resUpload.json();
-            // CHỈNH SỬA: Lưu link thumbnail chất lượng cao
+            // Lưu link dạng thumbnail để hiển thị trong bảng
             driveLink = `https://drive.google.com/thumbnail?id=${result.id}&sz=w800`; 
         }
 
@@ -192,14 +193,14 @@
 
         for (let nhom in groups) {
           let rows = groups[nhom].map(item => {
-            // TẠO MÃ QR DẠNG HÌNH ẢNH (Dùng Google Charts API)
-            const qrImageUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(item.Ma_QR)}&choe=UTF-8`;
+            // TẠO MÃ QR DẠNG HÌNH ẢNH
+            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(item.Ma_QR)}`;
             
             return `
             <tr>
               <td>
-                <img src="${qrImageUrl}" class="qr-preview" title="Bấm để xem to mã QR" 
-                     onclick="Swal.fire({title: 'Mã QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 300, imageHeight: 300})">
+                <img src="${qrImageUrl}" class="qr-preview" title="Xem mã QR" 
+                     onclick="Swal.fire({title: 'Mã QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 250, imageHeight: 250, confirmButtonText: 'ĐÓNG', confirmButtonColor: '#2D5A27'})">
                 <div style="font-size:10px; color:#888;">${item.Ma_QR}</div>
               </td>
               <td><b>${item.Ten_Hang}</b></td>
@@ -232,15 +233,16 @@
       } catch (e) { console.error(e); }
     }
 
-    // CHỈNH SỬA: Hàm xem ảnh gốc chất lượng cao nhất
+    // HÀM XEM ẢNH GỐC CHẤT LƯỢNG CAO
     function viewFullImage(thumbUrl) {
-        // Thumbnail URL có dạng: ...drive.google.com/thumbnail?id=FILE_ID&sz=w800
-        // Để lấy ảnh gốc, ta cần chuyển về dạng: ...drive.google.com/uc?id=FILE_ID
-        const fileId = thumbUrl.split('id=')[1].split('&')[0];
+        // Thumbnail link: ...drive.google.com/thumbnail?id=FILE_ID&sz=w800
+        const urlParams = new URLSearchParams(thumbUrl.split('?')[1]);
+        const fileId = urlParams.get('id');
+        // URL ảnh gốc trực tiếp từ Drive
         const fullResUrl = `https://drive.google.com/uc?id=${fileId}`;
         
         Swal.fire({
-            title: 'Hình ảnh vật tư',
+            title: 'Hình ảnh vật tư (Ảnh gốc)',
             imageUrl: fullResUrl,
             imageAlt: 'Vật tư kho',
             width: '80%',
@@ -264,6 +266,7 @@
           </div>`,
         showCancelButton: true,
         confirmButtonText: 'CẬP NHẬT',
+        confirmButtonColor: '#2D5A27',
         preConfirm: () => {
           return {
             Nhom_Hang: document.getElementById('e-nhom').value,
@@ -282,7 +285,7 @@
     }
 
     async function deleteItem(id) {
-      const r = await Swal.fire({ title: 'Xóa vật tư này?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
+      const r = await Swal.fire({ title: 'Xóa vật tư này?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'XÓA', cancelButtonText: 'HỦY' });
       if (r.isConfirmed) {
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${id}`, { method: 'DELETE', headers: h });
