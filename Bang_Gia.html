@@ -3,128 +3,248 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bảng Giá - Sắc Màu</title>
+  <title>Bảng Giá Sản Phẩm - Sắc Màu</title>
+  
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
   <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
+
   <style>
-    :root { --primary: #2D5A27; --bg: #f4f7f6; --accent: #d35400; }
+    :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; --accent: #d35400; }
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; }
-    .main-content { flex: 1; margin-left: 250px; padding: 25px; }
+    .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; }
+
+    /* Form Nhập */
     .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
     .input-group { display: flex; flex-direction: column; }
     .input-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
     .input-modern { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; font-weight: bold; }
+    .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(211, 84, 0, 0.1); }
+
+    /* Bảng Giá */
     .price-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .group-header { background: #f8fafc; padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 10px; }
+    .group-header { background: #f8fafc; padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 10px; transition: 0.2s; }
+    .group-header:hover { background: #edf2f7; color: var(--accent); }
     .group-content { display: none; margin-top: 5px; overflow-x: auto; }
     .group-content.show { display: block; }
+
     table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px; }
     th, td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: left; }
-    .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; }
-    .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; font-size: 16px; }
-    @media (max-width: 768px) { .main-content { margin-left: 0; } #sidebar-frame { display:none; } }
+    th { background: #f1f5f9; color: #64748b; font-size: 11px; text-transform: uppercase; }
+    
+    .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
+    .img-preview:hover { transform: scale(1.1); }
+    .qr-preview { width: 40px; height: 40px; cursor: pointer; background: white; padding: 2px; border: 1px solid #eee; }
+    .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; font-size: 16px; transition: 0.3s; }
+    .btn-submit:hover { background: #a04000; transform: translateY(-2px); }
+
+    @media (max-width: 768px) { .main-content { margin-left: 0; padding: 15px; } #sidebar-frame { left: -250px; } }
   </style>
 </head>
 <body>
+
   <iframe src="sidebar.html" id="sidebar-frame"></iframe>
+
   <div class="main-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2 style="margin:0; color: var(--accent);">🏷️ QUẢN LÝ BẢNG GIÁ</h2>
+      <div>
+        <h2 style="margin:0; color: var(--accent);">🏷️ QUẢN LÝ BẢNG GIÁ SẮC MÀU</h2>
+        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Cập nhật đơn giá & Mã tra cứu (SMP-XXXX)</p>
+      </div>
       <button onclick="getToken()" style="padding:10px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid var(--accent); background:white; color:var(--accent);">🔐 KẾT NỐI DRIVE</button>
     </div>
+
     <div class="form-card">
       <div class="form-grid">
-        <div class="input-group"><label>Nhóm hàng</label><input type="text" id="f-nhom" class="input-modern" placeholder="Vd: In Bạt..."></div>
+        <div class="input-group"><label>Nhóm hàng</label><input type="text" id="f-nhom" class="input-modern" placeholder="Vd: In Bạt, Decal..."></div>
         <div class="input-group"><label>Tên hàng *</label><input type="text" id="f-ten" class="input-modern" placeholder="Tên sản phẩm..."></div>
-        <div class="input-group"><label>Đơn vị tính</label><input type="text" id="f-dvt" class="input-modern" placeholder="Vd: m2..."></div>
-        <div class="input-group"><label>Giá lẻ (VNĐ)</label><input type="text" id="f-gia-ban" class="input-modern" value="0" oninput="formatCurrency(this)"></div>
-        <div class="input-group"><label>Giá sỉ (VNĐ)</label><input type="text" id="f-gia-si" class="input-modern" value="0" oninput="formatCurrency(this)"></div>
-        <div class="input-group"><label>Mô tả</label><input type="text" id="f-mota" class="input-modern"></div>
-        <div class="input-group" style="grid-column: span 2;"><label>Hình ảnh</label><input type="file" id="f-hinh" class="input-modern"></div>
+        <div class="input-group"><label>Đơn vị tính</label><input type="text" id="f-dvt" class="input-modern" placeholder="Vd: m2, Cái..."></div>
+        <div class="input-group"><label>Giá lẻ (VNĐ)</label><input type="text" id="f-gia-ban" class="input-modern" value="0" oninput="formatCurrencyInput(this)"></div>
+        <div class="input-group"><label>Giá sỉ / Thợ (VNĐ)</label><input type="text" id="f-gia-si" class="input-modern" value="0" oninput="formatCurrencyInput(this)"></div>
+        <div class="input-group"><label>Mô tả / Quy cách</label><input type="text" id="f-mota" class="input-modern" placeholder="Ghi chú..."></div>
+        <div class="input-group" style="grid-column: span 2;"><label>Hình ảnh mẫu</label><input type="file" id="f-hinh" class="input-modern" accept="image/*"></div>
       </div>
-      <button class="btn-submit" onclick="submitPriceItem()">📤 LƯU BÁO GIÁ</button>
+      <button class="btn-submit" onclick="submitPriceItem()">📤 LƯU VÀO BẢNG GIÁ</button>
     </div>
-    <div class="price-card"><div id="price-list"></div></div>
+
+    <div class="price-card">
+      <div id="price-list"><p style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu...</p></div>
+    </div>
   </div>
 
   <script>
     const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
-    const FOLDER_ID = "1ao2E97b8YdawmGb23c8U_6u7N65hTrVN";
+    const FOLDER_ID = "1ao2E97b8YdawmGb23c8U_6u7N65hTrVN"; 
     let accessToken = localStorage.getItem('drive_access_token');
     let tokenClient;
 
     function initTokenClient() {
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID, scope: 'https://www.googleapis.com/auth/drive.file',
-        callback: (res) => { accessToken = res.access_token; localStorage.setItem('drive_access_token', accessToken); }
-      });
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: 'https://www.googleapis.com/auth/drive.file',
+            callback: (tokenResponse) => {
+                accessToken = tokenResponse.access_token;
+                localStorage.setItem('drive_access_token', accessToken);
+                Swal.fire({ icon: 'success', title: 'Drive sẵn sàng!', timer: 1000, showConfirmButton: false });
+            },
+        });
     }
-    function getToken() { tokenClient.requestAccessToken(); }
-    function formatCurrency(input) {
-      let v = input.value.replace(/\D/g, "");
-      input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    }
-    function parseNum(s) { return Number(s.replace(/\./g, "")) || 0; }
 
+    function getToken() { tokenClient.requestAccessToken(); }
+
+    // Định dạng tiền tệ khi gõ
+    function formatCurrencyInput(input) {
+        let value = input.value.replace(/\D/g, "");
+        input.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function parseCurrency(str) { return Number(str.replace(/\./g, "")) || 0; }
+
+    document.addEventListener("DOMContentLoaded", () => { setTimeout(loadPriceList, 600); });
+
+    // Hàm Upload chuẩn lấy ID
     async function uploadDrive(file) {
-      const meta = { name: `GIA_${Date.now()}_${file.name}`, parents: [FOLDER_ID] };
-      const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
-        method:'POST', headers:{'Authorization':`Bearer ${accessToken}`,'Content-Type':'application/json'}, body:JSON.stringify(meta)
+      if (!accessToken) return null;
+      const metadata = { name: `GIA_${Date.now()}_${file.name}`, parents: [FOLDER_ID] };
+      const resInit = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(metadata)
       });
-      const loc = res.headers.get('Location');
-      const final = await fetch(loc, { method:'PUT', body:file });
-      const data = await final.json();
-      return `https://drive.google.com/file/d/${data.id}/view`;
+      const uploadUrl = resInit.headers.get('Location');
+      const resUpload = await fetch(uploadUrl, { method: 'PUT', body: file });
+      const result = await resUpload.json();
+      return result.id ? `https://drive.google.com/file/d/${result.id}/view` : null;
     }
 
     async function submitPriceItem() {
       const ten = document.getElementById('f-ten').value.trim();
-      if(!ten) return Swal.fire('Lỗi','Nhập tên hàng','warning');
-      Swal.fire({title:'Đang lưu...', didOpen:()=>Swal.showLoading()});
+      if(!ten) return Swal.fire('Lỗi', 'Nhập tên hàng!', 'warning');
+      
+      Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
       try {
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+        
+        // Chống trùng mã QR
         let maQR = ""; let isDup = true;
-        while(isDup) {
-          maQR = "SMP-" + Math.random().toString(36).substr(2,6).toUpperCase();
-          const ck = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Ma_QR=eq.${maQR}&select=Id`, {headers:h});
-          const d = await ck.json(); if(d.length===0) isDup = false;
+        while (isDup) {
+            maQR = "SMP-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+            const resCheck = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Ma_QR=eq.${maQR}&select=Id`, { headers: h });
+            const dataCheck = await resCheck.json();
+            if (dataCheck.length === 0) isDup = false;
         }
-        let link = ""; const file = document.getElementById('f-hinh').files[0];
-        if(file) link = await uploadDrive(file);
-        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham`, {
-          method:'POST', headers:h, body:JSON.stringify({
-            Nhom_Hang: document.getElementById('f-nhom').value, Ten_Hang: ten,
-            Don_Vi_Tinh: document.getElementById('f-dvt').value, Gia_Ban: parseNum(document.getElementById('f-gia-ban').value),
-            Gia_Si: parseNum(document.getElementById('f-gia-si').value), Mo_Ta: document.getElementById('f-mota').value,
-            Hinh_Anh: link, Ma_QR: maQR
+
+        let driveLink = "";
+        const file = document.getElementById('f-hinh').files[0];
+        if (file) driveLink = await uploadDrive(file);
+
+        const resDB = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham`, {
+          method: 'POST', headers: h, body: JSON.stringify({
+            Nhom_Hang: document.getElementById('f-nhom').value.trim() || "Chưa phân loại",
+            Ten_Hang: ten, 
+            Don_Vi_Tinh: document.getElementById('f-dvt').value,
+            Gia_Ban: parseCurrency(document.getElementById('f-gia-ban').value),
+            Gia_Si: parseCurrency(document.getElementById('f-gia-si').value),
+            Mo_Ta: document.getElementById('f-mota').value,
+            Hinh_Anh: driveLink,
+            Ma_QR: maQR
           })
         });
-        Swal.fire('Thành công','','success'); loadPriceList();
-      } catch(e) { Swal.fire('Lỗi', e.message, 'error'); }
+
+        if(resDB.ok) {
+          Swal.fire('Thành công', 'Đã lưu báo giá!', 'success');
+          document.getElementById('f-ten').value = "";
+          loadPriceList();
+        } else { throw new Error("Lỗi Database!"); }
+      } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
     async function loadPriceList() {
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-      const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*&order=Nhom_Hang.asc`, {headers:h});
-      const data = await res.json();
-      const groups = {}; data.forEach(i => { if(!groups[i.Nhom_Hang]) groups[i.Nhom_Hang]=[]; groups[i.Nhom_Hang].push(i); });
-      const cont = document.getElementById('price-list'); cont.innerHTML = "";
-      for(let n in groups) {
-        let rs = groups[n].map(i => {
-          const qr = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${i.Ma_QR}`;
-          let img = i.Hinh_Anh ? `<img src="https://drive.google.com/thumbnail?id=${i.Hinh_Anh.split('id=')[1] || i.Hinh_Anh.split('/d/')[1].split('/')[0]}&sz=w200" class="img-preview" onclick="window.open('${i.Hinh_Anh}')">` : '-';
-          return `<tr><td><img src="${qr}" style="width:40px" onclick="Swal.fire({imageUrl:'${qr}'})"></td><td>${img}</td><td><b>${i.Ten_Hang}</b></td><td>${i.Don_Vi_Tinh}</td><td style="color:red">${i.Gia_Ban.toLocaleString()}</td><td style="color:green">${i.Gia_Si.toLocaleString()}</td><td><button onclick="deletePrice(${i.Id})" style="color:red;border:none;background:none;cursor:pointer">XÓA</button></td></tr>`;
-        }).join('');
-        cont.innerHTML += `<div class="group-header" onclick="this.nextElementSibling.classList.toggle('show')"><span>➕ ${n.toUpperCase()}</span><span>▼</span></div><div class="group-content"><table><thead><tr><th>QR</th><th>Ảnh</th><th>Tên hàng</th><th>ĐVT</th><th>Giá lẻ</th><th>Giá sỉ</th><th>Thao tác</th></tr></thead><tbody>${rs}</tbody></table></div>`;
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*&order=Nhom_Hang.asc`, { headers: h });
+        const data = await res.json();
+        const groups = {};
+        data.forEach(item => {
+          if (!groups[item.Nhom_Hang]) groups[item.Nhom_Hang] = [];
+          groups[item.Nhom_Hang].push(item);
+        });
+
+        const container = document.getElementById('price-list');
+        container.innerHTML = "";
+
+        for (let nhom in groups) {
+          let rows = groups[nhom].map(item => {
+            const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(item.Ma_QR)}`;
+            let thumb = '<span style="color:#ccc">N/A</span>';
+            if (item.Hinh_Anh && item.Hinh_Anh.includes('/d/')) {
+                const fileId = item.Hinh_Anh.split('/d/')[1].split('/')[0];
+                thumb = `<img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w200" class="img-preview" onclick="window.open('${item.Hinh_Anh}', '_blank')">`;
+            }
+            return `<tr>
+              <td><img src="${qrImg}" style="width:40px" class="qr-preview" onclick="Swal.fire({imageUrl:'${qrImg}',imageWidth:250})"></td>
+              <td>${thumb}</td>
+              <td><b>${item.Ten_Hang}</b><br><small>${item.Mo_Ta || ''}</small></td>
+              <td>${item.Don_Vi_Tinh || ''}</td>
+              <td style="color:#c0392b;font-weight:bold;">${(item.Gia_Ban || 0).toLocaleString()}</td>
+              <td style="color:#27ae60;font-weight:bold;">${(item.Gia_Si || 0).toLocaleString()}</td>
+              <td>
+                <button onclick='editPrice(${JSON.stringify(item)})' style="color:#2980b9;border:none;background:none;cursor:pointer;font-weight:bold;">SỬA</button> | 
+                <button onclick="deletePrice(${item.Id})" style="color:red;border:none;background:none;cursor:pointer;font-weight:bold;">XÓA</button>
+              </td>
+            </tr>`}).join('');
+
+          container.innerHTML += `
+            <div class="group-header" onclick="this.nextElementSibling.classList.toggle('show')"><span>➕ ${nhom.toUpperCase()}</span><span>▼</span></div>
+            <div class="group-content"><table><thead><tr><th>QR</th><th>Ảnh</th><th>Tên hàng</th><th>ĐVT</th><th>Giá lẻ</th><th>Giá sỉ</th><th>Thao tác</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    async function editPrice(item) {
+      const { value: formValues } = await Swal.fire({
+        title: 'SỬA BÁO GIÁ',
+        width: '750px',
+        html: `<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;text-align:left;padding:10px;">
+            <div><label>Nhóm:</label><input id="e-nhom" class="swal2-input" value="${item.Nhom_Hang}"></div>
+            <div><label>Tên hàng:</label><input id="e-ten" class="swal2-input" value="${item.Ten_Hang}"></div>
+            <div><label>Giá lẻ:</label><input id="e-gia-ban" class="swal2-input" value="${(item.Gia_Ban || 0).toLocaleString().replace(/,/g, '.')}" oninput="formatCurrencyInput(this)"></div>
+            <div><label>Giá sỉ:</label><input id="e-gia-si" class="swal2-input" value="${(item.Gia_Si || 0).toLocaleString().replace(/,/g, '.')}" oninput="formatCurrencyInput(this)"></div>
+            <div><label>ĐVT:</label><input id="e-dvt" class="swal2-input" value="${item.Don_Vi_Tinh || ''}"></div>
+            <div><label>Mô tả:</label><input id="e-mota" class="swal2-input" value="${item.Mo_Ta || ''}"></div>
+            <div style="grid-column:span 2;"><label>Đổi ảnh mới:</label><input type="file" id="e-hinh" class="swal2-file" accept="image/*"></div>
+          </div>`,
+        showCancelButton: true,
+        confirmButtonText: 'LƯU',
+        preConfirm: async () => {
+          const newFile = document.getElementById('e-hinh').files[0];
+          let newLink = item.Hinh_Anh;
+          if (newFile) { Swal.showLoading(); newLink = await uploadDrive(newFile); }
+          return {
+            Nhom_Hang: document.getElementById('e-nhom').value,
+            Ten_Hang: document.getElementById('e-ten').value,
+            Gia_Ban: parseCurrency(document.getElementById('e-gia-ban').value),
+            Gia_Si: parseCurrency(document.getElementById('e-gia-si').value),
+            Don_Vi_Tinh: document.getElementById('e-dvt').value,
+            Mo_Ta: document.getElementById('e-mota').value,
+            Hinh_Anh: newLink
+          }
+        }
+      });
+      if (formValues) {
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${item.Id}`, { method: 'PATCH', headers: h, body: JSON.stringify(formValues) });
+        loadPriceList();
       }
     }
+
     async function deletePrice(id) {
-      if(confirm('Xóa?')) {
-        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${id}`, { method:'DELETE', headers:{'apikey':window.SB_CONFIG.KEY,'Authorization':`Bearer ${window.SB_CONFIG.KEY}`} });
+      if(confirm('Xóa sản phẩm?')) {
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` } });
         loadPriceList();
       }
     }
