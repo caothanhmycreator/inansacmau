@@ -16,7 +16,6 @@
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; }
     .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; }
 
-    /* Form Nhập */
     .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--primary); }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
     .input-group { display: flex; flex-direction: column; }
@@ -24,7 +23,6 @@
     .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; }
     .input-modern:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(45, 90, 39, 0.1); }
 
-    /* Bảng Kho */
     .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .group-header { background: #f8fafc; padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 10px; transition: 0.2s; }
     .group-header:hover { background: #edf2f7; color: var(--primary); }
@@ -36,10 +34,9 @@
     th { background: #f1f5f9; color: #64748b; font-size: 11px; text-transform: uppercase; }
     
     .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #ddd; }
+    .qr-preview { width: 40px; height: 40px; cursor: pointer; background: white; padding: 2px; border: 1px solid #eee; }
     .btn-submit { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; font-size: 16px; transition: 0.3s; }
     .btn-submit:hover { background: #1e3f1a; transform: translateY(-2px); }
-
-    .qr-code { font-family: monospace; background: #eee; padding: 2px 5px; border-radius: 4px; font-size: 11px; }
 
     @media (max-width: 768px) { .main-content { margin-left: 0; padding: 15px; } #sidebar-frame { left: -250px; } }
   </style>
@@ -52,7 +49,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div>
         <h2 style="margin:0; color: var(--primary);">📦 KHO VẬT TƯ SẮC MÀU</h2>
-        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Quản lý vật tư & Hình ảnh thực tế từ Drive</p>
+        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Quản lý kho & In mã QR Code vật tư</p>
       </div>
       <button onclick="getToken()" style="padding:10px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid var(--primary); background:white; color:var(--primary);">🔐 KẾT NỐI DRIVE (inansacmau...)</button>
     </div>
@@ -103,7 +100,6 @@
   </div>
 
   <script>
-    // 1. CẤU HÌNH DRIVE CHUẨN (FOLDER ĐÃ ĐƯỢC CHỈ ĐỊNH)
     const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
     const FOLDER_ID = "1ao2E97b8YdawmGb23c8U_6u7N65hTrVN"; 
     let accessToken = localStorage.getItem('drive_access_token');
@@ -151,7 +147,8 @@
             const uploadUrl = resInit.headers.get('Location');
             const resUpload = await fetch(uploadUrl, { method: 'PUT', body: file });
             const result = await resUpload.json();
-            driveLink = `https://drive.google.com/thumbnail?id=${result.id}&sz=w500`; 
+            // CHỈNH SỬA: Lưu link thumbnail chất lượng cao
+            driveLink = `https://drive.google.com/thumbnail?id=${result.id}&sz=w800`; 
         }
 
         const maQR = "SMK-" + Math.random().toString(36).substr(2, 6).toUpperCase();
@@ -169,7 +166,7 @@
         });
 
         if(resDB.ok) {
-          Swal.fire('Thành công', 'Đã lưu vật tư vào Drive & Database!', 'success');
+          Swal.fire('Thành công', 'Đã lưu vật tư!', 'success');
           document.getElementById('f-ten').value = "";
           document.getElementById('f-nhom').value = "";
           document.getElementById('f-hinh').value = "";
@@ -194,23 +191,31 @@
         if(data.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Kho trống.</p>'; return; }
 
         for (let nhom in groups) {
-          let rows = groups[nhom].map(item => `
+          let rows = groups[nhom].map(item => {
+            // TẠO MÃ QR DẠNG HÌNH ẢNH (Dùng Google Charts API)
+            const qrImageUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(item.Ma_QR)}&choe=UTF-8`;
+            
+            return `
             <tr>
-              <td><span class="qr-code">${item.Ma_QR}</span></td>
+              <td>
+                <img src="${qrImageUrl}" class="qr-preview" title="Bấm để xem to mã QR" 
+                     onclick="Swal.fire({title: 'Mã QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 300, imageHeight: 300})">
+                <div style="font-size:10px; color:#888;">${item.Ma_QR}</div>
+              </td>
               <td><b>${item.Ten_Hang}</b></td>
               <td><b style="color:var(--primary)">${item.So_Luong}</b></td>
               <td><small>${item.Kich_Thuoc || '-'}</small></td>
               <td>${item.Quy_Cach || '-'}</td>
               <td>${item.Chat_Lieu || '-'}</td>
               <td>
-                ${item.Hinh_Anh ? `<img src="${item.Hinh_Anh}" class="img-preview" onclick="window.open('${item.Hinh_Anh.replace('&sz=w500','')}')">` : '<span style="color:#ccc">N/A</span>'}
+                ${item.Hinh_Anh ? `<img src="${item.Hinh_Anh}" class="img-preview" onclick="viewFullImage('${item.Hinh_Anh}')">` : '<span style="color:#ccc">N/A</span>'}
               </td>
               <td>
                 <button onclick='editItem(${JSON.stringify(item)})' style="color:#2980b9; border:none; background:none; cursor:pointer; font-weight:bold;">SỬA</button> | 
                 <button onclick="deleteItem(${item.id})" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold;">XÓA</button>
               </td>
             </tr>
-          `).join('');
+          `}).join('');
 
           container.innerHTML += `
             <div class="group-header" onclick="toggleGroup('${nhom}')">
@@ -225,6 +230,23 @@
             </div>`;
         }
       } catch (e) { console.error(e); }
+    }
+
+    // CHỈNH SỬA: Hàm xem ảnh gốc chất lượng cao nhất
+    function viewFullImage(thumbUrl) {
+        // Thumbnail URL có dạng: ...drive.google.com/thumbnail?id=FILE_ID&sz=w800
+        // Để lấy ảnh gốc, ta cần chuyển về dạng: ...drive.google.com/uc?id=FILE_ID
+        const fileId = thumbUrl.split('id=')[1].split('&')[0];
+        const fullResUrl = `https://drive.google.com/uc?id=${fileId}`;
+        
+        Swal.fire({
+            title: 'Hình ảnh vật tư',
+            imageUrl: fullResUrl,
+            imageAlt: 'Vật tư kho',
+            width: '80%',
+            confirmButtonText: 'ĐÓNG',
+            confirmButtonColor: '#2D5A27'
+        });
     }
 
     function toggleGroup(id) { document.getElementById(`group-${id}`).classList.toggle('show'); }
