@@ -95,7 +95,10 @@
     /** 1. Render Menu theo phân quyền */
     function renderMenu(user) {
       const menuContainer = document.getElementById('dashboard-menu');
-      const userModules = (user.modules || "").split(',').map(s => s.trim());
+      // Sửa lại để lấy đúng cột Danh_Sach_Module như Sidebar
+      const moduleString = user.Danh_Sach_Module || user.modules || "";
+      const userModules = moduleString.split(',').map(s => s.trim());
+      
       let html = "";
       window.APP_MODULES.forEach(m => {
         if (userModules.includes(m.id)) {
@@ -109,11 +112,13 @@
     async function loadLiveStatistics() {
       try {
         const now = new Date();
-        // Lấy ngày đầu tháng và ngày hôm nay chuẩn theo giờ local
+        // Lấy ngày đầu tháng chính xác (YYYY-MM-01)
         const firstDay = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
-        const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+        // Lấy ngày hôm nay Chuẩn ISO
+        const today = now.toISOString().split('T')[0];
 
-        // A. Tính tổng doanh thu tháng này
+        // A. Tính tổng doanh thu tháng này từ bảng NhatKy_BanHang
+        // Lưu ý: Lọc gte (lớn hơn hoặc bằng) ngày đầu tháng
         const resRev = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ngay_Gio=gte.${firstDay}&select=Tong_Don`, { headers: h });
         if (resRev.ok) {
           const revData = await resRev.json();
@@ -122,7 +127,6 @@
         }
 
         // B. Lấy danh sách nhân viên đang làm hôm nay
-        // Mã hóa chữ "Đang làm" để URL không bị lỗi khoảng trắng hoặc dấu
         const statusQuery = encodeURIComponent("Đang làm");
         const resCC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=eq.${today}&Status=eq.${statusQuery}&select=Gio_Vao,DM_NhanVien(Ho_Ten)`, { headers: h });
         
@@ -134,7 +138,7 @@
             document.getElementById('active-count').innerText = ccData.length;
             activeListContainer.innerHTML = ccData.map(item => `
               <div class="staff-tag">
-                ${item.DM_NhanVien ? item.DM_NhanVien.Ho_Ten : 'N/A'} <small style="opacity:0.7; font-weight:normal;">(${item.Gio_Vao.substring(0,5)})</small>
+                ${item.DM_NhanVien ? item.DM_NhanVien.Ho_Ten : 'N/A'} <small style="opacity:0.7; font-weight:normal;">(${item.Gio_Vao ? item.Gio_Vao.substring(0,5) : ''})</small>
               </div>
             `).join('');
           } else {

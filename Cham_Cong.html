@@ -124,11 +124,11 @@
         const isMorning = currentHour < 12;
         if (isMorning) {
             if (currentHour < 7 || (currentHour === 7 && currentMin < 30)) {
-                return Swal.fire('Chưa đến giờ', 'Ca sáng bắt đầu từ 07:30 nhé Mỹ!', 'warning');
+                return Swal.fire('Chưa đến giờ', 'Ca sáng bắt đầu từ 07:30 nhé!', 'warning');
             }
         } else {
             if (currentHour < 13 || (currentHour === 13 && currentMin < 30)) {
-                return Swal.fire('Chưa đến giờ', 'Ca chiều bắt đầu từ 13:30 nhé Mỹ!', 'warning');
+                return Swal.fire('Chưa đến giờ', 'Ca chiều bắt đầu từ 13:30 nhé!', 'warning');
             }
         }
 
