@@ -12,93 +12,50 @@
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; }
     .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; }
-    
     .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 25px; }
     .header h2 { margin: 0; color: var(--primary); }
-    
     .header-controls { display: flex; gap: 15px; align-items: center; }
     .month-picker { padding: 10px 15px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold; outline: none; }
-    
-    .btn-export { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; transition: 0.3s; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); font-size: 14px; }
-    .btn-export:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4); }
-
+    .btn-export { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); font-size: 14px; }
     .summary-box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #f39c12; display: inline-block; }
     .summary-box p { margin: 0; color: #666; font-size: 13px; font-weight: bold; }
     .summary-box h3 { margin: 5px 0 0 0; color: #d35400; font-size: 24px; }
-
     .payroll-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
     .staff-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border: 1px solid var(--border); position: relative; }
     .staff-name { font-size: 18px; font-weight: bold; color: var(--primary); margin: 0 0 5px 0; padding-bottom: 10px; border-bottom: 1px dashed #ccc; display: flex; justify-content: space-between; align-items: center;}
-    
     .salary-row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 14px; color: #333;}
     .salary-row.total { font-size: 18px; font-weight: bold; color: #c0392b; border-top: 2px solid #eee; padding-top: 15px; margin-top: 15px; }
     .val-plus { color: #27ae60; font-weight: bold; }
     .val-minus { color: #e74c3c; font-weight: bold; }
-
-    .action-group { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
-    .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px;}
+    .action-group { display: flex; gap: 6px; margin-top: 20px; flex-wrap: wrap; }
+    .btn { flex: 1; padding: 10px 4px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 3px;}
     .btn-finance { background: #3498db; color: white; }
-    .btn-finance:hover { background: #2980b9; }
     .btn-details { background: #f39c12; color: white; }
-    .btn-details:hover { background: #e67e22; }
+    .btn-absent { background: #64748b; color: white; }
     .btn-payslip { background: #8e44ad; color: white; }
-    .btn-payslip:hover { background: #732d91; }
-    
     .badge { font-size: 11px; background: #e2e8f0; color: #475569; padding: 4px 10px; border-radius: 12px; font-weight: normal; }
-
-    @media print {
-      body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      #sidebar-frame, .mobile-nav-btn, .action-group, .no-print { display: none !important; }
-      .main-content { margin-left: 0; padding: 0; }
-      .header { border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
-      .summary-box { border: 1px solid #000; box-shadow: none; border-left: 5px solid #f39c12; }
-      .payroll-grid { display: block; }
-      .staff-card { break-inside: avoid; border: 1px solid #ddd; box-shadow: none; margin-bottom: 20px; padding: 15px; page-break-inside: avoid; }
-    }
-
-    @media (max-width: 768px) {
-      .main-content { margin-left: 0; padding: 15px; }
-      #sidebar-frame { left: -250px; }
-      .header { flex-direction: column; align-items: flex-start; gap: 15px; }
-      .header-controls { width: 100%; flex-wrap: wrap; }
-      .btn-export, .month-picker { flex: 1; text-align: center; justify-content: center; }
-    }
+    @media print { body { background: white; } #sidebar-frame, .action-group, .no-print { display: none !important; } .main-content { margin-left: 0; padding: 0; } .staff-card { break-inside: avoid; border: 1px solid #ddd; margin-bottom: 20px; } }
   </style>
 </head>
 <body>
-
   <iframe src="sidebar.html" id="sidebar-frame" class="no-print"></iframe>
-
   <div class="main-content">
     <div class="header">
-      <div>
-        <h2>💰 BẢNG TỔNG HỢP LƯƠNG</h2>
-        <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">In Ấn Sắc Màu - Đồng Tháp</p>
-      </div>
-      
+      <div><h2>💰 QUẢN LÝ LƯƠNG</h2><p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">In Ấn Sắc Màu - Đồng Tháp</p></div>
       <div class="header-controls">
         <input type="month" id="month-selector" class="month-picker no-print" onchange="loadPayroll()">
-        <button class="btn-export no-print" onclick="window.print()">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-          TẢI BẢNG LƯƠNG
-        </button>
+        <button class="btn-export no-print" onclick="window.print()">TẢI BẢNG LƯƠNG</button>
       </div>
     </div>
-
-    <div class="summary-box">
-      <p>TỔNG DOANH THU TRONG THÁNG</p>
-      <h3 id="lbl-doanh-thu">0đ</h3>
-    </div>
-
-    <div id="payroll-container" class="payroll-grid">
-      <h3 style="color:#888;">Đang tổng hợp số liệu...</h3>
-    </div>
+    <div class="summary-box"><p>TỔNG DOANH THU TRONG THÁNG</p><h3 id="lbl-doanh-thu">0đ</h3></div>
+    <div id="payroll-container" class="payroll-grid"><h3 style="color:#888;">Đang tính toán...</h3></div>
   </div>
 
   <script>
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
     let totalRevenue = 0;
     let currentTcData = []; 
+    let globalAbsentData = {}; // Lưu trữ dữ liệu nghỉ để tránh lỗi truyền tham số HTML
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -110,292 +67,171 @@
 
     async function loadPayroll() {
       const monthVal = document.getElementById('month-selector').value; 
-      if (!monthVal) return;
       const [year, month] = monthVal.split('-');
       const firstDay = `${year}-${month}-01`;
       const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
 
-      Swal.fire({ title: 'Đang tính toán...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
       try {
         const resRev = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=Ngay_Gio,Tong_Don`, { headers: h });
         const revData = await resRev.json();
-        
         totalRevenue = revData.reduce((sum, item) => {
-          if (item.Ngay_Gio && (item.Ngay_Gio.includes(`${month}/${year}`) || item.Ngay_Gio.includes(`${year}-${month}`))) {
-            return sum + (Number(item.Tong_Don) || 0);
-          }
+          if (item.Ngay_Gio && (item.Ngay_Gio.includes(`${month}/${year}`) || item.Ngay_Gio.includes(`${year}-${month}`))) return sum + (Number(item.Tong_Don) || 0);
           return sum;
         }, 0);
         document.getElementById('lbl-doanh-thu').innerText = totalRevenue.toLocaleString('vi-VN') + 'đ';
 
         const resEmp = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?select=*`, { headers: h });
         const empData = await resEmp.json();
-
         const resCC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=gte.${firstDay}&Ngay=lte.${lastDay}&select=*`, { headers: h });
         const ccData = await resCC.json();
-
         const resTC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?Ngay_Ghi=gte.${firstDay}&Ngay_Ghi=lte.${lastDay} 23:59:59&select=*`, { headers: h });
         currentTcData = await resTC.json(); 
 
-        renderPayrollGrid(empData, ccData, currentTcData);
-        Swal.close();
-      } catch (e) {
-        Swal.fire('Lỗi', 'Không thể tải dữ liệu: ' + e.message, 'error');
-      }
+        renderPayrollGrid(empData, ccData, currentTcData, year, month);
+      } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
-    function renderPayrollGrid(empData, ccData, tcData) {
+    function renderPayrollGrid(empData, ccData, tcData, year, month) {
       const container = document.getElementById('payroll-container');
       container.innerHTML = "";
-
+      globalAbsentData = {}; // Reset dữ liệu nghỉ
       const filteredEmp = empData.filter(emp => emp.Vai_Tro !== "Admin");
-
-      if(filteredEmp.length === 0) {
-         container.innerHTML = `<h3 style="color:#888;">Chưa có dữ liệu nhân viên để tính lương.</h3>`;
-         return;
-      }
+      const todayDate = new Date();
+      todayDate.setHours(23, 59, 59, 999); // Tính hết ngày hôm nay
 
       filteredEmp.forEach(emp => {
         const myCC = ccData.filter(c => String(c.User_ID) === String(emp.id));
         const myTC = tcData.filter(t => String(t.User_ID) === String(emp.id));
 
-        let luongCoBan = 0, soCong = 0, phuCapViec = 0, tamUng = 0, hoaHong = 0, tongNhan = 0;
-        let congText = "";
+        let luongCoBan = 0, phuCapViec = 0, tamUng = 0, hoaHong = 0, tongNhan = 0;
+        let infoCong = "";
+        let absents = [];
 
-        if (emp.Loai_Luong === "Tháng") {
-          soCong = myCC.length;
-          luongCoBan = (emp.Luong_Co_Ban / 26) * soCong;
-          congText = `${soCong} ngày`;
-        } else if (emp.Loai_Luong === "Buổi") {
-          soCong = myCC.length;
-          luongCoBan = soCong * emp.Luong_Co_Ban;
-          congText = `${soCong} buổi`;
-        } else if (emp.Loai_Luong === "Giờ") {
-          let totalHours = 0;
-          myCC.forEach(c => {
-            if (c.Gio_Vao && c.Gio_Ra) {
-              const [h1, m1] = c.Gio_Vao.split(':');
-              const [h2, m2] = c.Gio_Ra.split(':');
-              totalHours += ((h2*60 + Number(m2)) - (h1*60 + Number(m1))) / 60;
-            }
-          });
-          soCong = totalHours;
-          luongCoBan = soCong * emp.Luong_Co_Ban;
-          congText = `${soCong.toFixed(1)} giờ`;
+        // --- LOGIC LỌC NGÀY NGHỈ ĐẾN NGÀY HIỆN TẠI ---
+        const daysInMonth = new Date(year, month, 0).getDate();
+        for (let d = 1; d <= daysInMonth; d++) {
+            const checkDate = new Date(year, month - 1, d);
+            if (checkDate > todayDate) continue; // Bỏ qua ngày tương lai
+
+            if (checkDate.getDay() === 0) continue; // Bỏ qua Chủ Nhật
+
+            const dateStr = `${year}-${month}-${String(d).padStart(2, '0')}`;
+            const logsDay = myCC.filter(c => c.Ngay === dateStr);
+            const hasMorning = logsDay.some(l => parseInt(l.Gio_Vao.split(':')[0]) < 12);
+            const hasAfternoon = logsDay.some(l => parseInt(l.Gio_Vao.split(':')[0]) >= 12);
+
+            if (!hasMorning) absents.push(`Ngày ${d} (Sáng)`);
+            if (!hasAfternoon) absents.push(`Ngày ${d} (Chiều)`);
+        }
+        
+        globalAbsentData[emp.id] = absents; // Lưu vào biến toàn cục
+
+        if (emp.Ho_Ten.includes("Nhung") || emp.Ho_Ten.includes("Thư")) {
+          const soNgay = myCC.length * 0.5;
+          luongCoBan = (emp.Luong_Co_Ban / 26) * soNgay;
+          infoCong = `${soNgay} ngày`;
+        } else if (emp.Ho_Ten.includes("Như")) {
+          let tongGio = 0;
+          myCC.forEach(c => { if (c.Gio_Vao && c.Gio_Ra) {
+            const [h1, m1] = c.Gio_Vao.split(':'); const [h2, m2] = c.Gio_Ra.split(':');
+            tongGio += ((h2*60 + Number(m2)) - (h1*60 + Number(m1))) / 60;
+          }});
+          luongCoBan = tongGio * emp.Luong_Co_Ban;
+          infoCong = `${tongGio.toFixed(1)} giờ`;
         } else {
-          congText = "0";
+          let soBuoi = myCC.length;
+          luongCoBan = emp.Luong_Co_Ban * soBuoi;
+          infoCong = `${soBuoi} buổi`;
         }
 
         let phanTramHH = 0;
         let bacDoanhThu = Math.floor(totalRevenue / 100000000);
-        if (bacDoanhThu >= 1) {
-          phanTramHH = 1 + (bacDoanhThu - 1) * 0.5;
-        }
+        if (bacDoanhThu >= 1) phanTramHH = 1 + (bacDoanhThu - 1) * 0.5;
+        if (emp.Huong_Hoa_Hong && phanTramHH > 0) hoaHong = totalRevenue * (phanTramHH / 100);
 
-        if (emp.Huong_Hoa_Hong && phanTramHH > 0) {
-          hoaHong = totalRevenue * (phanTramHH / 100);
-        }
-
-        myTC.forEach(tc => {
-          if (tc.Loai === "Tạm ứng") tamUng += tc.So_Tien;
-          else phuCapViec += tc.So_Tien;
-        });
-
+        myTC.forEach(tc => { if (tc.Loai === "Tạm ứng") tamUng += tc.So_Tien; else phuCapViec += tc.So_Tien; });
         tongNhan = luongCoBan + hoaHong + phuCapViec - tamUng;
 
         container.innerHTML += `
           <div class="staff-card">
-            <h3 class="staff-name">
-              ${emp.Ho_Ten} 
-              <span class="badge">${emp.Loai_Luong || 'Chưa thiết lập'}</span>
-            </h3>
-            
-            <div class="salary-row"><span>Lương cơ bản (${congText}):</span> <b>${Math.round(luongCoBan || 0).toLocaleString('vi-VN')}đ</b></div>
-            ${(emp.Huong_Hoa_Hong && phanTramHH > 0) ? `<div class="salary-row"><span>Hoa hồng Doanh thu (${phanTramHH}%):</span> <b class="val-plus">+ ${Math.round(hoaHong).toLocaleString('vi-VN')}đ</b></div>` : ''}
-            <div class="salary-row"><span>Phụ cấp công việc:</span> <b class="val-plus">+ ${(phuCapViec || 0).toLocaleString('vi-VN')}đ</b></div>
-            <div class="salary-row"><span>Trừ tạm ứng:</span> <b class="val-minus">- ${(tamUng || 0).toLocaleString('vi-VN')}đ</b></div>
-            
-            <div class="salary-row total"><span>THỰC NHẬN:</span> <span>${Math.round(tongNhan || 0).toLocaleString('vi-VN')}đ</span></div>
+            <h3 class="staff-name">${emp.Ho_Ten} <span class="badge">${emp.Ho_Ten.match(/Nhung|Thư/) ? 'Tháng' : (emp.Ho_Ten.includes('Như') ? 'Giờ' : 'Buổi')}</span></h3>
+            <div class="salary-row"><span>Công thực tế:</span> <b>${infoCong}</b></div>
+            <div class="salary-row"><span>Lương cứng:</span> <b>${Math.round(luongCoBan).toLocaleString('vi-VN')}đ</b></div>
+            ${(emp.Huong_Hoa_Hong && phanTramHH > 0) ? `<div class="salary-row"><span>Hoa hồng (${phanTramHH}%):</span> <b class="val-plus">+ ${Math.round(hoaHong).toLocaleString('vi-VN')}đ</b></div>` : ''}
+            <div class="salary-row"><span>Phụ cấp công việc:</span> <b class="val-plus">+ ${phuCapViec.toLocaleString('vi-VN')}đ</b></div>
+            <div class="salary-row"><span>Trừ tạm ứng:</span> <b class="val-minus">- ${tamUng.toLocaleString('vi-VN')}đ</b></div>
+            <div class="salary-row total"><span>THỰC NHẬN:</span> <span>${Math.round(tongNhan).toLocaleString('vi-VN')}đ</span></div>
             
             <div class="action-group no-print">
               <button class="btn btn-finance" onclick="openFinanceModal('${emp.id}', '${emp.Ho_Ten}')">💰 Nhập</button>
               <button class="btn btn-details" onclick="viewFinanceDetails('${emp.id}', '${emp.Ho_Ten}')">👀 Kê khai</button>
-              <button class="btn btn-payslip" onclick="showPayslip('${emp.id}', '${emp.Ho_Ten}', '${congText}', ${luongCoBan}, ${hoaHong}, ${phanTramHH}, ${phuCapViec}, ${tamUng}, ${tongNhan})">📄 Phiếu lương</button>
+              <button class="btn btn-absent" onclick="showAbsentDetails('${emp.id}', '${emp.Ho_Ten}')">🚫 Nghỉ</button>
+              <button class="btn btn-payslip" onclick="showPayslip('${emp.id}', '${emp.Ho_Ten}', '${infoCong}', ${luongCoBan}, ${hoaHong}, ${phanTramHH}, ${phuCapViec}, ${tamUng}, ${tongNhan})">📄 Phiếu</button>
             </div>
-          </div>
-        `;
+          </div>`;
       });
     }
 
-    /** XEM PHIẾU LƯƠNG CHI TIẾT */
-    function showPayslip(empId, name, cong, luong, hh, hhPct, pc, ung, tong) {
-        const monthVal = document.getElementById('month-selector').value;
-        const [year, month] = monthVal.split('-');
-        
-        // Lấy chi tiết các lần hưởng phụ cấp hoặc tạm ứng
-        const myTC = currentTcData.filter(t => String(t.User_ID) === String(empId));
-        let detailsHtml = "";
-
-        if (myTC.length > 0) {
-            detailsHtml = `
-                <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
-                    <p style="font-weight: bold; font-size: 13px; color: #2D5A27; margin-bottom: 8px; text-align: left;">CHI TIẾT PHÁT SINH TRONG THÁNG:</p>
-                    <table style="width: 100%; font-size: 12px; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="border-bottom: 1px solid #ddd; background: #f9f9f9;">
-                                <th style="padding: 6px;">Ngày</th>
-                                <th style="padding: 6px;">Hạng mục</th>
-                                <th style="padding: 6px; text-align: right;">Số tiền</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${myTC.map(tc => {
-                                const sign = tc.Loai === "Tạm ứng" ? "-" : "+";
-                                const color = tc.Loai === "Tạm ứng" ? "#e74c3c" : "#27ae60";
-                                return `
-                                    <tr style="border-bottom: 1px solid #f1f1f1;">
-                                        <td style="padding: 6px;">${new Date(tc.Ngay_Ghi).toLocaleDateString('vi-VN')}</td>
-                                        <td style="padding: 6px;">${tc.Loai}</td>
-                                        <td style="padding: 6px; text-align: right; font-weight: bold; color: ${color};">${sign}${Number(tc.So_Tien).toLocaleString('vi-VN')}đ</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
+    function showAbsentDetails(empId, name) {
+        const absents = globalAbsentData[empId] || [];
         Swal.fire({
-            title: `<span style="color:var(--primary)">PHIẾU LƯƠNG THÁNG ${month}/${year}</span>`,
-            html: `
-                <div style="text-align: left; font-size: 14px; border: 1px solid #eee; padding: 15px; border-radius: 10px; background: #fff;">
-                    <p style="font-size: 16px; margin-bottom: 10px;"><b>Nhân viên:</b> ${name}</p>
-                    <hr style="border: 0.5px dashed #ccc">
-                    <div style="display:flex; justify-content: space-between; margin: 8px 0;">
-                        <span>Lương cơ bản (${cong}):</span>
-                        <b>${Math.round(luong).toLocaleString('vi-VN')}đ</b>
-                    </div>
-                    ${hh > 0 ? `
-                    <div style="display:flex; justify-content: space-between; margin: 8px 0; color: #27ae60;">
-                        <span>Hoa hồng doanh thu (${hhPct}%):</span>
-                        <b>+ ${Math.round(hh).toLocaleString('vi-VN')}đ</b>
-                    </div>` : ''}
-                    <div style="display:flex; justify-content: space-between; margin: 8px 0; color: #27ae60;">
-                        <span>Tổng phụ cấp công việc:</span>
-                        <b>+ ${pc.toLocaleString('vi-VN')}đ</b>
-                    </div>
-                    <div style="display:flex; justify-content: space-between; margin: 8px 0; color: #e74c3c;">
-                        <span>Tổng tạm ứng đã trừ:</span>
-                        <b>- ${ung.toLocaleString('vi-VN')}đ</b>
-                    </div>
-                    <hr style="border: 1px solid #333">
-                    <div style="display:flex; justify-content: space-between; font-size: 18px; font-weight: bold; color: #c0392b;">
-                        <span>THỰC LÃNH:</span>
-                        <span>${Math.round(tong).toLocaleString('vi-VN')}đ</span>
-                    </div>
-
-                    ${detailsHtml}
-                </div>
-            `,
-            confirmButtonText: 'ĐÓNG',
-            confirmButtonColor: '#2D5A27',
-            width: '500px'
+            title: `Chi tiết nghỉ - ${name}`,
+            html: absents.length > 0 ? `<div style="text-align:left; color:#c53030; font-size:14px; line-height:1.6;">${absents.join('<br>')}</div>` : "Nhân viên đi làm đầy đủ, không nghỉ buổi nào (tính đến hiện tại).",
+            confirmButtonText: 'ĐÓNG', confirmButtonColor: '#64748b'
         });
     }
 
-    /** XEM CHI TIẾT VÀ XÓA TÀI CHÍNH */
+    function showPayslip(empId, name, cong, luong, hh, hhPct, pc, ung, tong) {
+        const monthVal = document.getElementById('month-selector').value;
+        const [year, month] = monthVal.split('-');
+        const myTC = currentTcData.filter(t => String(t.User_ID) === String(empId));
+        const absents = globalAbsentData[empId] || [];
+        
+        let absentHtml = absents.length > 0 ? `
+            <div style="margin-top:10px; padding:10px; background:#fff5f5; border-radius:8px; border:1px solid #fed7d7;">
+                <p style="font-weight:bold; color:#c53030; font-size:12px; margin-bottom:5px; text-align:left;">CÁC BUỔI NGHỈ TRONG THÁNG:</p>
+                <div style="font-size:11px; color:#c53030; text-align:left;">${absents.join(', ')}</div>
+            </div>` : '';
+
+        Swal.fire({
+            title: `<span style="color:var(--primary)">PHIẾU LƯƠNG THÁNG ${month}/${year}</span>`,
+            html: `<div style="text-align: left; font-size: 14px; border: 1px solid #eee; padding: 15px; border-radius: 10px; background: #fff;">
+                    <p><b>Nhân viên:</b> ${name}</p><hr style="border: 0.5px dashed #ccc">
+                    <div style="display:flex; justify-content: space-between; margin: 8px 0;"><span>Lương cứng (${cong}):</span><b>${Math.round(luong).toLocaleString('vi-VN')}đ</b></div>
+                    ${hh > 0 ? `<div style="display:flex; justify-content: space-between; margin: 8px 0; color: #27ae60;"><span>Hoa hồng (${hhPct}%):</span><b>+ ${Math.round(hh).toLocaleString('vi-VN')}đ</b></div>` : ''}
+                    <div style="display:flex; justify-content: space-between; margin: 8px 0; color: #27ae60;"><span>Phụ cấp:</span><b>+ ${pc.toLocaleString('vi-VN')}đ</b></div>
+                    <div style="display:flex; justify-content: space-between; margin: 8px 0; color: #e74c3c;"><span>Tạm ứng:</span><b>- ${ung.toLocaleString('vi-VN')}đ</b></div>
+                    <hr style="border: 1px solid #333"><div style="display:flex; justify-content: space-between; font-size: 18px; font-weight: bold; color: #c0392b;"><span>THỰC LÃNH:</span><span>${Math.round(tong).toLocaleString('vi-VN')}đ</span></div>
+                    ${absentHtml}
+                    ${myTC.length > 0 ? `<div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"><p style="font-weight:bold; font-size:12px;">CHI TIẾT PHÁT SINH:</p>
+                    <table style="width:100%; font-size:11px;">${myTC.map(tc => `<tr><td>${new Date(tc.Ngay_Ghi).toLocaleDateString('vi-VN')}</td><td>${tc.Loai} (${tc.Noi_Dung || ''})</td><td align="right">${Number(tc.So_Tien).toLocaleString('vi-VN')}đ</td></tr>`).join('')}</table></div>` : ''}</div>`,
+            confirmButtonText: 'ĐÓNG', confirmButtonColor: '#2D5A27', width: '500px'
+        });
+    }
+
     function viewFinanceDetails(empId, empName) {
       const myTC = currentTcData.filter(t => String(t.User_ID) === String(empId));
-      
-      if(myTC.length === 0) {
-         return Swal.fire('Thông báo', 'Không có khoản phụ cấp/tạm ứng nào trong tháng này.', 'info');
-      }
-
-      let rows = myTC.map(tc => {
-         const date = new Date(tc.Ngay_Ghi).toLocaleDateString('vi-VN');
-         const typeColor = tc.Loai === 'Tạm ứng' ? 'color: #e74c3c;' : 'color: #27ae60;';
-         const sign = tc.Loai === 'Tạm ứng' ? '-' : '+';
-         const formatTien = Number(tc.So_Tien).toLocaleString('vi-VN');
-         return `
-           <tr>
-             <td style="padding: 10px; border-bottom: 1px solid #eee;">${date}</td>
-             <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight:bold;">${tc.Loai}</td>
-             <td style="padding: 10px; border-bottom: 1px solid #eee; ${typeColor} font-weight: bold;">${sign}${formatTien}đ</td>
-             <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">
-               <button onclick="deleteFinance('${tc.id}')" style="background:#e74c3c; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-weight:bold;">Xóa</button>
-             </td>
-           </tr>
-         `;
-      }).join('');
-
-      Swal.fire({
-        title: `Chi Tiết Biến Động`,
-        html: `
-          <div style="text-align:left; margin-bottom:15px; font-weight:bold; color:#2D5A27;">Nhân viên: ${empName}</div>
-          <table style="width: 100%; text-align: left; border-collapse: collapse; font-size: 14px;">
-            <thead>
-              <tr style="background: #f4f7f6;">
-                <th style="padding: 10px;">Ngày</th>
-                <th style="padding: 10px;">Loại</th>
-                <th style="padding: 10px;">Số tiền</th>
-                <th style="padding: 10px; text-align: right;">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-        `,
-        width: '600px', showConfirmButton: true, confirmButtonText: 'Đóng', confirmButtonColor: '#2D5A27'
-      });
+      if(myTC.length === 0) return Swal.fire('Thông báo', 'Không có khoản nào.', 'info');
+      let rows = myTC.map(tc => `<tr><td style="padding:10px;border-bottom:1px solid #eee;">${new Date(tc.Ngay_Ghi).toLocaleDateString('vi-VN')}</td><td style="padding:10px;border-bottom:1px solid #eee;">${tc.Loai}<br><small>${tc.Noi_Dung || ''}</small></td><td style="padding:10px;border-bottom:1px solid #eee;font-weight:bold;">${Number(tc.So_Tien).toLocaleString('vi-VN')}đ</td><td style="text-align:right;"><button onclick="deleteFinance('${tc.id}')" style="background:#e74c3c;color:white;border:none;padding:5px;border-radius:4px;">Xóa</button></td></tr>`).join('');
+      Swal.fire({ title: `Chi Tiết: ${empName}`, html: `<table style="width:100%;font-size:13px;text-align:left;">${rows}</table>`, width:'600px'});
     }
 
-    /** XÓA DỮ LIỆU TÀI CHÍNH */
     async function deleteFinance(id) {
-       Swal.fire({
-          title: 'Xóa khoản này?', text: "Số liệu sẽ bị loại khỏi bảng lương", icon: 'warning',
-          showCancelButton: true, confirmButtonText: 'Xóa ngay', confirmButtonColor: '#e74c3c'
-       }).then(async (r) => {
-          if(r.isConfirmed) {
-             Swal.fire({title:'Đang xóa...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-             await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?id=eq.${id}`, { method: 'DELETE', headers: h });
-             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã xóa!', showConfirmButton: false, timer: 1500 });
-             loadPayroll(); 
-          }
-       });
+       const r = await Swal.fire({ title: 'Xóa khoản này?', icon: 'warning', showCancelButton: true });
+       if(r.isConfirmed) { await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?id=eq.${id}`, { method: 'DELETE', headers: h }); loadPayroll(); }
     }
 
-    /** THÊM PHỤ CẤP / TẠM ỨNG */
     function openFinanceModal(empId, empName) {
       Swal.fire({
-        title: `Ghi nhận tài chính`, text: `Nhân viên: ${empName}`,
-        html: `
-          <select id="sw-loai" class="swal2-input" style="width:85%; font-size:15px;">
-            <option value="Giao hàng">Cộng: Giao hàng (+20.000đ)</option>
-            <option value="Nhận hàng">Cộng: Nhận hàng (+10.000đ)</option>
-            <option value="Khác">Cộng: Phụ cấp khác</option>
-            <option value="Tạm ứng">Trừ: Tạm ứng</option>
-          </select>
-          <input id="sw-tien" type="number" class="swal2-input" style="width:85%; font-size:15px;" placeholder="Nhập số tiền (VNĐ)...">
-        `,
-        showCancelButton: true, confirmButtonText: 'LƯU LẠI', confirmButtonColor: '#2D5A27',
+        title: `Nhập cho ${empName}`,
+        html: `<select id="sw-loai" class="swal2-input"><option value="Giao hàng">Giao hàng (+20k)</option><option value="Nhận hàng">Nhận hàng (+10k)</option><option value="Khác">Phụ cấp khác</option><option value="Tạm ứng">Tạm ứng</option></select><input id="sw-tien" type="number" class="swal2-input" placeholder="Số tiền..."><input id="sw-noidung" type="text" class="swal2-input" placeholder="Nội dung...">`,
+        showCancelButton: true,
         preConfirm: () => {
-          const loai = document.getElementById('sw-loai').value;
-          let tien = document.getElementById('sw-tien').value;
-          if (loai === "Giao hàng" && !tien) tien = 20000;
-          if (loai === "Nhận hàng" && !tien) tien = 10000;
-          if (!tien) { Swal.showValidationMessage('Vui lòng nhập số tiền'); return false; }
-          return { User_ID: empId, Loai: loai, So_Tien: Number(tien) };
+          const loai = document.getElementById('sw-loai').value; let tien = document.getElementById('sw-tien').value;
+          if (loai === "Giao hàng" && !tien) tien = 20000; if (loai === "Nhận hàng" && !tien) tien = 10000;
+          return { User_ID: empId, Loai: loai, So_Tien: Number(tien), Noi_Dung: document.getElementById('sw-noidung').value };
         }
-      }).then(async (r) => {
-        if (r.isConfirmed) {
-          const vnTime = new Date(new Date().getTime() + (7 * 60 * 60 * 1000));
-          const body = { ...r.value, Ngay_Ghi: vnTime.toISOString(), Nguoi_Xac_Nhan: currentUser.name || currentUser.Ho_Ten };
-          await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh`, { method: 'POST', headers: h, body: JSON.stringify(body) });
-          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã lưu thành công!', showConfirmButton: false, timer: 1500 });
-          loadPayroll(); 
-        }
-      });
+      }).then(async (r) => { if (r.isConfirmed) { await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh`, { method: 'POST', headers: h, body: JSON.stringify({...r.value, Ngay_Ghi: new Date().toISOString(), Nguoi_Xac_Nhan: currentUser.name}) }); loadPayroll(); } });
     }
   </script>
 </body>

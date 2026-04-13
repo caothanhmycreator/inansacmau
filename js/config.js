@@ -19,7 +19,13 @@ window.APP_MODULES = [
   { id: "Bao_Cao_Cong_Viec",   label: "Báo cáo công việc",      icon: "📝", file: "BC_Cong_Viec.html" },
   { id: "Quan_Ly_Tien_Do",     label: "Quản lý tiến độ",        icon: "🛰️", file: "Tien_Do.html" },
   { id: "Thu_Chi",             label: "Tiền mặt đầu ngày & Chi", icon: "💰", file: "Thu_Chi.html" },
-  { id: "Bao_Cao_Thu_Chi",     label: "Báo cáo thu chi",        icon: "📊", file: "BC_Thu_Chi.html" }
+  { id: "Bao_Cao_Thu_Chi",     label: "Báo cáo thu chi",        icon: "📊", file: "BC_Thu_Chi.html" },
+  { id: "Kho_Vat_Tu",         label: "Kho vật tư",          icon: "🏗️", file: "Kho.html" },
+  { id: "Bang_Gia_San_Pham",  label: "Bảng giá sản phẩm",   icon: "🏷️", file: "Bang_Gia.html" },
+  { id: "Dinh_Muc_Nguyen_Lieu", label: "Định mức nguyên liệu", icon: "🧪", file: "Nguyen_Lieu.html" },
+  { id: "Cham_Cong",             label: "Chấm công nhanh",     icon: "🕒", file: "Cham_Cong.html" },
+  { id: "Quan_Ly_Luong",         label: "Bảng tính lương",     icon: "💰", file: "Quan_Ly_Luong.html" },
+  { id: "Admin_Quan_Ly_Nhan_Su", label: "Quản trị nhân sự",    icon: "⚙️", file: "Admin_Quan_Ly_Nhan_Su.html" },
 ];
 
 window.formatDateTimeVN = function() {

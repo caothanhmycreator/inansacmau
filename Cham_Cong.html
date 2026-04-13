@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chấm Công Sắc Màu</title>
+  <title>Chấm Công Sắc Màu - 2 Ca</title>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
@@ -12,52 +12,34 @@
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; border: none; z-index: 999; }
     .main-content { flex: 1; margin-left: 250px; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    
     .card { background: white; width: 100%; max-width: 400px; padding: 40px 20px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
     .user-info h2 { margin: 0; color: var(--primary); font-size: 22px; }
     .user-info p { color: #666; margin: 5px 0 25px 0; }
-    
     .clock { font-size: 42px; font-weight: 800; color: #1a1a1a; margin-bottom: 30px; letter-spacing: -1px; }
-    
     .btn-main { width: 180px; height: 180px; border-radius: 50%; border: none; color: white; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 15px rgba(0,0,0,0.15); margin-bottom: 20px; }
     .btn-vao { background: #27ae60; }
     .btn-ra { background: #e67e22; }
     .btn-done { background: #94a3b8; cursor: not-allowed; }
     .btn-error { background: #e74c3c; } 
     .btn-main:active { transform: scale(0.95); }
-
     .status-text { font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 20px; }
     .status-working { background: #dcfce7; color: #15803d; }
     .status-off { background: #f1f5f9; color: #64748b; }
     .status-err { background: #fee2e2; color: #b91c1c; }
-
-    @media (max-width: 768px) {
-      .main-content { margin-left: 0; }
-      #sidebar-frame { left: -250px; }
-      body.sidebar-open #sidebar-frame { left: 0; }
-    }
+    @media (max-width: 768px) { .main-content { margin-left: 0; } #sidebar-frame { left: -250px; } body.sidebar-open #sidebar-frame { left: 0; } }
   </style>
 </head>
 <body>
-
   <iframe src="sidebar.html" id="sidebar-frame"></iframe>
-
   <div class="main-content">
     <div class="card">
       <div class="user-info">
         <h2 id="display-name">Nhân viên</h2>
         <p id="display-date">...</p>
       </div>
-
       <div class="clock" id="display-clock">00:00:00</div>
-
-      <div id="btn-container">
-        <button class="btn-main btn-done">Đang tải...</button>
-      </div>
-
-      <div style="margin-top: 15px;">
-        <span id="status-label" class="status-text status-off">...</span>
-      </div>
+      <div id="btn-container"><button class="btn-main btn-done">Đang tải...</button></div>
+      <div style="margin-top: 15px;"><span id="status-label" class="status-text status-off">...</span></div>
     </div>
   </div>
 
@@ -69,36 +51,18 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
       if(!user) return window.location.href = 'login.html';
-      
       const employeeName = user.name || user.Ho_Ten || "Nhân viên";
       document.getElementById('display-name').innerText = employeeName;
-      
       API_URL = `${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong`;
-      headers = { 
-        'apikey': window.SB_CONFIG.KEY, 
-        'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
-      };
+      headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
-      // --- CƠ CHẾ TỰ ĐỘNG TÌM ID NẾU BỊ THIẾU ---
       if (!user.id) {
         try {
           const resSearch = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?Ho_Ten=eq.${encodeURIComponent(employeeName)}&select=id`, { headers });
           const dataSearch = await resSearch.json();
-          if (dataSearch && dataSearch.length > 0) {
-            user.id = dataSearch[0].id;
-            localStorage.setItem('currentUser', JSON.stringify(user)); // Lưu bù lại vào máy
-          } else {
-            Swal.fire('Lỗi Hệ Thống', 'Không tìm thấy ID của nhân viên này trong CSDL', 'error');
-            return;
-          }
-        } catch (e) {
-          console.error("Lỗi dò ID:", e);
-        }
+          if (dataSearch.length > 0) { user.id = dataSearch[0].id; localStorage.setItem('currentUser', JSON.stringify(user)); }
+        } catch (e) { console.error(e); }
       }
-      // ------------------------------------------
-
       startClock();
       checkStatus();
     });
@@ -109,88 +73,85 @@
         document.getElementById('display-clock').innerText = now.toLocaleTimeString('vi-VN');
         document.getElementById('display-date').innerText = now.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
       };
-      update();
-      setInterval(update, 1000);
+      update(); setInterval(update, 1000);
     }
 
     async function checkStatus() {
       const now = new Date();
       const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-      
       const btnBox = document.getElementById('btn-container');
       const label = document.getElementById('status-label');
 
       try {
-        const res = await fetch(`${API_URL}?User_ID=eq.${user.id}&Ngay=eq.${today}&select=*`, { headers });
-        
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText || "Lỗi đọc dữ liệu");
-        }
-
+        // Lấy tất cả lượt chấm công trong ngày của nhân viên này
+        const res = await fetch(`${API_URL}?User_ID=eq.${user.id}&Ngay=eq.${today}&order=id.desc`, { headers });
         const data = await res.json();
 
-        if (data.length === 0) {
-          btnBox.innerHTML = `<button class="btn-main btn-vao" onclick="doAction('IN')">VÀO CA</button>`;
-          label.innerText = "CHƯA BẮT ĐẦU";
-          label.className = "status-text status-off";
+        // Tìm xem có lượt nào đang "Đang làm" (chưa bấm ra) hay không
+        currentLog = data.find(item => item.Status === "Đang làm");
+
+        if (currentLog) {
+          btnBox.innerHTML = `<button class="btn-main btn-ra" onclick="doAction('OUT')">XÁC NHẬN VỀ</button>`;
+          label.innerText = "ĐANG TRONG CA LÀM";
+          label.className = "status-text status-working";
         } else {
-          currentLog = data[0];
-          if (currentLog.Status === "Đang làm") {
-            btnBox.innerHTML = `<button class="btn-main btn-ra" onclick="doAction('OUT')">RA CA</button>`;
-            label.innerText = "ĐANG TRONG CA LÀM";
-            label.className = "status-text status-working";
+          // Nếu không có ca nào đang làm, cho phép "Vào ca" lần tiếp theo
+          const countDone = data.filter(item => item.Status === "Đã về").length;
+          if (countDone >= 2) {
+            btnBox.innerHTML = `<button class="btn-main btn-done">XONG 2 CA</button>`;
+            label.innerText = "ĐÃ HOÀN TẤT CÔNG VIỆC HÔM NAY";
+            label.className = "status-text status-off";
           } else {
-            btnBox.innerHTML = `<button class="btn-main btn-done">HOÀN TẤT</button>`;
-            label.innerText = `ĐÃ RA CA LÚC ${currentLog.Gio_Ra.substring(0,5)}`;
+            btnBox.innerHTML = `<button class="btn-main btn-vao" onclick="doAction('IN')">VÀO CA</button>`;
+            label.innerText = countDone === 0 ? "CHƯA VÀO CA SÁNG" : "CHƯA VÀO CA CHIỀU";
             label.className = "status-text status-off";
           }
         }
-      } catch (e) { 
-        console.error("Lỗi:", e);
-        btnBox.innerHTML = `<button class="btn-main btn-error" onclick="checkStatus()">LỖI TẢI<br><small style="font-size:12px; font-weight:normal">Bấm thử lại</small></button>`;
-        label.innerText = "LỖI KẾT NỐI DATABASE";
-        label.className = "status-text status-err";
-        Swal.fire('Lỗi kết nối', 'Hệ thống bị lỗi khi lấy dữ liệu: ' + e.message, 'error');
+      } catch (e) {
+        btnBox.innerHTML = `<button class="btn-main btn-error" onclick="checkStatus()">THỬ LẠI</button>`;
       }
     }
 
     async function doAction(type) {
       const now = new Date();
-      const time = now.toLocaleTimeString('en-GB'); 
-      const date = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+      const currentHour = now.getHours();
+      const currentMin = now.getMinutes();
+      const timeStr = now.toLocaleTimeString('en-GB'); 
+      const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
-      const confirmText = type === 'IN' ? 'Bắt đầu ca làm việc?' : 'Kết thúc ca làm việc?';
-      const result = await Swal.fire({ title: confirmText, icon: 'question', showCancelButton: true, confirmButtonColor: '#2D5A27', confirmButtonText: 'Đồng ý' });
-      
-      if (!result.isConfirmed) return;
-      Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-      try {
-        let res;
-        if (type === 'IN') {
-          res = await fetch(API_URL, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ User_ID: user.id, Ngay: date, Gio_Vao: time, Status: 'Đang làm' })
-          });
+      if (type === 'IN') {
+        // KIỂM TRA GIỜ VÀO CA
+        const isMorning = currentHour < 12;
+        if (isMorning) {
+            if (currentHour < 7 || (currentHour === 7 && currentMin < 30)) {
+                return Swal.fire('Chưa đến giờ', 'Ca sáng bắt đầu từ 07:30 nhé Mỹ!', 'warning');
+            }
         } else {
-          res = await fetch(`${API_URL}?id=eq.${currentLog.id}`, {
-            method: 'PATCH',
-            headers,
-            body: JSON.stringify({ Gio_Ra: time, Status: 'Đã về' })
-          });
+            if (currentHour < 13 || (currentHour === 13 && currentMin < 30)) {
+                return Swal.fire('Chưa đến giờ', 'Ca chiều bắt đầu từ 13:30 nhé Mỹ!', 'warning');
+            }
         }
 
-        if (res.ok) {
-          Swal.fire({ icon: 'success', title: 'Thành công!', timer: 1000, showConfirmButton: false });
-          checkStatus();
-        } else {
-          const err = await res.json();
-          throw new Error(err.message || 'Lỗi không xác định từ Database');
-        }
-      } catch (e) { 
-        Swal.fire('Lỗi Ghi Dữ Liệu', e.message, 'error');
+        const res = await Swal.fire({ title: 'Bắt đầu ca làm?', icon: 'question', showCancelButton: true, confirmButtonText: 'ĐỒNG Ý' });
+        if (!res.isConfirmed) return;
+        
+        Swal.showLoading();
+        const postRes = await fetch(API_URL, {
+          method: 'POST', headers,
+          body: JSON.stringify({ User_ID: user.id, Ngay: dateStr, Gio_Vao: timeStr, Status: 'Đang làm' })
+        });
+        if (postRes.ok) { Swal.fire({ icon: 'success', title: 'Đã vào ca!', timer: 1000, showConfirmButton: false }); checkStatus(); }
+      } else {
+        // RA CA
+        const res = await Swal.fire({ title: 'Kết thúc ca làm?', icon: 'warning', showCancelButton: true, confirmButtonText: 'XÁC NHẬN VỀ' });
+        if (!res.isConfirmed) return;
+
+        Swal.showLoading();
+        const patchRes = await fetch(`${API_URL}?id=eq.${currentLog.id}`, {
+          method: 'PATCH', headers,
+          body: JSON.stringify({ Gio_Ra: timeStr, Status: 'Đã về' })
+        });
+        if (patchRes.ok) { Swal.fire({ icon: 'success', title: 'Hẹn gặp lại!', timer: 1000, showConfirmButton: false }); checkStatus(); }
       }
     }
   </script>

@@ -5,6 +5,8 @@
   <style>
     body { margin: 0; background: #2D5A27; color: white; font-family: sans-serif; overflow: hidden; }
     .sidebar-header { padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-header img { cursor: pointer; transition: 0.3s; }
+    .sidebar-header img:hover { transform: scale(1.1); }
     #user-display { font-size: 11px; color: #a5d6a7; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 4px; display: block; margin-top: 8px; }
     
     .menu-box { height: calc(100vh - 160px); overflow-y: auto; padding-bottom: 40px; }
@@ -17,12 +19,15 @@
     .group.active .group-items { display: block; }
     .group.active .group-title { color: white; }
 
-    /* Link trang con - Mặc định ẩn hết */
+    /* Link trang con - Mặc định ẩn để phân quyền */
     .nav-link { 
       display: none; padding: 10px 20px 10px 35px; color: #cbd5e0; 
       text-decoration: none; font-size: 13px; border-left: 3px solid transparent; 
     }
     .nav-link:hover { background: #1a3617; color: white; border-left-color: #FF8C00; }
+    
+    /* Trang chủ luôn hiện */
+    .nav-link.always-show { display: block; padding: 15px 20px; font-weight: bold; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); }
     
     .logout-box { position: fixed; bottom: 0; width: 100%; padding: 10px; background: #2D5A27; box-sizing: border-box; }
   </style>
@@ -30,18 +35,29 @@
 <body>
 
 <div class="sidebar-header">
-  <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" width="60">
+  <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" width="60" onclick="parent.location.href='index.html'" title="Về Trang Chủ">
   <span id="user-display">Đang tải...</span>
 </div>
 
 <div class="menu-box">
+  <a href="index.html" target="_parent" class="nav-link always-show">🏠 TRANG CHỦ</a>
+
   <div class="group">
-    <div class="group-title" onclick="this.parentElement.classList.toggle('active')">📦 ĐƠN HÀNG <span>▼</span></div>
+    <div class="group-title" onclick="this.parentElement.classList.toggle('active')">📝 ĐƠN HÀNG <span>▼</span></div>
     <div class="group-items">
       <a href="Tao_Don.html" id="Tao_Don" target="_parent" class="nav-link">📝 Tạo đơn mới</a>
       <a href="Sua_Don.html" id="Sua_Phieu_Dat_Hang" target="_parent" class="nav-link">✏️ Sửa phiếu đặt</a>
       <a href="Xu_Ly.html" id="Xu_Ly" target="_parent" class="nav-link">⚙️ Xử lý đơn</a>
       <a href="Thanh_Toan.html" id="Thanh_Toan" target="_parent" class="nav-link">💳 Thanh toán</a>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-title" onclick="this.parentElement.classList.toggle('active')">📦 SẢN PHẨM <span>▼</span></div>
+    <div class="group-items">
+      <a href="Kho.html" id="Kho_Vat_Tu" target="_parent" class="nav-link">🏗️ Kho vật tư</a>
+      <a href="Bang_Gia.html" id="Bang_Gia_San_Pham" target="_parent" class="nav-link">🏷️ Bảng giá</a>
+      <a href="Nguyen_Lieu.html" id="Dinh_Muc_Nguyen_Lieu" target="_parent" class="nav-link">🧪 Nguyên liệu</a>
     </div>
   </div>
 
@@ -65,44 +81,64 @@
     </div>
   </div>
 
-  <div class="group active">
-  <div class="group-title" onclick="this.parentElement.classList.toggle('active')">⏰ NHÂN VIÊN <span>▼</span></div>
-  <div class="group-items">
-    <a href="Cham_Cong.html" id="Cham_Cong" target="_parent" class="nav-link">🕒 Chấm công nhanh</a>
+  <div class="group">
+    <div class="group-title" onclick="this.parentElement.classList.toggle('active')">⏰ NHÂN VIÊN <span>▼</span></div>
+    <div class="group-items">
+      <a href="Cham_Cong.html" id="Cham_Cong" target="_parent" class="nav-link">🕒 Chấm công nhanh</a>
+      <a href="Quan_Ly_Luong.html" id="Quan_Ly_Luong" target="_parent" class="nav-link">💰 Bảng tính lương</a>
+    </div>
   </div>
-</div>
 
-<div class="group">
-  <div class="group-title" onclick="this.parentElement.classList.toggle('active')">🛡️ QUẢN TRỊ <span>▼</span></div>
-  <div class="group-items">
-    <a href="Tien_Do.html" id="Quan_Ly_Tien_Do" target="_parent" class="nav-link">📈 Tiến độ</a>
-    <a href="BC_Cong_Viec.html" id="Bao_Cao_Cong_Viec" target="_parent" class="nav-link">📝 Công việc</a>
-    <a href="Quan_Tri.html" id="Quan_Tri_Don_Hang" target="_parent" class="nav-link">🗂️ Quản trị đơn</a>
-    <a href="Quan_Ly_Luong.html" id="Quan_Ly_Luong" target="_parent" class="nav-link">💰 Quản lý Lương</a>
+  <div class="group" id="admin-only-group">
+    <div class="group-title" onclick="this.parentElement.classList.toggle('active')">🛡️ QUẢN TRỊ <span>▼</span></div>
+    <div class="group-items">
+      <a href="Tien_Do.html" id="Quan_Ly_Tien_Do" target="_parent" class="nav-link">📈 Tiến độ chung</a>
+      <a href="BC_Cong_Viec.html" id="Bao_Cao_Cong_Viec" target="_parent" class="nav-link">📝 Báo cáo công việc</a>
+      <a href="Quan_Tri.html" id="Quan_Tri_Don_Hang" target="_parent" class="nav-link">🗂️ Quản trị đơn</a>
+      <a href="Admin_Quan_Ly_Nhan_Su.html" id="Admin_Quan_Ly_Nhan_Su" target="_parent" class="nav-link">⚙️ Quản lý nhân sự</a>
+    </div>
   </div>
-</div>
 </div>
 
 <div class="logout-box">
   <button onclick="parent.logout()" style="width:100%; padding:8px; background:#c0392b; color:white; border:none; cursor:pointer; border-radius:4px;">🚪 Đăng xuất</button>
 </div>
-
 <script>
+  // Lấy dữ liệu user từ máy tính
   const user = JSON.parse(localStorage.getItem('currentUser'));
+
   if (user) {
-    document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
-    const myModules = user.modules.split(',').map(s => s.trim());
+    // 1. Hiển thị thông tin tên và vai trò
+    document.getElementById('user-display').innerText = `${user.Ho_Ten || user.name || 'Người dùng'} (${user.Vai_Tro || user.role || 'N/A'})`;
     
-    // Check quyền theo từng ID trang con
+    // 2. Lấy chuỗi quyền (Ưu tiên lấy cột Danh_Sach_Module như trong ảnh Mỹ gửi)
+    const moduleString = user.Danh_Sach_Module || user.modules || "";
+    
+    // Tách chuỗi thành mảng và xóa khoảng trắng dư thừa
+    const myModules = moduleString.split(',').map(s => s.trim());
+    
+    console.log("Danh sách ID được cấp quyền:", myModules); // Mỹ có thể nhấn F12 để kiểm tra dòng này
+
+    // 3. Duyệt qua danh sách ID và cho hiển thị các nút bấm tương ứng
     myModules.forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.style.display = 'block';
+      if (el) {
+        el.style.display = 'block';
+      }
     });
 
-    // Nếu nhóm không có trang nào được phép xem thì ẩn cả nhóm
+    // 4. Kiểm tra các nhóm (Group), nếu nhóm nào không có link nào bên trong hiện lên thì ẩn luôn nhóm đó
     document.querySelectorAll('.group').forEach(g => {
+      // Nhóm có chứa link Trang chủ luôn hiện thì bỏ qua không ẩn
+      if (g.querySelector('.always-show')) return;
+
       const hasVisibleLink = Array.from(g.querySelectorAll('.nav-link')).some(a => a.style.display === 'block');
-      if (!hasVisibleLink) g.style.display = 'none';
+      
+      if (hasVisibleLink) {
+        g.style.display = 'block';
+      } else {
+        g.style.display = 'none';
+      }
     });
   }
 </script>
