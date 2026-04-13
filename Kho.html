@@ -34,7 +34,6 @@
     th { background: #f1f5f9; color: #64748b; font-size: 11px; text-transform: uppercase; }
     
     .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
-    .img-preview:hover { transform: scale(1.1); }
     .qr-preview { width: 40px; height: 40px; cursor: pointer; background: white; padding: 2px; border: 1px solid #eee; }
     .btn-submit { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; font-size: 16px; transition: 0.3s; }
     .btn-submit:hover { background: #1e3f1a; transform: translateY(-2px); }
@@ -50,7 +49,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div>
         <h2 style="margin:0; color: var(--primary);">📦 KHO VẬT TƯ SẮC MÀU</h2>
-        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Quản lý kho & In mã QR Code vật tư</p>
+        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Quản lý kho & Cập nhật hình ảnh Drive</p>
       </div>
       <button onclick="getToken()" style="padding:10px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid var(--primary); background:white; color:var(--primary);">🔐 KẾT NỐI DRIVE</button>
     </div>
@@ -113,7 +112,7 @@
             callback: (tokenResponse) => {
                 accessToken = tokenResponse.access_token;
                 localStorage.setItem('drive_access_token', accessToken);
-                Swal.fire({ icon: 'success', title: 'Drive đã kết nối!', timer: 1000, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: 'Drive đã sẵn sàng!', timer: 1000, showConfirmButton: false });
             },
         });
     }
@@ -124,6 +123,22 @@
       setTimeout(loadInventory, 600);
     });
 
+    /** HÀM BỔ TRỢ UPLOAD FILE LÊN DRIVE */
+    async function uploadFileToDrive(file) {
+        if (!accessToken) return null;
+        const metadata = { name: `KHO_${Date.now()}_${file.name}`, parents: [FOLDER_ID] };
+        const resInit = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(metadata)
+        });
+        if(resInit.status === 401) { getToken(); return null; }
+        const uploadUrl = resInit.headers.get('Location');
+        const resUpload = await fetch(uploadUrl, { method: 'PUT', body: file });
+        const result = await resUpload.json();
+        return `https://drive.google.com/file/d/${result.id}/view`; // Trả về link view trực tiếp
+    }
+
     async function submitInventory() {
       const nhom = document.getElementById('f-nhom').value.trim() || "Chưa phân loại";
       const ten = document.getElementById('f-ten').value.trim();
@@ -131,48 +146,29 @@
       const file = document.getElementById('f-hinh').files[0];
 
       if(!ten) return Swal.fire('Lỗi', 'Vui lòng nhập tên hàng hóa!', 'warning');
-      if(!accessToken) { Swal.fire('Drive chưa kết nối', 'Vui lòng bấm nút Kết nối Drive phía trên!', 'info'); return; }
-
-      Swal.fire({ title: 'Đang tải lên...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      
+      Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
       let driveLink = "";
       try {
-        if (file) {
-            const metadata = { name: `KHO_${Date.now()}_${file.name}`, parents: [FOLDER_ID] };
-            const resInit = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(metadata)
-            });
-            if(resInit.status === 401) { getToken(); return; }
-            const uploadUrl = resInit.headers.get('Location');
-            const resUpload = await fetch(uploadUrl, { method: 'PUT', body: file });
-            const result = await resUpload.json();
-            // Lưu link dạng thumbnail để hiển thị trong bảng
-            driveLink = `https://drive.google.com/thumbnail?id=${result.id}&sz=w800`; 
-        }
+        if (file) driveLink = await uploadFileToDrive(file);
 
         const maQR = "SMK-" + Math.random().toString(36).substr(2, 6).toUpperCase();
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
-        const body = {
-          Nhom_Hang: nhom, Ten_Hang: ten, So_Luong: Number(sl),
-          Kich_Thuoc: document.getElementById('f-kt').value,
-          Quy_Cach: document.getElementById('f-qc').value,
-          Chat_Lieu: document.getElementById('f-cl').value,
-          Ma_QR: maQR, Hinh_Anh: driveLink
-        };
-
-        const resDB = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu`, {
-          method: 'POST', headers: h, body: JSON.stringify(body)
+        
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu`, {
+          method: 'POST', headers: h, body: JSON.stringify({
+            Nhom_Hang: nhom, Ten_Hang: ten, So_Luong: Number(sl),
+            Kich_Thuoc: document.getElementById('f-kt').value,
+            Quy_Cach: document.getElementById('f-qc').value,
+            Chat_Lieu: document.getElementById('f-cl').value,
+            Ma_QR: maQR, Hinh_Anh: driveLink
+          })
         });
 
-        if(resDB.ok) {
-          Swal.fire('Thành công', 'Đã lưu vật tư!', 'success');
-          document.getElementById('f-ten').value = "";
-          document.getElementById('f-nhom').value = "";
-          document.getElementById('f-hinh').value = "";
-          loadInventory();
-        }
+        Swal.fire('Thành công', 'Đã lưu vật tư!', 'success');
+        document.getElementById('f-ten').value = "";
+        loadInventory();
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
@@ -189,19 +185,14 @@
 
         const container = document.getElementById('inventory-list');
         container.innerHTML = "";
-        if(data.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Kho trống.</p>'; return; }
 
         for (let nhom in groups) {
           let rows = groups[nhom].map(item => {
-            // TẠO MÃ QR DẠNG HÌNH ẢNH
             const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(item.Ma_QR)}`;
-            
             return `
             <tr>
               <td>
-                <img src="${qrImageUrl}" class="qr-preview" title="Xem mã QR" 
-                     onclick="Swal.fire({title: 'Mã QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 250, imageHeight: 250, confirmButtonText: 'ĐÓNG', confirmButtonColor: '#2D5A27'})">
-                <div style="font-size:10px; color:#888;">${item.Ma_QR}</div>
+                <img src="${qrImageUrl}" class="qr-preview" onclick="Swal.fire({title: 'QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 250})">
               </td>
               <td><b>${item.Ten_Hang}</b></td>
               <td><b style="color:var(--primary)">${item.So_Luong}</b></td>
@@ -209,7 +200,7 @@
               <td>${item.Quy_Cach || '-'}</td>
               <td>${item.Chat_Lieu || '-'}</td>
               <td>
-                ${item.Hinh_Anh ? `<img src="${item.Hinh_Anh}" class="img-preview" onclick="viewFullImage('${item.Hinh_Anh}')">` : '<span style="color:#ccc">N/A</span>'}
+                ${item.Hinh_Anh ? `<img src="https://i.ibb.co/m56L6vS/drive-icon.png" class="img-preview" onclick="window.open('${item.Hinh_Anh}', '_blank')" title="Mở ảnh trên Drive">` : '<span style="color:#ccc">N/A</span>'}
               </td>
               <td>
                 <button onclick='editItem(${JSON.stringify(item)})' style="color:#2980b9; border:none; background:none; cursor:pointer; font-weight:bold;">SỬA</button> | 
@@ -225,30 +216,12 @@
             </div>
             <div id="group-${nhom}" class="group-content">
               <table>
-                <thead><tr><th>Mã QR</th><th>Tên hàng</th><th>Tồn</th><th>KT</th><th>QC</th><th>Chất liệu</th><th>Ảnh</th><th>Thao tác</th></tr></thead>
+                <thead><tr><th>QR</th><th>Tên hàng</th><th>Tồn</th><th>KT</th><th>QC</th><th>Chất liệu</th><th>Ảnh</th><th>Thao tác</th></tr></thead>
                 <tbody>${rows}</tbody>
               </table>
             </div>`;
         }
       } catch (e) { console.error(e); }
-    }
-
-    // HÀM XEM ẢNH GỐC CHẤT LƯỢNG CAO
-    function viewFullImage(thumbUrl) {
-        // Thumbnail link: ...drive.google.com/thumbnail?id=FILE_ID&sz=w800
-        const urlParams = new URLSearchParams(thumbUrl.split('?')[1]);
-        const fileId = urlParams.get('id');
-        // URL ảnh gốc trực tiếp từ Drive
-        const fullResUrl = `https://drive.google.com/uc?id=${fileId}`;
-        
-        Swal.fire({
-            title: 'Hình ảnh vật tư (Ảnh gốc)',
-            imageUrl: fullResUrl,
-            imageAlt: 'Vật tư kho',
-            width: '80%',
-            confirmButtonText: 'ĐÓNG',
-            confirmButtonColor: '#2D5A27'
-        });
     }
 
     function toggleGroup(id) { document.getElementById(`group-${id}`).classList.toggle('show'); }
@@ -260,20 +233,24 @@
           <div style="text-align:left; font-size:14px;">
             <label>Nhóm hàng:</label><input id="e-nhom" class="swal2-input" value="${item.Nhom_Hang}">
             <label>Tên hàng:</label><input id="e-ten" class="swal2-input" value="${item.Ten_Hang}">
-            <label>Số lượng tồn:</label><input id="e-sl" type="number" class="swal2-input" value="${item.So_Luong}">
-            <label>Kích thước:</label><input id="e-kt" class="swal2-input" value="${item.Kich_Thuoc || ''}">
-            <label>Quy cách:</label><input id="e-qc" class="swal2-input" value="${item.Quy_Cach || ''}">
+            <label>Số lượng:</label><input id="e-sl" type="number" class="swal2-input" value="${item.So_Luong}">
+            <label>Hình ảnh mới (Nếu cần thay):</label>
+            <input type="file" id="e-hinh" class="swal2-input" accept="image/*" capture="environment">
           </div>`,
         showCancelButton: true,
         confirmButtonText: 'CẬP NHẬT',
-        confirmButtonColor: '#2D5A27',
-        preConfirm: () => {
+        preConfirm: async () => {
+          const newFile = document.getElementById('e-hinh').files[0];
+          let newLink = item.Hinh_Anh;
+          if (newFile) {
+              Swal.showLoading();
+              newLink = await uploadFileToDrive(newFile);
+          }
           return {
             Nhom_Hang: document.getElementById('e-nhom').value,
             Ten_Hang: document.getElementById('e-ten').value,
             So_Luong: Number(document.getElementById('e-sl').value),
-            Kich_Thuoc: document.getElementById('e-kt').value,
-            Quy_Cach: document.getElementById('e-qc').value
+            Hinh_Anh: newLink
           }
         }
       });
@@ -285,10 +262,9 @@
     }
 
     async function deleteItem(id) {
-      const r = await Swal.fire({ title: 'Xóa vật tư này?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'XÓA', cancelButtonText: 'HỦY' });
+      const r = await Swal.fire({ title: 'Xóa vật tư?', icon: 'warning', showCancelButton: true });
       if (r.isConfirmed) {
-        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${id}`, { method: 'DELETE', headers: h });
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` } });
         loadInventory();
       }
     }
