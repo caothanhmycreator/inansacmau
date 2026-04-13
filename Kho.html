@@ -185,10 +185,20 @@
 
         const container = document.getElementById('inventory-list');
         container.innerHTML = "";
+        if(data.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Kho trống.</p>'; return; }
 
         for (let nhom in groups) {
           let rows = groups[nhom].map(item => {
             const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(item.Ma_QR)}`;
+            
+            // XỬ LÝ LINK THUMBNAIL: Nếu đã có link, dùng sz=w200 để hiển thị nhanh trong bảng
+            let thumbDisplay = '<span style="color:#ccc">N/A</span>';
+            if (item.Hinh_Anh && item.Hinh_Anh.includes('drive.google.com')) {
+                const fileId = item.Hinh_Anh.split('/d/')[1]?.split('/')[0] || item.Hinh_Anh.split('id=')[1]?.split('&')[0];
+                const finalThumb = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+                thumbDisplay = `<img src="${finalThumb}" class="img-preview" onclick="window.open('${item.Hinh_Anh}', '_blank')" title="Nhấn để xem ảnh gốc trên Drive">`;
+            }
+
             return `
             <tr>
               <td>
@@ -199,9 +209,7 @@
               <td><small>${item.Kich_Thuoc || '-'}</small></td>
               <td>${item.Quy_Cach || '-'}</td>
               <td>${item.Chat_Lieu || '-'}</td>
-              <td>
-                ${item.Hinh_Anh ? `<img src="https://i.ibb.co/m56L6vS/drive-icon.png" class="img-preview" onclick="window.open('${item.Hinh_Anh}', '_blank')" title="Mở ảnh trên Drive">` : '<span style="color:#ccc">N/A</span>'}
-              </td>
+              <td>${thumbDisplay}</td>
               <td>
                 <button onclick='editItem(${JSON.stringify(item)})' style="color:#2980b9; border:none; background:none; cursor:pointer; font-weight:bold;">SỬA</button> | 
                 <button onclick="deleteItem(${item.id})" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold;">XÓA</button>
@@ -223,7 +231,6 @@
         }
       } catch (e) { console.error(e); }
     }
-
     function toggleGroup(id) { document.getElementById(`group-${id}`).classList.toggle('show'); }
 
     async function editItem(item) {
