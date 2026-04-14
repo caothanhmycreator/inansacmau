@@ -126,3 +126,92 @@ window.formatDateTimeVN = function() {
     // Chạy kiểm tra ngay lập tức khi load
     setTimeout(checkOrders, 2000);
 })();
+
+/**
+ * HỆ THỐNG THÔNG BÁO ĐẨY - BẢN CƯỠNG CHẾ KIỂM TRA
+ */
+(function() {
+    let lastCheckData = {};
+    let isFirstLoad = true;
+
+    const NOTIFY_CONFIG = {
+        "Admin": ["Tất cả"],
+        "Thiet_Ke": ["Chờ thiết kế"],
+        "Nhan_Vien_In": ["Chờ in"],
+        "Quan_Ly_Don": ["Chờ xử lý", "Chờ duyệt file", "Chờ thiết kế", "Chờ in", "Chờ gia công", "Chờ thanh toán", "Chờ giao hàng"]
+    };
+
+    async function checkOrders() {
+        try {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+
+            const role = user.Vai_Tro || "";
+            const states = NOTIFY_CONFIG[role] || [];
+            if (states.length === 0) return;
+
+            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+            let q = states.includes("Tất cả") ? "" : `&Trang_Thai=in.(${states.join(',')})`;
+            
+            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=id,Trang_Thai,Ten_Khach${q}`, { headers: h });
+            const data = await res.json();
+
+            // Dòng này để Mỹ kiểm tra trong tab Console xem nó có quét đơn không
+            console.log(`[Thông báo] Đang quét đơn cho ${role}... Tìm thấy: ${data.length}`);
+
+            let newItems = [];
+            data.forEach(item => {
+                if (!lastCheckData[item.id] || lastCheckData[item.id] !== item.Trang_Thai) {
+                    newItems.push(item);
+                }
+                lastCheckData[item.id] = item.Trang_Thai;
+            });
+
+            if (isFirstLoad) { 
+                isFirstLoad = false; 
+                console.log("[Thông báo] Ghi nhớ dữ liệu lần đầu thành công.");
+                return; 
+            }
+
+            if (newItems.length > 0) {
+                console.log("🔔 PHÁT HIỆN ĐƠN MỚI:", newItems[0]);
+                
+                // 1. Phát âm thanh
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                audio.play().catch(() => console.log("Trình duyệt chặn tự động phát âm thanh."));
+                
+                // 2. Thông báo hệ thống
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification(`🔔 SẮC MÀU: CÓ ĐƠN MỚI`, { 
+                        body: `Khách: ${newItems[0].Ten_Khach} - ${newItems[0].Trang_Thai}`,
+                        requireInteraction: true 
+                    });
+                }
+                
+                // 3. Ép hiện Swal ở trang chính (Dù đang ở Iframe)
+                const targetSwal = window.Swal || window.parent.Swal;
+                if (targetSwal) {
+                    targetSwal.fire({ 
+                        title: 'CÓ ĐƠN MỚI!', 
+                        text: `${newItems[0].Ten_Khach} vừa cập nhật trạng thái: ${newItems[0].Trang_Thai}`, 
+                        icon: 'info', 
+                        toast: true, 
+                        position: 'top-end', 
+                        timer: 10000,
+                        showConfirmButton: false 
+                    });
+                }
+            }
+        } catch (e) { console.error("Lỗi Notify:", e); }
+    }
+
+    // Yêu cầu quyền ngay lập tức
+    if ("Notification" in window) {
+        if (Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    }
+
+    setInterval(checkOrders, 20000); // 20 giây quét một lần
+    setTimeout(checkOrders, 3000);   // Chạy thử sau 3 giây khi load
+})();
