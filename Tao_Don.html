@@ -7,25 +7,15 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
-   <script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js"></script> 
 
   <style>
-    /* PC: Chừa lề sẵn 250px để trang KHÔNG bị giật khi load */
-.main-content { margin-left: 250px; transition: 0.3s; padding: 20px; }
-
-@media (max-width: 768px) {
-  .main-content { margin-left: 0 !important; padding-top: 50px; }
-  .mobile-nav-btn {
-    display: block; position: fixed; top: 10px; left: 10px; z-index: 999;
-    background: #2D5A27; color: white; padding: 8px 12px; border-radius: 4px; border: none;
-  }
-}
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
-
-    /* 1. GIAO DIỆN TRÊN MÀN HÌNH */
     body { margin: 0; background: #f4f7f6; display: flex; font-family: 'Segoe UI', sans-serif; }
-    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    
+    /* PC: Chừa lề sẵn 250px để trang KHÔNG bị giật khi load */
+    .main-content { flex: 1; margin-left: 250px; transition: 0.3s; padding: 20px; min-width: 0; }
 
+    /* Nút Thanh Toán (Toggle) */
     .pay-toggle-container { display: flex; background: #fffdfb; padding: 3px; border-radius: 8px; width: 160px; position: relative; margin-left: 10px; }
     .pay-option { flex: 1; text-align: center; padding: 6px 0; font-size: 11px; font-weight: bold; color: #999; cursor: pointer; z-index: 2; transition: 0.3s; }
     .pay-option.active { color: white; }
@@ -34,88 +24,94 @@
     .pay-slider.ck { left: 66.66%; background: #2980b9; width: calc(33.33% - 3px); }
     .pay-slider.mid { left: 33.33%; background: #bbb; }
 
+    /* Khung Giao Diện Chung */
     .sacmau-wrapper { max-width: 1000px; margin: auto; }
     .sacmau-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
     .sacmau-input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
     .sacmau-label { display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 4px; }
     .sacmau-row { display: flex; gap: 10px; margin-bottom: 10px; }
-    .sacmau-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-    .sacmau-table th { background: #2D5A27; color: white; padding: 10px; }
+    
+    /* Hệ thống lưới chia cột chuẩn cho PC */
+    .col-lg { flex: 2.5; }
+    .col-md { flex: 2; }
+    .col-sm { flex: 1.5; }
+    .col-xs { flex: 1; }
+    .col-btn { flex: 1; display: flex; align-items: flex-end; }
+
+    /* Bảng dữ liệu */
+    .table-wrapper { max-height: 220px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-top: 10px; }
+    .sacmau-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
+    .sacmau-table th { background: #2D5A27; color: white; padding: 10px; position: sticky; top: 0; z-index: 10; }
     .sacmau-table td { padding: 8px; border-bottom: 1px solid #eee; }
-    .sacmau-payment-box { display: flex; align-items: center; gap: 15px; padding: 15px; background: #f9f9f9; border-radius: 8px; }
+    
+    /* Vùng thanh toán */
+    .sacmau-payment-box { display: flex; align-items: flex-end; justify-content: space-between; padding: 15px; background: #f9f9f9; border-radius: 8px; margin-top: 15px; }
+    .pay-inputs { display: flex; gap: 20px; align-items: flex-end; }
+    .pay-deposit { width: 150px; }
+    .pay-totals { text-align: right; min-width: 250px; }
 
-    /* 2. CẤU HÌNH PHIẾU IN */
+    /* ========================================================
+       MOBILE RESPONSIVE (TỰ ĐỘNG XẾP DỌC TRÊN ĐIỆN THOẠI)
+       ======================================================== */
+    @media (max-width: 768px) {
+      .main-content { margin-left: 0 !important; padding: 15px; padding-top: 60px; }
+      
+      /* Biến tất cả các hàng ngang thành xếp dọc */
+      .sacmau-row { flex-direction: column; gap: 12px; }
+      .col-lg, .col-md, .col-sm, .col-xs, .col-btn { flex: none; width: 100%; }
+      
+      /* Phóng to nút Thêm */
+      .sacmau-btn-add { width: 100%; height: 45px !important; margin-top: 5px; font-size: 15px; }
+      
+      /* Khu vực thanh toán */
+      .sacmau-payment-box { flex-direction: column; align-items: stretch; gap: 15px; }
+      .pay-inputs { flex-direction: column; gap: 15px; align-items: stretch; }
+      .pay-deposit { width: 100%; }
+      .pay-toggle-container { width: 100%; margin-left: 0; height: 42px !important; }
+      .pay-option { padding: 9px 0; font-size: 13px; } /* Phóng to chữ TM / CK */
+      .pay-totals { text-align: left; min-width: auto; background: #fff3cd; padding: 15px; border-radius: 8px; }
+      
+      /* Cuộn ngang bảng nếu màn hình quá nhỏ */
+      .table-wrapper { overflow-x: auto; }
+      
+      /* Nút chức năng cuối trang */
+      .action-buttons { flex-direction: column; gap: 10px; }
+      .action-buttons button { width: 100%; padding: 15px !important; font-size: 15px; }
+    }
+
+    /* CHỐNG XUNG ĐỘT KHI IN */
     #vung-in-sacmau { display: none; }
-
     @media print {
       @page { size: A4; margin: 0; }
       body * { visibility: hidden; }
       #vung-in-sacmau, #vung-in-sacmau * { visibility: visible; }
       #vung-in-sacmau { 
-        display: block !important; 
-        position: absolute; 
-        left: 0; 
-        top: 0; 
-        width: 210mm; 
-        min-height: 297mm;
-        padding: 15mm; 
-        box-sizing: border-box;
-        background: white;
-        color: #000;
+        display: block !important; position: absolute; left: 0; top: 0; 
+        width: 210mm; min-height: 297mm; padding: 15mm; box-sizing: border-box;
+        background: white; color: #000;
       }
       .no-print { display: none !important; }
       .p-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
       .p-table th { background: #2D5A27 !important; color: white !important; padding: 10px; text-align: left; -webkit-print-color-adjust: exact; border: 1px solid #2D5A27; }
       .p-table td { padding: 8px; border: 1px solid #ccc; font-size: 14px; }
     }
-
-    @media (max-width: 768px) { .main-content { margin-left: 0; } }
-
-
-    /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
-
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
-
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
-    
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
-    }
-}
-
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
-
   <div class="main-content">
     <div class="sacmau-wrapper">
       <div class="sacmau-container no-print">
-        <h2 style="color: #2D5A27; margin-bottom: 15px;">🧾 TẠO ĐƠN HÀNG MỚI</h2>
+        <h2 style="color: #2D5A27; margin-bottom: 15px; margin-top: 0;">🧾 TẠO ĐƠN HÀNG MỚI</h2>
 
-        <div class="sacmau-item-box" style="padding: 10px; background: #fdfdfd; border: 1px solid #eee; border-radius: 8px;">
+        <div style="padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-radius: 8px;">
           <div class="sacmau-row">
-            <div style="flex: 2;">
+            <div class="col-md">
               <label class="sacmau-label">Tên khách hàng</label>
               <input id="tenKhach" list="khachList" class="sacmau-input" placeholder="Gõ tên khách..." oninput="autoFillKhach(this.value)">
               <datalist id="khachList"></datalist>
             </div>
-            <div style="flex: 1;">
+            <div class="col-xs">
               <label class="sacmau-label">Số điện thoại</label>
               <input id="sdt" class="sacmau-input" placeholder="0xxx...">
             </div>
@@ -126,53 +122,63 @@
           </div>
         </div>
 
-        <div class="sacmau-item-box" style="padding: 10px; margin-top: 10px; border-left: 4px solid #FF8C00; background: #fffaf5;">
+        <div style="padding: 15px; margin-top: 15px; border-left: 4px solid #FF8C00; background: #fffaf5; border-radius: 8px;">
           <div class="sacmau-row">
-            <div style="flex: 2.5;">
+            <div class="col-lg">
               <label class="sacmau-label">Sản phẩm</label>
               <input id="sanPham" list="spList" class="sacmau-input" placeholder="Tìm sản phẩm..." oninput="autoFillSP(this.value)">
               <datalist id="spList"></datalist>
             </div>
-            <div style="flex: 1;">
+            <div class="col-xs">
               <label class="sacmau-label">ĐVT</label>
               <input id="dvt" class="sacmau-input">
             </div>
           </div>
-          <div class="sacmau-row" style="margin-top: 10px; align-items: flex-end;">
-            <div style="flex: 1.2;">
+          
+          <div class="sacmau-row" style="align-items: flex-end;">
+            <div class="col-sm">
               <label class="sacmau-label">Số lượng</label>
-              <div style="display: flex;">
-                <button onclick="changeSL(-10)" style="width: 35px; height: 38px; border: 1px solid #ddd; border-radius: 6px 0 0 6px;">-</button>
-                <input id="sl" type="text" class="sacmau-input" value="0" style="text-align:center; border-radius: 0; border-left: none; border-right: none; height: 38px;" oninput="formatInput(this); updateTmpTotal()">
-                <button onclick="changeSL(10)" style="width: 35px; height: 38px; border: 1px solid #ddd; border-radius: 0 6px 6px 0;">+</button>
+              <div style="display: flex; width: 100%;">
+                <button onclick="changeSL(-10)" style="width: 40px; height: 38px; border: 1px solid #ddd; background: white; border-radius: 6px 0 0 6px; cursor: pointer;">-</button>
+                <input id="sl" type="text" class="sacmau-input" value="0" style="flex: 1; text-align:center; border-radius: 0; border-left: none; border-right: none; height: 38px;" oninput="formatInput(this); updateTmpTotal()">
+                <button onclick="changeSL(10)" style="width: 40px; height: 38px; border: 1px solid #ddd; background: white; border-radius: 0 6px 6px 0; cursor: pointer;">+</button>
               </div>
             </div>
-            <div style="flex: 1.2;">
+            <div class="col-sm">
               <label class="sacmau-label">Đơn giá</label>
               <input id="gia" type="text" class="sacmau-input" placeholder="0" oninput="formatInput(this); updateTmpTotal()">
             </div>
-            <div style="flex: 1.5;">
+            <div class="col-sm">
               <label class="sacmau-label">Tạm tính</label>
-              <input id="tmpTotal" class="sacmau-input" readonly style="background:#fff3cd; color:#d35400" value="0">
+              <input id="tmpTotal" class="sacmau-input" readonly style="background:#fff3cd; color:#d35400; font-weight: bold;" value="0">
             </div>
-            <button class="sacmau-btn-add" onclick="addItem()" style="height:38px; padding:0 15px; background:#FF8C00; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">+ THÊM</button>
+            <div class="col-btn">
+              <button class="sacmau-btn-add" onclick="addItem()" style="width: 100%; height:38px; background:#FF8C00; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; transition: 0.2s;">+ THÊM</button>
+            </div>
           </div>
         </div>
 
-        <div style="max-height: 180px; overflow-y: auto; margin-top: 10px; border: 1px solid #eee; border-radius: 8px;">
+        <div class="table-wrapper">
           <table class="sacmau-table">
             <thead>
-              <tr><th>Sản phẩm</th><th style="width:60px;">ĐVT</th><th style="width:50px;">SL</th><th style="width:90px;">Giá</th><th style="width:100px;">T.Tiền</th><th style="width:40px;"></th></tr>
+              <tr>
+                <th>Sản phẩm</th>
+                <th style="width:60px; text-align: center;">ĐVT</th>
+                <th style="width:50px; text-align: center;">SL</th>
+                <th style="width:90px; text-align: right;">Giá</th>
+                <th style="width:100px; text-align: right;">T.Tiền</th>
+                <th style="width:40px; text-align: center;">Xóa</th>
+              </tr>
             </thead>
             <tbody id="cart-body"></tbody>
           </table>
         </div>
 
-        <div class="sacmau-payment-box" style="justify-content: space-between; align-items: flex-end;">
-          <div style="display: flex; gap: 20px;">
-            <div style="width: 150px;">
+        <div class="sacmau-payment-box">
+          <div class="pay-inputs">
+            <div class="pay-deposit">
               <label class="sacmau-label">Khách cọc</label>
-              <input id="tra" type="text" class="sacmau-input" style="font-weight: bold; color: #2D5A27;" placeholder="0" oninput="formatInput(this); calc()">
+              <input id="tra" type="text" class="sacmau-input" style="font-weight: bold; color: #2D5A27; font-size: 15px;" placeholder="0" oninput="formatInput(this); calc()">
             </div>
             <div>
               <label class="sacmau-label">Hình thức</label>
@@ -184,7 +190,8 @@
               </div>
             </div>
           </div>
-          <div style="text-align: right; min-width: 250px;">
+          
+          <div class="pay-totals">
             <div style="margin-bottom: 5px;">
               <span style="font-weight: bold; color: #555; font-size: 13px;">TỔNG GIÁ TRỊ:</span>
               <span id="tong" style="color: red; font-size: 22px; font-weight: 900; margin-left: 10px;">0</span>đ
@@ -196,8 +203,8 @@
           </div>
         </div>
 
-        <div class="sacmau-row" style="margin-top:15px;">
-          <button style="flex:1; padding:12px; background:#666; color:white; border:none; border-radius:8px; cursor:pointer;" onclick="inHoaDon()">🖨️ IN PHIẾU</button>
+        <div class="sacmau-row action-buttons" style="margin-top:20px;">
+          <button style="flex:1; padding:12px; background:#666; color:white; border:none; border-radius:8px; cursor:pointer; font-weight: bold;" onclick="inHoaDon()">🖨️ IN PHIẾU</button>
           <button id="saveBtn" style="flex:1.5; padding:12px; background:#2D5A27; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="saveOrder()">🚀 LƯU & SẢN XUẤT</button>
         </div>
       </div>
@@ -238,6 +245,7 @@
   </div>
 
   <script>
+    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100%
     var cart = []; var dsK = []; var dsS = []; var currentPayMethod = "";
 
     async function napDuLieuTrang() {
@@ -262,7 +270,6 @@
       if (m) { document.getElementById("gia").value = Number(m.Gia_Le || 0).toLocaleString("vi-VN"); document.getElementById("dvt").value = m.DVT || ""; updateTmpTotal(); }
     }
 
-    /** 🚀 CHỈ GHI TONG_DON VÀO DÒNG ĐẦU TIÊN CỦA ĐƠN HÀNG */
     async function saveOrder() {
       if (cart.length === 0) return Swal.fire('Lỗi', 'Chưa có sản phẩm!', 'error');
       const totalBill = cart.reduce((s, item) => s + (item.sl * item.dg), 0);
@@ -294,7 +301,7 @@
           Con_No: (idx === 0 ? (totalBill - daTra) : 0), 
           Dia_Chi: document.getElementById("diaChi").value, 
           Hinh_Thuc_Thanh_Toan: (idx === 0 ? currentPayMethod : ""),
-          Tong_Don: (idx === 0 ? totalBill : 0) // GHI TỔNG ĐƠN VÀO DÒNG ĐẦU TIÊN
+          Tong_Don: (idx === 0 ? totalBill : 0)
         }));
         
         const rowsLog = cart.map(i => ({ Ngay_Gio: cleanTime, Ma_Don: ma, Ten_Hang: i.sp, Khach_Hang: tenKH, Gio_Tao_Don: cleanTime, Gio_Xu_Ly: cleanTime, Trang_Thai: "Chờ xử lý", Nguoi_Thuc_Hien: "Hệ thống" }));
@@ -312,7 +319,7 @@
     function getRaw(id) { return Number(document.getElementById(id).value.replace(/\./g, "")) || 0; }
     function updateTmpTotal() { document.getElementById("tmpTotal").value = (getRaw("sl") * getRaw("gia")).toLocaleString("vi-VN"); }
     function addItem() { let sp = document.getElementById("sanPham").value; let sl = getRaw("sl"); let gia = getRaw("gia"); let dvt = document.getElementById("dvt").value; if (!sp || sl <= 0) return Swal.fire('Lỗi', 'Chọn SP và SL > 0', 'error'); cart.push({sp, sl, dg: gia, dvt}); render(); ["sanPham","dvt","gia","sl","tmpTotal"].forEach(id => document.getElementById(id).value = (id=="sl"||id=="tmpTotal"?"0":"")); }
-    function render() { document.getElementById("cart-body").innerHTML = cart.map((i, idx) => `<tr><td><b>${i.sp}</b></td><td style="text-align:center">${i.dvt}</td><td style="text-align:center">${i.sl.toLocaleString()}</td><td style="text-align:right">${i.dg.toLocaleString()}</td><td style="text-align:right; font-weight:bold">${(i.sl*i.dg).toLocaleString()}</td><td onclick="cart.splice(${idx},1);render()" style="color:red; cursor:pointer; text-align:center">✕</td></tr>`).join(""); calc(); }
+    function render() { document.getElementById("cart-body").innerHTML = cart.map((i, idx) => `<tr><td><b>${i.sp}</b></td><td style="text-align:center">${i.dvt}</td><td style="text-align:center">${i.sl.toLocaleString()}</td><td style="text-align:right">${i.dg.toLocaleString()}</td><td style="text-align:right; font-weight:bold">${(i.sl*i.dg).toLocaleString()}</td><td onclick="cart.splice(${idx},1);render()" style="color:red; cursor:pointer; text-align:center; font-weight:bold;">✕</td></tr>`).join(""); calc(); }
     
     function calc() { 
       let t = cart.reduce((s, i) => s + (i.sl * i.dg), 0); 
