@@ -82,16 +82,34 @@
 
   <script>
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+    let lastCheckData = {}; // Lưu trữ để so sánh đơn mới/cũ tránh báo lặp
+
+    // Cấu hình trạng thái theo dõi cho từng vai trò
+    const NOTIFY_CONFIG = {
+        "Admin": ["Tất cả"],
+        "Thiết kế": ["Chờ thiết kế"],
+        "Nhân viên in": ["Chờ in"],
+        "Thu ngân": ["Chờ xử lý", "Chờ duyệt file", "Chờ thiết kế", "Chờ in", "Chờ gia công", "Chờ thanh toán", "Chờ giao hàng"]
+    };
 
     document.addEventListener("DOMContentLoaded", function() {
       const user = JSON.parse(localStorage.getItem('currentUser'));
       if(!user) return;
-      document.getElementById('welcome-name').innerText = user.name || user.Ho_Ten;
+      document.getElementById('welcome-name').innerText = user.Ho_Ten || user.name;
       
       renderMenu(user);
       loadLiveStatistics();
+
+      // Xin quyền thông báo trình duyệt
+      if ("Notification" in window && Notification.permission !== "granted") {
+          Notification.requestPermission();
+      }
+
+      // Vòng lặp kiểm tra đơn hàng mới mỗi 20 giây
+      setInterval(checkNewOrders, 20000);
     });
 
+    /** 1. Render Menu theo phân quyền */
     function renderMenu(user) {
       const menuContainer = document.getElementById('dashboard-menu');
       const moduleString = user.Danh_Sach_Module || user.modules || "";
@@ -106,52 +124,77 @@
       menuContainer.innerHTML = html;
     }
 
+    /** 2. Kiểm tra đơn hàng mới theo vai trò */
+    async function checkNewOrders() {
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        if (!user) return;
+
+        const role = user.Vai_Tro || "Nhân viên";
+        let statesToWatch = NOTIFY_CONFIG[role] || [];
+        if (statesToWatch.length === 0) return;
+
+        try {
+            let query = "";
+            // Nếu không phải Admin, tạo câu lệnh lọc theo danh sách trạng thái
+            if (!statesToWatch.includes("Tất cả")) {
+                const statusFilter = statesToWatch.join(',');
+                query = `&Trang_Thai=in.(${statusFilter})`;
+            }
+
+            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=id,Trang_Thai,Ten_Khach${query}`, { headers: h });
+            const data = await res.json();
+
+            let hasNew = false;
+            let newItems = [];
+
+            data.forEach(item => {
+                // Nếu là đơn mới chưa từng lưu hoặc trạng thái đã thay đổi
+                if (!lastCheckData[item.id] || lastCheckData[item.id] !== item.Trang_Thai) {
+                    hasNew = true;
+                    newItems.push(item);
+                }
+                lastCheckData[item.id] = item.Trang_Thai;
+            });
+
+            if (hasNew && newItems.length > 0) {
+                triggerAlert(role, newItems);
+            }
+        } catch (e) { console.error("Lỗi thông báo:", e); }
+    }
+
+    /** 3. Phát báo động và hiện thông báo */
+    function triggerAlert(role, items) {
+        // Phát âm thanh
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        audio.play().catch(e => console.log("Cần tương tác với web để phát âm thanh"));
+
+        const count = items.length;
+        const first = items[0];
+
+        // Thông báo hệ thống (Windows/macOS)
+        if (Notification.permission === "granted") {
+            new Notification(`🔔 SẮC MÀU: ${role.toUpperCase()}`, {
+                body: `Bạn có ${count} công việc mới. Khách: ${first.Ten_Khach}`,
+                icon: "https://i.ibb.co/m56L6vS/drive-icon.png",
+                requireInteraction: true // Thông báo đứng yên đến khi bấm vào
+            });
+        }
+
+        // Thông báo giao diện Web
+        Swal.fire({
+            title: `🔔 CÓ ĐƠN MỚI (${role})`,
+            html: `Có đơn hàng vừa được cập nhật.<br>Khách gần nhất: <b>${first.Ten_Khach}</b>`,
+            icon: 'info',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: true,
+            confirmButtonText: 'ĐÃ XEM',
+            confirmButtonColor: '#2D5A27'
+        });
+    }
+
+    /** 4. Tải dữ liệu Doanh thu & Chấm công (Giữ nguyên logic ổn định) */
     async function loadLiveStatistics() {
       try {
         const now = new Date();
-        const curMonth = String(now.getMonth() + 1).padStart(2, '0');
-        const curYear = String(now.getFullYear());
-        const todayStr = now.getFullYear() + '-' + curMonth + '-' + String(now.getDate()).padStart(2, '0');
-
-        // A. TÍNH DOANH THU THÁNG (Sửa lỗi hiển thị sai theo logic bảng lương)
-        const resRev = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=Ngay_Gio,Tong_Don`, { headers: h });
-        if (resRev.ok) {
-          const revData = await resRev.json();
-          // Lọc dữ liệu khớp với Tháng/Năm hiện tại
-          const total = revData.reduce((sum, item) => {
-            if (item.Ngay_Gio && (item.Ngay_Gio.includes(`${curMonth}/${curYear}`) || item.Ngay_Gio.includes(`${curYear}-${curMonth}`))) {
-                return sum + (Number(item.Tong_Don) || 0);
-            }
-            return sum;
-          }, 0);
-          document.getElementById('total-revenue').innerText = total.toLocaleString('vi-VN') + "đ";
-        }
-
-        // B. Lấy danh sách nhân viên đang làm hôm nay
-        const statusQuery = encodeURIComponent("Đang làm");
-        const resCC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=eq.${todayStr}&Status=eq.${statusQuery}&select=Gio_Vao,DM_NhanVien(Ho_Ten)`, { headers: h });
-        
-        if (resCC.ok) {
-          const ccData = await resCC.json();
-          const activeListContainer = document.getElementById('active-staff-list');
-          
-          if (ccData.length > 0) {
-            document.getElementById('active-count').innerText = ccData.length;
-            activeListContainer.innerHTML = ccData.map(item => `
-              <div class="staff-tag">
-                ${item.DM_NhanVien ? item.DM_NhanVien.Ho_Ten : 'N/A'} <small style="opacity:0.7; font-weight:normal;">(${item.Gio_Vao ? item.Gio_Vao.substring(0,5) : ''})</small>
-              </div>
-            `).join('');
-          } else {
-            document.getElementById('active-count').innerText = "0";
-            activeListContainer.innerHTML = '<span class="no-staff">Tiệm chưa có nhân viên nào đang làm.</span>';
-          }
-        }
-      } catch (e) { 
-        console.error("Lỗi Dashboard:", e); 
-        document.getElementById('active-staff-list').innerHTML = '<span class="no-staff" style="color: red;">Lỗi tải dữ liệu.</span>';
-      }
-    }
-  </script>
-</body>
-</html>
+        const curMonth = String(now.getMonth() + 1).padStart(2, '0
