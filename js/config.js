@@ -51,7 +51,7 @@ window.formatDateTimeVN = function() {
 /**
  * HỆ THỐNG THÔNG BÁO REALTIME (SUPABASE)
  */
-(function() {
+function() {
   // 1. Tự động tải thư viện Supabase nếu chưa có
   if (!window.supabase) {
     const script = document.createElement('script');
