@@ -9,24 +9,27 @@
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
   <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
-<script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js"></script> 
+  
   <style>
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       ======================================================== */
     :root { --primary-f2: #2D5A27; --bg-light: #f4f7f6; }
     body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
     
-    /* Layout MPA */
-    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; min-width: 0; }
 
     .f2-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .f2-header { background: linear-gradient(135deg, #2D5A27 0%, #3e7a36 100%); padding: 15px 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
     
     .f2-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
     .f2-table th { padding: 12px; color: #64748b; font-size: 12px; text-transform: uppercase; text-align: left; }
-    .f2-row { background: #fff; transition: 0.2s; }
+    .f2-row { background: #fff; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     .f2-row td { padding: 15px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; vertical-align: middle; }
     .f2-row td:first-child { border-left: 1px solid #eee; border-radius: 10px 0 0 10px; }
     .f2-row td:last-child { border-right: 1px solid #eee; border-radius: 0 10px 10px 0; }
-    .f2-row:hover { background: #fdfdfd; transform: scale(1.002); }
+    .f2-row:hover { background: #fdfdfd; transform: scale(1.002); box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
 
     .action-wrapper { display: flex; flex-wrap: nowrap; gap: 5px; justify-content: center; min-width: 400px; }
     .btn-stt { border: none; color: white; padding: 10px 8px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 10px; white-space: nowrap; flex: 1; max-width: 110px; transition: 0.2s; }
@@ -36,27 +39,60 @@
     .btn-ready { background: #27ae60; } 
     .btn-stt:hover { filter: brightness(90%); transform: translateY(-1px); }
     
-    .note-warning { background: #fff5f5; color: #c53030; padding: 5px; border-radius: 4px; font-size: 11px; margin-top: 5px; border-left: 3px solid #ef4444; }
+    .note-warning { background: #fff5f5; color: #c53030; padding: 5px; border-radius: 4px; font-size: 11px; margin-top: 5px; border-left: 3px solid #ef4444; display: inline-block; }
     
     .f2-form-group { text-align: left; margin-bottom: 10px; }
     .f2-form-group label { font-size: 11px; font-weight: bold; color: #2D5A27; display: block; margin-bottom: 3px; }
     .f2-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
-    .input-link-modern { font-family: monospace; font-size: 11px; color: #2980b9; }
+    
+    /* FIX LỖI POPUP: Ép input nhận linh hoạt kích thước để chừa chỗ cho nút Drive */
+    .input-link-modern { font-family: monospace; font-size: 11px; color: #2980b9; flex: 1; min-width: 0; }
 
-    .btn-drive-up { background: #1e73be; color: white; border: none; padding: 0 12px; border-radius: 4px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .btn-drive-up { background: #1e73be; color: white; border: none; padding: 0 12px; border-radius: 4px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0; }
     .btn-drive-up:hover { filter: brightness(90%); }
 
+    /* Ưu tiên z-index cho SweetAlert */
     .swal2-container { z-index: 20000 !important; }
-    @media (max-width: 768px) { .main-content { margin-left: 0; } }
-  
-    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
-    .main-content { margin-left: 250px; transition: 0.3s; padding: 20px; }
 
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
+
+    /* ========================================================
+       2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       ======================================================== */
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
-        .main-content { margin-left: 0 !important; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 60px; }
         body.sidebar-open #sidebar-frame { left: 0; }
         .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: #2D5A27; color: white; padding: 8px 12px; border: none; border-radius: 4px; }
+        
+        .f2-container { padding: 15px; }
+        .f2-header { flex-direction: column; align-items: flex-start; gap: 12px; border-radius: 8px; }
+        .f2-header > div { width: 100%; display: flex; justify-content: space-between; }
+        .f2-header button { flex: 1; padding: 10px; font-size: 12px; }
+
+        /* Biến bảng thành Dạng Card */
+        .f2-table, .f2-table thead, .f2-table tbody, .f2-table th, .f2-table td, .f2-table tr { display: block; width: 100%; box-sizing: border-box; }
+        .f2-table thead { display: none; }
+        .f2-row { margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #eee; border-left: 4px solid #FF8C00; }
+        .f2-row td { padding: 10px; border: none; border-bottom: 1px solid #f9f9f9; text-align: left; }
+        .f2-row td:last-child { border-bottom: none; border-radius: 0 0 8px 8px; background: #fafafa; }
+        
+        /* Chỉnh lại Nút thao tác (Xếp thành 2 cột) */
+        .action-wrapper { min-width: 100%; flex-wrap: wrap; gap: 8px; justify-content: space-between; }
+        .btn-stt { max-width: 100%; flex: 1 1 45%; padding: 12px 8px; font-size: 12px; }
+
+        /* ====================================================
+           SỬA LỖI POPUP TRÀN MÀN HÌNH TRÊN ĐIỆN THOẠI
+           ==================================================== */
+        .swal2-popup { width: 95% !important; padding: 15px !important; font-size: 14px !important; }
+        .swal2-html-container { margin: 10px 0 !important; overflow-x: hidden !important; }
+        
+        /* Giúp nút Xác Nhận và Hủy xếp dọc, to rõ, không bị lẹm */
+        .swal2-actions { flex-direction: column !important; width: 100% !important; gap: 10px !important; margin-top: 15px !important; }
+        .swal2-actions button { width: 100% !important; margin: 0 !important; padding: 14px !important; font-size: 15px !important; }
+        
+        .f2-input { font-size: 14px !important; padding: 10px !important; }
+        .btn-drive-up { padding: 0 15px !important; } /* Nút upload to hơn dễ bấm */
     }
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
@@ -92,6 +128,8 @@
   </div>
 
   <script>
+    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100% (KHÔNG ĐỔI MỘT CHỮ)
+    
     // 1. CẤU HÌNH DRIVE API
     const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
     const FOLDER_ID = "1Cn8AyIJvMxkEC4-UQnBdZOS_vhvkrnF_";
