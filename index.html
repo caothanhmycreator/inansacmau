@@ -1,84 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Dashboard - Sắc Màu</title>
-  <meta charset="UTF-8">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/config.js"></script>
-  <script src="js/auth_guard.js"></script>
-  <style>
-    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; }
-    .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; }
-    .header { margin-bottom: 25px; border-bottom: 2px solid #2D5A27; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-    
-    /* Chỉ số Header */
-    .stat-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-    .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border-left: 5px solid #2D5A27; }
-    .stat-card h4 { margin: 0; color: #666; font-size: 13px; text-transform: uppercase; }
-    .stat-card p { margin: 10px 0 0 0; font-size: 24px; font-weight: bold; color: #2D5A27; }
+    <title>Dashboard - Sắc Màu</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth_guard.js"></script>
+    <script src="js/sidebar_loader.js"></script> 
 
-    /* Trạng thái nhân viên */
-    .staff-monitor { background: #e8f5e9; padding: 20px; border-radius: 15px; margin-bottom: 30px; border: 1px solid #c8e6c9; }
-    .staff-monitor h3 { margin: 0 0 15px 0; font-size: 16px; color: #2D5A27; display: flex; align-items: center; gap: 8px; }
-    .staff-list { display: flex; flex-wrap: wrap; gap: 10px; }
-    .staff-tag { background: white; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: 600; border: 1px solid #2D5A27; color: #2D5A27; display: flex; align-items: center; gap: 6px; }
-    .staff-tag::before { content: ""; width: 8px; height: 8px; background: #27ae60; border-radius: 50%; box-shadow: 0 0 8px #27ae60; }
-    .no-staff { color: #888; font-style: italic; font-size: 13px; }
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; }
+        
+        /* Cải tiến Main Content để tự né Sidebar trên PC và tràn màn hình trên Mobile */
+        .main-content { 
+            flex: 1; 
+            margin-left: 250px; /* PC giữ lề */
+            padding: 30px; 
+            transition: 0.3s; 
+            min-width: 0; /* Chống vỡ layout bảng */
+        }
 
-    /* Lưới các ô chức năng */
-    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-    .module-card { 
-      background: white; padding: 25px; border-radius: 15px; text-align: center; 
-      text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-      transition: 0.3s; border: 1px solid #eee; display: flex; flex-direction: column; align-items: center;
-    }
-    .module-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); border-color: #2D5A27; }
-    .module-card i { font-size: 40px; margin-bottom: 15px; }
-    .module-card span { font-weight: bold; font-size: 15px; color: #2D5A27; }
+        @media (max-width: 768px) {
+            .main-content { 
+                margin-left: 0; /* Mobile tràn màn hình */
+                padding: 15px; 
+                padding-top: 60px; /* Chừa chỗ cho nút Menu */
+            }
+            .header h2 { font-size: 18px; }
+            .stat-container { grid-template-columns: 1fr; } /* Thẻ chỉ số xếp dọc trên mobile */
+        }
 
-    @media (max-width: 768px) { 
-      .main-content { margin-left: 0; padding: 20px; } 
-      #sidebar-frame { left: -250px; }
-    }
-    
-    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
-    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
-  </style>
+        /* Giữ nguyên các Style cũ của Mỹ cho Dashboard bên dưới... */
+        .header { margin-bottom: 25px; border-bottom: 2px solid #2D5A27; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .stat-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border-left: 5px solid #2D5A27; }
+        .stat-card p { margin: 10px 0 0 0; font-size: 24px; font-weight: bold; color: #2D5A27; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+        .module-card { background: white; padding: 20px; border-radius: 12px; text-align: center; text-decoration: none; border: 1px solid #eee; display: flex; flex-direction: column; align-items: center; transition: 0.2s; }
+        .module-card:hover { border-color: #2D5A27; transform: translateY(-3px); }
+        .module-card i { font-size: 30px; margin-bottom: 10px; }
+        .module-card span { font-weight: bold; font-size: 14px; color: #2D5A27; }
+    </style>
 </head>
 <body>
 
- <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
- <iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h2 style="color: #2D5A27; margin: 0;">🏠 BẢNG ĐIỀU KHIỂN CHÍNH</h2>
+                <p style="color: #666; margin: 5px 0;">Chào mừng trở lại, <b id="welcome-name">...</b>!</p>
+            </div>
+        </div>
 
-  <div class="main-content">
-    <div class="header">
-      <div>
-        <h2 style="color: #2D5A27; margin: 0;">🏠 BẢNG ĐIỀU KHIỂN CHÍNH</h2>
-        <p style="color: #666; margin: 5px 0;">Chào mừng trở lại, <b id="welcome-name">...</b>!</p>
-      </div>
+        <div class="stat-container">
+            <div class="stat-card"><h4>💰 Doanh thu tháng này</h4><p id="total-revenue">0đ</p></div>
+            <div class="stat-card"><h4>👥 Nhân sự đang trực</h4><p id="active-count">0</p></div>
+        </div>
+
+        <div id="dashboard-menu" class="dashboard-grid">
+            </div>
     </div>
-
-    <div class="stat-container">
-      <div class="stat-card">
-        <h4>💰 Doanh thu tháng này</h4>
-        <p id="total-revenue">0đ</p>
-      </div>
-      <div class="stat-card">
-        <h4>👥 Nhân sự đang trực</h4>
-        <p id="active-count">0</p>
-      </div>
-    </div>
-
-    <div class="staff-monitor">
-      <h3>🟢 NHÂN VIÊN ĐANG TẠI TIỆM</h3>
-      <div id="active-staff-list" class="staff-list">
-        <span class="no-staff">Đang nạp dữ liệu...</span>
-      </div>
-    </div>
-
-    <div id="dashboard-menu" class="dashboard-grid">
-      </div>
-  </div>
 
   <script>
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
