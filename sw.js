@@ -1,4 +1,3 @@
-
 importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDKWorker.js');
 
 // ... Phía dưới này giữ nguyên các hàm cũ của Mỹ ...
