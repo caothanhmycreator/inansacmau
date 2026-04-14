@@ -101,14 +101,27 @@
 
     async function checkNewOrders() {
         const user = JSON.parse(localStorage.getItem('currentUser'));
-        const role = user?.Vai_Tro || "";
+        if (!user) {
+            console.log("❌ Lỗi: Không tìm thấy thông tin đăng nhập trong LocalStorage");
+            return;
+        }
+
+        const role = user.Vai_Tro || "";
         const states = NOTIFY_CONFIG[role] || [];
-        if (states.length === 0) return;
+        
+        console.log(`[Kiểm tra] Vai trò: ${role} | Trạng thái theo dõi: ${states.join(', ')}`);
+
+        if (states.length === 0) {
+            console.log("⚠️ Chú ý: Vai trò này không được cấu hình nhận thông báo.");
+            return;
+        }
 
         try {
             let q = states.includes("Tất cả") ? "" : `&Trang_Thai=in.(${states.join(',')})`;
             const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=id,Trang_Thai,Ten_Khach${q}`, { headers: h });
             const data = await res.json();
+
+            console.log(`📡 Đã quét Database: Tìm thấy ${data.length} đơn phù hợp.`);
 
             let newItems = [];
             data.forEach(item => {
@@ -118,35 +131,20 @@
                 lastCheckData[item.id] = item.Trang_Thai;
             });
 
-            // Không báo ồn ào ở lần load đầu tiên (chỉ ghi nhớ dữ liệu)
-            if (isFirstLoad) { isFirstLoad = false; return; }
+            if (isFirstLoad) {
+                isFirstLoad = false;
+                console.log("✅ Lần đầu load: Đã ghi nhớ dữ liệu, chờ đơn mới...");
+                return;
+            }
 
             if (newItems.length > 0) {
-                // Phát âm thanh báo động
-                new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(() => {});
-                
-                // Hiện thông báo hệ điều hành
-                if (Notification.permission === "granted") {
-                    new Notification(`🔔 SẮC MÀU: CÓ ĐƠN MỚI`, { 
-                        body: `Khách: ${newItems[0].Ten_Khach} - Trạng thái: ${newItems[0].Trang_Thai}`,
-                        requireInteraction: true 
-                    });
-                }
-                
-                // Hiện thông báo giao diện web
-                Swal.fire({
-                    title: 'ĐƠN MỚI!',
-                    text: `Có ${newItems.length} cập nhật mới trong bộ phận của bạn.`,
-                    icon: 'info',
-                    toast: true,
-                    position: 'top-end',
-                    timer: 8000,
-                    showConfirmButton: false
-                });
+                console.log("🔔 PHÁT HIỆN ĐƠN MỚI:", newItems);
+                triggerAlert(role, newItems);
             }
-        } catch (e) { console.error("Lỗi Notify:", e); }
+        } catch (e) {
+            console.error("❌ Lỗi kết nối Supabase:", e);
+        }
     }
-
     async function loadLiveStatistics() {
       try {
         const now = new Date();
