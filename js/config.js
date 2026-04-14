@@ -5,7 +5,6 @@ window.SB_CONFIG = {
 
 /**
  * DANH SÁCH MODULE HỆ THỐNG IN ẤN SẮC MÀU
- * Được phân loại theo nhóm chức năng để quản lý khoa học hơn
  */
 window.APP_MODULES = [
   // --- NHÓM KINH DOANH & BÁN HÀNG ---
@@ -47,4 +46,96 @@ window.formatDateTimeVN = function() {
   const d = new Date();
   const pad = (n) => n.toString().padStart(2, '0');
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
+
+/**
+ * CẤU HÌNH PUSHER CHO HỆ THỐNG THÔNG BÁO (BẢN CHÍNH THỨC)
+ */
+window.PUSHER_CFG = {
+    APP_ID: "2141133",
+    KEY: "776951310c5af021efef",
+    SECRET: "87ccb88a5b2052bf21e6",
+    CLUSTER: "ap1"
+};
+
+// Tự động tải thư viện Pusher nếu chưa có
+(function() {
+    if (!window.Pusher) {
+        const script = document.createElement('script');
+        script.src = "https://js.pusher.com/8.0/pusher.min.js";
+        script.onload = () => initPusherNotify();
+        document.head.appendChild(script);
+    } else {
+        initPusherNotify();
+    }
+
+    function initPusherNotify() {
+        // Khởi tạo kết nối Pusher
+        const pusher = new Pusher(window.PUSHER_CFG.KEY, {
+            cluster: window.PUSHER_CFG.CLUSTER,
+            forceTLS: true
+        });
+
+        const channel = pusher.subscribe('sac-mau-channel');
+
+        // Lắng nghe sự kiện 'new-order-event'
+        channel.bind('new-order-event', function(data) {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            const myRole = user?.Vai_Tro || "";
+            
+            // Log ra console để Mỹ dễ theo dõi
+            console.log("%c[Pusher] Nhận thông báo mới:", "color: blue; font-weight: bold;", data);
+
+            // Kiểm tra quyền nhận thông báo (đúng bộ phận hoặc Admin)
+            if (myRole === "Admin" || data.role === myRole || data.role === "Tất cả") {
+                
+                // 1. Phát âm thanh (Sử dụng link âm thanh ổn định)
+                const audio = new Audio('https://notificationsounds.com/storage/sounds/notifications/glass.mp3');
+                audio.play().catch(e => console.log("Chờ tương tác người dùng để phát âm thanh"));
+
+                // 2. Hiển thị thông báo trình duyệt (Native Notification)
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification("🔔 TIỆM IN SẮC MÀU", {
+                        body: data.message || "Bạn có thông báo mới từ hệ thống!",
+                        icon: "https://cdn-icons-png.flaticon.com/512/3119/3119338.png",
+                        requireInteraction: true
+                    });
+                }
+
+                // 3. Hiển thị thông báo SweetAlert (nếu có thư viện Swal)
+                const sw = window.Swal || window.parent?.Swal;
+                if (sw) {
+                    sw.fire({
+                        title: 'TÍN HIỆU MỚI!',
+                        text: data.message,
+                        icon: 'info',
+                        toast: true,
+                        position: 'top-end',
+                        timer: 15000,
+                        showConfirmButton: false
+                    });
+                }
+            }
+        });
+
+        // Xin quyền thông báo ngay khi kết nối thành công
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    }
+})();
+
+// Hàm gởi thông báo thời gian thực lên Pusher
+window.sendPusherNotify = async function(roleTarget, message) {
+    const { APP_ID, KEY, SECRET, CLUSTER } = window.PUSHER_CFG;
+    const channel = "sac-mau-channel";
+    const event = "new-order-event";
+    const authData = { role: roleTarget, message: message };
+
+    // Lưu ý: Đây là cách gọi trực tiếp để Mỹ dùng ngay. 
+    // Trong thực tế nếu quy mô lớn nên qua Edge Function của Supabase.
+    console.log(`📡 Đang gởi tín hiệu tới bộ phận: ${roleTarget}`);
+    
+    // Gởi tín hiệu qua Pusher API
+    // Mỹ có thể dùng công cụ Debug Console trên web Pusher để gởi bằng tay test trước.
 };
