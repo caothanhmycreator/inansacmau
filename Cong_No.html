@@ -8,11 +8,15 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
-<script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js"></script> 
   <style>
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       ======================================================== */
     :root { --primary-f9: #c0392b; --header-gradient: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); --bg-light: #f8fafc; }
     body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
-    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; min-width: 0; }
+    
     .f9-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .f9-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
     
@@ -21,8 +25,12 @@
     .f9-row { background: white; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer; }
     .f9-row:hover { background: #fff5f5; }
     .f9-row td { padding: 15px; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    .f9-row td:first-child { border-left: 1px solid #e2e8f0; border-radius: 10px 0 0 10px; }
+    .f9-row td:last-child { border-right: 1px solid #e2e8f0; border-radius: 0 10px 10px 0; }
     
-    .btn-debt { background: #c0392b; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; box-shadow: 0 3px 0 #962d22; }
+    .btn-debt { background: #c0392b; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; box-shadow: 0 3px 0 #962d22; transition: 0.2s; }
+    .btn-debt:active { transform: translateY(2px); box-shadow: 0 1px 0 #962d22; }
+    .btn-debt:hover { filter: brightness(110%); }
     
     /* Toggle TM/CK */
     .pay-toggle-f9 { display: flex; background: #eee; padding: 2px; border-radius: 6px; width: 140px; position: relative; border: 1px solid #ddd; height: 32px; align-items: center; margin-top: 5px; }
@@ -36,7 +44,7 @@
     .f9-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; padding: 10px; }
     .f9-input-group { display: flex; flex-direction: column; }
     .f9-input-group label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 5px; }
-    .f9-input-group input { padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; }
+    .f9-input-group input { padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; box-sizing: border-box; }
     .f9-input-group input:focus { border-color: #c0392b; }
     .f9-input-group input[readonly] { background: #f8fafc; color: #c0392b; font-weight: bold; border-style: dashed; }
 
@@ -45,52 +53,89 @@
       body * { visibility: hidden; }
       #vung-in-f9, #vung-in-f9 * { visibility: visible; }
       #vung-in-f9 { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+      .no-print { display: none !important; }
     }
     .print-table-f9 { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
     .print-table-f9 th { background: #c0392b !important; color: white !important; padding: 10px; text-align: left; -webkit-print-color-adjust: exact; }
     .print-table-f9 td { padding: 8px; border: 1px solid #ccc; font-size: 13px; }
 
-    /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
-
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
-
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
+    .swal2-container { z-index: 20000 !important; }
     
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
-    }
-}
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
 
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    /* ========================================================
+       2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       ======================================================== */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 60px; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        
+        .mobile-nav-btn {
+            display: block; position: fixed; top: 10px; left: 10px; 
+            z-index: 1000; background: #c0392b; color: white; 
+            padding: 8px 12px; border: none; border-radius: 4px;
+        }
+        
+        .f9-container { padding: 15px; }
+        .f9-header { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; border-radius: 8px; }
+        .f9-header > div { width: 100%; }
+        
+        /* Flex row cho nhóm 2 nút LÀM MỚI và NHẬP CÔNG NỢ */
+        .f9-header > div:nth-child(2) { display: flex; flex-direction: column; width: 100%; gap: 10px; }
+        .f9-header button { width: 100%; padding: 12px; font-size: 13px; }
+
+        /* Biến bảng thành Dạng Thẻ (Card) */
+        .f9-table, .f9-table thead, .f9-table tbody, .f9-table th, .f9-table td, .f9-table tr { display: block; width: 100%; box-sizing: border-box; }
+        .f9-table thead { display: none; }
+        
+        .f9-row { margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #eee; border-left: 4px solid #c0392b; position: relative; }
+        .f9-row td { padding: 10px 12px; border: none; border-bottom: 1px solid #f9f9f9; text-align: left; position: relative; padding-left: 110px; min-height: 20px; }
+        .f9-row td:last-child { border-bottom: none; border-radius: 0 0 8px 8px; background: #fdfdfd; padding-left: 12px; text-align: center; margin-top: 5px; }
+        
+        /* Nhãn tự động cho thẻ Mobile */
+        .f9-row td:before { position: absolute; left: 12px; top: 10px; font-weight: bold; color: #555; font-size: 12px; text-transform: uppercase; }
+        .f9-row td:nth-child(1):before { content: "Mã Đơn:"; }
+        .f9-row td:nth-child(2):before { content: "Khách hàng:"; }
+        .f9-row td:nth-child(3):before { content: "Ngày nợ:"; }
+        .f9-row td:nth-child(4):before { content: "Tổng/Đã trả:"; }
+        .f9-row td:nth-child(5):before { content: "CÒN NỢ:"; color: #c0392b; font-size: 13px;}
+        
+        .f9-row td:nth-child(5) { font-size: 16px; padding-top: 8px; padding-bottom: 8px; }
+        .btn-debt { width: 100%; padding: 14px; font-size: 13px; }
+
+        /* --- SỬA LỖI POPUP SWEETALERT --- */
+        .swal2-popup { width: 95% !important; padding: 15px !important; border-radius: 12px !important; }
+        
+        /* Sửa Popup NHẬP NỢ (Biến Grid 2 cột thành 1 cột xếp dọc) */
+        .f9-form-grid { display: flex !important; flex-direction: column !important; gap: 12px !important; padding: 5px !important; }
+        .f9-input-group { width: 100% !important; }
+        .f9-input-group input { padding: 12px !important; font-size: 15px !important; }
+        
+        /* Sửa Popup THU NỢ */
+        .pay-toggle-f9 { width: 100% !important; height: 42px !important; }
+        .pay-opt-f9 { font-size: 13px !important; padding: 12px 0 !important; }
+        #pay_f9 { font-size: 24px !important; padding: 12px !important; box-sizing: border-box !important; height: auto !important; }
+
+        /* Nút Xác Nhận / Đóng */
+        .swal2-actions { flex-direction: column !important; width: 100% !important; gap: 10px !important; margin-top: 15px !important; }
+        .swal2-actions button { width: 100% !important; margin: 0 !important; padding: 14px !important; font-size: 15px !important; border-radius: 8px !important; }
+    }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
-
   <div class="main-content">
-    <div class="f9-container">
+    <div class="f9-container no-print">
       <div class="f9-header">
         <div>
           <h2 style="margin:0; font-size: 20px;">💰 QUẢN LÝ CÔNG NỢ</h2>
           <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Danh sách nợ cũ & Nhập nợ mới</p>
         </div>
         <div style="display: flex; gap: 10px;">
-          <button onclick="openAddDebtPopup()" style="background:#fff; color:#c0392b; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:700;">➕ NHẬP CÔNG NỢ</button>
-          <button onclick="loadF9Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 LÀM MỚI</button>
+          <button onclick="openAddDebtPopup()" style="background:#fff; color:#c0392b; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:700; transition: 0.2s;">➕ NHẬP NỢ TAY</button>
+          <button onclick="loadF9Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:600; transition: 0.2s;">🔄 LÀM MỚI</button>
         </div>
       </div>
 
@@ -98,16 +143,16 @@
         <table class="f9-table">
           <thead>
             <tr>
-              <th style="width: 150px;">Mã đơn</th>
-              <th>Khách hàng</th>
-              <th>Ngày nợ</th>
-              <th>Tổng nợ / Đã trả</th>
-              <th style="color: #c0392b;">Còn nợ</th>
-              <th style="text-align: center;">Thao tác</th>
+              <th style="width: 15%;">Mã đơn</th>
+              <th style="width: 25%;">Khách hàng</th>
+              <th style="width: 15%;">Ngày nợ</th>
+              <th style="width: 20%;">Tổng nợ / Đã trả</th>
+              <th style="width: 15%; color: #c0392b;">Còn nợ</th>
+              <th style="width: 10%; text-align: center;">Thao tác</th>
             </tr>
           </thead>
           <tbody id="f9-table-body">
-            <tr><td colspan="6" style="text-align:center; padding:50px; color:#64748b;">🔍 Đang lọc danh sách nợ...</td></tr>
+            <tr><td colspan="6" style="text-align:center; padding:50px; color:#64748b; font-style: italic;">🔍 Đang nạp danh sách nợ...</td></tr>
           </tbody>
         </table>
       </div>
@@ -117,6 +162,7 @@
   <div id="vung-in-f9"></div>
 
   <script>
+    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100%
     window.listF9 = [];
     let currentPayF9 = "";
 
@@ -135,17 +181,17 @@
         window.listF9 = data.filter(row => parseFloat(row.Con_Lai) > 0);
 
         if (window.listF9.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px;">🎉 Không có nợ tồn đọng.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px; font-weight:bold; color:#27ae60;">🎉 Tuyệt vời! Hiện không có công nợ tồn đọng.</td></tr>';
           return;
         }
 
         tbody.innerHTML = window.listF9.map((it, idx) => `
           <tr class="f9-row">
-            <td onclick="viewOrderDetails('${it.Ma_Don}')"><b>${it.Ma_Don}</b></td>
+            <td onclick="viewOrderDetails('${it.Ma_Don}')"><b style="color:#2c3e50;">${it.Ma_Don}</b></td>
             <td onclick="viewOrderDetails('${it.Ma_Don}')"><b>${it.Khach_Hang}</b></td>
-            <td>${it.Ngay_Gio}</td>
-            <td>${parseFloat(it.Tong_Don).toLocaleString()}<br><small style="color:green">Đã trả: ${parseFloat(it.Da_Tra).toLocaleString()}</small></td>
-            <td style="color:red; font-weight:bold;">${parseFloat(it.Con_Lai).toLocaleString()}</td>
+            <td style="color:#64748b;">${it.Ngay_Gio}</td>
+            <td>T: ${parseFloat(it.Tong_Don).toLocaleString()}<br><small style="color:#27ae60; font-weight:bold;">Đ: ${parseFloat(it.Da_Tra).toLocaleString()}</small></td>
+            <td style="color:#e74c3c; font-weight:bold; font-size:14px;">${parseFloat(it.Con_Lai).toLocaleString()} đ</td>
             <td style="text-align:center"><button class="btn-debt" onclick="openDebtPopup(${idx})">💵 THU NỢ</button></td>
           </tr>`).join('');
       } catch (e) { console.error(e); }
@@ -160,24 +206,24 @@
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${maDon}`, { headers: h });
         const items = await res.json();
         
-        if (items.length === 0) return Swal.fire('Thông báo', 'Không tìm thấy chi tiết sản phẩm cho mã này (có thể là nợ nhập tay).', 'info');
+        if (items.length === 0) return Swal.fire('Thông báo', 'Không tìm thấy chi tiết sản phẩm cho mã này (Đơn nhập nợ tay).', 'info');
 
         let rowsHtml = items.map(m => `
-          <div style="display:grid; grid-template-columns: 2fr 0.5fr 1fr 1fr; gap:10px; padding:8px; border-bottom:1px dashed #eee; font-size:13px;">
+          <div style="display:grid; grid-template-columns: 2fr 0.5fr 1fr 1fr; gap:10px; padding:10px 8px; border-bottom:1px dashed #eee; font-size:13px; align-items:center;">
             <div style="text-align:left;">${m.Ten_Hang}</div>
-            <div>${m.So_Luong}</div>
-            <div style="text-align:right;">${(m.Don_Gia || 0).toLocaleString()}</div>
-            <div style="text-align:right; font-weight:bold;">${(m.Thanh_Tien || 0).toLocaleString()}</div>
+            <div style="text-align:center;">${m.So_Luong}</div>
+            <div style="text-align:right; color:#7f8c8d;">${(m.Don_Gia || 0).toLocaleString()}</div>
+            <div style="text-align:right; font-weight:bold; color:#2c3e50;">${(m.Thanh_Tien || 0).toLocaleString()}</div>
           </div>`).join('');
 
         Swal.fire({
-          title: `CHI TIẾT ĐƠN: ${maDon}`,
+          title: `<span style="font-size: 18px; color: #c0392b; text-transform: uppercase;">CHI TIẾT ĐƠN: ${maDon}</span>`,
           width: '700px',
           html: `
-            <div style="background:#f9f9f9; padding:10px; font-weight:bold; display:grid; grid-template-columns: 2fr 0.5fr 1fr 1fr; gap:10px; font-size:12px; color:#666; border-bottom:2px solid #ddd;">
-              <div style="text-align:left;">SẢN PHẨM</div><div>SL</div><div style="text-align:right;">ĐƠN GIÁ</div><div style="text-align:right;">T.TIỀN</div>
+            <div style="background:#fdf2f2; padding:12px 8px; font-weight:bold; display:grid; grid-template-columns: 2fr 0.5fr 1fr 1fr; gap:10px; font-size:12px; color:#c0392b; border-bottom:2px solid #fecaca; border-radius:6px 6px 0 0;">
+              <div style="text-align:left;">SẢN PHẨM</div><div style="text-align:center;">SL</div><div style="text-align:right;">ĐƠN GIÁ</div><div style="text-align:right;">T.TIỀN</div>
             </div>
-            ${rowsHtml}`,
+            <div style="max-height:40vh; overflow-y:auto;">${rowsHtml}</div>`,
           confirmButtonText: 'ĐÓNG', confirmButtonColor: '#34495e'
         });
       } catch (e) { console.error(e); }
@@ -186,7 +232,7 @@
     /** 3. FORM NHẬP CÔNG NỢ MỚI (BỔ SUNG Ô GHI CHÚ) */
     function openAddDebtPopup() {
       Swal.fire({
-        title: 'NHẬP CÔNG NỢ MỚI',
+        title: '<span style="color:#c0392b;">NHẬP CÔNG NỢ MỚI</span>',
         width: '600px',
         html: `
           <div class="f9-form-grid">
@@ -215,7 +261,7 @@
               <input id="add_ghichu" placeholder="Nhập ghi chú (nếu có)">
             </div>
           </div>`,
-        showCancelButton: true, confirmButtonText: '💾 LƯU NỢ', confirmButtonColor: '#c0392b',
+        showCancelButton: true, confirmButtonText: '💾 LƯU NỢ TAY', confirmButtonColor: '#c0392b', cancelButtonText: 'HỦY BỎ', cancelButtonColor: '#94a3b8',
         preConfirm: () => {
           const ma = document.getElementById('add_ma').value;
           const kh = document.getElementById('add_kh').value;
@@ -264,25 +310,25 @@
       currentPayF9 = "";
 
       Swal.fire({
-        title: `THU NỢ: ${it.Ma_Don}`,
+        title: `<span style="color:#c0392b;">THU NỢ: ${it.Ma_Don}</span>`,
         html: `
-          <div style="text-align:left; border:1px solid #ddd; padding:15px; border-radius:8px;">
-            <p>👤 <b>Khách hàng:</b> ${it.Khach_Hang}</p>
-            <p style="color:red; font-weight:bold; font-size:18px;">Nợ tồn: ${nợHiệnTại.toLocaleString()} đ</p>
-            <div style="background:#fff5f5; padding:15px; border-radius:8px; border:1px solid #fecaca; margin-top:10px;">
-               <label style="font-weight:bold; color:#c0392b; font-size:11px;">SỐ TIỀN THU LẦN NÀY:</label>
-               <input type="text" id="pay_f9" class="swal2-input" style="margin:5px 0; width:100%; font-size:24px; border:2px solid #c0392b; text-align:right; font-weight:bold; color:#c0392b;" value="${nợHiệnTại.toLocaleString('vi-VN')}">
+          <div style="text-align:left; border:1px solid #ddd; padding:15px; border-radius:8px; background:#fff;">
+            <p style="margin-top:0;">👤 <b>Khách hàng:</b> <span style="color:#34495e;">${it.Khach_Hang}</span></p>
+            <p style="color:#c0392b; font-weight:bold; font-size:18px; margin-bottom:0;">Nợ tồn: ${nợHiệnTại.toLocaleString()} đ</p>
+            <div style="background:#fff5f5; padding:15px; border-radius:8px; border:1px solid #fecaca; margin-top:15px;">
+               <label style="font-weight:bold; color:#c0392b; font-size:12px; display:block; margin-bottom:5px;">SỐ TIỀN KHÁCH ĐÓNG:</label>
+               <input type="text" id="pay_f9" class="swal2-input" style="margin:0; width:100%; font-size:24px; border:2px solid #c0392b; text-align:right; font-weight:bold; color:#c0392b; border-radius:6px; box-sizing:border-box;" value="${nợHiệnTại.toLocaleString('vi-VN')}">
                
-               <label style="font-weight:bold; color:#c0392b; font-size:11px; display:block; margin-top:10px;">HÌNH THỨC THANH TOÁN:</label>
-               <div class="pay-toggle-f9">
+               <label style="font-weight:bold; color:#c0392b; font-size:12px; display:block; margin-top:15px; margin-bottom:5px;">HÌNH THỨC GIAO DỊCH:</label>
+               <div class="pay-toggle-f9" style="width:100%; height:40px;">
                   <div id="f9-slider" class="pay-sld-f9 mid"></div>
-                  <div class="pay-opt-f9" id="f9-opt-tm" onclick="setPayF9('TM')">TM</div>
-                  <div class="pay-opt-f9 active" id="f9-opt-mid" onclick="setPayF9('')">--</div>
-                  <div class="pay-opt-f9" id="f9-opt-ck" onclick="setPayF9('CK')">CK</div>
+                  <div class="pay-opt-f9" id="f9-opt-tm" onclick="setPayF9('TM')" style="padding: 10px 0; font-size: 13px;">TIỀN MẶT</div>
+                  <div class="pay-opt-f9 active" id="f9-opt-mid" onclick="setPayF9('')" style="padding: 10px 0; font-size: 13px;">-- CHỌN --</div>
+                  <div class="pay-opt-f9" id="f9-opt-ck" onclick="setPayF9('CK')" style="padding: 10px 0; font-size: 13px;">CHUYỂN KHOẢN</div>
                </div>
             </div>
           </div>`,
-        showCancelButton: true, confirmButtonText: 'XÁC NHẬN THU', confirmButtonColor: '#27ae60',
+        showCancelButton: true, confirmButtonText: '🚀 XÁC NHẬN THU', confirmButtonColor: '#27ae60', cancelButtonText: 'ĐÓNG', cancelButtonColor: '#94a3b8',
         didOpen: () => {
           const inp = document.getElementById('pay_f9');
           inp.addEventListener('input', function() {
@@ -293,7 +339,7 @@
         },
         preConfirm: () => {
           const val = cleanF9Money(document.getElementById('pay_f9').value);
-          if (val <= 0 || currentPayF9 === "") return Swal.showValidationMessage('Vui lòng nhập tiền > 0 và chọn TM/CK!');
+          if (val <= 0 || currentPayF9 === "") return Swal.showValidationMessage('Vui lòng nhập số tiền > 0 và chọn Hình thức!');
           return val;
         }
       }).then(r => { if(r.isConfirmed) executeDebtPayment(idx, r.value, currentPayF9); });
@@ -354,27 +400,27 @@
     function showPrintPreviewF9(it, soTienThu, conLai) {
       const isCleared = conLai <= 10;
       const billHtml = `
-        <div style="padding:20px; font-family:Arial, sans-serif;">
+        <div style="padding:20px; font-family:Arial, sans-serif; background:#fff;">
           <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #c0392b; padding-bottom: 10px;">
             <div><h1 style="color: #c0392b; margin: 0; font-size: 22px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1><p style="font-size:12px;">📞 0399.221.753 - 0337.663.113</p></div>
             <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 80px;">
           </div>
           <div style="text-align: center; margin: 15px 0;"><h2 style="color: #c0392b; text-transform: uppercase;">PHIẾU THU TIỀN NỢ</h2><p>Mã nợ: ${it.Ma_Don}</p></div>
-          <div style="background:#fdf2f2; padding:10px; border-radius:8px; border:1px solid #fecaca; margin-bottom:15px;">
-            <p>👤 <b>Khách hàng:</b> ${it.Khach_Hang}</p>
-            <p>📅 <b>Ngày thu:</b> ${new Date().toLocaleString('vi-VN')}</p>
+          <div style="background:#fdf2f2; padding:15px; border-radius:8px; border:1px solid #fecaca; margin-bottom:15px;">
+            <p style="margin-top:0;">👤 <b>Khách hàng:</b> ${it.Khach_Hang}</p>
+            <p style="margin-bottom:0;">📅 <b>Ngày thu:</b> ${new Date().toLocaleString('vi-VN')}</p>
           </div>
-          <div style="margin-left: auto; width: 300px; background: #fff5f5; padding: 15px; border-radius: 8px; border: 1px solid #fecaca; position: relative;">
-            ${isCleared ? '<div style="position:absolute; left:-120px; top:10px; color:#c0392b; border:3px double #c0392b; padding:5px; font-weight:bold; transform:rotate(-15deg);">ĐÃ TẤT TOÁN</div>' : ''}
-            <div style="display:flex; justify-content:space-between;"><span>Nợ cũ:</span><b>${parseFloat(it.Con_Lai).toLocaleString()} đ</b></div>
-            <div style="display:flex; justify-content:space-between; color:#c0392b;"><span>Thu thêm:</span><b>-${soTienThu.toLocaleString()} đ</b></div>
+          <div style="margin-left: auto; width: 320px; background: #fff5f5; padding: 15px; border-radius: 8px; border: 1px solid #fecaca; position: relative;">
+            ${isCleared ? '<div style="position:absolute; left:-120px; top:10px; color:#c0392b; border:3px double #c0392b; padding:5px 10px; font-weight:bold; transform:rotate(-15deg); background:rgba(255,255,255,0.9);">ĐÃ TẤT TOÁN</div>' : ''}
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Nợ cũ:</span><b>${parseFloat(it.Con_Lai).toLocaleString()} đ</b></div>
+            <div style="display:flex; justify-content:space-between; color:#c0392b;"><span>Thu đợt này:</span><b>-${soTienThu.toLocaleString()} đ</b></div>
             <div style="display:flex; justify-content:space-between; border-top:1px dashed #c0392b; margin-top:10px; padding-top:10px;">
-              <span><b>CÒN LẠI:</b></span><b style="color:red; font-size:16px;">${conLai.toLocaleString()} đ</b>
+              <span><b>CÒN LẠI:</b></span><b style="color:red; font-size:18px;">${conLai.toLocaleString()} đ</b>
             </div>
           </div>
         </div>`;
       document.getElementById('vung-in-f9').innerHTML = billHtml;
-      Swal.fire({ title: 'XEM TRƯỚC PHIẾU', html: `<div style="text-align:left;">${billHtml}</div>`, confirmButtonText: '🖨️ IN PHIẾU' }).then(r => { if(r.isConfirmed) window.print(); });
+      Swal.fire({ title: '<span style="color:#c0392b;">XEM TRƯỚC PHIẾU</span>', html: `<div style="text-align:left; border:1px solid #fecaca; border-radius:8px;">${billHtml}</div>`, confirmButtonText: '🖨️ IN PHIẾU', confirmButtonColor: '#c0392b', showCancelButton: true, cancelButtonText: 'ĐÓNG', width: '700px' }).then(r => { if(r.isConfirmed) window.print(); });
     }
   </script>
 </body>

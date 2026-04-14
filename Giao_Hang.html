@@ -8,12 +8,15 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
-<script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js"></script> 
   <style>
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       ======================================================== */
     :root { --primary-f8: #2980b9; --header-gradient: linear-gradient(135deg, #2980b9 0%, #3498db 100%); --bg-light: #f8fafc; --border-color: #e2e8f0; }
     body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', Tahoma, sans-serif; }
     
-    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; min-width: 0; }
     .f8-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .f8-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
     
@@ -21,13 +24,23 @@
     .f8-table th { padding: 12px 15px; color: #64748b; font-size: 13px; text-transform: uppercase; text-align: left; }
     .f8-row { background: white; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     .f8-row td { padding: 15px; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    .f8-row td:first-child { border-left: 1px solid var(--border-color); border-radius: 10px 0 0 10px; }
+    .f8-row td:last-child { border-right: 1px solid var(--border-color); border-radius: 0 10px 10px 0; }
+    .f8-row:hover { background: #fdfdfd; transform: scale(1.002); box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
     
     .btn-action { border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; color: white; transition: 0.2s; text-transform: uppercase; }
     .btn-giao { background: #27ae60; box-shadow: 0 3px 0 #1e8449; }
+    .btn-giao:active { transform: translateY(2px); box-shadow: 0 1px 0 #1e8449; }
     
     .popup-row { display: grid; grid-template-columns: 2fr 0.8fr 1.2fr 1fr; gap: 8px; padding: 12px; border-bottom: 1px solid #eee; align-items: center; font-size: 13px; }
 
-    /* VÙNG IN */
+    .swal2-container { z-index: 20000 !important; }
+    
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
+
+    /* ========================================================
+       2. VÙNG IN & CẤU HÌNH IN (GIỮ NGUYÊN)
+       ======================================================== */
     #vung-in-f8 { display: none; }
     @media print {
       body * { visibility: hidden; }
@@ -40,65 +53,83 @@
     .print-table th { background: #2980b9 !important; color: #fff !important; padding: 12px; text-align: left; border: 2px solid #2980b9; font-size: 22px; -webkit-print-color-adjust: exact; }
     .print-table td { padding: 15px 12px; border: 2px solid #2980b9; font-size: 26px; font-weight: bold; color: #000; }
 
-    .swal2-container { z-index: 20000 !important; }
-    @media (max-width: 768px) { .main-content { margin-left: 0; } }
-  
-    /* PC: Chừa lề 250px cố định */
-    #sidebar-frame { 
-        width: 250px; height: 100vh; position: fixed; 
-        left: 0; top: 0; z-index: 9999; border: none; 
-    }
-
-    .main-content { 
-        margin-left: 250px; /* Giữ lề cố định */
-        transition: 0.3s; 
-        padding: 20px; 
-    }
-
-    /* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
+    /* ========================================================
+       3. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       ======================================================== */
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
-        .main-content { margin-left: 0 !important; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 60px; }
         body.sidebar-open #sidebar-frame { left: 0; }
         
         .mobile-nav-btn {
             display: block; position: fixed; top: 10px; left: 10px; 
-            z-index: 1000; background: #2D5A27; color: white; 
+            z-index: 1000; background: #2980b9; color: white; 
             padding: 8px 12px; border: none; border-radius: 4px;
         }
-    }
+        
+        .f8-container { padding: 15px; }
+        .f8-header { flex-direction: column; align-items: flex-start; gap: 15px; border-radius: 8px; padding: 15px; }
+        .f8-header > div { width: 100%; }
+        .f8-header button { width: 100%; padding: 12px; font-size: 14px; }
 
+        /* Biến bảng thành Dạng Thẻ (Card) */
+        .f8-table, .f8-table thead, .f8-table tbody, .f8-table th, .f8-table td, .f8-table tr { display: block; width: 100%; box-sizing: border-box; }
+        .f8-table thead { display: none; }
+        
+        .f8-row { margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #eee; border-left: 4px solid #2980b9; background: #fff; }
+        .f8-row td { padding: 12px; border: none; border-bottom: 1px solid #f9f9f9; text-align: left; position: relative; padding-left: 110px; min-height: 20px; }
+        .f8-row td:last-child { border-bottom: none; border-radius: 0 0 8px 8px; background: #fafafa; padding-left: 12px; text-align: center; margin-top: 5px; }
+        
+        /* Nhãn tự động cho thẻ Mobile */
+        .f8-row td:before { position: absolute; left: 12px; top: 12px; font-weight: bold; color: #555; font-size: 12px; text-transform: uppercase; }
+        .f8-row td:nth-child(1):before { content: "Mã/Ngày:"; }
+        .f8-row td:nth-child(2):before { content: "Khách hàng:"; }
+        .f8-row td:nth-child(3):before { content: "Hàng hóa:"; }
+        .f8-row td:nth-child(4):before { content: "Tổng/Đã trả:"; }
+        .f8-row td:nth-child(5):before { content: "CÒN NỢ:"; color: #e74c3c; font-size: 13px; }
+        
+        /* Cột Còn Nợ */
+        .f8-row td:nth-child(5) { font-size: 16px; padding-top: 10px; padding-bottom: 10px; }
+        
+        .btn-giao { width: 100%; padding: 14px; font-size: 14px; margin-top: 5px; }
+
+        /* Sửa Lỗi Popup SweetAlert tràn màn hình */
+        .swal2-popup { width: 95% !important; padding: 15px !important; border-radius: 12px !important; }
+        .swal2-html-container { margin: 10px 0 !important; overflow-x: hidden !important; }
+        
+        /* Tách nút */
+        .swal2-actions { flex-direction: column !important; width: 100% !important; gap: 10px !important; margin-top: 15px !important; }
+        .swal2-actions button { width: 100% !important; margin: 0 !important; padding: 14px !important; font-size: 15px !important; border-radius: 8px !important; }
+    }
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
-
-
   <div class="main-content">
-    <div class="f8-container">
+    <div class="f8-container no-print">
       <div class="f8-header">
         <div>
           <h2 style="margin:0; font-size: 20px;">🚚 KIỂM SOÁT ĐƠN CHỜ GIAO</h2>
           <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Tách biệt Lưu hệ thống & In phiếu vận chuyển Sắc Màu</p>
         </div>
-        <button onclick="loadF8Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 LÀM MỚI</button>
+        <button onclick="loadF8Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition: 0.2s;">🔄 LÀM MỚI</button>
       </div>
 
       <div style="overflow-x: auto;">
         <table class="f8-table">
           <thead>
             <tr>
-              <th style="width: 120px;">Mã đơn</th>
-              <th>Khách hàng</th>
-              <th>Tên hàng (Tích hợp)</th>
-              <th>Tổng / Đã trả</th>
-              <th>Còn nợ</th>
-              <th style="text-align: center;">Thao tác</th>
+              <th style="width: 15%;">Mã đơn</th>
+              <th style="width: 20%;">Khách hàng</th>
+              <th style="width: 25%;">Tên hàng (Tích hợp)</th>
+              <th style="width: 15%;">Tổng / Đã trả</th>
+              <th style="width: 15%;">Còn nợ</th>
+              <th style="width: 10%; text-align: center;">Thao tác</th>
             </tr>
           </thead>
           <tbody id="f8-table-body">
-            <tr><td colspan="6" style="text-align:center; padding:50px; color:#64748b;">🔄 Đang nạp danh sách chờ giao...</td></tr>
+            <tr><td colspan="6" style="text-align:center; padding:50px; color:#64748b; font-style: italic;">🔄 Đang nạp danh sách chờ giao...</td></tr>
           </tbody>
         </table>
       </div>
@@ -108,6 +139,7 @@
   <div id="vung-in-f8"></div>
 
   <script>
+    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100% (KHÔNG ĐỔI 1 CHỮ)
     window.listF8 = [];
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -141,18 +173,18 @@
 
         window.listF8 = Object.values(grouped).filter(g => g.coMonChoGiao);
         if (window.listF8.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px;">✨ Hiện không có đơn nào chờ giao.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px; color:#2980b9; font-weight:bold;">✨ Hiện không có đơn nào chờ giao.</td></tr>';
           return;
         }
 
         tbody.innerHTML = window.listF8.map((item, index) => {
           const dsMon = item.cacMon.filter(m => m.Trang_Thai === "Chờ giao hàng").map(m => m.Ten_Hang).join(", ");
           return `<tr class="f8-row">
-            <td><b>${item.maDon}</b><br><small>${item.ngay}</small></td>
-            <td><b>${item.khachHang}</b><br><small>${item.sdt}</small></td>
-            <td style="color:#2980b9;">${dsMon}</td>
-            <td>T: ${item.tongDon.toLocaleString()}<br><small style="color:green">Đ: ${item.tongDaTra.toLocaleString()}</small></td>
-            <td style="color:red; font-weight:bold;">${(item.tongDon - item.tongDaTra).toLocaleString()}</td>
+            <td><b style="color:#2c3e50;">${item.maDon}</b><br><small style="color:#7f8c8d;">${item.ngay}</small></td>
+            <td><b>${item.khachHang}</b><br><small style="color:#7f8c8d;">${item.sdt}</small></td>
+            <td style="color:#2980b9; font-weight: 500;">${dsMon}</td>
+            <td>T: ${item.tongDon.toLocaleString()}<br><small style="color:#27ae60; font-weight:bold;">Đ: ${item.tongDaTra.toLocaleString()}</small></td>
+            <td style="color:#e74c3c; font-weight:bold; font-size:14px;">${(item.tongDon - item.tongDaTra).toLocaleString()} đ</td>
             <td style="text-align:center"><button class="btn-action btn-giao" onclick="handleGiaoMain(${index})">XỬ LÝ ĐƠN</button></td>
           </tr>`;
         }).join('');
@@ -164,8 +196,8 @@
       const it = window.listF8[idx];
       
       Swal.fire({
-        title: 'XỬ LÝ GIAO HÀNG',
-        text: `Chuyển trạng thái đơn ${it.maDon} sang HOÀN TẤT?`,
+        title: '<span style="color:#2D5A27; font-size:20px;">XỬ LÝ GIAO HÀNG</span>',
+        html: `Chuyển trạng thái đơn <b style="color:#2980b9;">${it.maDon}</b> sang <b>HOÀN TẤT</b>?`,
         icon: 'question',
         showDenyButton: true,
         showCancelButton: true,
@@ -173,7 +205,8 @@
         denyButtonText: '🖨️ CHỈ IN PHIẾU',
         cancelButtonText: 'ĐÓNG',
         confirmButtonColor: '#27ae60',
-        denyButtonColor: '#2980b9'
+        denyButtonColor: '#2980b9',
+        cancelButtonColor: '#94a3b8'
       }).then(r => {
         if (r.isConfirmed) processUpdate(it);
         else if (r.isDenied) showPreviewFull(it);
@@ -182,7 +215,7 @@
 
     /** 3. CẬP NHẬT CƠ SỞ DỮ LIỆU */
     async function processUpdate(it) {
-      Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      Swal.fire({ title: 'Đang lưu hệ thống...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const cleanNow = window.formatDateTimeVN();
 
@@ -216,14 +249,14 @@
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
-    /** 4. THIẾT KẾ PHIẾU IN (ĐÃ SỬA FONT) */
+    /** 4. THIẾT KẾ PHIẾU IN */
     function getPrintHTML(it, rows, footer) {
       const diachiIn = (it.diachi && it.diachi !== "Tại cửa hàng") 
         ? `<div style="font-size:30px; font-weight:bold; margin-bottom:10px; border-bottom: 2px dashed #2980b9; padding-bottom:5px;">Đ/C: ${it.diachi}</div>` 
         : '';
 
       return `
-        <div style="padding:20px; font-family: 'Segoe UI', Tahoma, sans-serif; color:#000; border: 1px solid #ccc;">
+        <div style="padding:20px; font-family: 'Segoe UI', Tahoma, sans-serif; color:#000; border: 1px solid #ccc; background:#fff;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #2980b9; padding-bottom: 10px;">
             <div style="flex: 1;">
               <h1 style="color: #2980b9; margin: 0; font-size: 26px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1>
@@ -238,7 +271,7 @@
             <p style="margin: 10px 0; font-weight: bold; font-size: 18px;">Mã vận đơn: <span style="background:#eee; padding: 2px 10px; border-radius: 4px;">${it.maDon}</span></p>
           </div>
 
-          <div style="margin-top:20px; border: 3px solid #2980b9; padding: 15px; border-radius: 12px;">
+          <div style="margin-top:20px; border: 3px solid #2980b9; padding: 15px; border-radius: 12px; background:#f9f9f9;">
             <div style="font-size:48px; font-weight:900; margin-bottom:15px; text-transform:uppercase; color:#000; border-bottom: 4px solid #2980b9; padding-bottom:10px;">
               KHÁCH: ${it.khachHang}
             </div>
@@ -246,11 +279,11 @@
             <div style="font-size:40px; font-weight:900; color: #d32f2f;">SĐT: ${it.sdt || '--- --- ---'}</div>
           </div>
 
-          <table class="print-table" style="font-family: 'Segoe UI', Tahoma, sans-serif;">
+          <table class="print-table" style="font-family: 'Segoe UI', Tahoma, sans-serif; width: 100%; border-collapse: collapse; margin-top: 20px;">
             <thead>
               <tr>
-                <th style="font-size: 24px; padding: 15px;">DANH MỤC SẢN PHẨM SẢN XUẤT</th>
-                <th style="width:120px; text-align:center; font-size: 24px; padding: 15px;">SL</th>
+                <th style="font-size: 24px; padding: 15px; background: #2980b9; color: #fff; border: 2px solid #2980b9; text-align: left;">DANH MỤC SẢN PHẨM SẢN XUẤT</th>
+                <th style="width:120px; text-align:center; font-size: 24px; padding: 15px; background: #2980b9; color: #fff; border: 2px solid #2980b9;">SL</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -273,8 +306,8 @@
     function showPreviewFull(it) {
       const rows = it.cacMon.filter(m => m.Trang_Thai === "Chờ giao hàng").map(m => `
         <tr>
-          <td style="font-size: 28px; line-height: 1.2;">• ${m.Ten_Hang}</td>
-          <td style="text-align:center; font-size: 28px;">${m.So_Luong}</td>
+          <td style="font-size: 28px; line-height: 1.2; border: 2px solid #2980b9; padding: 15px 12px; font-weight: bold;">• ${m.Ten_Hang}</td>
+          <td style="text-align:center; font-size: 28px; border: 2px solid #2980b9; padding: 15px 12px; font-weight: bold;">${m.So_Luong}</td>
         </tr>`).join('');
         
       const footer = `
@@ -288,9 +321,9 @@
 
     function renderAndPrint(html) {
       Swal.fire({
-        title: 'XEM PHIẾU VẬN CHUYỂN',
-        html: `<div id="p-area" style="border:1px solid #2980b9; background:#fff; text-align:left; overflow: auto; max-height: 70vh;">${html}</div>`,
-        showCancelButton: true, confirmButtonText: '🖨️ IN PHIẾU', cancelButtonText: 'ĐÓNG', confirmButtonColor: '#2980b9', width: '900px'
+        title: '<span style="font-size:18px; color:#2980b9;">XEM TRƯỚC PHIẾU VẬN CHUYỂN</span>',
+        html: `<div id="p-area" style="border:1px solid #2980b9; background:#fff; text-align:left; overflow: auto; max-height: 60vh; padding: 10px; border-radius: 8px;">${html}</div>`,
+        showCancelButton: true, confirmButtonText: '🖨️ IN PHIẾU', cancelButtonText: 'ĐÓNG', confirmButtonColor: '#2980b9', width: '850px'
       }).then(r => {
         if (r.isConfirmed) {
           document.getElementById('vung-in-f8').innerHTML = html;

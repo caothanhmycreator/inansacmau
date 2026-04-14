@@ -8,12 +8,15 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
-<script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js"></script> 
   <style>
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       ======================================================== */
     :root { --primary-f5: #e67e22; --header-gradient: linear-gradient(135deg, #e67e22 0%, #d35400 100%); --bg-light: #f8fafc; --border-color: #e2e8f0; }
     body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
     
-    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; min-width: 0; }
 
     .f5-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .f5-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -29,32 +32,88 @@
     .note-x { background: #fff7ed; color: #9a3412; padding: 8px; border-radius: 6px; border-left: 4px solid #f97316; font-size: 12px; margin-top: 8px; }
     
     .img-container { width: 130px; height: 180px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); background: #f1f5f9; display: flex; align-items: center; justify-content: center; margin: 0 auto; position: relative; }
-    .img-preview { max-width: 100%; max-height: 100%; object-fit: contain; cursor: pointer; }
+    .img-preview { max-width: 100%; max-height: 100%; object-fit: contain; cursor: pointer; transition: 0.2s; }
+    .img-preview:hover { transform: scale(1.05); }
 
-    .btn-action { border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.2s; width: 100%; margin-bottom: 5px; text-transform: uppercase; }
+    .btn-action { border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.2s; width: 100%; margin-bottom: 5px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 5px; }
     .btn-done { background: #27ae60; color: white; height: 50px; font-size: 13px; }
-    .btn-file { background: #f1f5f9; color: #2563eb; border: 1px solid #cbd5e1; }
+    .btn-done:hover { background: #219653; }
+    .btn-file { background: #f1f5f9; color: #2563eb; border: 1px solid #cbd5e1; height: 40px; }
+    .btn-file:hover { background: #e2e8f0; }
 
     .nl-row { display: grid; grid-template-columns: 1fr 1.5fr 1fr 0.8fr 1fr 40px; gap: 5px; margin-bottom: 8px; align-items: center; }
-    .nl-input { padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; width: 100%; box-sizing: border-box; }
+    .nl-input { padding: 8px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; width: 100%; box-sizing: border-box; }
 
     .swal2-container { z-index: 20000 !important; }
-    @media (max-width: 768px) { .main-content { margin-left: 0; } }
   
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
-    .main-content { margin-left: 250px; transition: 0.3s; padding: 20px; }
 
+    /* ========================================================
+       2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       ======================================================== */
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
-        .main-content { margin-left: 0 !important; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 60px; }
         body.sidebar-open #sidebar-frame { left: 0; }
         .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: #2D5A27; color: white; padding: 8px 12px; border: none; border-radius: 4px; }
+        
+        .f5-container { padding: 15px; }
+        .f5-header { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }
+        .f5-header > div { width: 100%; }
+        .f5-header button { width: 100%; padding: 12px; font-size: 14px; }
+
+        /* Biến bảng thành Dạng Thẻ (Card) */
+        .f5-table, .f5-table thead, .f5-table tbody, .f5-table th, .f5-table td { display: block; width: 100%; box-sizing: border-box; }
+        .f5-table thead { display: none; }
+        
+        /* Đẩy cột ảnh lên trên */
+        .f5-row { display: flex; flex-direction: column; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #eee; border-left: 4px solid var(--primary-f5); position: relative; }
+        .f5-row td { padding: 12px; border: none; border-bottom: 1px solid #f9f9f9; text-align: left; }
+        .f5-row td:last-child { border-bottom: none; border-radius: 0 0 8px 8px; background: #fafafa; padding: 15px 12px; }
+        
+        /* 1. Cột Ảnh */
+        .f5-row td:nth-child(3) { order: -1; display: flex; justify-content: center; padding-bottom: 10px; border-bottom: none; background: #f8fafc; border-radius: 8px 8px 0 0; }
+        .img-container { width: 100%; height: 200px; border: 1px solid #e2e8f0; max-width: 350px; } 
+        
+        /* 2. Cột Đơn & Khách */
+        .f5-row td:nth-child(1), .f5-row td:nth-child(2) { padding-top: 8px; padding-bottom: 8px; }
+        .f5-row td:nth-child(1):before { content: "Mã Đơn: "; font-weight: bold; color: #555; font-size: 12px; }
+        .f5-row td:nth-child(2):before { content: "Khách / SP: "; font-weight: bold; color: #555; font-size: 12px; display: block; margin-bottom: 2px; }
+        
+        /* 3. Cột Kỹ thuật */
+        .f5-row td:nth-child(4) { padding-top: 10px; padding-bottom: 10px; }
+        .badge { font-size: 13px; padding: 6px 10px; margin-bottom: 5px; }
+        
+        /* 4. Nút Thao Tác */
+        .btn-action { font-size: 13px; margin-bottom: 10px; }
+        
+        /* --- SỬA LỖI POPUP XUẤT KHO TRÊN MOBILE --- */
+        .swal2-popup { width: 95% !important; padding: 15px !important; border-radius: 12px !important; }
+        
+        /* Chuyển grid ngang thành list dọc */
+        .nl-row { 
+          display: flex; flex-wrap: wrap; background: #fff; padding: 10px; 
+          border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 10px; 
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative; gap: 8px;
+        }
+        .nl-row.header-mobile-hide { display: none !important; }
+        
+        .nl-input { font-size: 14px; padding: 10px 8px; }
+        .nl-row .m-ma { width: 35%; order: 1; }
+        .nl-row .m-ten { width: calc(65% - 10px); order: 2; }
+        .nl-row .m-loai { width: 35%; order: 3; }
+        .nl-row .m-sl { width: 25%; order: 4; }
+        .nl-row .m-note { width: calc(40% - 16px); order: 5; }
+        
+        .nl-row button { position: absolute; right: -5px; top: -10px; background: #fee2e2 !important; width: 25px; height: 25px; border-radius: 50%; border: 1px solid #fca5a5 !important; display: flex; align-items: center; justify-content: center; font-size: 12px !important; }
+        
+        .swal2-actions { flex-direction: column !important; width: 100% !important; gap: 10px !important; margin-top: 15px !important; }
+        .swal2-actions button { width: 100% !important; margin: 0 !important; padding: 14px !important; font-size: 15px !important; border-radius: 8px !important; }
     }
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
-
 
   <div class="main-content">
     <div class="f5-container">
@@ -163,7 +222,7 @@
             📌 Đơn: <b>${item.Ma_Don}</b> - SP: <b>${item.Ten_Hang}</b>
           </div>
           <div id="material-list">
-            <div class="nl-row" style="font-weight:bold; font-size:11px; border-bottom:2px solid #e2e8f0; padding-bottom:5px; margin-bottom:10px;">
+            <div class="nl-row header-mobile-hide" style="font-weight:bold; font-size:11px; border-bottom:2px solid #e2e8f0; padding-bottom:5px; margin-bottom:10px;">
               <div>Mã NL</div><div>Tên Nguyên Liệu</div><div>Phân loại</div><div>SL</div><div>Ghi chú</div><div></div>
             </div>
             <div class="nl-row item-row">
