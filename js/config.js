@@ -49,62 +49,63 @@ window.formatDateTimeVN = function() {
 };
 
 /**
- * HỆ THỐNG THÔNG BÁO WINDOWS - BẢN CƯỠNG CHẾ (POLLING)
+ * HỆ THỐNG THÔNG BÁO REALTIME (SUPABASE)
  */
 (function() {
-    let lastId = localStorage.getItem('last_order_id_notify');
-    let isFirst = true;
+  // 1. Tự động tải thư viện Supabase nếu chưa có
+  if (!window.supabase) {
+    const script = document.createElement('script');
+    script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+    script.onload = () => initRealtime();
+    document.head.appendChild(script);
+  } else {
+    initRealtime();
+  }
+
+  function initRealtime() {
+    // 2. Khởi tạo kết nối Realtime
+    const supabaseClient = supabase.createClient(window.SB_CONFIG.URL, window.SB_CONFIG.KEY);
 
     const CFG = {
-        "Admin": ["Tất cả"],
-        "Thiet_Ke": ["Chờ thiết kế"],
-        "Nhan_Vien_In": ["Chờ in"],
-        "Quan_Ly_Don": ["Chờ xử lý", "Chờ duyệt file", "Chờ thiết kế", "Chờ in", "Chờ gia công", "Chờ thanh toán", "Chờ giao hàng"]
+      "Admin": ["Tất cả"],
+      "Thiet_Ke": ["Chờ thiết kế"],
+      "Nhan_Vien_In": ["Chờ in"],
+      "Quan_Ly_Don": ["Chờ xử lý", "Chờ duyệt file", "Chờ thiết kế", "Chờ in", "Chờ gia công", "Chờ thanh toán", "Chờ giao hàng"]
     };
 
-    async function checkOrders() {
-        try {
-            const user = JSON.parse(localStorage.getItem('currentUser'));
-            if (!user) return;
-            const role = user.Vai_Tro || "";
-            const states = CFG[role] || [];
-            if (states.length === 0) return;
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    if (!user) return;
+    const role = user.Vai_Tro || "";
+    const states = CFG[role] || [];
 
-            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=id,Trang_Thai,Ten_Khach_Hang&order=id.desc&limit=1`, { headers: h });
-            const data = await res.json();
+    // 3. Đăng ký lắng nghe sự thay đổi trên bảng NhatKy_BanHang
+    supabaseClient
+      .channel('order-changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'NhatKy_BanHang' }, payload => {
+        const newOrder = payload.new;
+        
+        // Kiểm tra xem trạng thái đơn hàng mới có thuộc nhóm role này quan tâm không
+        if (states.includes("Tất cả") || states.includes(newOrder.Trang_Thai)) {
+          showNotification(newOrder);
+        }
+      })
+      .subscribe();
+  }
 
-            if (data && data.length > 0) {
-                const latest = data[0];
-                if (latest.id != lastId) {
-                    if (!isFirst && (states.includes("Tất cả") || states.includes(latest.Trang_Thai))) {
-                        
-                        // 1. PHÁT ÂM THANH (Dùng link cực lớn)
-                        new Audio('https://notificationsounds.com/storage/sounds/notifications/glass.mp3').play().catch(()=>{});
+  function showNotification(order) {
+    // Phát âm thanh
+    new Audio('https://notificationsounds.com/storage/sounds/notifications/glass.mp3').play().catch(()=>{});
 
-                        // 2. THÔNG BÁO WINDOWS
-                        if ("Notification" in window && Notification.permission === "granted") {
-                            const n = new Notification("🔔 SẮC MÀU: CÓ ĐƠN MỚI", {
-                                body: `Khách: ${latest.Ten_Khach_Hang}\nTrạng thái: ${latest.Trang_Thai}`,
-                                icon: "favicon.ico",
-                                requireInteraction: true // Thông báo sẽ KHÔNG tự biến mất cho đến khi Mỹ bấm tắt
-                            });
-                            n.onclick = () => { window.focus(); n.close(); };
-                        }
-                    }
-                    lastId = latest.id;
-                    localStorage.setItem('last_order_id_notify', latest.id);
-                }
-            }
-            isFirst = false;
-        } catch (e) { console.error("Lỗi Notify:", e); }
+    // Thông báo Windows
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification("🔔 SẮC MÀU: ĐƠN MỚI", {
+        body: `Khách: ${order.Ten_Khach_Hang}\nTrạng thái: ${order.Trang_Thai}`,
+        requireInteraction: true
+      });
     }
+  }
 
-    // Xin quyền Windows ngay khi load
-    if ("Notification" in window && Notification.permission !== "granted") {
-        Notification.requestPermission();
-    }
-
-    setInterval(checkOrders, 15000); // 15 giây quét một lần
-    setTimeout(checkOrders, 3000);
+  if ("Notification" in window && Notification.permission !== "granted") {
+    Notification.requestPermission();
+  }
 })();
