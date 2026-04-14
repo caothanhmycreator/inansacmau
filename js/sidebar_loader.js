@@ -1,27 +1,26 @@
 // sidebar_loader.js
 (function() {
-    // 1. Kiểm tra nếu script đã có rồi thì không nạp thêm nữa
-    if (document.getElementById('onesignal-sdk')) return;
+    // 1. Chỉ nạp thư viện nếu chưa có
+    if (!document.getElementById('onesignal-sdk')) {
+        const osScript = document.createElement('script');
+        osScript.id = 'onesignal-sdk';
+        osScript.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+        osScript.defer = true;
+        document.head.appendChild(osScript);
+    }
 
-    const osScript = document.createElement('script');
-    osScript.id = 'onesignal-sdk';
-    osScript.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
-    osScript.defer = true;
-    document.head.appendChild(osScript);
-
+    // 2. Khởi tạo OneSignal
     window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(function(oneSignal) {
-        // 2. Chỉ khởi tạo nếu OneSignal chưa chạy
-        if (!oneSignal.isInitialized()) {
-            oneSignal.init({
-                // KIỂM TRA KỸ: Phải chính xác từng ký tự, không dư khoảng trắng
-                appId: "e06b8b48-2adf-4970-b2b3-9b509e5357d8", 
-                allowLocalhostAsSecureOrigin: true, // Hỗ trợ nếu Mỹ test trên máy tính
+    OneSignalDeferred.push(async function(oneSignal) {
+        // Kiểm tra xem đã khởi tạo chưa (v16 dùng .initialized)
+        if (!oneSignal.initialized) {
+            await oneSignal.init({
+                appId: "e06b8b48-2adf-4970-b2b3-9b509e5357d8",
+                allowLocalhostAsSecureOrigin: true,
             });
         }
     });
 })();
-
 // ... Các đoạn code nạp Sidebar cũ của Mỹ giữ nguyên phía dưới ...
 /**
  * SIDEBAR LOADER - BẢN KHÔI PHỤC LOGIC CỦA MỸ
