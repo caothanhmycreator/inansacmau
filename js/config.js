@@ -47,10 +47,10 @@ window.formatDateTimeVN = function() {
   const pad = (n) => n.toString().padStart(2, '0');
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
-(function() {
-    let lastDataString = localStorage.getItem('last_order_data');
-    let isInitialLoad = true;
 
+
+(function() {
+    let lastId = localStorage.getItem('last_order_id_notify');
     const NOTIFY_CONFIG = {
         "Admin": ["Tất cả"],
         "Thiet_Ke": ["Chờ thiết kế"],
@@ -58,7 +58,7 @@ window.formatDateTimeVN = function() {
         "Quan_Ly_Don": ["Chờ xử lý", "Chờ duyệt file", "Chờ thiết kế", "Chờ in", "Chờ gia công", "Chờ thanh toán", "Chờ giao hàng"]
     };
 
-    async function checkWindowsNotify() {
+    async function checkOrders() {
         try {
             const user = JSON.parse(localStorage.getItem('currentUser'));
             if (!user) return;
@@ -67,59 +67,38 @@ window.formatDateTimeVN = function() {
             if (states.length === 0) return;
 
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-            const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=id,Trang_Thai,Ten_Khach_Hang&order=id.desc&limit=5`, { headers: h });
-            const data = await response.json();
+            // Quét đơn hàng mới nhất
+            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=id,Trang_Thai,Ten_Khach_Hang&order=id.desc&limit=1`, { headers: h });
+            const data = await res.json();
 
             if (data && data.length > 0) {
-                const currentDataString = JSON.stringify(data);
-                if (currentDataString !== lastDataString) {
-                    if (!isInitialLoad) {
-                        data.forEach(order => {
-                            const oldState = JSON.parse(lastDataString || "[]").find(x => x.id === order.id)?.Trang_Thai;
-                            if (order.Trang_Thai !== oldState) {
-                                if (states.includes("Tất cả") || states.includes(order.Trang_Thai)) {
-                                    
-                                    // 1. PHÁT ÂM THANH (Dùng link cực lớn)
-                                    new Audio('https://notificationsounds.com/storage/sounds/notifications/glass.mp3').play();
+                const latest = data[0];
+                if (latest.id != lastId) {
+                    if (lastId && (states.includes("Tất cả") || states.includes(latest.Trang_Thai))) {
+                        
+                        // 1. CHUÔNG BÁO
+                        new Audio('https://notificationsounds.com/storage/sounds/notifications/glass.mp3').play().catch(()=>{});
 
-                                    // 2. THÔNG BÁO WINDOWS (BẮT BUỘC HIỆN)
-                                    if ("Notification" in window && Notification.permission === "granted") {
-                                        const notification = new Notification("🔔 SẮC MÀU - ĐƠN MỚI", {
-                                            body: `Khách: ${order.Ten_Khach_Hang}\nTrạng thái: ${order.Trang_Thai}`,
-                                            icon: "https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png",
-                                            requireInteraction: true, // Ép Windows giữ thông báo không cho tự ẩn
-                                            silent: false // Bắt Windows phải phát tiếng mặc định của hệ thống
-                                        });
-                                        
-                                        notification.onclick = function() {
-                                            window.focus();
-                                            this.close();
-                                        };
-                                    }
-
-                                    // 3. HIỆN POPUP TRÊN WEB
-                                    const sw = window.Swal || window.parent.Swal;
-                                    if (sw) sw.fire({ title: 'CÓ ĐƠN MỚI!', text: order.Ten_Khach_Hang, icon: 'info', toast: true, position: 'top-end', timer: 10000 });
-                                }
-                            }
-                        });
+                        // 2. THÔNG BÁO WINDOWS (BANNER)
+                        if (Notification.permission === "granted") {
+                            new Notification("🔔 SẮC MÀU: ĐƠN MỚI", {
+                                body: `Khách: ${latest.Ten_Khach_Hang}\nTrạng thái: ${latest.Trang_Thai}`,
+                                requireInteraction: true,
+                                icon: "favicon.ico"
+                            });
+                        }
                     }
-                    lastDataString = currentDataString;
-                    localStorage.setItem('last_order_data', currentDataString);
+                    lastId = latest.id;
+                    localStorage.setItem('last_order_id_notify', latest.id);
                 }
             }
-            isInitialLoad = false;
         } catch (e) {}
     }
 
-    // Xin quyền Windows ngay lập tức
-    if ("Notification" in window) {
-        Notification.requestPermission().then(permission => {
-            if (permission !== "granted") {
-                console.log("Mỹ ơi, bạn chưa cho phép Windows gởi thông báo rồi!");
-            }
-        });
+    if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
     }
 
-    setInterval(checkWindowsNotify, 10000);
+    setInterval(checkOrders, 10000); // 10 giây quét 1 lần
+    checkOrders();
 })();
