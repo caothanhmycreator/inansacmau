@@ -53,7 +53,7 @@ window.formatDateTimeVN = function() {
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 OneSignalDeferred.push(function(oneSignal) {
   oneSignal.init({
-    appId: "DÁN_APP_ID_CỦA_MỸ_VÀO_ĐÂY", // Thay mã App ID của Mỹ vào
+    appId: "e06b8b48-2adf-4970-b2b3-9b509e5357d8", // Thay mã App ID của Mỹ vào
   });
 });
 
