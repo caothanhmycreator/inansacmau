@@ -5,6 +5,7 @@ window.SB_CONFIG = {
 
 /**
  * DANH SÁCH MODULE HỆ THỐNG IN ẤN SẮC MÀU
+ * Được phân loại theo nhóm chức năng để quản lý khoa học hơn
  */
 window.APP_MODULES = [
   // --- NHÓM KINH DOANH & BÁN HÀNG ---
@@ -47,65 +48,3 @@ window.formatDateTimeVN = function() {
   const pad = (n) => n.toString().padStart(2, '0');
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
-
-/**
- * HỆ THỐNG THÔNG BÁO REALTIME (SUPABASE)
- */
-function() {
-  // 1. Tự động tải thư viện Supabase nếu chưa có
-  if (!window.supabase) {
-    const script = document.createElement('script');
-    script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
-    script.onload = () => initRealtime();
-    document.head.appendChild(script);
-  } else {
-    initRealtime();
-  }
-
-  function initRealtime() {
-    // 2. Khởi tạo kết nối Realtime
-    const supabaseClient = supabase.createClient(window.SB_CONFIG.URL, window.SB_CONFIG.KEY);
-
-    const CFG = {
-      "Admin": ["Tất cả"],
-      "Thiet_Ke": ["Chờ thiết kế"],
-      "Nhan_Vien_In": ["Chờ in"],
-      "Quan_Ly_Don": ["Chờ xử lý", "Chờ duyệt file", "Chờ thiết kế", "Chờ in", "Chờ gia công", "Chờ thanh toán", "Chờ giao hàng"]
-    };
-
-    const user = JSON.parse(localStorage.getItem('currentUser'));
-    if (!user) return;
-    const role = user.Vai_Tro || "";
-    const states = CFG[role] || [];
-
-    // 3. Đăng ký lắng nghe sự thay đổi trên bảng NhatKy_BanHang
-    supabaseClient
-      .channel('order-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'NhatKy_BanHang' }, payload => {
-        const newOrder = payload.new;
-        
-        // Kiểm tra xem trạng thái đơn hàng mới có thuộc nhóm role này quan tâm không
-        if (states.includes("Tất cả") || states.includes(newOrder.Trang_Thai)) {
-          showNotification(newOrder);
-        }
-      })
-      .subscribe();
-  }
-
-  function showNotification(order) {
-    // Phát âm thanh
-    new Audio('https://notificationsounds.com/storage/sounds/notifications/glass.mp3').play().catch(()=>{});
-
-    // Thông báo Windows
-    if ("Notification" in window && Notification.permission === "granted") {
-      new Notification("🔔 SẮC MÀU: ĐƠN MỚI", {
-        body: `Khách: ${order.Ten_Khach_Hang}\nTrạng thái: ${order.Trang_Thai}`,
-        requireInteraction: true
-      });
-    }
-  }
-
-  if ("Notification" in window && Notification.permission !== "granted") {
-    Notification.requestPermission();
-  }
-})();
