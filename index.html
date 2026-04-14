@@ -72,20 +72,32 @@
     };
 
     document.addEventListener("DOMContentLoaded", function() {
-      const user = JSON.parse(localStorage.getItem('currentUser'));
-      if(!user) return window.location.href = "login.html";
-      
-      // Fix hiển thị tên
-      document.getElementById('welcome-name').innerText = user.Ho_Ten || user.name || "Thành viên";
-      
-      renderMenu(user);
-      loadLiveStatistics();
+  const user = JSON.parse(localStorage.getItem('currentUser'));
+  if(!user) return window.location.href = "login.html";
+  
+  document.getElementById('welcome-name').innerText = user.Ho_Ten || user.name || "Thành viên";
+  
+  renderMenu(user);
+  loadLiveStatistics();
 
-      if ("Notification" in window && Notification.permission !== "granted") {
-          Notification.requestPermission();
+  // Bảng nhắc cấp quyền thông báo
+  if ("Notification" in window) {
+      if (Notification.permission === "default") {
+          Swal.fire({
+              title: 'Cấp quyền thông báo',
+              text: 'Mỹ và anh em nhớ nhấn "Cho phép" trên góc màn hình để nhận báo đơn hàng mới nhé!',
+              icon: 'warning',
+              confirmButtonText: 'TÔI ĐÃ HIỂU'
+          }).then(() => {
+              Notification.requestPermission();
+          });
+      } else if (Notification.permission === "denied") {
+          Swal.fire('Lỗi thông báo', 'Mỹ đang chặn thông báo trên trình duyệt. Nhấn vào hình ổ khóa trên thanh địa chỉ để mở lại nhé!', 'error');
       }
-      setInterval(checkNewOrders, 20000);
-    });
+  }
+  
+  setInterval(checkNewOrders, 20000);
+});
 
     function renderMenu(user) {
       const menuContainer = document.getElementById('dashboard-menu');
