@@ -1,6 +1,5 @@
 /**
- * SIDEBAR LOADER - IN ẤN SẮC MÀU
- * GIỮ NGUYÊN CẤU TRÚC HTML CŨ - ẨN THANH CUỘN
+ * SIDEBAR LOADER - BẢN CHUẨN THỨ TỰ CỦA MỸ
  */
 (function() {
     function initSidebar() {
@@ -12,7 +11,7 @@
         const moduleString = user.Danh_Sach_Module || "";
         const myModules = moduleString.split(',').map(s => s.trim());
 
-        // 1. CHÈN KHUNG SIDEBAR VÀ GIỮ NGUYÊN HTML MENU CỦA MỸ
+        // 1. CHÈN SIDEBAR VÀ GIỮ NGUYÊN THỨ TỰ MENU CŨ CỦA MỸ
         const sidebarHTML = `
             <div id="sm-overlay" onclick="toggleMobileSidebar()"></div>
             <div id="sm-sidebar" class="sm-sidebar">
@@ -42,7 +41,6 @@
                             <a href="Cho_In.html" id="Cho_In" class="nav-link">🖨️ Đơn chờ In</a>
                             <a href="Gia_Cong.html" id="Gia_Cong_Lien_Ket" class="nav-link">🔨 Gia Công</a>
                             <a href="Giao_Hang.html" id="Giao_Hang" class="nav-link">🚚 Giao Hàng</a>
-                            <a href="Tien_Do.html" id="Quan_Ly_Tien_Do" class="nav-link">📈 Tiến độ chung</a>
                         </div>
                     </div>
 
@@ -75,6 +73,7 @@
                     <div class="group" id="admin-only-group">
                         <div class="group-title" onclick="this.parentElement.classList.toggle('active')">🛡️ QUẢN TRỊ <span>▼</span></div>
                         <div class="group-items">
+                            <a href="Tien_Do.html" id="Quan_Ly_Tien_Do" class="nav-link">📈 Tiến độ chung</a>
                             <a href="BC_Cong_Viec.html" id="Bao_Cao_Cong_Viec" class="nav-link">📝 Báo cáo công việc</a>
                             <a href="Quan_Tri.html" id="Quan_Tri_Don_Hang" class="nav-link">🗂️ Quản trị đơn</a>
                             <a href="Admin_Quan_Ly_Nhan_Su.html" id="Admin_Quan_Ly_Nhan_Su" class="nav-link">⚙️ Quản lý nhân sự</a>
@@ -83,7 +82,7 @@
                 </div>
 
                 <div class="sm-logout-box">
-                    <button onclick="logoutAction()">🚪 Đăng xuất</button>
+                    <button onclick="logoutAction()" style="width:100%; padding:8px; background:#c0392b; color:white; border:none; cursor:pointer; border-radius:4px;">🚪 Đăng xuất</button>
                 </div>
             </div>
             <button class="sm-mobile-btn" onclick="toggleMobileSidebar()">☰ MENU</button>
@@ -91,30 +90,37 @@
 
         document.body.insertAdjacentHTML('afterbegin', sidebarHTML);
 
-        // 2. XỬ LÝ PHÂN QUYỀN (GIỮ NGUYÊN LOGIC CŨ)
-        myModules.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'block';
-        });
+      // 2. PHÂN QUYỀN (Bản sửa lỗi an toàn)
+        try {
+            myModules.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.style.display = 'block';
+                }
+            });
 
-        document.querySelectorAll('.sm-sidebar .group').forEach(g => {
-            const hasVisibleLink = Array.from(g.querySelectorAll('.nav-link')).some(a => a.style.display === 'block');
-            g.style.display = hasVisibleLink ? 'block' : 'none';
-        });
-    }
+            document.querySelectorAll('.sm-sidebar .group').forEach(g => {
+                const links = g.querySelectorAll('.nav-link');
+                const hasVisibleLink = Array.from(links).some(a => {
+                    // Kiểm tra xem mục đó có được display block không
+                    return window.getComputedStyle(a).display !== 'none';
+                });
+                g.style.display = hasVisibleLink ? 'block' : 'none';
+            });
+        } catch (err) {
+            console.warn("Lỗi phân quyền nhẹ, vẫn tiếp tục vẽ menu:", err);
+        }
 
-    window.toggleMobileSidebar = function() { document.body.classList.toggle('sm-open'); };
-    window.logoutAction = function() { localStorage.removeItem('currentUser'); window.location.href = 'login.html'; };
-
-    // 3. CSS TỐI ƯU: ẨN THANH CUỘN & RESPONSIVE
+    // 3. CSS ĐỂ Sidebar ĐẸP VÀ ẨN THANH CUỘN
     const style = document.createElement('style');
     style.textContent = `
         .sm-sidebar { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; background: #2D5A27; color: white; z-index: 10001; transition: 0.3s; display: flex; flex-direction: column; }
         .sm-header { padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .sm-user-info { font-size: 11px; color: #a5d6a7; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 4px; display: block; margin-top: 8px; }
         
+        /* ẨN THANH CUỘN */
         .sm-menu-box { flex: 1; overflow-y: auto; padding-bottom: 60px; scrollbar-width: none; -ms-overflow-style: none; }
-        .sm-menu-box::-webkit-scrollbar { display: none; } /* ẨN THANH CUỘN */
+        .sm-menu-box::-webkit-scrollbar { display: none; }
 
         .group { border-bottom: 1px solid rgba(255,255,255,0.05); }
         .group-title { padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; font-size: 13px; color: #8eb38a; }
@@ -124,12 +130,11 @@
 
         .nav-link { display: none; padding: 10px 20px 10px 35px; color: #cbd5e0; text-decoration: none; font-size: 13px; border-left: 3px solid transparent; }
         .nav-link:hover { background: #1a3617; color: white; border-left-color: #FF8C00; }
-        .nav-link.always-show { display: block; padding: 15px 20px; font-weight: bold; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-link.always-show { display: block !important; padding: 15px 20px; font-weight: bold; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); }
 
         .sm-logout-box { position: absolute; bottom: 0; width: 100%; padding: 10px; background: #2D5A27; box-sizing: border-box; }
-        .sm-logout-box button { width: 100%; padding: 8px; background: #c0392b; color: white; border: none; cursor: pointer; border-radius: 4px; }
-
-        .sm-mobile-btn { display: none; position: fixed; top: 10px; left: 10px; z-index: 10000; background: #2D5A27; color: white; border: none; padding: 8px 12px; border-radius: 4px; }
+        
+        .sm-mobile-btn { display: none; position: fixed; top: 10px; left: 10px; z-index: 10000; background: #2D5A27; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
         #sm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 10000; }
 
         @media (max-width: 768px) {

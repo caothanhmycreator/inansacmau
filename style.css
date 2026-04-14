@@ -156,7 +156,15 @@ a, a:visited, a:hover, a:active {
   display: flex;
   flex-direction: column;
 }
-
+/* Sửa từ .main thành .main-content để khớp với HTML của Mỹ */
+.main-content {
+  margin-left: var(--sidebar-width); /* Để nội dung không bị Sidebar đè */
+  width: calc(100% - var(--sidebar-width));
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: 0.3s;
+}
 .top-bar {
   height: 60px;
   padding: 0 25px;
@@ -332,5 +340,21 @@ a, a:visited, a:hover, a:active {
     font-size: 9pt !important;
   }
 }
+/* Cưỡng chế hiển thị cho Sidebar do JS tạo ra */
+.sm-sidebar {
+    width: var(--sidebar-width) !important;
+    background-color: var(--primary) !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    z-index: 10001 !important;
+}
 
+/* Đảm bảo nội dung chính luôn dạt sang phải trên Máy tính */
+@media (min-width: 769px) {
+    .main-content {
+        margin-left: var(--sidebar-width) !important;
+    }
+}
 </style>
