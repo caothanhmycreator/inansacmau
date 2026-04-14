@@ -7,7 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
-  <script src="https://js.pusher.com/8.0/pusher.min.js"></script>
+
   <style>
     /* PC: Chừa lề sẵn 250px để trang KHÔNG bị giật khi load */
 .main-content { margin-left: 250px; transition: 0.3s; padding: 20px; }
@@ -304,20 +304,6 @@
         await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_BanHang`, { method: 'POST', headers: h, body: JSON.stringify(rowsBH) });
         await fetch(`${SB_CONFIG.URL}/rest/v1/Log_TienDo`, { method: 'POST', headers: h, body: JSON.stringify(rowsLog) });
         if (daTra > 0) { await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers: h, body: JSON.stringify({ Ngay_Gio: cleanTime, Ma_Don: ma, Khach_Hang: tenKH, Ten_Hang: cart.map(x => x.sp).join(", "), So_Tien_Thu: daTra, Hinh_Thuc_Thanh_Toan: currentPayMethod }) }); }
-
-
-        // --- BẮT ĐẦU ĐOẠN THÊM MỚI ĐỂ BÁO PUSHER ---
-        if (window.Pusher) {
-            // Mỹ có thể tùy biến thông báo gởi cho bộ phận Thiết kế hoặc Admin
-            const pusherMsg = `🚀 ĐƠN MỚI: Khách ${tenKH} vừa đặt ${cart.length} món. Mã đơn: ${ma}`;
-            
-            // Gởi tín hiệu qua kênh Pusher (Lưu ý: Gọi hàm sendPusherNotify Mỹ đã thêm ở config.js)
-            if (typeof window.sendPusherNotify === 'function') {
-                window.sendPusherNotify("Admin", pusherMsg); 
-                // Mỹ cũng có thể báo cho Admin hoặc Quan_Ly_Don tùy ý
-            }
-        }
-
 
         Swal.fire('Thành công', 'Đã lưu đơn: ' + ma, 'success').then(() => { location.reload(); });
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
