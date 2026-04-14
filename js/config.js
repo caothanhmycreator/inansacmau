@@ -47,10 +47,6 @@ window.formatDateTimeVN = function() {
   const pad = (n) => n.toString().padStart(2, '0');
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
-
-/**
- * HỆ THỐNG THÔNG BÁO TỰ ĐỘNG (BẢN NÂNG CẤP: BÁO CẢ KHI ĐỔI TRẠNG THÁI)
- */
 (function() {
     let lastDataString = localStorage.getItem('last_order_data');
     let isInitialLoad = true;
@@ -62,7 +58,7 @@ window.formatDateTimeVN = function() {
         "Quan_Ly_Don": ["Chờ xử lý", "Chờ duyệt file", "Chờ thiết kế", "Chờ in", "Chờ gia công", "Chờ thanh toán", "Chờ giao hàng"]
     };
 
-    async function checkOrderChanges() {
+    async function checkWindowsNotify() {
         try {
             const user = JSON.parse(localStorage.getItem('currentUser'));
             if (!user) return;
@@ -71,48 +67,59 @@ window.formatDateTimeVN = function() {
             if (states.length === 0) return;
 
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-            
-            // Lấy 5 đơn hàng mới cập nhật gần đây nhất (để bao quát cả đơn mới và đơn vừa đổi trạng thái)
             const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=id,Trang_Thai,Ten_Khach_Hang&order=id.desc&limit=5`, { headers: h });
             const data = await response.json();
 
             if (data && data.length > 0) {
-                // Tạo một chuỗi đại diện cho dữ liệu hiện tại để so sánh
                 const currentDataString = JSON.stringify(data);
-
                 if (currentDataString !== lastDataString) {
-                    // Nếu không phải lần đầu load trang thì mới bắt đầu báo động
                     if (!isInitialLoad) {
-                        // Tìm xem trong 5 đơn này, có đơn nào mới hoặc vừa đổi trạng thái mà mình cần quan tâm không
                         data.forEach(order => {
-                            // Nếu đơn này chưa được lưu trạng thái cũ hoặc trạng thái đã thay đổi
                             const oldState = JSON.parse(lastDataString || "[]").find(x => x.id === order.id)?.Trang_Thai;
-                            
                             if (order.Trang_Thai !== oldState) {
-                                const isTargetStatus = states.includes("Tất cả") || states.includes(order.Trang_Thai);
-                                
-                                if (isTargetStatus) {
-                                    // PHÁT THÔNG BÁO
-                                    new Audio('https://notificationsounds.com/storage/sounds/notifications/glass.mp3').play().catch(()=>{});
+                                if (states.includes("Tất cả") || states.includes(order.Trang_Thai)) {
                                     
+                                    // 1. PHÁT ÂM THANH (Dùng link cực lớn)
+                                    new Audio('https://notificationsounds.com/storage/sounds/notifications/glass.mp3').play();
+
+                                    // 2. THÔNG BÁO WINDOWS (BẮT BUỘC HIỆN)
+                                    if ("Notification" in window && Notification.permission === "granted") {
+                                        const notification = new Notification("🔔 SẮC MÀU - ĐƠN MỚI", {
+                                            body: `Khách: ${order.Ten_Khach_Hang}\nTrạng thái: ${order.Trang_Thai}`,
+                                            icon: "https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png",
+                                            requireInteraction: true, // Ép Windows giữ thông báo không cho tự ẩn
+                                            silent: false // Bắt Windows phải phát tiếng mặc định của hệ thống
+                                        });
+                                        
+                                        notification.onclick = function() {
+                                            window.focus();
+                                            this.close();
+                                        };
+                                    }
+
+                                    // 3. HIỆN POPUP TRÊN WEB
                                     const sw = window.Swal || window.parent.Swal;
-                                    if (sw) sw.fire({ title: 'CẬP NHẬT ĐƠN!', text: `Khách: ${order.Ten_Khach_Hang} -> ${order.Trang_Thai}`, icon: 'info', toast: true, position: 'top-end', timer: 8000, showConfirmButton: false });
-                                    
-                                    if (Notification.permission === "granted") new Notification("SẮC MÀU", { body: `Đơn khách ${order.Ten_Khach_Hang} chuyển sang ${order.Trang_Thai}` });
+                                    if (sw) sw.fire({ title: 'CÓ ĐƠN MỚI!', text: order.Ten_Khach_Hang, icon: 'info', toast: true, position: 'top-end', timer: 10000 });
                                 }
                             }
                         });
                     }
-                    
                     lastDataString = currentDataString;
                     localStorage.setItem('last_order_data', currentDataString);
                 }
             }
             isInitialLoad = false;
-        } catch (e) { console.error("Lỗi thông báo:", e); }
+        } catch (e) {}
     }
 
-    if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
-    setInterval(checkOrderChanges, 10000); // Quét mỗi 10 giây
-    setTimeout(checkOrderChanges, 2000);
+    // Xin quyền Windows ngay lập tức
+    if ("Notification" in window) {
+        Notification.requestPermission().then(permission => {
+            if (permission !== "granted") {
+                console.log("Mỹ ơi, bạn chưa cho phép Windows gởi thông báo rồi!");
+            }
+        });
+    }
+
+    setInterval(checkWindowsNotify, 10000);
 })();
