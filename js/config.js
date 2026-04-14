@@ -49,13 +49,7 @@ window.formatDateTimeVN = function() {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
-// Dán đoạn này vào cuối file js/config.js
-window.OneSignalDeferred = window.OneSignalDeferred || [];
-OneSignalDeferred.push(function(oneSignal) {
-  oneSignal.init({
-    appId: "e06b8b48-2adf-4970-b2b3-9b509e5357d8", // Thay mã App ID của Mỹ vào
-  });
-});
+
 
 // Hàm gửi thông báo "Ting Ting" dùng chung toàn hệ thống
 async function guiThongBaoSacMau(tieude, noidung) {
