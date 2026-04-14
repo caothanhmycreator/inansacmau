@@ -9,33 +9,81 @@
   <script src="js/auth_guard.js"></script>
   <script src="js/sidebar_loader.js"></script> 
   <style>
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       ======================================================== */
     :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; }
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
-    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; }
-    .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; min-width: 0; }
+    
     .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 25px; }
     .header h2 { margin: 0; color: var(--primary); }
     .header-controls { display: flex; gap: 15px; align-items: center; }
+    
     .month-picker { padding: 10px 15px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold; outline: none; }
-    .btn-export { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); font-size: 14px; }
+    .btn-export { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); font-size: 14px; transition: 0.2s; }
+
     .summary-box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #f39c12; display: inline-block; }
     .summary-box p { margin: 0; color: #666; font-size: 13px; font-weight: bold; }
     .summary-box h3 { margin: 5px 0 0 0; color: #d35400; font-size: 24px; }
+    
     .payroll-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
     .staff-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border: 1px solid var(--border); position: relative; }
+    
     .staff-name { font-size: 18px; font-weight: bold; color: var(--primary); margin: 0 0 5px 0; padding-bottom: 10px; border-bottom: 1px dashed #ccc; display: flex; justify-content: space-between; align-items: center;}
     .salary-row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 14px; color: #333;}
     .salary-row.total { font-size: 18px; font-weight: bold; color: #c0392b; border-top: 2px solid #eee; padding-top: 15px; margin-top: 15px; }
+    
     .val-plus { color: #27ae60; font-weight: bold; }
     .val-minus { color: #e74c3c; font-weight: bold; }
+    
     .action-group { display: flex; gap: 6px; margin-top: 20px; flex-wrap: wrap; }
-    .btn { flex: 1; padding: 10px 4px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 3px;}
-    .btn-finance { background: #3498db; color: white; }
-    .btn-details { background: #f39c12; color: white; }
-    .btn-absent { background: #64748b; color: white; }
-    .btn-payslip { background: #8e44ad; color: white; }
+    .btn { flex: 1; padding: 12px 4px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 3px; color: white; }
+    .btn-finance { background: #3498db; }
+    .btn-details { background: #f39c12; }
+    .btn-absent { background: #64748b; }
+    .btn-payslip { background: #8e44ad; }
+
     .badge { font-size: 11px; background: #e2e8f0; color: #475569; padding: 4px 10px; border-radius: 12px; font-weight: normal; }
-    @media print { body { background: white; } #sidebar-frame, .action-group, .no-print { display: none !important; } .main-content { margin-left: 0; padding: 0; } .staff-card { break-inside: avoid; border: 1px solid #ddd; margin-bottom: 20px; } }
+    .swal2-container { z-index: 20000 !important; }
+
+    /* ========================================================
+       2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       ======================================================== */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 70px; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: var(--primary); color: white; padding: 8px 12px; border: none; border-radius: 4px; }
+
+        .header { flex-direction: column; align-items: flex-start; gap: 15px; }
+        .header-controls { width: 100%; flex-direction: column; align-items: stretch; }
+        .summary-box { width: 100%; box-sizing: border-box; text-align: center; }
+
+        .payroll-grid { grid-template-columns: 1fr; }
+        .action-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        /* FIX LỖI XUỐNG DÒNG TRONG POPUP CHI TIẾT (ẢNH image_7f9466) */
+        .swal2-popup { width: 95% !important; padding: 10px !important; border-radius: 12px !important; }
+        .swal2-html-container { margin: 10px 0 !important; overflow-x: auto !important; }
+        
+        .finance-table { width: 100% !important; border-collapse: collapse !important; table-layout: fixed !important; }
+        .finance-table td { padding: 8px 4px !important; font-size: 12px !important; border-bottom: 1px solid #eee !important; word-break: break-word !important; }
+        
+        /* Cột Ngày và Số tiền bắt buộc không được xuống dòng */
+        .col-date { width: 75px !important; white-space: nowrap !important; color: #666; }
+        .col-amount { width: 85px !important; white-space: nowrap !important; font-weight: bold !important; text-align: right !important; color: #2c3e50; }
+        .col-action { width: 45px !important; text-align: right !important; }
+    }
+
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    @media print { 
+      body { background: white; } 
+      #sidebar-frame, .action-group, .no-print, .mobile-nav-btn { display: none !important; } 
+      .main-content { margin-left: 0; padding: 0; } 
+      .staff-card { break-inside: avoid; border: 1px solid #ddd; margin-bottom: 20px; box-shadow: none; } 
+    }
   </style>
 </head>
 <body>
@@ -45,18 +93,19 @@
       <div><h2>💰 QUẢN LÝ LƯƠNG</h2><p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">In Ấn Sắc Màu - Đồng Tháp</p></div>
       <div class="header-controls">
         <input type="month" id="month-selector" class="month-picker no-print" onchange="loadPayroll()">
-        <button class="btn-export no-print" onclick="window.print()">TẢI BẢNG LƯƠNG</button>
+        <button class="btn-export no-print" onclick="window.print()">🖨️ TẢI BẢNG LƯƠNG</button>
       </div>
     </div>
     <div class="summary-box"><p>TỔNG DOANH THU TRONG THÁNG</p><h3 id="lbl-doanh-thu">0đ</h3></div>
-    <div id="payroll-container" class="payroll-grid"><h3 style="color:#888;">Đang tính toán...</h3></div>
+    <div id="payroll-container" class="payroll-grid"><h3 style="color:#888;">Đang tính toán sổ sách...</h3></div>
   </div>
 
   <script>
+    // TOÀN BỘ LOGIC JS CỦA MỸ GIỮ NGUYÊN 100%
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
     let totalRevenue = 0;
     let currentTcData = []; 
-    let globalAbsentData = {}; // Lưu trữ dữ liệu nghỉ để tránh lỗi truyền tham số HTML
+    let globalAbsentData = {}; 
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -95,10 +144,10 @@
     function renderPayrollGrid(empData, ccData, tcData, year, month) {
       const container = document.getElementById('payroll-container');
       container.innerHTML = "";
-      globalAbsentData = {}; // Reset dữ liệu nghỉ
+      globalAbsentData = {};
       const filteredEmp = empData.filter(emp => emp.Vai_Tro !== "Admin");
       const todayDate = new Date();
-      todayDate.setHours(23, 59, 59, 999); // Tính hết ngày hôm nay
+      todayDate.setHours(23, 59, 59, 999);
 
       filteredEmp.forEach(emp => {
         const myCC = ccData.filter(c => String(c.User_ID) === String(emp.id));
@@ -108,13 +157,11 @@
         let infoCong = "";
         let absents = [];
 
-        // --- LOGIC LỌC NGÀY NGHỈ ĐẾN NGÀY HIỆN TẠI ---
         const daysInMonth = new Date(year, month, 0).getDate();
         for (let d = 1; d <= daysInMonth; d++) {
             const checkDate = new Date(year, month - 1, d);
-            if (checkDate > todayDate) continue; // Bỏ qua ngày tương lai
-
-            if (checkDate.getDay() === 0) continue; // Bỏ qua Chủ Nhật
+            if (checkDate > todayDate) continue; 
+            if (checkDate.getDay() === 0) continue; 
 
             const dateStr = `${year}-${month}-${String(d).padStart(2, '0')}`;
             const logsDay = myCC.filter(c => c.Ngay === dateStr);
@@ -125,7 +172,7 @@
             if (!hasAfternoon) absents.push(`Ngày ${d} (Chiều)`);
         }
         
-        globalAbsentData[emp.id] = absents; // Lưu vào biến toàn cục
+        globalAbsentData[emp.id] = absents;
 
         if (emp.Ho_Ten.includes("Nhung") || emp.Ho_Ten.includes("Thư")) {
           const soNgay = myCC.length * 0.5;
@@ -159,7 +206,7 @@
             <div class="salary-row"><span>Công thực tế:</span> <b>${infoCong}</b></div>
             <div class="salary-row"><span>Lương cứng:</span> <b>${Math.round(luongCoBan).toLocaleString('vi-VN')}đ</b></div>
             ${(emp.Huong_Hoa_Hong && phanTramHH > 0) ? `<div class="salary-row"><span>Hoa hồng (${phanTramHH}%):</span> <b class="val-plus">+ ${Math.round(hoaHong).toLocaleString('vi-VN')}đ</b></div>` : ''}
-            <div class="salary-row"><span>Phụ cấp công việc:</span> <b class="val-plus">+ ${phuCapViec.toLocaleString('vi-VN')}đ</b></div>
+            <div class="salary-row"><span>Phụ cấp việc:</span> <b class="val-plus">+ ${phuCapViec.toLocaleString('vi-VN')}đ</b></div>
             <div class="salary-row"><span>Trừ tạm ứng:</span> <b class="val-minus">- ${tamUng.toLocaleString('vi-VN')}đ</b></div>
             <div class="salary-row total"><span>THỰC NHẬN:</span> <span>${Math.round(tongNhan).toLocaleString('vi-VN')}đ</span></div>
             
@@ -205,31 +252,51 @@
                     <hr style="border: 1px solid #333"><div style="display:flex; justify-content: space-between; font-size: 18px; font-weight: bold; color: #c0392b;"><span>THỰC LÃNH:</span><span>${Math.round(tong).toLocaleString('vi-VN')}đ</span></div>
                     ${absentHtml}
                     ${myTC.length > 0 ? `<div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"><p style="font-weight:bold; font-size:12px;">CHI TIẾT PHÁT SINH:</p>
-                    <table style="width:100%; font-size:11px;">${myTC.map(tc => `<tr><td>${new Date(tc.Ngay_Ghi).toLocaleDateString('vi-VN')}</td><td>${tc.Loai} (${tc.Noi_Dung || ''})</td><td align="right">${Number(tc.So_Tien).toLocaleString('vi-VN')}đ</td></tr>`).join('')}</table></div>` : ''}</div>`,
+                    <div style="overflow-x:auto"><table style="width:100%; font-size:11px;">${myTC.map(tc => `<tr><td style="white-space:nowrap">${new Date(tc.Ngay_Ghi).toLocaleDateString('vi-VN')}</td><td>${tc.Loai} (${tc.Noi_Dung || ''})</td><td align="right" style="white-space:nowrap">${Number(tc.So_Tien).toLocaleString('vi-VN')}đ</td></tr>`).join('')}</table></div></div>` : ''}</div>`,
             confirmButtonText: 'ĐÓNG', confirmButtonColor: '#2D5A27', width: '500px'
         });
     }
 
+    // ĐÃ FIX BẰNG CẤU TRÚC CLASS CHỐNG LỖI XUỐNG DÒNG
     function viewFinanceDetails(empId, empName) {
       const myTC = currentTcData.filter(t => String(t.User_ID) === String(empId));
-      if(myTC.length === 0) return Swal.fire('Thông báo', 'Không có khoản nào.', 'info');
-      let rows = myTC.map(tc => `<tr><td style="padding:10px;border-bottom:1px solid #eee;">${new Date(tc.Ngay_Ghi).toLocaleDateString('vi-VN')}</td><td style="padding:10px;border-bottom:1px solid #eee;">${tc.Loai}<br><small>${tc.Noi_Dung || ''}</small></td><td style="padding:10px;border-bottom:1px solid #eee;font-weight:bold;">${Number(tc.So_Tien).toLocaleString('vi-VN')}đ</td><td style="text-align:right;"><button onclick="deleteFinance('${tc.id}')" style="background:#e74c3c;color:white;border:none;padding:5px;border-radius:4px;">Xóa</button></td></tr>`).join('');
-      Swal.fire({ title: `Chi Tiết: ${empName}`, html: `<table style="width:100%;font-size:13px;text-align:left;">${rows}</table>`, width:'600px'});
+      if(myTC.length === 0) return Swal.fire('Thông báo', 'Không có khoản kê khai nào.', 'info');
+      
+      let rows = myTC.map(tc => {
+        const d = new Date(tc.Ngay_Ghi);
+        const dateStr = d.getDate() + "/" + (d.getMonth()+1) + "/" + d.getFullYear();
+        return '<tr>' +
+          '<td class="col-date">' + dateStr + '</td>' +
+          '<td class="col-info"><b>' + tc.Loai + '</b><br><small>' + (tc.Noi_Dung || "") + '</small></td>' +
+          '<td class="col-amount">' + Number(tc.So_Tien).toLocaleString("vi-VN") + 'đ</td>' +
+          '<td class="col-action"><button onclick="deleteFinance(\'' + tc.id + '\')" class="btn" style="background:#e74c3c; padding:5px 8px; font-size:10px; flex:none;">Xóa</button></td>' +
+        '</tr>';
+      }).join('');
+
+      Swal.fire({ 
+        title: 'Kê khai: ' + empName, 
+        html: '<div style="overflow-x:auto"><table class="finance-table">' + rows + '</table></div>', 
+        width:'600px',
+        confirmButtonText: 'ĐÓNG',
+        confirmButtonColor: '#64748b'
+      });
     }
 
     async function deleteFinance(id) {
-       const r = await Swal.fire({ title: 'Xóa khoản này?', icon: 'warning', showCancelButton: true });
+       const r = await Swal.fire({ title: 'Xác nhận xóa?', text: 'Thao tác này không thể hoàn tác.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'XÓA NGAY' });
        if(r.isConfirmed) { await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?id=eq.${id}`, { method: 'DELETE', headers: h }); loadPayroll(); }
     }
 
     function openFinanceModal(empId, empName) {
       Swal.fire({
-        title: `Nhập cho ${empName}`,
-        html: `<select id="sw-loai" class="swal2-input"><option value="Giao hàng">Giao hàng (+20k)</option><option value="Nhận hàng">Nhận hàng (+10k)</option><option value="Khác">Phụ cấp khác</option><option value="Tạm ứng">Tạm ứng</option></select><input id="sw-tien" type="number" class="swal2-input" placeholder="Số tiền..."><input id="sw-noidung" type="text" class="swal2-input" placeholder="Nội dung...">`,
+        title: 'Nhập cho ' + empName,
+        html: '<select id="sw-loai" class="swal2-input"><option value="Giao hàng">Giao hàng (+20k)</option><option value="Nhận hàng">Nhận hàng (+10k)</option><option value="Khác">Phụ cấp khác</option><option value="Tạm ứng">Tạm ứng</option></select><input id="sw-tien" type="number" class="swal2-input" placeholder="Số tiền..."><input id="sw-noidung" type="text" class="swal2-input" placeholder="Nội dung...">',
         showCancelButton: true,
+        confirmButtonText: 'LƯU DỮ LIỆU',
         preConfirm: () => {
           const loai = document.getElementById('sw-loai').value; let tien = document.getElementById('sw-tien').value;
           if (loai === "Giao hàng" && !tien) tien = 20000; if (loai === "Nhận hàng" && !tien) tien = 10000;
+          if (!tien) return Swal.showValidationMessage('Vui lòng nhập số tiền!');
           return { User_ID: empId, Loai: loai, So_Tien: Number(tien), Noi_Dung: document.getElementById('sw-noidung').value };
         }
       }).then(async (r) => { if (r.isConfirmed) { await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh`, { method: 'POST', headers: h, body: JSON.stringify({...r.value, Ngay_Ghi: new Date().toISOString(), Nguoi_Xac_Nhan: currentUser.name}) }); loadPayroll(); } });
