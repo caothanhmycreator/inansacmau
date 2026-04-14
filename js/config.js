@@ -49,13 +49,12 @@ window.formatDateTimeVN = function() {
 };
 
 /**
- * HỆ THỐNG THÔNG BÁO TỰ ĐỘNG (REALTIME POLLING)
+ * HỆ THỐNG THÔNG BÁO TỰ ĐỘNG (BẢN NÂNG CẤP: BÁO CẢ KHI ĐỔI TRẠNG THÁI)
  */
 (function() {
-    let lastNotifiedId = localStorage.getItem('last_order_id');
+    let lastDataString = localStorage.getItem('last_order_data');
     let isInitialLoad = true;
 
-    // Cấu hình trạng thái theo dõi cho từng vai trò
     const NOTIFY_CONFIG = {
         "Admin": ["Tất cả"],
         "Thiet_Ke": ["Chờ thiết kế"],
@@ -63,7 +62,7 @@ window.formatDateTimeVN = function() {
         "Quan_Ly_Don": ["Chờ xử lý", "Chờ duyệt file", "Chờ thiết kế", "Chờ in", "Chờ gia công", "Chờ thanh toán", "Chờ giao hàng"]
     };
 
-    async function checkNewOrders() {
+    async function checkOrderChanges() {
         try {
             const user = JSON.parse(localStorage.getItem('currentUser'));
             if (!user) return;
@@ -73,57 +72,47 @@ window.formatDateTimeVN = function() {
 
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
             
-            // Lấy đơn hàng mới nhất từ Database
-            const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=id,Trang_Thai,Ten_Khach_Hang&order=id.desc&limit=1`, { headers: h });
+            // Lấy 5 đơn hàng mới cập nhật gần đây nhất (để bao quát cả đơn mới và đơn vừa đổi trạng thái)
+            const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=id,Trang_Thai,Ten_Khach_Hang&order=id.desc&limit=5`, { headers: h });
             const data = await response.json();
 
             if (data && data.length > 0) {
-                const latestOrder = data[0];
+                // Tạo một chuỗi đại diện cho dữ liệu hiện tại để so sánh
+                const currentDataString = JSON.stringify(data);
 
-                // Nếu là ID mới và trạng thái phù hợp với vai trò
-                if (latestOrder.id != lastNotifiedId) {
-                    const isTargetStatus = states.includes("Tất cả") || states.includes(latestOrder.Trang_Thai);
-                    
-                    if (isTargetStatus && !isInitialLoad) {
-                        // 1. Phát âm thanh Ting Ting
-                        const audio = new Audio('https://notificationsounds.com/storage/sounds/notifications/glass.mp3');
-                        audio.play().catch(() => console.log("Cần click vào trang để nghe âm thanh"));
-
-                        // 2. Thông báo bằng SweetAlert (Popup trên web)
-                        const swalTarget = window.Swal || window.parent.Swal;
-                        if (swalTarget) {
-                            swalTarget.fire({
-                                title: '🔔 CÓ ĐƠN MỚI!',
-                                text: `Khách: ${latestOrder.Ten_Khach_Hang} - Trạng thái: ${latestOrder.Trang_Thai}`,
-                                icon: 'info',
-                                toast: true,
-                                position: 'top-end',
-                                timer: 10000,
-                                showConfirmButton: false
-                            });
-                        }
-
-                        // 3. Thông báo hệ thống (Notification)
-                        if ("Notification" in window && Notification.permission === "granted") {
-                            new Notification("SẮC MÀU: ĐƠN MỚI", { body: `Khách hàng: ${latestOrder.Ten_Khach_Hang}` });
-                        }
+                if (currentDataString !== lastDataString) {
+                    // Nếu không phải lần đầu load trang thì mới bắt đầu báo động
+                    if (!isInitialLoad) {
+                        // Tìm xem trong 5 đơn này, có đơn nào mới hoặc vừa đổi trạng thái mà mình cần quan tâm không
+                        data.forEach(order => {
+                            // Nếu đơn này chưa được lưu trạng thái cũ hoặc trạng thái đã thay đổi
+                            const oldState = JSON.parse(lastDataString || "[]").find(x => x.id === order.id)?.Trang_Thai;
+                            
+                            if (order.Trang_Thai !== oldState) {
+                                const isTargetStatus = states.includes("Tất cả") || states.includes(order.Trang_Thai);
+                                
+                                if (isTargetStatus) {
+                                    // PHÁT THÔNG BÁO
+                                    new Audio('https://notificationsounds.com/storage/sounds/notifications/glass.mp3').play().catch(()=>{});
+                                    
+                                    const sw = window.Swal || window.parent.Swal;
+                                    if (sw) sw.fire({ title: 'CẬP NHẬT ĐƠN!', text: `Khách: ${order.Ten_Khach_Hang} -> ${order.Trang_Thai}`, icon: 'info', toast: true, position: 'top-end', timer: 8000, showConfirmButton: false });
+                                    
+                                    if (Notification.permission === "granted") new Notification("SẮC MÀU", { body: `Đơn khách ${order.Ten_Khach_Hang} chuyển sang ${order.Trang_Thai}` });
+                                }
+                            }
+                        });
                     }
                     
-                    // Ghi nhớ ID đơn cuối cùng để không báo lặp
-                    lastNotifiedId = latestOrder.id;
-                    localStorage.setItem('last_order_id', latestOrder.id);
+                    lastDataString = currentDataString;
+                    localStorage.setItem('last_order_data', currentDataString);
                 }
             }
             isInitialLoad = false;
         } catch (e) { console.error("Lỗi thông báo:", e); }
     }
 
-    // Xin quyền thông báo
-    if ("Notification" in window && Notification.permission === "default") {
-        Notification.requestPermission();
-    }
-
-    // Chạy kiểm tra mỗi 10 giây (Rất nhẹ, không tốn tài nguyên)
-    setInterval(checkNewOrders, 10000);
-    setTimeout(checkNewOrders, 2000);
+    if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+    setInterval(checkOrderChanges, 10000); // Quét mỗi 10 giây
+    setTimeout(checkOrderChanges, 2000);
 })();
