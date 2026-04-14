@@ -280,9 +280,13 @@
       if (daTra > 0 && currentPayMethod === "") return Swal.fire('Lỗi', 'Vui lòng chọn TM hoặc CK!', 'warning');
 
       Swal.fire({ title: '⚡ Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      
       const cleanTime = formatDateTimeVN();
       const ma = `HD-${new Date().getDate().toString().padStart(2, '0')}${(new Date().getMonth() + 1).toString().padStart(2, '0')}-${new Date().getHours()}${new Date().getMinutes()}${new Date().getSeconds()}`;
+      
+      // Lấy tên khách hàng một lần duy nhất ở đây
       const tenKH = document.getElementById("tenKhach").value.trim() || "Khách lẻ";
+      
       const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
 
       try {
@@ -306,13 +310,24 @@
         
         const rowsLog = cart.map(i => ({ Ngay_Gio: cleanTime, Ma_Don: ma, Ten_Hang: i.sp, Khach_Hang: tenKH, Gio_Tao_Don: cleanTime, Gio_Xu_Ly: cleanTime, Trang_Thai: "Chờ xử lý", Nguoi_Thuc_Hien: "Hệ thống" }));
         
+        // 1. Lưu đơn hàng vào Database
         await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_BanHang`, { method: 'POST', headers: h, body: JSON.stringify(rowsBH) });
         await fetch(`${SB_CONFIG.URL}/rest/v1/Log_TienDo`, { method: 'POST', headers: h, body: JSON.stringify(rowsLog) });
-        if (daTra > 0) { await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers: h, body: JSON.stringify({ Ngay_Gio: cleanTime, Ma_Don: ma, Khach_Hang: tenKH, Ten_Hang: cart.map(x => x.sp).join(", "), So_Tien_Thu: daTra, Hinh_Thuc_Thanh_Toan: currentPayMethod }) }); }
+        if (daTra > 0) { 
+            await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers: h, body: JSON.stringify({ Ngay_Gio: cleanTime, Ma_Don: ma, Khach_Hang: tenKH, Ten_Hang: cart.map(x => x.sp).join(", "), So_Tien_Thu: daTra, Hinh_Thuc_Thanh_Toan: currentPayMethod }) }); 
+        }
 
+        // 2. PHÁT LỆNH THÔNG BÁO TỚI ĐIỆN THOẠI (Dùng biến tenKH đã có sẵn)
+        // Thêm await để đảm bảo gửi xong mới reload trang
+        await guiThongBaoSacMau("🔥 ĐƠN HÀNG MỚI", "Khách " + tenKH + " vừa đặt đơn mới tại Sắc Màu!");
+
+        // 3. Thông báo thành công và load lại trang
         Swal.fire('Thành công', 'Đã lưu đơn: ' + ma, 'success').then(() => { location.reload(); });
-      } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
-    }
+
+      } catch (e) { 
+          Swal.fire('Lỗi', e.message, 'error'); 
+      }
+}
 
     function changeSL(s) { let el = document.getElementById("sl"); let v = Math.max(0, getRaw("sl") + s); el.value = v.toLocaleString("vi-VN"); updateTmpTotal(); }
     function formatInput(el) { let v = el.value.replace(/\D/g, ""); if (v !== "") el.value = Number(v).toLocaleString("vi-VN"); }

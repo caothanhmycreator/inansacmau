@@ -48,3 +48,36 @@ window.formatDateTimeVN = function() {
   const pad = (n) => n.toString().padStart(2, '0');
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
+
+// Dán đoạn này vào cuối file js/config.js
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+OneSignalDeferred.push(function(oneSignal) {
+  oneSignal.init({
+    appId: "DÁN_APP_ID_CỦA_MỸ_VÀO_ĐÂY", // Thay mã App ID của Mỹ vào
+  });
+});
+
+// Hàm gửi thông báo "Ting Ting" dùng chung toàn hệ thống
+async function guiThongBaoSacMau(tieude, noidung) {
+    const appID = "e06b8b48-2adf-4970-b2b3-9b509e5357d8";
+    const apiKey = "os_v2_app_4bvywsbk35exbmvttnij4u2x3btd7eudzjyuhsmsij5efmpcadwti3h4xhhtneczfehnaiw7uvbhcjoja52vwduwqgowkvnxbmb543a";
+
+    try {
+        await fetch("https://onesignal.com/api/v1/notifications", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": "Basic " + apiKey
+            },
+            body: JSON.stringify({
+                app_id: appID,
+                included_segments: ["All"], 
+                headings: { "vi": tieude },
+                contents: { "vi": noidung }
+            })
+        });
+        console.log("Sắc Màu: Đã gửi thông báo thành công!");
+    } catch (e) {
+        console.error("Lỗi gửi thông báo:", e);
+    }
+}

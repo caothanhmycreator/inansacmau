@@ -1,3 +1,20 @@
+// Tự động nạp thư viện OneSignal cho tất cả các trang
+(function() {
+    const osScript = document.createElement('script');
+    osScript.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+    osScript.defer = true;
+    document.head.appendChild(osScript);
+
+    // Khởi tạo OneSignal ngay khi thư viện tải xong
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(function(oneSignal) {
+        oneSignal.init({
+            appId: "DÁN_MÃ_APP_ID_CỦA_MỸ_VÀO_ĐÂY", // Nhớ thay mã của Mỹ nhé
+        });
+    });
+})();
+
+// ... Các đoạn code nạp Sidebar cũ của Mỹ giữ nguyên phía dưới ...
 /**
  * SIDEBAR LOADER - BẢN KHÔI PHỤC LOGIC CỦA MỸ
  */
@@ -175,3 +192,4 @@ const style = document.createElement('style');
         document.addEventListener('DOMContentLoaded', initSidebar);
     }
 })();
+
