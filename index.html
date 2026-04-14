@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2D5A27">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('Sắc Màu App: Đã sẵn sàng!'))
+        .catch(err => console.log('Lỗi đăng ký App:', err));
+    });
+  }
+</script>
     <title>Dashboard - Sắc Màu</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 

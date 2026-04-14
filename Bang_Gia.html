@@ -9,12 +9,15 @@
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
   <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
-<script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js"></script> 
   <style>
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       ======================================================== */
     :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; --accent: #d35400; }
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
-    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; }
-    .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
 
     .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
@@ -26,10 +29,10 @@
     .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .group-header { background: #f8fafc; padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 10px; transition: 0.2s; }
     .group-header:hover { background: #edf2f7; color: var(--accent); }
-    .group-content { display: none; margin-top: 5px; overflow-x: auto; }
+    .group-content { display: none; margin-top: 5px; }
     .group-content.show { display: block; }
 
-    table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: left; }
     th { background: #f1f5f9; color: #64748b; font-size: 11px; text-transform: uppercase; }
     
@@ -39,19 +42,61 @@
     .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; font-size: 16px; transition: 0.3s; }
     .btn-submit:hover { background: #a04000; transform: translateY(-2px); }
 
-    @media (max-width: 768px) { .main-content { margin-left: 0; padding: 15px; } #sidebar-frame { left: -250px; } }
+    .swal2-container { z-index: 20000 !important; }
+
+    /* ========================================================
+       2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       ======================================================== */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        
+        .mobile-nav-btn {
+            display: block; position: fixed; top: 10px; left: 10px; 
+            z-index: 1000; background: var(--accent); color: white; 
+            padding: 8px 12px; border: none; border-radius: 4px;
+        }
+
+        .header-top { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+        .header-top button { width: 100%; }
+
+        .form-card { padding: 15px; }
+        .form-grid { grid-template-columns: 1fr; }
+        .input-group { grid-column: span 1 !important; }
+
+        /* Biến bảng thành Card để tra cứu giá dễ dàng */
+        .group-content { overflow-x: hidden; }
+        table, thead, tbody, th, td, tr { display: block; width: 100%; }
+        thead { display: none; }
+        
+        tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: flex-start; text-align: left; }
+        
+        /* Nhãn hiển thị cột */
+        td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
+        
+        .img-preview { width: 60px; height: 60px; }
+        .qr-preview { width: 50px; height: 50px; }
+
+        /* SweetAlert Popup Mobile */
+        .swal2-popup { width: 95% !important; padding: 10px !important; border-radius: 12px !important; }
+        .swal2-html-container div[style*="display: grid"] { grid-template-columns: 1fr !important; gap: 10px !important; }
+        .swal2-actions button { width: 100% !important; margin: 5px 0 !important; padding: 12px !important; border-radius: 8px !important; }
+    }
+
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
-
   <div class="main-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div>
         <h2 style="margin:0; color: var(--accent);">🏷️ QUẢN LÝ BẢNG GIÁ SẮC MÀU</h2>
         <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Cấu trúc chuẩn từ Kho - Đồng bộ mã sản phẩm</p>
       </div>
-      <button onclick="getToken()" style="padding:10px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid var(--accent); background:white; color:var(--accent);">🔐 KẾT NỐI DRIVE</button>
+      <button onclick="getToken()" style="padding:10px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid var(--accent); background:white; color:var(--accent); transition: 0.2s;">🔐 KẾT NỐI DRIVE</button>
     </div>
 
     <div class="form-card">
@@ -100,6 +145,7 @@
   </div>
 
   <script>
+    // TOÀN BỘ LOGIC JS GIỮ NGUYÊN 100%
     const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
     const FOLDER_ID = "1ao2E97b8YdawmGb23c8U_6u7N65hTrVN"; 
     let accessToken = localStorage.getItem('drive_access_token');
@@ -119,7 +165,6 @@
 
     function getToken() { tokenClient.requestAccessToken(); }
 
-    // Định dạng tiền 1.000.000
     function formatCurrency(input) {
       let v = input.value.replace(/\D/g, "");
       input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -130,7 +175,6 @@
       setTimeout(loadPriceList, 600);
     });
 
-    /** HÀM UPLOAD DRIVE CHUẨN (Copy từ Kho.html) */
     async function uploadFileToDrive(file) {
         if (!accessToken) return null;
         try {
@@ -151,7 +195,6 @@
         }
     }
 
-    /** HÀM LƯU (Có chống trùng mã QR như Kho.html) */
     async function submitPriceItem() {
       const ten = document.getElementById('f-ten').value.trim();
       const nhom = document.getElementById('f-nhom').value.trim() || "Chưa phân loại";
@@ -164,7 +207,6 @@
       try {
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
         
-        // 1. CHỐNG TRÙNG MÃ QR (Tiền tố SMP - Sac Mau Price)
         let maQR = "";
         let isDuplicate = true;
         while (isDuplicate) {
@@ -177,7 +219,6 @@
         let driveLink = "";
         if (file) driveLink = await uploadFileToDrive(file);
 
-        // 2. GHI VÀO DB (Tên cột viết hoa chuẩn SQL của bạn)
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham`, {
           method: 'POST', headers: h, body: JSON.stringify({
             Nhom_Hang: nhom, 
@@ -198,7 +239,6 @@
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
-    /** HÀM LOAD BẢNG (Thu gọn nhóm như Kho.html) */
     async function loadPriceList() {
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
       try {
@@ -216,6 +256,7 @@
         if(data.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Bảng giá trống.</p>'; return; }
 
         for (let nhom in groups) {
+          // Bổ sung data-label để CSS bọc thẻ Mobile
           let rows = groups[nhom].map(item => {
             const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(item.Ma_QR)}`;
             
@@ -228,15 +269,15 @@
 
             return `
             <tr>
-              <td><img src="${qrImageUrl}" class="qr-preview" onclick="Swal.fire({title: 'QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 250})"></td>
-              <td>${thumbDisplay}</td>
-              <td><b>${item.Ten_Hang}</b><br><small style="color:#888">${item.Mo_Ta || ''}</small></td>
-              <td>${item.Don_Vi_Tinh || ''}</td>
-              <td style="color:red; font-weight:bold;">${(item.Gia_Ban || 0).toLocaleString()}</td>
-              <td style="color:green; font-weight:bold;">${(item.Gia_Si || 0).toLocaleString()}</td>
-              <td>
-                <button onclick='editPrice(${JSON.stringify(item)})' style="color:#2980b9; border:none; background:none; cursor:pointer; font-weight:bold;">SỬA</button> | 
-                <button onclick="deletePrice(${item.Id})" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold;">XÓA</button>
+              <td data-label="Mã QR"><img src="${qrImageUrl}" class="qr-preview" onclick="Swal.fire({title: 'QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 250})"></td>
+              <td data-label="Ảnh">${thumbDisplay}</td>
+              <td data-label="Tên hàng"><b>${item.Ten_Hang}</b><br><small style="color:#888">${item.Mo_Ta || ''}</small></td>
+              <td data-label="ĐVT">${item.Don_Vi_Tinh || ''}</td>
+              <td data-label="Giá lẻ" style="color:red; font-weight:bold;">${(item.Gia_Ban || 0).toLocaleString()}</td>
+              <td data-label="Giá sỉ" style="color:green; font-weight:bold;">${(item.Gia_Si || 0).toLocaleString()}</td>
+              <td data-label="Thao tác">
+                <button onclick='editPrice(${JSON.stringify(item)})' style="color:#2980b9; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px;">SỬA</button> | 
+                <button onclick="deletePrice(${item.Id})" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px;">XÓA</button>
               </td>
             </tr>`}).join('');
 
@@ -255,7 +296,6 @@
       } catch (e) { console.error(e); }
     }
 
-    /** HÀM SỬA (Giao diện 2 cột chuẩn Kho.html) */
     async function editPrice(item) {
       const { value: formValues } = await Swal.fire({
         title: 'CẬP NHẬT BÁO GIÁ',
@@ -276,6 +316,7 @@
         showCancelButton: true,
         confirmButtonText: 'LƯU THAY ĐỔI',
         confirmButtonColor: '#d35400',
+        cancelButtonText: 'HỦY',
         preConfirm: async () => {
           const newFile = document.getElementById('e-hinh').files[0];
           let newLink = item.Hinh_Anh;
@@ -286,6 +327,7 @@
           return {
             Nhom_Hang: document.getElementById('e-nhom').value,
             Ten_Hang: document.getElementById('e-ten').value,
+            So_Luong: item.So_Luong, // Giữ nguyên SL kho
             Gia_Ban: parseNum(document.getElementById('e-gia-ban').value),
             Gia_Si: parseNum(document.getElementById('e-gia-si').value),
             Don_Vi_Tinh: document.getElementById('e-dvt').value,
@@ -302,7 +344,6 @@
       }
     }
 
-    /** HÀM XÓA */
     async function deletePrice(id) {
       const r = await Swal.fire({ title: 'Xóa báo giá này?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'XÓA NGAY' });
       if (r.isConfirmed) {

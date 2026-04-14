@@ -8,12 +8,14 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
-<script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js"></script> 
   <style>
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       ======================================================== */
     :root { --primary: #2c3e50; --bg: #f8fafc; --border: #e2e8f0; }
     body { margin: 0; background: var(--bg); display: flex; font-family: 'Segoe UI', sans-serif; }
     
-    /* 1. SỬA LỖI SIDEBAR */
     .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
 
     .bc-container { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; }
@@ -22,14 +24,12 @@
     .filter-group { display: flex; align-items: center; gap: 10px; background: #f1f5f9; padding: 8px 15px; border-radius: 10px; border: 1px solid var(--border); }
     .filter-group input { border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; outline: none; font-weight: 600; }
 
-    /* 2. KHU VỰC TỔNG QUAN ĐƠN MỚI TRONG NGÀY */
     .summary-section { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 15px; padding: 20px; background: #fffcf5; border-bottom: 1px solid #fef3c7; }
     .sum-card { background: white; padding: 15px; border-radius: 10px; border: 1px solid #fde68a; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
     .sum-label { font-size: 11px; color: #92400e; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
     .sum-value { font-size: 24px; font-weight: 900; color: #1e293b; margin: 5px 0; }
     .khach-list { font-size: 12px; color: #475569; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
 
-    /* 3. KHU VỰC TRẠNG THÁI HIỆN TẠI (CHỜ IN, CHỜ GIA CÔNG...) */
     .status-section { padding: 20px; }
     .status-table { width: 100%; border-collapse: collapse; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .status-table th { background: #f8fafc; padding: 12px 15px; text-align: left; color: #64748b; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid var(--border); }
@@ -37,41 +37,53 @@
     
     .status-name { display: flex; align-items: center; gap: 10px; font-weight: 700; color: #1e293b; }
     .count-badge { background: #fee2e2; color: #b91c1c; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; min-width: 60px; text-align: center; }
-    .btn-detail { background: var(--primary); color: white; border: none; padding: 6px 15px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+    .btn-detail { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.2s; font-weight: bold; }
     .btn-detail:hover { background: #1a252f; }
 
-    @media (max-width: 1024px) { .main-content { margin-left: 0; } .summary-section { grid-template-columns: 1fr; } }
-  
-    /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
+    .swal2-container { z-index: 20000 !important; }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
 
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
+    /* ========================================================
+       2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       ======================================================== */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        
+        .mobile-nav-btn {
+            display: block; position: fixed; top: 10px; left: 10px; 
+            z-index: 1000; background: #2D5A27; color: white; 
+            padding: 8px 12px; border: none; border-radius: 4px;
+        }
 
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
-    
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
+        .bc-header { flex-direction: column; align-items: flex-start; padding: 15px; }
+        .filter-group { width: 100%; box-sizing: border-box; flex-direction: column; align-items: stretch; }
+        .filter-group input { width: 100%; }
+
+        /* Tổng quan 1 cột trên Mobile */
+        .summary-section { grid-template-columns: 1fr; padding: 15px; }
+        .sum-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
+
+        /* Bảng trạng thái gọn lại */
+        .status-section { padding: 15px 10px; }
+        .status-table th:nth-child(2), .status-table td:nth-child(2) { text-align: center; padding: 10px 5px; }
+        .status-table th:last-child, .status-table td:last-child { padding: 10px 5px; }
+        
+        .count-badge { padding: 4px 8px; font-size: 13px; min-width: 50px; }
+        .status-name { font-size: 13px; }
+        .btn-detail { padding: 8px 10px; font-size: 11px; white-space: nowrap; }
+
+        /* Popup chi tiết chống tràn */
+        .swal2-popup { width: 95% !important; padding: 10px !important; border-radius: 12px !important; }
+        .swal2-html-container { margin: 10px 0 !important; overflow-x: auto !important; }
+        .swal2-html-container table { min-width: 450px; } /* Cho phép cuộn ngang trong popup */
     }
-}
 
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
-
 
   <div class="main-content">
     <div class="bc-container">
@@ -79,7 +91,7 @@
         <h2 style="margin:0; font-size: 20px; color: var(--primary); font-weight: 800;">📊 BÁO CÁO CÔNG VIỆC</h2>
         <div class="filter-group">
           <input type="date" id="report-date">
-          <button onclick="loadReport()" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:700;">XEM BÁO CÁO</button>
+          <button onclick="loadReport()" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:700; transition: 0.2s;">XEM BÁO CÁO</button>
         </div>
       </div>
 
@@ -99,13 +111,13 @@
       </div>
 
       <div class="status-section">
-        <h3 style="font-size: 15px; color: #475569; margin: 0 0 15px 0;">⚡ DANH SÁCH MÓN ĐANG CHỜ THEO KHÂU (BACKLOG)</h3>
+        <h3 style="font-size: 15px; color: #475569; margin: 0 0 15px 0; border-left: 4px solid var(--primary); padding-left: 10px;">⚡ DANH SÁCH MÓN ĐANG CHỜ THEO KHÂU (BACKLOG)</h3>
         <table class="status-table">
           <thead>
             <tr>
-              <th>Công đoạn</th>
-              <th style="text-align: center;">Số món đang nằm chờ</th>
-              <th style="text-align: right;">Chi tiết món/khách</th>
+              <th style="width: 40%;">Công đoạn</th>
+              <th style="text-align: center; width: 30%;">Số món chờ</th>
+              <th style="text-align: right; width: 30%;">Thao tác</th>
             </tr>
           </thead>
           <tbody id="status-body">
@@ -116,44 +128,39 @@
   </div>
 
   <script>
-    /** 🚀 DANH SÁCH TRẠNG THÁI CẦN THEO DÕI */
+    // TOÀN BỘ LOGIC JS GIỮ NGUYÊN 100%
     const TARGET_STATUSES = [
       "Chờ xử lý", "Chờ thiết kế", "Chờ duyệt file", "Chờ in", "Chờ gia công", "Chờ giao hàng", "Chờ thanh toán"
     ];
 
-    window.fullData = []; // Lưu toàn bộ backlog để hiện popup
+    window.fullData = []; 
 
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('report-date').value = new Date().toISOString().split('T')[0];
       setTimeout(() => { loadReport(); }, 600);
     });
 
-    /** 🚀 TẢI DỮ LIỆU TỪ NHATKY_BANHANG */
     async function loadReport() {
       const rawDate = document.getElementById('report-date').value;
       const [y, m, d] = rawDate.split('-');
-      const dateStr = `${d}/${m}/${y}`; // DD/MM/YYYY
+      const dateStr = `${d}/${m}/${y}`; 
 
       Swal.fire({ title: 'Đang tải dữ liệu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
 
       try {
-        // Lấy toàn bộ đơn hàng chưa Hoàn tất để đếm backlog, và lọc theo ngày để tính đơn mới
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=not.in.("Hoàn tất","Công nợ")&order=id.desc`, { headers: h });
         const data = await res.json();
         window.fullData = data;
 
-        // 1. Lọc đơn nhận trong ngày được chọn
         const todayItems = data.filter(it => it.Ngay_Gio && it.Ngay_Gio.includes(dateStr));
         const uniqueOrders = new Set(todayItems.map(i => i.Ma_Don));
         const uniqueKhach = new Set(todayItems.map(i => i.Ten_Khach_Hang));
 
-        // Cập nhật Khu vực 1
         document.getElementById('val-new-orders').innerText = uniqueOrders.size;
         document.getElementById('val-new-items').innerText = todayItems.length;
         document.getElementById('val-khach-list').innerText = Array.from(uniqueKhach).join(", ") || "Không có khách mới.";
 
-        // 2. Phân loại toàn bộ backlog theo trạng thái (không phân biệt ngày)
         const stats = {};
         TARGET_STATUSES.forEach(st => stats[st] = data.filter(item => item.Trang_Thai === st));
 
@@ -163,7 +170,6 @@
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
-    /** 🚀 HIỂN THỊ BẢNG TRẠNG THÁI */
     function renderStatusTable(stats) {
       const tbody = document.getElementById('status-body');
       tbody.innerHTML = TARGET_STATUSES.map(st => {
@@ -173,14 +179,13 @@
             <td><div class="status-name">${st}</div></td>
             <td style="text-align: center;"><span class="count-badge">${count} món</span></td>
             <td style="text-align: right;">
-              <button class="btn-detail" onclick="showPopupDetail('${st}')">Xem chi tiết</button>
+              <button class="btn-detail" onclick="showPopupDetail('${st}')">CHI TIẾT</button>
             </td>
           </tr>
         `;
       }).join('');
     }
 
-    /** 🚀 POPUP: CHI TIẾT "Bao nhiêu món, món gì, của ai" */
     window.showPopupDetail = function(statusName) {
       const items = window.fullData.filter(i => i.Trang_Thai === statusName);
       if (items.length === 0) return Swal.fire('Thông báo', 'Hiện không có món nào ở khâu này.', 'info');
@@ -188,11 +193,11 @@
       let html = `
         <div style="max-height:450px; overflow-y:auto; border:1px solid #eee; border-radius:8px;">
           <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
-            <thead style="background:#f8fafc; position:sticky; top:0;">
+            <thead style="background:#f8fafc; position:sticky; top:0; z-index:10;">
               <tr>
-                <th style="padding:12px; border-bottom:2px solid #e2e8f0;">Mã đơn</th>
-                <th style="padding:12px; border-bottom:2px solid #e2e8f0;">Khách hàng</th>
-                <th style="padding:12px; border-bottom:2px solid #e2e8f0;">Sản phẩm</th>
+                <th style="padding:12px; border-bottom:2px solid #e2e8f0; white-space:nowrap;">Mã đơn</th>
+                <th style="padding:12px; border-bottom:2px solid #e2e8f0; white-space:nowrap;">Khách hàng</th>
+                <th style="padding:12px; border-bottom:2px solid #e2e8f0; white-space:nowrap;">Sản phẩm</th>
                 <th style="padding:12px; border-bottom:2px solid #e2e8f0; text-align:center;">SL</th>
               </tr>
             </thead>
@@ -210,11 +215,14 @@
         </div>`;
 
       Swal.fire({
-        title: `KHÂU: ${statusName.toUpperCase()}`,
+        title: `<span style="font-size:18px; color:var(--primary);">KHÂU: ${statusName.toUpperCase()}</span>`,
         html: html,
         width: '850px',
         confirmButtonColor: '#2c3e50',
-        confirmButtonText: 'ĐÓNG'
+        confirmButtonText: 'ĐÓNG',
+        customClass: {
+          container: 'swal-mobile-fix'
+        }
       });
     };
   </script>

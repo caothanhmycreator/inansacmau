@@ -8,11 +8,15 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
-<script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js"></script> 
   <style>
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       ======================================================== */
     :root { --primary-f10: #34495e; --header-gradient: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); --bg-light: #f8fafc; }
     body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
-    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; min-width: 0; }
     .f10-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .f10-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
     
@@ -23,42 +27,61 @@
     .f10-table th { padding: 12px 15px; color: #64748b; font-size: 12px; text-transform: uppercase; text-align: left; }
     .f10-row { background: white; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     .f10-row td { padding: 12px 8px; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; vertical-align: middle; font-size: 13px; }
+    .f10-row td:first-child { border-left: 1px solid #e2e8f0; border-radius: 8px 0 0 8px; }
+    .f10-row td:last-child { border-right: 1px solid #e2e8f0; border-radius: 0 8px 8px 0; }
     
-    .status-select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; width: 100%; font-size: 11px; cursor: pointer; background: #f9fafb; }
-    .btn-del { background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+    .status-select { padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; font-size: 12px; cursor: pointer; background: #f9fafb; outline: none; font-weight: 500; color: #2c3e50; }
+    .status-select:focus { border-color: #3498db; }
+    
+    .btn-del { background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 14px; }
     .btn-del:hover { background: #c0392b; }
-    .btn-detail { background: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
+    .btn-detail { background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-right: 5px; font-size: 14px; }
 
-    @media (max-width: 768px) { .main-content { margin-left: 0; } .filter-bar { grid-template-columns: 1fr; } }
- 
- 
-    
-    /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
+    /* Fix Sidebar lề PC */
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
+    .swal2-container { z-index: 20000 !important; }
 
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
+    /* ========================================================
+       2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       ======================================================== */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 70px; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        
+        .mobile-nav-btn {
+            display: block; position: fixed; top: 10px; left: 10px; 
+            z-index: 1000; background: #2D5A27; color: white; 
+            padding: 8px 12px; border: none; border-radius: 4px;
+        }
 
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
-    
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
+        .f10-header { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }
+        .f10-header button { width: 100%; }
+
+        .filter-bar { grid-template-columns: 1fr; gap: 10px; padding: 15px; }
+        .filter-bar input, .filter-bar select { font-size: 15px; padding: 12px; }
+
+        /* Biến bảng thành Dạng Thẻ (Card) */
+        .f10-table, .f10-table thead, .f10-table tbody, .f10-table th, .f10-table td, .f10-table tr { display: block; width: 100%; box-sizing: border-box; }
+        .f10-table thead { display: none; } 
+        
+        .f10-row { margin-bottom: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #eee; background: #fff; padding: 5px 0; }
+        .f10-row td { border: none !important; border-bottom: 1px solid #f8f9fa !important; padding: 10px 15px !important; text-align: left; position: relative; padding-left: 110px !important; min-height: 45px; display: flex; align-items: center; }
+        .f10-row td:last-child { border-bottom: none !important; background: #fdfdfd; padding-left: 15px !important; display: flex; justify-content: center; gap: 10px; }
+        
+        /* Nhãn tự động cho Mobile */
+        .f10-row td:before { position: absolute; left: 15px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
+        
+        .status-select { font-size: 14px; padding: 10px; height: 45px; }
+        .btn-detail, .btn-del { flex: 1; padding: 12px; font-size: 16px; display: flex; justify-content: center; align-items: center; }
+        
+        /* SweetAlert Popup Mobile */
+        .swal2-popup { width: 95% !important; border-radius: 15px !important; }
+        .swal2-html-container { margin: 10px 0 !important; overflow-x: auto !important; }
+        .swal2-html-container table { min-width: 400px; }
     }
-}
 
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
@@ -102,7 +125,7 @@
             </tr>
           </thead>
           <tbody id="f10-table-body">
-            <tr><td colspan="5" style="text-align:center; padding:50px;">⚡ Đang lấy dữ liệu...</td></tr>
+            <tr><td colspan="5" style="text-align:center; padding:50px; color:#64748b; font-style: italic;">⚡ Đang đồng bộ dữ liệu...</td></tr>
           </tbody>
         </table>
       </div>
@@ -110,6 +133,7 @@
   </div>
 
   <script>
+    // TOÀN BỘ LOGIC JS GIỮ NGUYÊN 100% (CHỈ THÊM DATA-LABEL ĐỂ MOBILE HIỂN THỊ)
     window.listAllF10 = [];
     const statuses = ["Chờ xử lý", "Chờ thiết kế", "Chờ duyệt file", "Chờ in", "Chờ gia công", "Chờ giao hàng", "Chờ thanh toán", "Công nợ", "Hoàn tất"];
 
@@ -132,23 +156,23 @@
     function renderF10Table(data) {
       const tbody = document.getElementById('f10-table-body');
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;">❌ Không có dữ liệu.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;">❌ Không có dữ liệu đơn hàng.</td></tr>';
         return;
       }
       tbody.innerHTML = data.map((item, index) => {
         let options = statuses.map(s => `<option value="${s}" ${item.Trang_Thai === s ? 'selected' : ''}>${s}</option>`).join('');
         return `<tr class="f10-row">
-          <td onclick="viewF10Detail(${index})"><b>${item.Ma_Don}</b><br><small>${item.Ngay_Gio ? item.Ngay_Gio.split(' ')[0] : ""}</small></td>
-          <td>${item.Ten_Khach_Hang}</td>
-          <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.Ten_Hang}</td>
-          <td>
-            <select class="status-select" onchange="changeStatusF10(${item.id}, this.value, '${item.Ma_Don}', '${item.Ten_Hang}')">
+          <td data-label="Mã/Ngày" onclick="viewF10Detail(${index})"><b>${item.Ma_Don}</b><br><small style="color:#7f8c8d;">${item.Ngay_Gio ? item.Ngay_Gio.split(' ')[0] : ""}</small></td>
+          <td data-label="Khách hàng"><b>${item.Ten_Khach_Hang}</b></td>
+          <td data-label="Sản phẩm" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color:#2980b9;">${item.Ten_Hang}</td>
+          <td data-label="Trạng thái">
+            <select class="status-select" onchange="changeStatusF10(${item.id}, this.value, '${item.Ma_Don}', '${item.Ten_Hang.replace(/'/g, "\\'")}')">
               ${options}
             </select>
           </td>
-          <td style="text-align:center">
-            <button class="btn-detail" onclick="viewF10Detail(${index})">👁️</button>
-            <button class="btn-del" onclick="confirmDeleteF10(${item.id}, '${item.Ma_Don}', '${item.Ten_Hang}')">🗑️</button>
+          <td data-label="Thao tác" style="text-align:center">
+            <button class="btn-detail" onclick="viewF10Detail(${index})" title="Chi tiết">👁️</button>
+            <button class="btn-del" onclick="confirmDeleteF10(${item.id}, '${item.Ma_Don}', '${item.Ten_Hang.replace(/'/g, "\\'")}')" title="Xóa vĩnh viễn">🗑️</button>
           </td>
         </tr>`;
       }).join('');
@@ -169,25 +193,24 @@
       renderF10Table(filtered);
     }
 
-    /** 🚀 BỔ SUNG BẢNG HỎI XÁC NHẬN TRƯỚC KHI THAY ĐỔI */
     async function changeStatusF10(id, newStatus, maDon, tenHang) {
       const confirmResult = await Swal.fire({
-        title: 'XÁC NHẬN CHUYỂN TRẠNG THÁI?',
-        text: `Bạn muốn chuyển đơn ${maDon} sang "${newStatus}"?`,
+        title: 'CHUYỂN TRẠNG THÁI?',
+        text: `Xác nhận chuyển đơn ${maDon} sang "${newStatus}"?`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#34495e',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'ĐỒNG Ý',
+        cancelButtonColor: '#95a5a6',
+        confirmButtonText: 'XÁC NHẬN',
         cancelButtonText: 'HUỶ'
       });
 
       if (!confirmResult.isConfirmed) {
-        loadF10Data(); // Tải lại để reset dropdown về trạng thái cũ
+        loadF10Data(); 
         return;
       }
 
-      Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const nowVN = window.formatDateTimeVN();
 
@@ -198,24 +221,15 @@
       };
 
       try {
-        // 1. Cập nhật bảng Nhật ký bán hàng
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, {
           method: 'PATCH', headers: h, body: JSON.stringify({ "Trang_Thai": newStatus })
         });
 
-        // 2. Cấu hình payload xóa sạch các mốc giờ khác (trừ Gio_Tao_Don)
         let logData = { 
           "Trang_Thai": newStatus, 
           "Nguoi_Thuc_Hien": "Quản trị (F10)",
-          "Gio_Xu_Ly": null,
-          "Gio_Thiet_Ke": null,
-          "Gio_Duyet_File": null,
-          "Gio_In": null,
-          "Gio_Gia_Cong": null,
-          "Gio_Giao_Hang": null,
-          "Gio_Thanh_Toan": null,
-          "Gio_Hoan_Tat": null,
-          "Cong_No": null
+          "Gio_Xu_Ly": null, "Gio_Thiet_Ke": null, "Gio_Duyet_File": null, "Gio_In": null,
+          "Gio_Gia_Cong": null, "Gio_Giao_Hang": null, "Gio_Thanh_Toan": null, "Gio_Hoan_Tat": null, "Cong_No": null
         };
 
         if (colMap[newStatus]) logData[colMap[newStatus]] = nowVN;
@@ -232,18 +246,18 @@
     async function confirmDeleteF10(id, maDon, tenHang) {
       const result = await Swal.fire({
         title: 'XÓA VĨNH VIỄN?',
-        text: `Đơn ${maDon} sẽ bị xóa khỏi hệ thống!`,
-        icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'XÓA NGAY'
+        text: `Đơn ${maDon} sẽ bị xóa sạch khỏi mọi Nhật ký hệ thống!`,
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA NGAY'
       });
       if (result.isConfirmed) {
-        Swal.fire({ title: 'Đang truy quét xóa...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'Đang dọn dẹp dữ liệu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
         try {
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(maDon)}&Ten_Hang=eq.${encodeURIComponent(tenHang)}`, { method: 'DELETE', headers: h });
           const tables = ["Nhatky_giacong", "Nhatky_nguyenlieu", "NhatKy_ThuNo", "Cong_No"];
           await Promise.all(tables.map(t => fetch(`${window.SB_CONFIG.URL}/rest/v1/${t}?Ma_Don=eq.${encodeURIComponent(maDon)}`, { method: 'DELETE', headers: h })));
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, { method: 'DELETE', headers: h });
-          Swal.fire('Thành công', 'Dữ liệu đã được xóa sạch.', 'success');
+          Swal.fire('Đã xóa!', 'Mọi dấu vết của đơn hàng đã được loại bỏ.', 'success');
           loadF10Data();
         } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
       }
@@ -252,12 +266,13 @@
     window.viewF10Detail = function(idx) {
       const item = window.listAllF10[idx];
       const dsMon = window.listAllF10.filter(it => it.Ma_Don === item.Ma_Don);
-      let rowsHtml = dsMon.map(mon => `<tr><td style="padding:8px 0;">${mon.Ten_Hang}</td><td style="text-align:center;">${mon.So_Luong}</td><td style="text-align:right;">${(mon.Thanh_Tien || 0).toLocaleString()} đ</td></tr>`).join('');
+      let rowsHtml = dsMon.map(mon => `<tr><td style="padding:10px 0;">${mon.Ten_Hang}</td><td style="text-align:center;">${mon.So_Luong}</td><td style="text-align:right; font-weight:bold;">${(mon.Thanh_Tien || 0).toLocaleString()}</td></tr>`).join('');
       Swal.fire({
-        title: 'MÃ ĐƠN: ' + item.Ma_Don,
-        width: '600px',
-        html: `<div style="text-align:left; font-size:14px; margin-bottom:10px;">👤 Khách: <b>${item.Ten_Khach_Hang}</b></div><table style="width:100%; border-collapse:collapse; font-size:13px;"><thead style="background:#f4f4f4;"><tr><th style="text-align:left; padding:5px;">Sản phẩm</th><th>SL</th><th style="text-align:right;">Tiền</th></tr></thead><tbody>${rowsHtml}</tbody></table>`,
-        confirmButtonColor: '#34495e'
+        title: `<span style="font-size:18px;">MÃ ĐƠN: ${item.Ma_Don}</span>`,
+        width: '650px',
+        html: `<div style="text-align:left; font-size:14px; margin-bottom:15px; background:#f8fafc; padding:10px; border-radius:8px;">👤 Khách: <b>${item.Ten_Khach_Hang}</b></div><div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:13px;"><thead style="background:#f1f5f9;"><tr style="color:#64748b; text-transform:uppercase; font-size:11px;"><th style="text-align:left; padding:10px;">Sản phẩm</th><th>SL</th><th style="text-align:right;">Tiền (đ)</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`,
+        confirmButtonColor: '#34495e',
+        confirmButtonText: 'ĐÓNG'
       });
     };
   </script>

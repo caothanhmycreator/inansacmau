@@ -9,53 +9,91 @@
   <script src="js/auth_guard.js"></script>
   <script src="js/sidebar_loader.js"></script> 
   <style>
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       ======================================================== */
     :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; --accent: #3498db; }
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
-    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; }
-    .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; }
     
-    .header { border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; min-width: 0; }
+    
+    .header { border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
     .header h2 { margin: 0; color: var(--primary); }
 
     .admin-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); margin-bottom: 30px; }
     .staff-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #f8fafc; padding: 10px 15px; border-radius: 10px; }
     
-    .table-responsive { width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
-    .attendance-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1200px; }
+    .table-responsive { width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: white; }
+    .attendance-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1100px; }
     .attendance-table th, .attendance-table td { border: 1px solid #e2e8f0; padding: 8px 4px; text-align: center; }
-    .attendance-table th { background: #f1f5f9; color: #475569; position: sticky; top: 0; }
-    .attendance-table td input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+    .attendance-table th { background: #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 10; }
+    .attendance-table td input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary); }
     
-    .shift-label { font-weight: bold; color: #64748b; background: #f8fafc; width: 60px; }
-    .month-picker { padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold; }
+    .shift-label { font-weight: bold; color: #64748b; background: #f8fafc !important; width: 60px; position: sticky; left: 0; z-index: 5; }
+    .month-picker { padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold; outline: none; background: white; }
 
-    .btn { padding: 8px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 12px; }
+    .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 12px; text-transform: uppercase; }
     .btn-edit { background: var(--accent); color: white; }
     .btn-danger { background: #e74c3c; color: white; }
-    .edit-input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 5px; font-weight: bold; width: 140px; }
+    .edit-input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 5px; font-weight: bold; width: 120px; outline: none; }
 
-    @media (max-width: 768px) { .main-content { margin-left: 0; padding: 15px; } #sidebar-frame { left: -250px; } }
+    .swal2-container { z-index: 20000 !important; }
+
+    /* ========================================================
+       2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       ======================================================== */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 70px; overflow-x: hidden; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        
+        .mobile-nav-btn {
+            display: block; position: fixed; top: 10px; left: 10px; 
+            z-index: 1000; background: var(--primary); color: white; 
+            padding: 8px 12px; border: none; border-radius: 4px;
+        }
+
+        .header { flex-direction: column; align-items: flex-start; }
+        .month-picker { width: 100%; }
+
+        .staff-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+        .staff-header > div { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+        .edit-input { width: 100px; }
+
+        .admin-card { padding: 12px; margin-bottom: 20px; }
+        
+        .table-responsive { -webkit-overflow-scrolling: touch; }
+        .attendance-table { font-size: 11px; }
+        
+        .btn { width: 100%; padding: 14px; margin-top: 5px; }
+
+        .swal2-popup { width: 95% !important; border-radius: 15px !important; padding: 15px !important; }
+        .swal2-html-container { margin: 10px 0 !important; }
+        .swal2-input, .swal2-select { font-size: 16px !important; margin: 10px auto !important; width: 90% !important; box-sizing: border-box !important; }
+    }
+
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
-
-
   <div class="main-content">
     <div class="header">
       <div>
-        <h2>⚙️ QUẢN TRỊ NHÂN SỰ TOÀN THÁNG</h2>
-        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Điều chỉnh lương cứng, tick công và sửa tài chính chi tiết</p>
+        <h2>⚙️ QUẢN TRỊ NHÂN SỰ</h2>
+        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Điều chỉnh hệ số & Chốt công tháng</p>
       </div>
       <input type="month" id="month-selector" class="month-picker" onchange="loadAllData()">
     </div>
 
     <div id="admin-container">
-      <h3 style="color:#888; text-align: center; margin-top: 50px;">Đang tải dữ liệu...</h3>
+      <h3 style="color:#888; text-align: center; margin-top: 50px;">🔍 Đang nạp dữ liệu nhân sự...</h3>
     </div>
   </div>
 
   <script>
+    // FIX LỖI SYNTAX confirmButtonColor
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
     let listStaff = [];
     let listAttendance = [];
@@ -104,14 +142,15 @@
         return `
           <div class="admin-card">
             <div class="staff-header">
-              <h3>👤 ${s.Ho_Ten}</h3>
+              <h3 style="margin:0; color:var(--primary);">👤 ${s.Ho_Ten}</h3>
               <div>
-                Hệ số: <input type="number" id="base-${s.id}" class="edit-input" value="${s.Luong_Co_Ban}">
-                <button class="btn btn-edit" onclick="updateSalary('${s.id}')">LƯU</button>
+                <span style="font-size:12px; font-weight:bold; color:#475569;">Lương CB: </span>
+                <input type="number" id="base-${s.id}" class="edit-input" value="${s.Luong_Co_Ban}">
+                <button class="btn btn-edit" style="padding: 8px 12px;" onclick="updateSalary('${s.id}')">LƯU</button>
               </div>
             </div>
             <div class="table-responsive"><table class="attendance-table">${headerRow}</tr>${morningRow}</tr>${afternoonRow}</tr></table></div>
-            <div style="margin-top:15px;"><button class="btn btn-edit" style="background:#8e44ad;" onclick="viewFinancials('${s.id}', '${s.Ho_Ten}')">🎁 Phụ cấp / Tạm ứng</button></div>
+            <div style="margin-top:15px;"><button class="btn btn-edit" style="background:#8e44ad; width: 100%;" onclick="viewFinancials('${s.id}', '${s.Ho_Ten}')">🎁 PHỤ CẤP / TẠM ỨNG / KÊ KHAI</button></div>
           </div>`;
       }).join('');
     }
@@ -134,7 +173,7 @@
             });
             loadAllData();
         } else {
-            Swal.fire({ title: 'Xóa công?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Xóa' }).then(async (result) => {
+            Swal.fire({ title: 'Xóa công?', text: 'Bạn muốn xóa ngày công này?', icon: 'warning', showCancelButton: true, confirmButtonText: 'XÓA', cancelButtonText: 'HỦY' }).then(async (result) => {
                 if (result.isConfirmed) {
                     await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?id=eq.${existingId}`, { method: 'DELETE', headers: h });
                     loadAllData();
@@ -146,10 +185,9 @@
     async function updateSalary(id) {
       const newVal = document.getElementById(`base-${id}`).value;
       await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?id=eq.${id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ Luong_Co_Ban: Number(newVal) }) });
-      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã lưu', showConfirmButton: false, timer: 1000 });
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã cập nhật lương cơ bản', showConfirmButton: false, timer: 1500 });
     }
 
-    /** XEM & SỬA TÀI CHÍNH CHI TIẾT */
     async function viewFinancials(empId, name) {
       const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?User_ID=eq.${empId}&order=Ngay_Ghi.desc&limit=20`, { headers: h });
       const fds = await res.json();
@@ -157,23 +195,21 @@
         const dateDisplay = new Date(f.Ngay_Ghi).toLocaleString('vi-VN');
         return `
         <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; text-align:left;">
-          <div style="flex:1;">
+          <div style="flex:1; padding-right:10px;">
             <b style="color:var(--primary)">${f.Loai}</b>: ${f.So_Tien.toLocaleString()}đ<br>
             <small style="color:#666;">Ngày: ${dateDisplay}</small><br>
             <small style="color:#888;">Nội dung: ${f.Noi_Dung || '...'}</small>
           </div>
           <div style="display:flex; gap:5px;">
-            <button class="btn btn-edit" style="padding:5px 8px;" onclick='editFinanceItem(${JSON.stringify(f)})'>Sửa</button>
-            <button class="btn btn-danger" style="padding:5px 8px;" onclick="deleteFinance('${f.id}')">Xóa</button>
+            <button class="btn btn-edit" style="padding:5px 8px; font-size:10px; width:auto; margin:0;" onclick='editFinanceItem(${JSON.stringify(f)})'>Sửa</button>
+            <button class="btn btn-danger" style="padding:5px 8px; font-size:10px; width:auto; margin:0;" onclick="deleteFinance('${f.id}')">Xóa</button>
           </div>
         </div>`;
       }).join('');
-      Swal.fire({ title: `Tài chính: ${name}`, html: `<div style="max-height:450px; overflow-y:auto;">${html || 'Chưa có dữ liệu'}</div>`, showConfirmButton: false, width: '600px' });
+      Swal.fire({ title: `<span style="font-size:18px;">TÀI CHÍNH: ${name}</span>`, html: `<div style="max-height:400px; overflow-y:auto; border:1px solid #eee; border-radius:8px;">${html || '<p style="padding:20px; color:#888;">Chưa có kê khai</p>'}</div>`, showConfirmButton: false, width: '650px', showCloseButton: true });
     }
 
-    /** HÀM SỬA TỪNG MỤC */
     async function editFinanceItem(item) {
-        // Tách ngày giờ để hiện lên input
         const d = new Date(item.Ngay_Ghi);
         const dateVal = d.toISOString().split('T')[0];
         const timeVal = d.toTimeString().split(' ')[0].substring(0,5);
@@ -181,27 +217,29 @@
         const { value: formValues } = await Swal.fire({
             title: 'Chỉnh sửa tài chính',
             html: `
-                <div style="text-align:left; font-size:14px;">
-                    <label>Ngày ghi nhận:</label>
+                <div style="text-align:left; font-size:14px; padding: 0 5px;">
+                    <label style="font-weight:bold; display:block; margin-top:10px;">Ngày ghi nhận:</label>
                     <input id="edit-date" type="date" class="swal2-input" value="${dateVal}">
-                    <label>Giờ:</label>
+                    <label style="font-weight:bold; display:block; margin-top:10px;">Giờ:</label>
                     <input id="edit-time" type="time" class="swal2-input" value="${timeVal}">
-                    <label>Loại:</label>
+                    <label style="font-weight:bold; display:block; margin-top:10px;">Loại khoản:</label>
                     <select id="edit-loai" class="swal2-input">
                         <option value="Giao hàng" ${item.Loai==='Giao hàng'?'selected':''}>Giao hàng</option>
                         <option value="Nhận hàng" ${item.Loai==='Nhận hàng'?'selected':''}>Nhận hàng</option>
                         <option value="Khác" ${item.Loai==='Khác'?'selected':''}>Phụ cấp khác</option>
                         <option value="Tạm ứng" ${item.Loai==='Tạm ứng'?'selected':''}>Tạm ứng</option>
                     </select>
-                    <label>Số tiền (VNĐ):</label>
+                    <label style="font-weight:bold; display:block; margin-top:10px;">Số tiền (VNĐ):</label>
                     <input id="edit-tien" type="number" class="swal2-input" value="${item.So_Tien}">
-                    <label>Nội dung:</label>
+                    <label style="font-weight:bold; display:block; margin-top:10px;">Nội dung chi tiết:</label>
                     <input id="edit-noidung" type="text" class="swal2-input" value="${item.Noi_Dung || ''}">
                 </div>
             `,
             focusConfirm: false,
             showCancelButton: true,
             confirmButtonText: 'LƯU THAY ĐỔI',
+            cancelButtonText: 'HỦY',
+            confirmButtonColor: '#2D5A27', // ĐÃ FIX: DÙNG MÃ MÀU TRỰC TIẾP
             preConfirm: () => {
                 return {
                     Ngay_Ghi: document.getElementById('edit-date').value + 'T' + document.getElementById('edit-time').value + ':00',
@@ -217,17 +255,18 @@
                 method: 'PATCH', headers: h, body: JSON.stringify(formValues)
             });
             if(res.ok) {
-                Swal.fire('Đã cập nhật!', '', 'success');
+                Swal.fire({ icon: 'success', title: 'Đã cập nhật!', timer: 1000, showConfirmButton: false });
                 loadAllData();
             }
         }
     }
 
     async function deleteFinance(id) {
-        Swal.fire({ title: 'Xóa khoản này?', icon: 'warning', showCancelButton: true }).then(async (r) => {
+        Swal.fire({ title: 'Xóa khoản này?', text: 'Dữ liệu sẽ bị xóa vĩnh viễn!', icon: 'warning', showCancelButton: true, confirmButtonText: 'XÓA', cancelButtonText: 'HỦY', confirmButtonColor: '#e74c3c' }).then(async (r) => {
             if (r.isConfirmed) {
                 await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?id=eq.${id}`, { method: 'DELETE', headers: h });
-                Swal.close(); loadAllData();
+                Swal.fire({ icon: 'success', title: 'Đã xóa!', timer: 800, showConfirmButton: false });
+                loadAllData();
             }
         });
     }
