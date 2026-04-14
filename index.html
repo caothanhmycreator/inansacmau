@@ -10,27 +10,45 @@
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; }
     .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; }
     .header { margin-bottom: 25px; border-bottom: 2px solid #2D5A27; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* Chỉ số Header */
     .stat-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
     .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border-left: 5px solid #2D5A27; }
     .stat-card h4 { margin: 0; color: #666; font-size: 13px; text-transform: uppercase; }
     .stat-card p { margin: 10px 0 0 0; font-size: 24px; font-weight: bold; color: #2D5A27; }
+
+    /* Trạng thái nhân viên */
     .staff-monitor { background: #e8f5e9; padding: 20px; border-radius: 15px; margin-bottom: 30px; border: 1px solid #c8e6c9; }
     .staff-monitor h3 { margin: 0 0 15px 0; font-size: 16px; color: #2D5A27; display: flex; align-items: center; gap: 8px; }
     .staff-list { display: flex; flex-wrap: wrap; gap: 10px; }
     .staff-tag { background: white; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: 600; border: 1px solid #2D5A27; color: #2D5A27; display: flex; align-items: center; gap: 6px; }
     .staff-tag::before { content: ""; width: 8px; height: 8px; background: #27ae60; border-radius: 50%; box-shadow: 0 0 8px #27ae60; }
-    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
-    .module-card { background: white; padding: 25px; border-radius: 15px; text-align: center; text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; border: 1px solid #eee; display: flex; flex-direction: column; align-items: center; }
+    .no-staff { color: #888; font-style: italic; font-size: 13px; }
+
+    /* Lưới các ô chức năng */
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+    .module-card { 
+      background: white; padding: 25px; border-radius: 15px; text-align: center; 
+      text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      transition: 0.3s; border: 1px solid #eee; display: flex; flex-direction: column; align-items: center;
+    }
     .module-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); border-color: #2D5A27; }
-    .module-card i { font-size: 40px; margin-bottom: 15px; font-style: normal; }
-    .module-card span { font-weight: bold; font-size: 14px; color: #2D5A27; }
+    .module-card i { font-size: 40px; margin-bottom: 15px; }
+    .module-card span { font-weight: bold; font-size: 15px; color: #2D5A27; }
+
+    @media (max-width: 768px) { 
+      .main-content { margin-left: 0; padding: 20px; } 
+      #sidebar-frame { left: -250px; }
+    }
+    
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
-    @media (max-width: 768px) { .main-content { margin-left: 0; } #sidebar-frame { display:none; } }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
-  <iframe src="sidebar.html" id="sidebar-frame"></iframe>
+ <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
+ <iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
 
   <div class="main-content">
     <div class="header">
@@ -41,110 +59,53 @@
     </div>
 
     <div class="stat-container">
-      <div class="stat-card"><h4>💰 Doanh thu tháng này</h4><p id="total-revenue">0đ</p></div>
-      <div class="stat-card"><h4>👥 Nhân sự đang trực</h4><p id="active-count">0</p></div>
+      <div class="stat-card">
+        <h4>💰 Doanh thu tháng này</h4>
+        <p id="total-revenue">0đ</p>
+      </div>
+      <div class="stat-card">
+        <h4>👥 Nhân sự đang trực</h4>
+        <p id="active-count">0</p>
+      </div>
     </div>
 
     <div class="staff-monitor">
       <h3>🟢 NHÂN VIÊN ĐANG TẠI TIỆM</h3>
-      <div id="active-staff-list" class="staff-list"><span style="color:#888">Đang nạp dữ liệu...</span></div>
+      <div id="active-staff-list" class="staff-list">
+        <span class="no-staff">Đang nạp dữ liệu...</span>
+      </div>
     </div>
 
-    <div id="dashboard-menu" class="dashboard-grid"></div>
+    <div id="dashboard-menu" class="dashboard-grid">
+      </div>
   </div>
 
   <script>
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-    let lastCheckData = {};
-    let isFirstLoad = true;
-
-    // CẤU HÌNH ĐÃ KHỚP VỚI DATABASE TRONG ẢNH MỸ GỬI
-    const NOTIFY_CONFIG = {
-        "Admin": ["Tất cả"],
-        "Thiet_Ke": ["Chờ thiết kế"],
-        "Nhan_Vien_In": ["Chờ in"],
-        "Quan_Ly_Don": ["Chờ xử lý", "Chờ duyệt file", "Chờ thiết kế", "Chờ in", "Chờ gia công", "Chờ thanh toán", "Chờ giao hàng"]
-    };
 
     document.addEventListener("DOMContentLoaded", function() {
       const user = JSON.parse(localStorage.getItem('currentUser'));
-      if(!user) return window.location.href = "login.html";
-      
-      document.getElementById('welcome-name').innerText = user.Ho_Ten || user.name || "Thành viên";
+      if(!user) return;
+      document.getElementById('welcome-name').innerText = user.name || user.Ho_Ten;
       
       renderMenu(user);
       loadLiveStatistics();
-
-      // Xin quyền thông báo
-      if ("Notification" in window && Notification.permission !== "granted") {
-          Notification.requestPermission();
-      }
-
-      checkNewOrders(); 
-      setInterval(checkNewOrders, 20000); // Quét mỗi 20 giây
     });
 
     function renderMenu(user) {
       const menuContainer = document.getElementById('dashboard-menu');
-      const moduleStr = user.Danh_Sach_Module || user.modules || "";
-      const userModules = moduleStr.split(',').map(s => s.trim());
+      const moduleString = user.Danh_Sach_Module || user.modules || "";
+      const userModules = moduleString.split(',').map(s => s.trim());
+      
       let html = "";
-      if(window.APP_MODULES) {
-          window.APP_MODULES.forEach(m => {
-            if (userModules.includes(m.id)) {
-              html += `<a href="${m.file}" class="module-card"><i>${m.icon}</i><span>${m.label}</span></a>`;
-            }
-          });
-      }
-      menuContainer.innerHTML = html || "<p>Bạn chưa được cấp quyền truy cập.</p>";
+      window.APP_MODULES.forEach(m => {
+        if (userModules.includes(m.id)) {
+          html += `<a href="${m.file}" class="module-card"><i>${m.icon}</i><span>${m.label}</span></a>`;
+        }
+      });
+      menuContainer.innerHTML = html;
     }
 
-    async function checkNewOrders() {
-        const user = JSON.parse(localStorage.getItem('currentUser'));
-        if (!user) {
-            console.log("❌ Lỗi: Không tìm thấy thông tin đăng nhập trong LocalStorage");
-            return;
-        }
-
-        const role = user.Vai_Tro || "";
-        const states = NOTIFY_CONFIG[role] || [];
-        
-        console.log(`[Kiểm tra] Vai trò: ${role} | Trạng thái theo dõi: ${states.join(', ')}`);
-
-        if (states.length === 0) {
-            console.log("⚠️ Chú ý: Vai trò này không được cấu hình nhận thông báo.");
-            return;
-        }
-
-        try {
-            let q = states.includes("Tất cả") ? "" : `&Trang_Thai=in.(${states.join(',')})`;
-            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=id,Trang_Thai,Ten_Khach${q}`, { headers: h });
-            const data = await res.json();
-
-            console.log(`📡 Đã quét Database: Tìm thấy ${data.length} đơn phù hợp.`);
-
-            let newItems = [];
-            data.forEach(item => {
-                if (!lastCheckData[item.id] || lastCheckData[item.id] !== item.Trang_Thai) {
-                    newItems.push(item);
-                }
-                lastCheckData[item.id] = item.Trang_Thai;
-            });
-
-            if (isFirstLoad) {
-                isFirstLoad = false;
-                console.log("✅ Lần đầu load: Đã ghi nhớ dữ liệu, chờ đơn mới...");
-                return;
-            }
-
-            if (newItems.length > 0) {
-                console.log("🔔 PHÁT HIỆN ĐƠN MỚI:", newItems);
-                triggerAlert(role, newItems);
-            }
-        } catch (e) {
-            console.error("❌ Lỗi kết nối Supabase:", e);
-        }
-    }
     async function loadLiveStatistics() {
       try {
         const now = new Date();
@@ -152,26 +113,44 @@
         const curYear = String(now.getFullYear());
         const todayStr = now.getFullYear() + '-' + curMonth + '-' + String(now.getDate()).padStart(2, '0');
 
-        // Doanh thu tháng
+        // A. TÍNH DOANH THU THÁNG (Sửa lỗi hiển thị sai theo logic bảng lương)
         const resRev = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=Ngay_Gio,Tong_Don`, { headers: h });
-        const revData = await resRev.json();
-        const total = revData.reduce((sum, item) => {
+        if (resRev.ok) {
+          const revData = await resRev.json();
+          // Lọc dữ liệu khớp với Tháng/Năm hiện tại
+          const total = revData.reduce((sum, item) => {
             if (item.Ngay_Gio && (item.Ngay_Gio.includes(`${curMonth}/${curYear}`) || item.Ngay_Gio.includes(`${curYear}-${curMonth}`))) {
                 return sum + (Number(item.Tong_Don) || 0);
             }
             return sum;
-        }, 0);
-        document.getElementById('total-revenue').innerText = total.toLocaleString('vi-VN') + "đ";
+          }, 0);
+          document.getElementById('total-revenue').innerText = total.toLocaleString('vi-VN') + "đ";
+        }
 
-        // Chấm công
+        // B. Lấy danh sách nhân viên đang làm hôm nay
         const statusQuery = encodeURIComponent("Đang làm");
         const resCC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=eq.${todayStr}&Status=eq.${statusQuery}&select=Gio_Vao,DM_NhanVien(Ho_Ten)`, { headers: h });
-        const ccData = await resCC.json();
-        document.getElementById('active-count').innerText = ccData.length;
-        document.getElementById('active-staff-list').innerHTML = ccData.length > 0 ? 
-            ccData.map(item => `<div class="staff-tag">${item.DM_NhanVien?.Ho_Ten || 'N/A'} <small>(${item.Gio_Vao?.substring(0,5)})</small></div>`).join('') : 
-            '<span style="color:#888">Hiện không có ai trực.</span>';
-      } catch (e) {}
+        
+        if (resCC.ok) {
+          const ccData = await resCC.json();
+          const activeListContainer = document.getElementById('active-staff-list');
+          
+          if (ccData.length > 0) {
+            document.getElementById('active-count').innerText = ccData.length;
+            activeListContainer.innerHTML = ccData.map(item => `
+              <div class="staff-tag">
+                ${item.DM_NhanVien ? item.DM_NhanVien.Ho_Ten : 'N/A'} <small style="opacity:0.7; font-weight:normal;">(${item.Gio_Vao ? item.Gio_Vao.substring(0,5) : ''})</small>
+              </div>
+            `).join('');
+          } else {
+            document.getElementById('active-count').innerText = "0";
+            activeListContainer.innerHTML = '<span class="no-staff">Tiệm chưa có nhân viên nào đang làm.</span>';
+          }
+        }
+      } catch (e) { 
+        console.error("Lỗi Dashboard:", e); 
+        document.getElementById('active-staff-list').innerHTML = '<span class="no-staff" style="color: red;">Lỗi tải dữ liệu.</span>';
+      }
     }
   </script>
 </body>
