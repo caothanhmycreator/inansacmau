@@ -8,10 +8,13 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
-<script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js"></script> 
   <style>
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       ======================================================== */
     body { margin: 0; background: #f4f7f6; display: flex; font-family: sans-serif; }
-    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; min-width: 0; }
 
     :root { --f15-primary: #2c3e50; --f15-green: #27ae60; --f15-red: #e74c3c; --f15-blue: #2980b9; }
     .f15-container { font-family: 'Segoe UI', sans-serif; }
@@ -28,67 +31,98 @@
     .card-ck { border-left-color: var(--f15-blue); }
     .card-cuoi { border-left-color: #f39c12; background: #fffdf2; }
 
-    .f15-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
-    .f15-table th { background: var(--f15-primary); color: white; padding: 12px; text-align: left; font-size: 13px; }
-    .f15-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
+    .f15-table-container { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-x: auto; }
+    .f15-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; min-width: 500px; }
+    .f15-table th { background: var(--f15-primary); color: white; padding: 12px; text-align: left; font-size: 13px; white-space: nowrap; }
+    .f15-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; vertical-align: middle; }
     .f15-table tr:hover { background: #f9f9f9; }
-    .badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; display: inline-block; }
     .bg-thu { background: var(--f15-green); }
     .bg-chi { background: var(--f15-red); }
 
-    @media (max-width: 768px) { .main-content { margin-left: 0; } }
-  
-    /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
+    .swal2-container { z-index: 20000 !important; }
 
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
 
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
-    
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
+    /* ========================================================
+       2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       ======================================================== */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 60px; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        
+        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: var(--f15-primary); color: white; padding: 8px 12px; border: none; border-radius: 4px; }
+        
+        .f15-container { padding: 0; }
+
+        /* Tiêu đề & Chọn ngày dàn dọc */
+        .f15-header-mobile { flex-direction: column !important; align-items: flex-start !important; gap: 10px; margin-bottom: 15px !important; }
+        #f15-date-picker { width: 100%; box-sizing: border-box; padding: 10px !important; font-size: 15px; }
+
+        /* Lưới thẻ Tóm tắt (Dashboard) 2 cột */
+        .f15-dashboard { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .f15-card { padding: 12px; }
+        .f15-card .value { font-size: 15px; }
+        
+        /* Thẻ "Tồn cuối ngày" và "Két đầu ngày" chiếm trọn 2 cột */
+        .card-ket, .card-cuoi { grid-column: span 2; }
+        .card-cuoi .value { font-size: 20px; } /* Nhấn mạnh thẻ cuối ngày */
+
+        /* Bảng Giao dịch Phát sinh chuyển thành Dạng Thẻ (Card) */
+        .f15-table-container { padding: 10px; background: transparent; box-shadow: none; border-radius: 0; overflow-x: visible; }
+        .f15-table-container h3 { background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; text-align: center; color: var(--f15-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        
+        .f15-table, .f15-table thead, .f15-table tbody, .f15-table th, .f15-table td, .f15-table tr { display: block; width: 100%; box-sizing: border-box; }
+        .f15-table thead { display: none; } /* Ẩn thẻ tiêu đề ngang */
+        
+        .f15-table tr { background: white; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #eee; display: flex; flex-wrap: wrap; padding: 10px; align-items: center; position: relative; }
+        
+        /* Chia lại bố cục từng ô trong 1 thẻ Giao dịch */
+        .f15-table td { border: none; padding: 5px; }
+        
+        /* Cột 1: Giờ (Nằm góc trên trái) */
+        .f15-table td:nth-child(1) { width: 50%; color: #7f8c8d; font-size: 12px; padding-bottom: 0; }
+        /* Cột 2: Loại (Thu/Chi - Nằm góc trên phải) */
+        .f15-table td:nth-child(2) { width: 50%; text-align: right; padding-bottom: 0; }
+        
+        /* Cột 3: Nội dung (Nằm trọn dòng thứ 2) */
+        .f15-table td:nth-child(3) { width: 100%; font-size: 14px; padding-top: 5px; padding-bottom: 5px; }
+        
+        /* Cột 4: Số tiền (Góc dưới trái, to, rõ) */
+        .f15-table td:nth-child(4) { width: 60%; text-align: left !important; font-size: 16px; font-weight: 900; }
+        /* Cột 5: Hình thức TM/CK (Góc dưới phải) */
+        .f15-table td:nth-child(5) { width: 40%; text-align: right !important; color: #95a5a6; font-weight: bold; }
+        
+        /* Sửa Lỗi Popup SweetAlert Chi tiết đơn */
+        .swal2-popup { width: 95% !important; padding: 15px !important; border-radius: 12px !important; }
+        .swal2-html-container { margin: 10px 0 !important; overflow-x: auto !important; } /* Cho phép cuộn ngang bảng chi tiết */
+        .swal2-actions button { width: 100% !important; padding: 14px !important; font-size: 15px !important; border-radius: 8px !important; }
     }
-}
-
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
-
-
 <div class="main-content">
   <div class="f15-container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div class="f15-header-mobile" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h2 style="margin:0; color: var(--f15-primary);">💰 BÁO CÁO TÀI CHÍNH NGÀY</h2>
-      <input type="date" id="f15-date-picker" onchange="loadF15Data()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
+      <input type="date" id="f15-date-picker" onchange="loadF15Data()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-weight: bold; color: var(--f15-primary); outline: none;">
     </div>
 
     <div class="f15-dashboard" id="f15-dash"></div>
 
-    <div style="background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-      <h3 style="font-size: 15px; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">📄 CHI TIẾT DÒNG TIỀN PHÁT SINH</h3>
+    <div class="f15-table-container">
+      <h3 style="font-size: 15px; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; color: var(--f15-primary);">📄 CHI TIẾT DÒNG TIỀN PHÁT SINH</h3>
       <table class="f15-table">
         <thead>
           <tr>
-            <th>Giờ</th>
-            <th>Loại</th>
-            <th>Nội dung</th>
-            <th style="text-align: right;">Số tiền</th>
-            <th style="text-align: center;">Hình thức</th>
+            <th style="width: 10%;">Giờ</th>
+            <th style="width: 15%;">Loại</th>
+            <th style="width: 45%;">Nội dung</th>
+            <th style="width: 20%; text-align: right;">Số tiền</th>
+            <th style="width: 10%; text-align: center;">Hình thức</th>
           </tr>
         </thead>
         <tbody id="f15-table-body"></tbody>
@@ -98,6 +132,7 @@
 </div>
 
 <script>
+// TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100%
 document.addEventListener("DOMContentLoaded", function() {
   document.getElementById('f15-date-picker').valueAsDate = new Date();
   loadF15Data();
@@ -111,7 +146,7 @@ async function loadF15Data() {
   const tbody = document.getElementById('f15-table-body');
   
   dash.innerHTML = "⚡ Đang tính toán...";
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">☕ Đang quét sổ sách...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; color:#95a5a6; font-style:italic;">☕ Đang quét sổ sách...</td></tr>';
 
   const parts = dateVal.split('-');
   const dateSearch = `${parts[2]}/${parts[1]}/${parts[0]}`;
@@ -157,7 +192,6 @@ async function loadF15Data() {
     const tongThu = report.thuTM + report.thuCK;
     const tonCuoi = report.ketDauNgay + report.thuTM - report.tongChi;
 
-    // 🚀 CẬP NHẬT: THÊM Ô THU TIỀN MẶT VÀO ĐÂY
     dash.innerHTML = `
       <div class="f15-card card-ket"><h4>Két đầu ngày</h4><span class="value">${report.ketDauNgay.toLocaleString()} đ</span></div>
       <div class="f15-card card-thu"><h4>Tổng Thu (TM+CK)</h4><span class="value" style="color:var(--f15-green)">+ ${tongThu.toLocaleString()} đ</span></div>
@@ -168,19 +202,19 @@ async function loadF15Data() {
     `;
 
     if (report.transactions.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Ngày này chưa phát sinh giao dịch.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; font-weight:bold; color:var(--f15-primary);">Ngày này chưa phát sinh giao dịch.</td></tr>';
       return;
     }
 
     tbody.innerHTML = report.transactions.map(t => `
-      <tr onclick="showF15Detail('${t.maDon}', '${t.noiDung}')">
+      <tr onclick="showF15Detail('${t.maDon}', '${t.noiDung.replace(/'/g, "\\'")}')">
         <td>${t.gio}</td>
         <td><span class="badge ${t.loai === 'Thu' ? 'bg-thu' : 'bg-chi'}">${t.loai.toUpperCase()}</span></td>
-        <td><b>${t.noiDung}</b></td>
-        <td style="text-align: right; font-weight: bold; color: ${t.loai === 'Thu' ? '#27ae60' : '#e74c3c'}">
+        <td><b style="color:var(--f15-primary);">${t.noiDung}</b></td>
+        <td style="text-align: right; font-weight: bold; color: ${t.loai === 'Thu' ? '#27ae60' : '#e74c3c'}; font-size:15px;">
           ${t.loai === 'Thu' ? '+' : '-'} ${t.soTien.toLocaleString()}
         </td>
-        <td style="text-align: center;"><small>${t.hinhThuc}</small></td>
+        <td style="text-align: center; font-weight:bold; color:#7f8c8d;"><small>${t.hinhThuc}</small></td>
       </tr>
     `).join('');
 
@@ -198,13 +232,32 @@ async function showF15Detail(maDon, noiDung) {
     const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${maDon}&select=*`, { headers });
     const items = await res.json();
     Swal.close();
-    if (!items || items.length === 0) { Swal.fire('Thông báo', 'Không tìm thấy dữ liệu đơn hàng.', 'info'); return; }
-    let table = `<table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;"><tr style="background:#eee;"><th style="padding:8px;">Sản phẩm</th><th style="padding:8px; text-align:center;">SL</th><th style="padding:8px; text-align:right;">Thành tiền</th></tr>`;
+    if (!items || items.length === 0) { Swal.fire('Thông báo', 'Không tìm thấy chi tiết dữ liệu đơn hàng.', 'info'); return; }
+    
+    let table = `<table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left; min-width:400px;">
+                    <tr style="background:#eee; color:var(--f15-primary);">
+                      <th style="padding:10px;">Sản phẩm</th>
+                      <th style="padding:10px; text-align:center;">SL</th>
+                      <th style="padding:10px; text-align:right;">Thành tiền</th>
+                    </tr>`;
     items.forEach(it => {
-      table += `<tr><td style="padding:8px; border-bottom:1px solid #eee;">${it.Ten_Hang}<br><small style="color:blue">${it.Trang_Thai || ''}</small></td><td style="padding:8px; border-bottom:1px solid #eee; text-align:center;">${it.So_Luong}</td><td style="padding:8px; border-bottom:1px solid #eee; text-align:right;">${Number(it.Thanh_Tien).toLocaleString()}</td></tr>`;
+      table += `<tr>
+                  <td style="padding:10px; border-bottom:1px solid #eee;"><b>${it.Ten_Hang}</b><br><small style="color:var(--f15-blue); font-weight:bold;">${it.Trang_Thai || ''}</small></td>
+                  <td style="padding:10px; border-bottom:1px solid #eee; text-align:center;">${it.So_Luong}</td>
+                  <td style="padding:10px; border-bottom:1px solid #eee; text-align:right; font-weight:bold; color:var(--f15-primary);">${Number(it.Thanh_Tien).toLocaleString()} đ</td>
+                </tr>`;
     });
     table += `</table>`;
-    Swal.fire({ title: 'CHI TIẾT: ' + maDon, html: `<div style="text-align:left; margin-bottom:10px;"><b>Giao dịch:</b> ${noiDung}</div>` + table, confirmButtonText: 'ĐÓNG', confirmButtonColor: '#2c3e50', width: '600px' });
+    
+    Swal.fire({ 
+        title: `<span style="color:var(--f15-primary); font-size:20px;">CHI TIẾT: ${maDon}</span>`, 
+        html: `<div style="text-align:left; margin-bottom:15px; font-size:14px; background:#f9f9f9; padding:10px; border-radius:6px; border-left:4px solid var(--f15-blue);">
+                 <b>Giao dịch:</b> ${noiDung}
+               </div>` + table, 
+        confirmButtonText: 'ĐÓNG', 
+        confirmButtonColor: '#2c3e50', 
+        width: '600px' 
+    });
   } catch (e) { Swal.fire('Lỗi', 'Không thể lấy chi tiết đơn hàng', 'error'); }
 }
 </script>

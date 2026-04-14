@@ -16,7 +16,6 @@
     :root { --primary-f9: #c0392b; --header-gradient: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); --bg-light: #f8fafc; }
     body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
     .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; min-width: 0; }
-    
     .f9-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .f9-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
     
@@ -71,29 +70,21 @@
         .main-content { margin-left: 0 !important; padding: 15px; padding-top: 60px; }
         body.sidebar-open #sidebar-frame { left: 0; }
         
-        .mobile-nav-btn {
-            display: block; position: fixed; top: 10px; left: 10px; 
-            z-index: 1000; background: #c0392b; color: white; 
-            padding: 8px 12px; border: none; border-radius: 4px;
-        }
+        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: #c0392b; color: white; padding: 8px 12px; border: none; border-radius: 4px; }
         
         .f9-container { padding: 15px; }
         .f9-header { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; border-radius: 8px; }
         .f9-header > div { width: 100%; }
-        
-        /* Flex row cho nhóm 2 nút LÀM MỚI và NHẬP CÔNG NỢ */
         .f9-header > div:nth-child(2) { display: flex; flex-direction: column; width: 100%; gap: 10px; }
         .f9-header button { width: 100%; padding: 12px; font-size: 13px; }
 
-        /* Biến bảng thành Dạng Thẻ (Card) */
-        .f9-table, .f9-table thead, .f9-table tbody, .f9-table th, .f9-table td, .f9-table tr { display: block; width: 100%; box-sizing: border-box; }
+        .f9-table, .f9-table thead, .f9-table tbody, .f9-table th, .f9-table td { display: block; width: 100%; box-sizing: border-box; }
         .f9-table thead { display: none; }
         
         .f9-row { margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #eee; border-left: 4px solid #c0392b; position: relative; }
         .f9-row td { padding: 10px 12px; border: none; border-bottom: 1px solid #f9f9f9; text-align: left; position: relative; padding-left: 110px; min-height: 20px; }
         .f9-row td:last-child { border-bottom: none; border-radius: 0 0 8px 8px; background: #fdfdfd; padding-left: 12px; text-align: center; margin-top: 5px; }
         
-        /* Nhãn tự động cho thẻ Mobile */
         .f9-row td:before { position: absolute; left: 12px; top: 10px; font-weight: bold; color: #555; font-size: 12px; text-transform: uppercase; }
         .f9-row td:nth-child(1):before { content: "Mã Đơn:"; }
         .f9-row td:nth-child(2):before { content: "Khách hàng:"; }
@@ -104,20 +95,16 @@
         .f9-row td:nth-child(5) { font-size: 16px; padding-top: 8px; padding-bottom: 8px; }
         .btn-debt { width: 100%; padding: 14px; font-size: 13px; }
 
-        /* --- SỬA LỖI POPUP SWEETALERT --- */
         .swal2-popup { width: 95% !important; padding: 15px !important; border-radius: 12px !important; }
         
-        /* Sửa Popup NHẬP NỢ (Biến Grid 2 cột thành 1 cột xếp dọc) */
         .f9-form-grid { display: flex !important; flex-direction: column !important; gap: 12px !important; padding: 5px !important; }
         .f9-input-group { width: 100% !important; }
         .f9-input-group input { padding: 12px !important; font-size: 15px !important; }
         
-        /* Sửa Popup THU NỢ */
         .pay-toggle-f9 { width: 100% !important; height: 42px !important; }
         .pay-opt-f9 { font-size: 13px !important; padding: 12px 0 !important; }
         #pay_f9 { font-size: 24px !important; padding: 12px !important; box-sizing: border-box !important; height: auto !important; }
 
-        /* Nút Xác Nhận / Đóng */
         .swal2-actions { flex-direction: column !important; width: 100% !important; gap: 10px !important; margin-top: 15px !important; }
         .swal2-actions button { width: 100% !important; margin: 0 !important; padding: 14px !important; font-size: 15px !important; border-radius: 8px !important; }
     }
@@ -375,7 +362,6 @@
       } catch (e) { console.error(e); }
     }
 
-    /** HÀM TIỆN ÍCH */
     function handleF9MoneyInput(el) {
       let v = cleanF9Money(el.value);
       if (v < 0) v = 0;
@@ -396,7 +382,7 @@
       else document.getElementById('f9-opt-mid').classList.add('active');
     }
 
-    /** PHIẾU IN */
+    // ĐÃ CHỈNH LẠI HIỂN THỊ "CÒN LẠI" VỪA KHÍT MÀN HÌNH ĐIỆN THOẠI
     function showPrintPreviewF9(it, soTienThu, conLai) {
       const isCleared = conLai <= 10;
       const billHtml = `
@@ -410,8 +396,9 @@
             <p style="margin-top:0;">👤 <b>Khách hàng:</b> ${it.Khach_Hang}</p>
             <p style="margin-bottom:0;">📅 <b>Ngày thu:</b> ${new Date().toLocaleString('vi-VN')}</p>
           </div>
-          <div style="margin-left: auto; width: 320px; background: #fff5f5; padding: 15px; border-radius: 8px; border: 1px solid #fecaca; position: relative;">
-            ${isCleared ? '<div style="position:absolute; left:-120px; top:10px; color:#c0392b; border:3px double #c0392b; padding:5px 10px; font-weight:bold; transform:rotate(-15deg); background:rgba(255,255,255,0.9);">ĐÃ TẤT TOÁN</div>' : ''}
+          
+          <div style="margin-top: 15px; width: 100%; box-sizing: border-box; background: #fff5f5; padding: 15px; border-radius: 8px; border: 1px solid #fecaca; position: relative;">
+            ${isCleared ? '<div style="position:absolute; left:10px; top:-15px; color:#c0392b; border:3px double #c0392b; padding:5px 10px; font-weight:bold; transform:rotate(-15deg); background:rgba(255,255,255,0.9); font-size:12px; z-index:10;">ĐÃ TẤT TOÁN</div>' : ''}
             <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Nợ cũ:</span><b>${parseFloat(it.Con_Lai).toLocaleString()} đ</b></div>
             <div style="display:flex; justify-content:space-between; color:#c0392b;"><span>Thu đợt này:</span><b>-${soTienThu.toLocaleString()} đ</b></div>
             <div style="display:flex; justify-content:space-between; border-top:1px dashed #c0392b; margin-top:10px; padding-top:10px;">
