@@ -48,3 +48,81 @@ window.formatDateTimeVN = function() {
   const pad = (n) => n.toString().padStart(2, '0');
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
+
+/**
+ * HỆ THỐNG THÔNG BÁO ĐẨY THEO VAI TRÒ (DÁN THÊM)
+ */
+(function() {
+    const NOTIFY_CONFIG = {
+        "Admin": ["Tất cả"],
+        "Thiet_Ke": ["Chờ thiết kế"],
+        "Nhan_Vien_In": ["Chờ in"],
+        "Quan_Ly_Don": ["Chờ xử lý", "Chờ duyệt file", "Chờ thiết kế", "Chờ in", "Chờ gia công", "Chờ thanh toán", "Chờ giao hàng"]
+    };
+
+    let lastCheckData = {};
+    let isFirstLoad = true;
+
+    async function checkOrders() {
+        try {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+
+            const role = user.Vai_Tro || "";
+            const states = NOTIFY_CONFIG[role] || [];
+            if (states.length === 0) return;
+
+            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+            let q = states.includes("Tất cả") ? "" : `&Trang_Thai=in.(${states.join(',')})`;
+            
+            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=id,Trang_Thai,Ten_Khach${q}`, { headers: h });
+            const data = await res.json();
+
+            let newItems = [];
+            data.forEach(item => {
+                if (!lastCheckData[item.id] || lastCheckData[item.id] !== item.Trang_Thai) {
+                    newItems.push(item);
+                }
+                lastCheckData[item.id] = item.Trang_Thai;
+            });
+
+            if (isFirstLoad) { isFirstLoad = false; return; }
+
+            if (newItems.length > 0) {
+                // 1. Phát tiếng chuông báo
+                new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(() => {});
+                
+                // 2. Thông báo hệ điều hành (Native Push)
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification(`🔔 SẮC MÀU: ${role.toUpperCase()}`, { 
+                        body: `Có đơn mới: ${newItems[0].Ten_Khach}`,
+                        requireInteraction: true 
+                    });
+                }
+                
+                // 3. Thông báo Pop-up Web (nếu có thư viện SweetAlert)
+                if (window.Swal) {
+                    window.parent.Swal.fire({ 
+                        title: 'ĐƠN MỚI!', 
+                        text: `Bộ phận ${role} có đơn hàng vừa cập nhật.`, 
+                        icon: 'info', 
+                        toast: true, 
+                        position: 'top-end', 
+                        timer: 5000, 
+                        showConfirmButton: false 
+                    });
+                }
+            }
+        } catch (e) { console.error("Lỗi Notify:", e); }
+    }
+
+    // Xin quyền thông báo ngay khi tải trang
+    if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+    }
+
+    // Khởi động vòng lặp kiểm tra mỗi 25 giây
+    setInterval(checkOrders, 25000);
+    // Chạy kiểm tra ngay lập tức khi load
+    setTimeout(checkOrders, 2000);
+})();
