@@ -50,28 +50,22 @@ window.formatDateTimeVN = function() {
 };
 
 
-
-// Hàm gửi thông báo "Ting Ting" dùng chung toàn hệ thống
 async function guiThongBaoSacMau(tieude, noidung) {
-    const appID = "e06b8b48-2adf-4970-b2b3-9b509e5357d8";
-    const apiKey = "os_v2_app_4bvywsbk35exbmvttnij4u2x3btd7eudzjyuhsmsij5efmpcadwti3h4xhhtneczfehnaiw7uvbhcjoja52vwduwqgowkvnxbmb543a";
+    // Đây là URL đã khớp với Project ID và Function Name trong ảnh của Mỹ
+    const URL_FUNCTION = "https://zatxvklirqvyacslkpgy.supabase.co/functions/v1/bright-handler";
 
     try {
-        await fetch("https://onesignal.com/api/v1/notifications", {
+        const response = await fetch(URL_FUNCTION, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": "Basic " + apiKey
+            headers: { 
+                "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                app_id: appID,
-                included_segments: ["All"], 
-                headings: { "vi": tieude },
-                contents: { "vi": noidung }
-            })
+            body: JSON.stringify({ tieude, noidung })
         });
-        console.log("Sắc Màu: Đã gửi thông báo thành công!");
+        
+        const resData = await response.json();
+        console.log("Sắc Màu: Kết quả gửi tin:", resData);
     } catch (e) {
-        console.error("Lỗi gửi thông báo:", e);
+        console.error("Sắc Màu: Lỗi gọi Edge Function:", e);
     }
 }
