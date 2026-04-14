@@ -1,65 +1,84 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard - Sắc Màu</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="js/config.js"></script>
-    <script src="js/auth_guard.js"></script>
-    <script src="js/sidebar_loader.js"></script> 
+  <title>Dashboard - Sắc Màu</title>
+  <meta charset="UTF-8">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+  <style>
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; }
+    .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; }
+    .header { margin-bottom: 25px; border-bottom: 2px solid #2D5A27; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* Chỉ số Header */
+    .stat-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border-left: 5px solid #2D5A27; }
+    .stat-card h4 { margin: 0; color: #666; font-size: 13px; text-transform: uppercase; }
+    .stat-card p { margin: 10px 0 0 0; font-size: 24px; font-weight: bold; color: #2D5A27; }
 
-    <style>
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; }
-        .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; min-width: 0; }
+    /* Trạng thái nhân viên */
+    .staff-monitor { background: #e8f5e9; padding: 20px; border-radius: 15px; margin-bottom: 30px; border: 1px solid #c8e6c9; }
+    .staff-monitor h3 { margin: 0 0 15px 0; font-size: 16px; color: #2D5A27; display: flex; align-items: center; gap: 8px; }
+    .staff-list { display: flex; flex-wrap: wrap; gap: 10px; }
+    .staff-tag { background: white; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: 600; border: 1px solid #2D5A27; color: #2D5A27; display: flex; align-items: center; gap: 6px; }
+    .staff-tag::before { content: ""; width: 8px; height: 8px; background: #27ae60; border-radius: 50%; box-shadow: 0 0 8px #27ae60; }
+    .no-staff { color: #888; font-style: italic; font-size: 13px; }
 
-        @media (max-width: 768px) {
-            .main-content { margin-left: 0; padding: 15px; padding-top: 60px; }
-            .header h2 { font-size: 18px; }
-            .stat-container { grid-template-columns: 1fr; }
-        }
+    /* Lưới các ô chức năng */
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+    .module-card { 
+      background: white; padding: 25px; border-radius: 15px; text-align: center; 
+      text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      transition: 0.3s; border: 1px solid #eee; display: flex; flex-direction: column; align-items: center;
+    }
+    .module-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); border-color: #2D5A27; }
+    .module-card i { font-size: 40px; margin-bottom: 15px; }
+    .module-card span { font-weight: bold; font-size: 15px; color: #2D5A27; }
 
-        .header { margin-bottom: 25px; border-bottom: 2px solid #2D5A27; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .stat-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border-left: 5px solid #2D5A27; }
-        .stat-card p { margin: 10px 0 0 0; font-size: 24px; font-weight: bold; color: #2D5A27; }
-        
-        /* CSS cho phần danh sách nhân viên bị thiếu */
-        .staff-monitor { background: #e8f5e9; padding: 20px; border-radius: 12px; margin-bottom: 30px; }
-        .staff-tag { display: inline-block; background: white; padding: 5px 12px; border-radius: 20px; margin: 5px; font-size: 13px; border: 1px solid #2D5A27; }
-        
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
-        .module-card { background: white; padding: 20px; border-radius: 12px; text-align: center; text-decoration: none; border: 1px solid #eee; display: flex; flex-direction: column; align-items: center; transition: 0.2s; }
-        .module-card:hover { border-color: #2D5A27; transform: translateY(-3px); }
-        .module-card i { font-size: 30px; margin-bottom: 10px; }
-        .module-card span { font-weight: bold; font-size: 14px; color: #2D5A27; }
-    </style>
+    @media (max-width: 768px) { 
+      .main-content { margin-left: 0; padding: 20px; } 
+      #sidebar-frame { left: -250px; }
+    }
+    
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+  </style>
 </head>
 <body>
 
-    <div class="main-content">
-        <div class="header">
-            <div>
-                <h2 style="color: #2D5A27; margin: 0;">🏠 BẢNG ĐIỀU KHIỂN CHÍNH</h2>
-                <p style="color: #666; margin: 5px 0;">Chào mừng trở lại, <b id="welcome-name">...</b>!</p>
-            </div>
-        </div>
+ <button class="mobile-nav-btn no-print" onclick="toggleMobileSidebar()">☰ MENU</button>
+ <iframe src="sidebar.html" id="sidebar-frame" frameborder="0" class="no-print"></iframe>
 
-        <div class="stat-container">
-            <div class="stat-card"><h4>💰 Doanh thu tháng này</h4><p id="total-revenue">0đ</p></div>
-            <div class="stat-card"><h4>👥 Nhân sự đang trực</h4><p id="active-count">0</p></div>
-        </div>
-
-        <div class="staff-monitor">
-            <h3 style="font-size: 15px; color: #2D5A27; margin-top: 0;">🟢 NHÂN VIÊN ĐANG TẠI TIỆM</h3>
-            <div id="active-staff-list">
-                <span style="color: #888; font-style: italic; font-size: 13px;">Đang nạp dữ liệu...</span>
-            </div>
-        </div>
-
-        <div id="dashboard-menu" class="dashboard-grid">
-            </div>
+  <div class="main-content">
+    <div class="header">
+      <div>
+        <h2 style="color: #2D5A27; margin: 0;">🏠 BẢNG ĐIỀU KHIỂN CHÍNH</h2>
+        <p style="color: #666; margin: 5px 0;">Chào mừng trở lại, <b id="welcome-name">...</b>!</p>
+      </div>
     </div>
+
+    <div class="stat-container">
+      <div class="stat-card">
+        <h4>💰 Doanh thu tháng này</h4>
+        <p id="total-revenue">0đ</p>
+      </div>
+      <div class="stat-card">
+        <h4>👥 Nhân sự đang trực</h4>
+        <p id="active-count">0</p>
+      </div>
+    </div>
+
+    <div class="staff-monitor">
+      <h3>🟢 NHÂN VIÊN ĐANG TẠI TIỆM</h3>
+      <div id="active-staff-list" class="staff-list">
+        <span class="no-staff">Đang nạp dữ liệu...</span>
+      </div>
+    </div>
+
+    <div id="dashboard-menu" class="dashboard-grid">
+      </div>
+  </div>
 
   <script>
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
@@ -67,9 +86,7 @@
     document.addEventListener("DOMContentLoaded", function() {
       const user = JSON.parse(localStorage.getItem('currentUser'));
       if(!user) return;
-      
-      const welcomeName = document.getElementById('welcome-name');
-      if(welcomeName) welcomeName.innerText = user.name || user.Ho_Ten;
+      document.getElementById('welcome-name').innerText = user.name || user.Ho_Ten;
       
       renderMenu(user);
       loadLiveStatistics();
@@ -77,8 +94,6 @@
 
     function renderMenu(user) {
       const menuContainer = document.getElementById('dashboard-menu');
-      if(!menuContainer) return;
-
       const moduleString = user.Danh_Sach_Module || user.modules || "";
       const userModules = moduleString.split(',').map(s => s.trim());
       
@@ -98,46 +113,43 @@
         const curYear = String(now.getFullYear());
         const todayStr = now.getFullYear() + '-' + curMonth + '-' + String(now.getDate()).padStart(2, '0');
 
-        // A. TÍNH DOANH THU THÁNG
+        // A. TÍNH DOANH THU THÁNG (Sửa lỗi hiển thị sai theo logic bảng lương)
         const resRev = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=Ngay_Gio,Tong_Don`, { headers: h });
         if (resRev.ok) {
           const revData = await resRev.json();
+          // Lọc dữ liệu khớp với Tháng/Năm hiện tại
           const total = revData.reduce((sum, item) => {
             if (item.Ngay_Gio && (item.Ngay_Gio.includes(`${curMonth}/${curYear}`) || item.Ngay_Gio.includes(`${curYear}-${curMonth}`))) {
                 return sum + (Number(item.Tong_Don) || 0);
             }
             return sum;
           }, 0);
-          
-          const revEl = document.getElementById('total-revenue');
-          if(revEl) revEl.innerText = total.toLocaleString('vi-VN') + "đ";
+          document.getElementById('total-revenue').innerText = total.toLocaleString('vi-VN') + "đ";
         }
 
-        // B. Lấy danh sách nhân viên
+        // B. Lấy danh sách nhân viên đang làm hôm nay
         const statusQuery = encodeURIComponent("Đang làm");
         const resCC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=eq.${todayStr}&Status=eq.${statusQuery}&select=Gio_Vao,DM_NhanVien(Ho_Ten)`, { headers: h });
         
         if (resCC.ok) {
           const ccData = await resCC.json();
           const activeListContainer = document.getElementById('active-staff-list');
-          const activeCountEl = document.getElementById('active-count');
           
-          if (activeListContainer) {
-              if (ccData.length > 0) {
-                if(activeCountEl) activeCountEl.innerText = ccData.length;
-                activeListContainer.innerHTML = ccData.map(item => `
-                  <div class="staff-tag">
-                    ${item.DM_NhanVien ? item.DM_NhanVien.Ho_Ten : 'N/A'} <small style="opacity:0.7;">(${item.Gio_Vao ? item.Gio_Vao.substring(0,5) : ''})</small>
-                  </div>
-                `).join('');
-              } else {
-                if(activeCountEl) activeCountEl.innerText = "0";
-                activeListContainer.innerHTML = '<span style="color: #888; font-style: italic; font-size: 13px;">Tiệm chưa có nhân viên nào đang làm.</span>';
-              }
+          if (ccData.length > 0) {
+            document.getElementById('active-count').innerText = ccData.length;
+            activeListContainer.innerHTML = ccData.map(item => `
+              <div class="staff-tag">
+                ${item.DM_NhanVien ? item.DM_NhanVien.Ho_Ten : 'N/A'} <small style="opacity:0.7; font-weight:normal;">(${item.Gio_Vao ? item.Gio_Vao.substring(0,5) : ''})</small>
+              </div>
+            `).join('');
+          } else {
+            document.getElementById('active-count').innerText = "0";
+            activeListContainer.innerHTML = '<span class="no-staff">Tiệm chưa có nhân viên nào đang làm.</span>';
           }
         }
       } catch (e) { 
         console.error("Lỗi Dashboard:", e); 
+        document.getElementById('active-staff-list').innerHTML = '<span class="no-staff" style="color: red;">Lỗi tải dữ liệu.</span>';
       }
     }
   </script>
