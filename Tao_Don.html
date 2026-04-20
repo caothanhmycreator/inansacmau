@@ -253,7 +253,8 @@
       try {
         const [resK, resS] = await Promise.all([
           fetch(`${SB_CONFIG.URL}/rest/v1/DM_KhachHang?select=*`, { headers: h }),
-          fetch(`${SB_CONFIG.URL}/rest/v1/DM_SanPham?select=*`, { headers: h })
+          // Đã sửa API trỏ về bảng Bang_Gia_San_Pham
+          fetch(`${SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*`, { headers: h }) 
         ]);
         dsK = await resK.json(); dsS = await resS.json();
         document.getElementById("khachList").innerHTML = dsK.map(k => `<option value="${k.Ten_Khach_Hang}">`).join("");
@@ -267,7 +268,8 @@
     }
     function autoFillSP(v) {
       let m = dsS.find(s => s.Ten_Hang && s.Ten_Hang.toLowerCase() === v.toLowerCase().trim());
-      if (m) { document.getElementById("gia").value = Number(m.Gia_Le || 0).toLocaleString("vi-VN"); document.getElementById("dvt").value = m.DVT || ""; updateTmpTotal(); }
+      // Đã cập nhật trường Gia_Ban và Don_Vi_Tinh theo cấu trúc bảng mới
+      if (m) { document.getElementById("gia").value = Number(m.Gia_Ban || 0).toLocaleString("vi-VN"); document.getElementById("dvt").value = m.Don_Vi_Tinh || ""; updateTmpTotal(); }
     }
 
     async function saveOrder() {
@@ -278,6 +280,56 @@
       if (daTra < 0) return Swal.fire('Lỗi', 'Tiền cọc không thể âm!', 'error');
       if (daTra > totalBill) return Swal.fire('Lỗi', 'Tiền cọc vượt quá tổng đơn!', 'warning');
       if (daTra > 0 && currentPayMethod === "") return Swal.fire('Lỗi', 'Vui lòng chọn TM hoặc CK!', 'warning');
+
+      // =========================================================================
+      // THÊM MỚI: KIỂM TRA ÂM KHO TRƯỚC KHI LƯU
+      // =========================================================================
+      Swal.fire({ title: 'Đang kiểm tra kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      const hCheck = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
+      
+      try {
+        let khoCheck = {};
+        cart.forEach(i => {
+            let spDB = dsS.find(s => s.Ten_Hang === i.sp);
+            if (spDB && spDB.Ghi_Chu && spDB.Ghi_Chu.startsWith('SMK-')) {
+                if (!khoCheck[spDB.Ghi_Chu]) khoCheck[spDB.Ghi_Chu] = 0;
+                khoCheck[spDB.Ghi_Chu] += i.sl;
+            }
+        });
+
+        let amKhoCaches = [];
+        for (let maKho in khoCheck) {
+            let slBan = khoCheck[maKho];
+            const resKho = await fetch(`${SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${maKho}&select=id,Ten_Hang,So_Luong`, { headers: hCheck });
+            const dataKho = await resKho.json();
+            
+            if (dataKho && dataKho.length > 0) {
+                let tonKho = Number(dataKho[0].So_Luong) || 0;
+                if (tonKho - slBan < 0) {
+                    amKhoCaches.push(`- <b>${dataKho[0].Ten_Hang}</b> (Tồn: ${tonKho}, Bán: ${slBan})`);
+                }
+            }
+        }
+
+        if (amKhoCaches.length > 0) {
+            const confirmAm = await Swal.fire({
+                title: 'CẢNH BÁO ÂM KHO!',
+                html: `Các vật tư sau sẽ bị âm kho nếu tiếp tục:<br><div style="text-align:left; margin-top:10px; background:#ffebeb; padding:10px; border-radius:6px; color:#d33;">${amKhoCaches.join("<br>")}</div><br><b>Bạn có muốn chấp nhận số âm và tiếp tục lưu đơn không?</b>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'CHẤP NHẬN & LƯU',
+                cancelButtonText: 'HỦY ĐƠN'
+            });
+            if (!confirmAm.isConfirmed) {
+                return; // Ngừng lưu đơn
+            }
+        }
+      } catch (errCheck) {
+         console.error("Lỗi khi kiểm tra kho trước lưu:", errCheck);
+      }
+      // =========================================================================
 
       Swal.fire({ title: '⚡ Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       
@@ -317,6 +369,44 @@
             await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers: h, body: JSON.stringify({ Ngay_Gio: cleanTime, Ma_Don: ma, Khach_Hang: tenKH, Ten_Hang: cart.map(x => x.sp).join(", "), So_Tien_Thu: daTra, Hinh_Thuc_Thanh_Toan: currentPayMethod }) }); 
         }
 
+        // =========================================================================
+        // TỰ ĐỘNG TRỪ TỒN KHO VẬT TƯ SAU KHI LƯU ĐƠN
+        // =========================================================================
+        try {
+            let khoUpdates = {};
+            // Quét các mặt hàng trong giỏ, gom nhóm số lượng theo Mã Kho (SMK-)
+            cart.forEach(i => {
+                let spDB = dsS.find(s => s.Ten_Hang === i.sp);
+                if (spDB && spDB.Ghi_Chu && spDB.Ghi_Chu.startsWith('SMK-')) {
+                    if (!khoUpdates[spDB.Ghi_Chu]) khoUpdates[spDB.Ghi_Chu] = 0;
+                    khoUpdates[spDB.Ghi_Chu] += i.sl;
+                }
+            });
+
+            // Duyệt qua từng mã kho cần trừ
+            for (let maKho in khoUpdates) {
+                let slBan = khoUpdates[maKho];
+                // Lấy thông tin tồn kho hiện tại
+                const resKho = await fetch(`${SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${maKho}&select=id,So_Luong`, { headers: h });
+                const dataKho = await resKho.json();
+                
+                if (dataKho && dataKho.length > 0) {
+                    let idKho = dataKho[0].id;
+                    let tonMoi = (Number(dataKho[0].So_Luong) || 0) - slBan;
+                    
+                    // Cập nhật số lượng mới về Supabase
+                    await fetch(`${SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${idKho}`, {
+                        method: 'PATCH',
+                        headers: h,
+                        body: JSON.stringify({ So_Luong: tonMoi })
+                    });
+                }
+            }
+        } catch (errKho) {
+            console.error("Lỗi khi trừ kho:", errKho);
+        }
+        // =========================================================================
+
         // 2. PHÁT LỆNH THÔNG BÁO TỚI ĐIỆN THOẠI (Dùng biến tenKH đã có sẵn)
         // Thêm await để đảm bảo gửi xong mới reload trang
         await guiThongBaoSacMau("🔥 ĐƠN HÀNG MỚI", "Khách " + tenKH + " vừa đặt đơn mới tại Sắc Màu!");
@@ -350,7 +440,7 @@
       document.getElementById("p-sdt").innerText = document.getElementById("sdt").value || "---";
       document.getElementById("p-diachi").innerText = document.getElementById("diaChi").value || "---";
       document.getElementById("p-ngay").innerText = formatDateTimeVN();
-      let h = ""; cart.forEach(i => { h += `<tr><td><b>${i.sp}</b></td><td style="text-align:center;">${i.dvt}</td><td style="text-align:center;">${i.sl.toLocaleString()}</td><td style="text-align:right;">${i.dg.toLocaleString()}</td><td style="text-align:right; font-weight:bold;">${(i.sl*i.dg).toLocaleString()}</td></tr>`; });
+      let h = ""; cart.forEach(i => { h += `<tr><td><b>${i.sp}</b></td><td style="text-align:center;">${i.dvt}</td><td style="text-align:center;">${i.sl.toLocaleString()}</td><td style="text-align:right;">${i.dg.toLocaleString()}</td><td style="text-align:right; font-weight:bold">${(i.sl*i.dg).toLocaleString()}</td></tr>`; });
       document.getElementById("p-body").innerHTML = h;
       let t = cart.reduce((s, i) => s + (i.sl * i.dg), 0);
       let c = getRaw("tra");

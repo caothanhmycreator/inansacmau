@@ -39,8 +39,13 @@
     .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
     .img-preview:hover { transform: scale(1.1); }
     .qr-preview { width: 40px; height: 40px; cursor: pointer; background: white; padding: 2px; border: 1px solid #eee; }
-    .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; font-size: 16px; transition: 0.3s; }
+    
+    /* Cập nhật class nút bấm */
+    .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; flex: 1; }
     .btn-submit:hover { background: #a04000; transform: translateY(-2px); }
+    .btn-import-kho { background: #2D5A27; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; flex: 1; }
+    .btn-import-kho:hover { background: #1e3f1a; transform: translateY(-2px); }
+    .btn-container { display: flex; gap: 15px; margin-top: 20px; width: 100%; }
 
     .swal2-container { z-index: 20000 !important; }
 
@@ -64,6 +69,7 @@
         .form-card { padding: 15px; }
         .form-grid { grid-template-columns: 1fr; }
         .input-group { grid-column: span 1 !important; }
+        .btn-container { flex-direction: column; gap: 10px; }
 
         /* Biến bảng thành Card để tra cứu giá dễ dàng */
         .group-content { overflow-x: hidden; }
@@ -130,7 +136,10 @@
           <input type="file" id="f-hinh" class="input-modern" accept="image/*">
         </div>
       </div>
-      <button class="btn-submit" onclick="submitPriceItem()">📤 XÁC NHẬN LƯU BẢNG GIÁ</button>
+      <div class="btn-container">
+        <button class="btn-import-kho" onclick="openKhoImportPopup()">📥 NHẬP TỪ KHO VẬT TƯ</button>
+        <button class="btn-submit" onclick="submitPriceItem()">📤 XÁC NHẬN LƯU BẢNG GIÁ</button>
+      </div>
     </div>
 
     <div class="inventory-card">
@@ -271,7 +280,11 @@
             <tr>
               <td data-label="Mã QR"><img src="${qrImageUrl}" class="qr-preview" onclick="Swal.fire({title: 'QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 250})"></td>
               <td data-label="Ảnh">${thumbDisplay}</td>
-              <td data-label="Tên hàng"><b>${item.Ten_Hang}</b><br><small style="color:#888">${item.Mo_Ta || ''}</small></td>
+              <td data-label="Tên hàng">
+                <b>${item.Ten_Hang}</b><br>
+                <small style="color:#888">${item.Mo_Ta || ''}</small><br>
+                <small style="color:#2D5A27; font-weight:bold;">${item.Ghi_Chu ? '🔗 Liên kết kho: ' + item.Ghi_Chu : ''}</small>
+              </td>
               <td data-label="ĐVT">${item.Don_Vi_Tinh || ''}</td>
               <td data-label="Giá lẻ" style="color:red; font-weight:bold;">${(item.Gia_Ban || 0).toLocaleString()}</td>
               <td data-label="Giá sỉ" style="color:green; font-weight:bold;">${(item.Gia_Si || 0).toLocaleString()}</td>
@@ -327,7 +340,6 @@
           return {
             Nhom_Hang: document.getElementById('e-nhom').value,
             Ten_Hang: document.getElementById('e-ten').value,
-            So_Luong: item.So_Luong, // Giữ nguyên SL kho
             Gia_Ban: parseNum(document.getElementById('e-gia-ban').value),
             Gia_Si: parseNum(document.getElementById('e-gia-si').value),
             Don_Vi_Tinh: document.getElementById('e-dvt').value,
@@ -351,6 +363,136 @@
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${id}`, { method: 'DELETE', headers: h });
         loadPriceList();
       }
+    }
+
+    // =========================================================================
+    // TÍNH NĂNG MỚI: NHẬP GIÁ HÀNG LOẠT TỪ KHO VẬT TƯ (Bảo toàn mã SMK)
+    // =========================================================================
+   // =========================================================================
+    // TÍNH NĂNG MỚI: NHẬP GIÁ HÀNG LOẠT TỪ KHO VẬT TƯ (Bảo toàn mã SMK)
+    // =========================================================================
+    async function openKhoImportPopup() {
+        Swal.fire({ title: 'Đang tải dữ liệu Kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+
+        try {
+            // 1. Tải danh sách vật tư từ Kho
+            const resKho = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?select=*`, { headers: h });
+            const dataKho = await resKho.json();
+
+            // 2. Tải danh sách mã QR Kho đã lưu trong Ghi_Chu của Bảng Giá
+            const resGia = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=Ghi_Chu`, { headers: h });
+            const dataGia = await resGia.json();
+            const maKhoDaCoGia = dataGia.map(item => item.Ghi_Chu).filter(m => m && m.startsWith('SMK-'));
+
+            // 3. Lọc ra những vật tư Kho CHƯA TỪNG có trong Bảng Giá
+            const vatTuMoi = dataKho.filter(vt => !maKhoDaCoGia.includes(vt.Ma_QR));
+
+            if (vatTuMoi.length === 0) {
+                return Swal.fire('Thông báo', 'Tất cả vật tư trong kho đều đã được niêm yết giá.', 'info');
+            }
+
+            // 4. Tạo giao diện bảng nhập liệu
+            let rowsHtml = vatTuMoi.map((vt, index) => `
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; text-align: left; max-width: 150px;">
+                        <b>${vt.Ten_Hang}</b><br>
+                        <small style="color: gray;">Mã kho: ${vt.Ma_QR}</small>
+                    </td>
+                    <td style="padding: 10px; text-align: center;">${vt.Quy_Cach || '-'}</td>
+                    <td style="padding: 10px;"><input type="text" id="imp-ban-${index}" class="swal2-input" placeholder="Giá lẻ" style="width: 100%; margin: 0; font-size: 13px;" oninput="formatCurrency(this)"></td>
+                    <td style="padding: 10px;"><input type="text" id="imp-si-${index}" class="swal2-input" placeholder="Giá sỉ" style="width: 100%; margin: 0; font-size: 13px;" oninput="formatCurrency(this)"></td>
+                </tr>
+            `).join('');
+
+            const { value: newDataToInsert, isConfirmed } = await Swal.fire({
+                title: 'ĐỒNG BỘ GIÁ TỪ KHO',
+                width: '800px',
+                html: `
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <thead style="position: sticky; top: 0; background: #2D5A27; color: white;">
+                                <tr>
+                                    <th style="padding: 10px; text-align: left;">Tên Vật Tư</th>
+                                    <th style="padding: 10px; text-align: center;">ĐVT</th>
+                                    <th style="padding: 10px;">Giá Lẻ (Nhập tay)</th>
+                                    <th style="padding: 10px;">Giá Sỉ (Nhập tay)</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                    <p style="color: red; font-size: 12px; margin-top: 10px; text-align: left;">* Lưu ý: Chỉ những dòng có nhập Giá Lẻ hoặc Giá Sỉ mới được lưu vào hệ thống.</p>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'LƯU TẤT CẢ VÀO BẢNG GIÁ',
+                confirmButtonColor: '#d35400',
+                cancelButtonText: 'HỦY BỎ',
+                preConfirm: () => {
+                    const data = [];
+                    for (let i = 0; i < vatTuMoi.length; i++) {
+                        const elBan = document.getElementById(`imp-ban-${i}`);
+                        const elSi = document.getElementById(`imp-si-${i}`);
+                        
+                        if (!elBan || !elSi) continue;
+
+                        const giaBan = parseNum(elBan.value);
+                        const giaSi = parseNum(elSi.value);
+                        
+                        if (giaBan > 0 || giaSi > 0) {
+                            let maQRSanPham = "SMP-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+                            data.push({
+                                Nhom_Hang: vatTuMoi[i].Nhom_Hang,
+                                Ten_Hang: vatTuMoi[i].Ten_Hang,
+                                Gia_Ban: giaBan,
+                                Gia_Si: giaSi,
+                                Don_Vi_Tinh: vatTuMoi[i].Quy_Cach || 'Cái', 
+                                Mo_Ta: vatTuMoi[i].Kich_Thuoc ? `KT: ${vatTuMoi[i].Kich_Thuoc}` : '',
+                                Hinh_Anh: vatTuMoi[i].Hinh_Anh,
+                                Ma_QR: maQRSanPham, 
+                                Ghi_Chu: vatTuMoi[i].Ma_QR 
+                            });
+                        }
+                    }
+                    return data;
+                }
+            });
+
+            // 5. Nếu xác nhận lưu và có dữ liệu
+            if (isConfirmed && newDataToInsert) {
+                if (newDataToInsert.length > 0) {
+                    Swal.fire({ title: 'Đang đẩy dữ liệu lên hệ thống...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    
+                    // SỬA LỖI Ở ĐÂY: Thêm header khai báo JSON chuẩn
+                    const postHeaders = { 
+                        'apikey': window.SB_CONFIG.KEY, 
+                        'Authorization': `Bearer ${window.SB_CONFIG.KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    };
+
+                    const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham`, {
+                        method: 'POST',
+                        headers: postHeaders,
+                        body: JSON.stringify(newDataToInsert)
+                    });
+
+                    // SỬA LỖI Ở ĐÂY: Bắt lỗi nếu Supabase từ chối
+                    if (!response.ok) {
+                        const errInfo = await response.json();
+                        throw new Error(errInfo.message || "Cơ sở dữ liệu từ chối gói thông tin!");
+                    }
+
+                    Swal.fire('Thành công', `Đã đồng bộ ${newDataToInsert.length} vật tư vào Bảng Giá.`, 'success');
+                    loadPriceList();
+                } else {
+                    Swal.fire('Thông báo', 'Bạn chưa nhập giá cho vật tư nào nên không có gì được lưu.', 'info');
+                }
+            }
+
+        } catch (error) {
+            Swal.fire('Lỗi', error.message, 'error');
+        }
     }
   </script>
 </body>

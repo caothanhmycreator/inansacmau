@@ -254,8 +254,9 @@
 </div>
 
 <script>
-// TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100% (KHÔNG ĐỔI MỘT CHỮ)
+// TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100%
 var f12_prods = []; var f12_hinhThuc = ""; var f12_id_money_row = null;
+var f12_originalItems = {}; // Lưu trữ số lượng ban đầu để tính delta
 
 document.addEventListener("DOMContentLoaded", function() {
   setTimeout(() => { loadSua_DonData(); }, 500);
@@ -272,11 +273,24 @@ async function loadSua_DonData() {
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">⚡ Đang đồng bộ dữ liệu đơn hàng...</td></tr>';
   const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
   try {
-    const [resSP, resBH] = await Promise.all([
-      fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_SanPham?select=*`, { headers }),
-      fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*&order=Ngay_Gio.desc`, { headers })
+    const [resBH, resBG] = await Promise.all([
+      fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*&order=Ngay_Gio.desc`, { headers }),
+      // Sửa nguồn lấy gọi ý từ Bang_Gia_San_Pham
+      fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*`, { headers })
     ]);
-    f12_prods = (await resSP.json()).map(s => ({ ten: s.Ten_Hang, dvt: s.DVT, dongia: s.Gia_Le }));
+    
+    window.dsGia = await resBG.json(); // Lưu tạm danh sách Bảng giá để map Ghi_Chu
+    f12_prods = window.dsGia.map(s => ({ ten: s.Ten_Hang, dvt: s.Don_Vi_Tinh, dongia: s.Gia_Ban }));
+
+    // Tự động tạo thẻ datalist nếu chưa có để hiển thị gợi ý
+    let spListEl = document.getElementById("spList");
+    if (!spListEl) {
+        spListEl = document.createElement("datalist");
+        spListEl.id = "spList";
+        document.body.appendChild(spListEl);
+    }
+    spListEl.innerHTML = window.dsGia.map(s => `<option value="${s.Ten_Hang}">`).join("");
+    
     const data = await resBH.json();
     const grouped = {};
     data.forEach(item => {
@@ -313,9 +327,18 @@ async function f12_viewDetail(maDon) {
     const data = await res.json();
     Swal.close();
     if (!data || data.length === 0) return Swal.fire('Lỗi', 'Không tìm thấy chi tiết đơn!', 'error');
+    
     let moneyRow = data.find(x => Number(x.Khach_Da_Tra) > 0) || data[0];
     f12_id_money_row = moneyRow.id;
     window.f12_current_info = { maDon: moneyRow.Ma_Don, kh: moneyRow.Ten_Khach_Hang, sdt: moneyRow.So_Dien_Thoai, dc: moneyRow.Dia_Chi, datCocCu: Number(moneyRow.Khach_Da_Tra) || 0 };
+    
+    // Lưu trữ số lượng gốc để tính delta sau này
+    f12_originalItems = {};
+    data.forEach(item => {
+        if (!f12_originalItems[item.Ten_Hang]) f12_originalItems[item.Ten_Hang] = 0;
+        f12_originalItems[item.Ten_Hang] += Number(item.So_Luong) || 0;
+    });
+
     document.getElementById('view-ma-don').textContent = moneyRow.Ma_Don;
     document.getElementById('view-ten-khach').textContent = moneyRow.Ten_Khach_Hang;
     document.getElementById('view-sdt').textContent = moneyRow.So_Dien_Thoai;
@@ -369,15 +392,108 @@ function inHoaDonSua() {
 async function f12_saveFinal() {
   const extraDeposit = Number(document.getElementById('view-inp-extra').value.replace(/\./g, "")) || 0;
   var tongMoi = 0;
-  document.querySelectorAll('#view-table-body tr').forEach(tr => { tongMoi += (Number(tr.querySelector('.f12-edit-sl').value)||0) * (Number(tr.querySelector('.f12-edit-dg').value.replace(/\./g, ""))||0); });
+  
+  // Tính tổng mới và gom số lượng mới theo sản phẩm
+  let newItemsCount = {};
+  document.querySelectorAll('#view-table-body tr').forEach(tr => { 
+      let sl = Number(tr.querySelector('.f12-edit-sl').value)||0;
+      let spName = tr.querySelector('.f12-edit-sp').value;
+      tongMoi += sl * (Number(tr.querySelector('.f12-edit-dg').value.replace(/\./g, ""))||0); 
+      
+      if (!newItemsCount[spName]) newItemsCount[spName] = 0;
+      newItemsCount[spName] += sl;
+  });
+  
   var noThucTe = tongMoi - window.f12_current_info.datCocCu;
 
   if (extraDeposit < 0) return Swal.fire('Lỗi dữ liệu', 'Tiền cọc không được là số âm!', 'error');
   if (extraDeposit > noThucTe) return Swal.fire('Lỗi dữ liệu', `Thu quá nợ! Khách chỉ nợ tối đa ${noThucTe.toLocaleString()}đ`, 'warning');
   if (extraDeposit > 0 && f12_hinhThuc === "") return Swal.fire('Thiếu hình thức', 'Vui lòng chọn TM hoặc CK cho tiền cọc thêm!', 'warning');
 
-  Swal.fire({ title: '⚡ Đang đồng bộ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  // =========================================================================
+  // THÊM MỚI: TÍNH DELTA VÀ KIỂM TRA ÂM KHO
+  // =========================================================================
+  Swal.fire({ title: 'Đang kiểm tra kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  
+  // SỬA LỖI: Định nghĩa headers chuẩn
   const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+  let khoDelta = {};
+
+  // Tính chênh lệch (Delta) giữa số mới và số cũ
+  // Nếu Delta > 0: Tức là mua thêm -> Trừ kho
+  // Nếu Delta < 0: Tức là giảm số lượng / xóa -> Hoàn lại kho
+  for (let spName in newItemsCount) {
+      let slMoi = newItemsCount[spName];
+      let slCu = f12_originalItems[spName] || 0;
+      let delta = slMoi - slCu;
+      
+      if (delta !== 0) {
+          let spDB = window.dsGia.find(s => s.Ten_Hang === spName);
+          if (spDB && spDB.Ghi_Chu && spDB.Ghi_Chu.startsWith('SMK-')) {
+              if (!khoDelta[spDB.Ghi_Chu]) khoDelta[spDB.Ghi_Chu] = 0;
+              khoDelta[spDB.Ghi_Chu] += delta; 
+          }
+      }
+  }
+
+  // Quét các món cũ đã bị xóa hoàn toàn khỏi bảng
+  for (let spName in f12_originalItems) {
+      if (!newItemsCount[spName]) {
+          let delta = -f12_originalItems[spName]; // Hoàn toàn bộ về kho
+          let spDB = window.dsGia.find(s => s.Ten_Hang === spName);
+          if (spDB && spDB.Ghi_Chu && spDB.Ghi_Chu.startsWith('SMK-')) {
+              if (!khoDelta[spDB.Ghi_Chu]) khoDelta[spDB.Ghi_Chu] = 0;
+              khoDelta[spDB.Ghi_Chu] += delta;
+          }
+      }
+  }
+
+  // Kiểm tra cảnh báo âm kho (Chỉ cảnh báo khi Delta > 0 và Kho ko đủ)
+  try {
+      let amKhoCaches = [];
+      let finalKhoUpdates = []; // Lưu lại thông tin ID và số tồn mới để update sau
+
+      for (let maKho in khoDelta) {
+          let deltaBan = khoDelta[maKho];
+          const resKho = await fetch(`${SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${maKho}&select=id,Ten_Hang,So_Luong`, { headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` } });
+          const dataKho = await resKho.json();
+          
+          if (dataKho && dataKho.length > 0) {
+              let tonKho = Number(dataKho[0].So_Luong) || 0;
+              let tonMoi = tonKho - deltaBan;
+              
+              if (tonMoi < 0) {
+                  amKhoCaches.push(`- <b>${dataKho[0].Ten_Hang}</b> (Tồn: ${tonKho}, Trừ thêm: ${deltaBan})`);
+              }
+              finalKhoUpdates.push({ id: dataKho[0].id, tonMoi: tonMoi });
+          }
+      }
+
+      if (amKhoCaches.length > 0) {
+          const confirmAm = await Swal.fire({
+              title: 'CẢNH BÁO ÂM KHO!',
+              html: `Các vật tư sau sẽ bị âm kho do bạn tăng số lượng:<br><div style="text-align:left; margin-top:10px; background:#ffebeb; padding:10px; border-radius:6px; color:#d33;">${amKhoCaches.join("<br>")}</div><br><b>Bạn có muốn chấp nhận số âm và tiếp tục lưu?</b>`,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#d33',
+              cancelButtonColor: '#3085d6',
+              confirmButtonText: 'CHẤP NHẬN & LƯU',
+              cancelButtonText: 'HỦY BỎ'
+          });
+          if (!confirmAm.isConfirmed) {
+              return; 
+          }
+      }
+
+      // Gán kết quả tính toán kho để dùng cập nhật thật ở phần sau
+      window.khoUpdatesFinal = finalKhoUpdates;
+
+  } catch (errCheck) {
+      console.error("Lỗi khi kiểm tra kho trước lưu sửa:", errCheck);
+  }
+  // =========================================================================
+
+  Swal.fire({ title: '⚡ Đang đồng bộ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
   const cleanNow = getCleanVNTime();
   const maDon = window.f12_current_info.maDon;
   const tenKH = window.f12_current_info.kh;
@@ -409,6 +525,20 @@ async function f12_saveFinal() {
       await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang`, { method: 'POST', headers, body: JSON.stringify(itemsToCreate) });
     }
 
+    // =========================================================================
+    // CẬP NHẬT THỰC TẾ VÀO KHO
+    // =========================================================================
+    if (window.khoUpdatesFinal && window.khoUpdatesFinal.length > 0) {
+        for (let update of window.khoUpdatesFinal) {
+            await fetch(`${SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${update.id}`, {
+                method: 'PATCH',
+                headers: headers,
+                body: JSON.stringify({ So_Luong: update.tonMoi })
+            });
+        }
+    }
+    // =========================================================================
+
     if (extraDeposit > 0) {
       await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers, body: JSON.stringify({ 
         Ngay_Gio: cleanNow, Ma_Don: maDon, Khach_Hang: tenKH, So_Tien_Thu: extraDeposit, Hinh_Thuc_Thanh_Toan: f12_hinhThuc, Ten_Hang: "Cọc thêm đơn " + maDon
@@ -417,7 +547,7 @@ async function f12_saveFinal() {
 
     const allItems = [...itemsToUpdate, ...itemsToCreate];
     for (let item of allItems) {
-      const checkLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${maDon}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { headers });
+      const checkLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${maDon}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` } });
       const logData = await checkLog.json();
       
       const logBody = { 
@@ -432,7 +562,7 @@ async function f12_saveFinal() {
       }
     }
 
-    Swal.fire('Thành công!', 'Đã đồng bộ thông tin sang cả 3 bảng.', 'success');
+    Swal.fire('Thành công!', 'Đã đồng bộ thông tin sang tất cả các bảng.', 'success');
     document.getElementById('f12-modal-view').style.display = 'none';
     loadSua_DonData();
   } catch (e) { Swal.fire('Lỗi hệ thống', e.message, 'error'); }
