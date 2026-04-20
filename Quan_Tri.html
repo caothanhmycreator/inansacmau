@@ -210,8 +210,72 @@
         return;
       }
 
-      Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+
+      // =========================================================================
+      // BẮT ĐẦU ĐOẠN MÃ XỬ LÝ GHI NỢ (ĐÃ THÊM MỚI THEO CẤU TRÚC BẢNG Cong_No)
+      // =========================================================================
+      if (newStatus === "Công nợ") {
+        // Lấy thông tin tổng đơn hàng từ danh sách hiện tại
+        const dsMon = window.listAllF10.filter(it => it.Ma_Don === maDon);
+        const khachHang = dsMon.length > 0 ? dsMon[0].Ten_Khach_Hang : "";
+        const tongDon = dsMon.reduce((sum, it) => sum + (Number(it.Thanh_Tien) || 0), 0);
+        
+        // Kiểm tra xem mã đơn này đã tồn tại trong bảng Cong_No chưa
+        Swal.fire({ title: 'Đang kiểm tra công nợ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const checkRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(maDon)}`, { headers: h });
+        const checkData = await checkRes.json();
+        
+        let isUpdate = false;
+        let proceedGhiNo = true;
+
+        if (checkData && checkData.length > 0) {
+          const overwriteConfirm = await Swal.fire({
+            title: 'ĐÃ TỒN TẠI CÔNG NỢ!',
+            text: `Mã đơn ${maDon} đã có trong danh sách nợ. Bạn có muốn ghi đè để cập nhật lại không?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e74c3c',
+            cancelButtonColor: '#95a5a6',
+            confirmButtonText: 'CÓ, GHI ĐÈ',
+            cancelButtonText: 'KHÔNG, CHỈ ĐỔI TRẠNG THÁI'
+          });
+          
+          if (overwriteConfirm.isConfirmed) {
+            isUpdate = true;
+          } else {
+            proceedGhiNo = false; // Bỏ qua phần ghi nợ, đi tiếp xuống đổi trạng thái
+          }
+        }
+
+        if (proceedGhiNo) {
+          Swal.fire({ title: 'Đang ghi nhận nợ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          
+          const noData = {
+            "Ngay_Gio": window.formatDateTimeVN(),
+            "Ma_Don": maDon,
+            "Khach_Hang": khachHang,
+            "Tong_Don": tongDon.toString(),
+            "Da_Tra": "0", // Mặc định khách chưa trả
+            "Con_Lai": tongDon.toString()
+          };
+
+          if (isUpdate) {
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(maDon)}`, {
+              method: 'PATCH', headers: h, body: JSON.stringify(noData)
+            });
+          } else {
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No`, {
+              method: 'POST', headers: h, body: JSON.stringify(noData)
+            });
+          }
+        }
+      }
+      // =========================================================================
+      // KẾT THÚC ĐOẠN MÃ XỬ LÝ GHI NỢ
+      // =========================================================================
+
+      Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const nowVN = window.formatDateTimeVN();
 
       const colMap = { 
