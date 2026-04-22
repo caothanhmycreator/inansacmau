@@ -5,13 +5,13 @@
   const fileName = path.substring(path.lastIndexOf('/') + 1) || 'index.html';
 
   // 1. Chặn đăng nhập (Trừ trang Login)
-  if (!user && !fileName.toLowerCase().includes('login.html')) {
+  if (!user && !fileName.toLowerCase().includes('Login.html')) {
     window.location.href = 'Login.html';
     return;
   }
 
   // 2. Danh sách các trang mặc định ai cũng vào được
-  const publicFiles = ['index.html', 'Login.html', 'login.html', 'profile.html'];
+  const publicFiles = ['index.html', 'Login.html', 'Login.html', 'profile.html'];
 
   if (user && !publicFiles.includes(fileName)) {
     
