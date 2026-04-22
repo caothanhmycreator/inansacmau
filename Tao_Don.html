@@ -248,13 +248,14 @@
     // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100% (Đã bổ sung tính năng lưu khách và sản phẩm mới)
     var cart = []; var dsK = []; var dsS = []; var dsSP_Goc = []; var currentPayMethod = "";
 
-    async function napDuLieuTrang() {
+async function napDuLieuTrang() {
       const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
       try {
         const [resK, resS, resSPGoc] = await Promise.all([
-          fetch(`${SB_CONFIG.URL}/rest/v1/DM_KhachHang?select=*`, { headers: h }),
-          fetch(`${SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*`, { headers: h }),
-          fetch(`${SB_CONFIG.URL}/rest/v1/DM_SanPham?select=*`, { headers: h }) // Tải bảng gốc để kiểm tra
+          // Đã thêm limit=10000 và ưu tiên khách mới tạo (order=id.desc)
+          fetch(`${SB_CONFIG.URL}/rest/v1/DM_KhachHang?select=*&limit=10000&order=id.desc`, { headers: h }),
+          fetch(`${SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*&limit=10000`, { headers: h }),
+          fetch(`${SB_CONFIG.URL}/rest/v1/DM_SanPham?select=*&limit=10000`, { headers: h })
         ]);
         dsK = await resK.json(); 
         dsS = await resS.json();
