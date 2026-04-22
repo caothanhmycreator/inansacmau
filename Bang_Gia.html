@@ -533,6 +533,7 @@
             let rowsHtml = uniqueSpChuaCoGia.map((sp, index) => {
                 const giaLeStr = Number(sp.Gia_Le || 0).toLocaleString("vi-VN");
                 const giaSiStr = Number(sp.Gia_Si || 0).toLocaleString("vi-VN");
+                let spId = sp.id || sp.Id || '';
                 
                 return `
                 <tr id="dm-row-${index}" style="border-bottom: 2px solid #eee; background: ${index % 2 === 0 ? '#fff' : '#fcfcfc'}">
@@ -542,17 +543,20 @@
                     <td style="padding: 10px; text-align: left; max-width: 200px;">
                         <b style="color: #2980b9;">${sp.Ten_Hang}</b><br>
                         <small style="color: gray;">Gốc: Lẻ ${giaLeStr}đ - Sỉ ${giaSiStr}đ</small><br>
-                        <input type="text" id="dm-mota-${index}" class="swal2-input" placeholder="Nhập mô tả (Không bắt buộc)..." style="width: 100%; margin: 5px 0 0 0; font-size: 12px; height: 30px;">
+                        <div style="display: flex; gap: 5px; margin-top: 5px;">
+                            <input type="text" id="dm-dvt-${index}" class="swal2-input" value="${sp.DVT || 'Cái'}" placeholder="ĐVT..." style="width: 30%; margin: 0; font-size: 12px; height: 30px;">
+                            <input type="text" id="dm-mota-${index}" class="swal2-input" placeholder="Nhập mô tả (Không bắt buộc)..." style="width: 70%; margin: 0; font-size: 12px; height: 30px;">
+                        </div>
                     </td>
                     <td style="padding: 10px; vertical-align: top;"><input type="text" id="dm-ban-${index}" class="swal2-input" value="${giaLeStr}" style="width: 100%; margin: 0; font-size: 13px; text-align:right;" oninput="formatCurrency(this)"></td>
                     <td style="padding: 10px; vertical-align: top;"><input type="text" id="dm-si-${index}" class="swal2-input" value="${giaSiStr}" style="width: 100%; margin: 0; font-size: 13px; text-align:right;" oninput="formatCurrency(this)"></td>
                     <td style="padding: 10px; text-align: center; vertical-align: top;">
                         <input type="file" id="dm-file-${index}" accept="image/*" style="font-size: 11px; max-width: 120px;">
-                        <input type="hidden" id="dm-dvt-${index}" value="${sp.DVT || 'Cái'}">
                         <input type="hidden" id="dm-ten-${index}" value="${sp.Ten_Hang}">
                     </td>
                     <td style="padding: 10px; text-align: center; vertical-align: top;">
-                        <button id="dm-btn-${index}" onclick="saveSingleItemFromDM(${index})" style="background: #2D5A27; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%;">LƯU</button>
+                        <button id="dm-btn-${index}" onclick="saveSingleItemFromDM(${index})" style="background: #2D5A27; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%; margin-bottom: 5px;">LƯU</button>
+                        <button id="dm-del-btn-${index}" onclick="deleteItemFromDM(${index}, '${spId}')" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%;">XÓA</button>
                     </td>
                 </tr>
             `}).join('');
@@ -671,6 +675,46 @@
                 toast: true, position: 'top-end', icon: 'error',
                 title: error.message, showConfirmButton: false, timer: 3000
             });
+        }
+    }
+
+    // Hàm gọi ngầm khi nhấn nút Xóa khỏi danh mục
+    window.deleteItemFromDM = async function(index, id) {
+        if (!id) {
+            alert("Không tìm thấy ID sản phẩm để xóa!");
+            return;
+        }
+        
+        if (!confirm("Xác nhận xóa sản phẩm này hoàn toàn khỏi Danh Mục Sản Phẩm?")) return;
+        
+        const delBtn = document.getElementById(`dm-del-btn-${index}`);
+        delBtn.innerText = "Đang xóa...";
+        delBtn.disabled = true;
+
+        try {
+            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+            
+            let response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_SanPham?id=eq.${id}`, {
+                method: 'DELETE',
+                headers: h
+            });
+
+            // Fallback nếu ID dùng viết hoa (Id)
+            if (!response.ok) {
+                response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_SanPham?Id=eq.${id}`, {
+                    method: 'DELETE',
+                    headers: h
+                });
+                if (!response.ok) throw new Error("Lỗi xóa từ Cơ sở dữ liệu");
+            }
+
+            const row = document.getElementById(`dm-row-${index}`);
+            if(row) row.style.display = 'none';
+
+        } catch (error) {
+            delBtn.innerText = "XÓA LỖI";
+            delBtn.disabled = false;
+            alert(error.message);
         }
     }
   </script>
