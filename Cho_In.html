@@ -223,7 +223,7 @@
           </div>
           <div id="material-list">
             <div class="nl-row header-mobile-hide" style="font-weight:bold; font-size:11px; border-bottom:2px solid #e2e8f0; padding-bottom:5px; margin-bottom:10px;">
-              <div>Tên Nguyên Liệu</div><div>Phân loại</div><div>SL</div><div>Ghi chú</div><div></div>
+              <div>Tên Nguyên Liệu</div><div>Đơn vị tính</div><div>SL</div><div>Ghi chú</div><div></div>
             </div>
             <div class="nl-row item-row">
               <input class="nl-input m-ten" placeholder="Tên vật tư"><input class="nl-input m-loai" placeholder="Cuộn/Tấm"><input class="nl-input m-sl" type="number" placeholder="SL"><input class="nl-input m-note" placeholder="Ghi chú">
@@ -282,7 +282,7 @@
       try {
         const materialData = materials.map(m => ({
           Ngay_Gio: cleanNow, Ma_Don: item.Ma_Don, Khach_Hang: item.Ten_Khach_Hang, Ten_Hang: item.Ten_Hang,
-          Ma_Nguyen_Lieu: m.maNL, Ten_Nguyen_Lieu: m.tenNL, Phan_Loai: m.loaiNL, So_Luong: m.slNL, Ghi_Chu: m.noteNL,
+          Ma_Nguyen_Lieu: m.maNL, Ten_Nguyen_Lieu: m.tenNL, DVT: m.loaiNL, So_Luong: m.slNL, Ghi_Chu: m.noteNL,
           id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000)
         }));
 
