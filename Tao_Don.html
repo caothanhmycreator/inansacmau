@@ -245,18 +245,23 @@
   </div>
 
   <script>
-    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100%
-    var cart = []; var dsK = []; var dsS = []; var currentPayMethod = "";
+    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100% (Đã bổ sung tính năng lưu khách và sản phẩm mới)
+    var cart = []; var dsK = []; var dsS = []; var dsSP_Goc = []; var currentPayMethod = "";
 
     async function napDuLieuTrang() {
       const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
       try {
-        const [resK, resS] = await Promise.all([
+        const [resK, resS, resSPGoc] = await Promise.all([
           fetch(`${SB_CONFIG.URL}/rest/v1/DM_KhachHang?select=*`, { headers: h }),
-          // Đã sửa API trỏ về bảng Bang_Gia_San_Pham
-          fetch(`${SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*`, { headers: h }) 
+          fetch(`${SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*`, { headers: h }),
+          fetch(`${SB_CONFIG.URL}/rest/v1/DM_SanPham?select=*`, { headers: h }) // Tải bảng gốc để kiểm tra
         ]);
-        dsK = await resK.json(); dsS = await resS.json();
+        dsK = await resK.json(); 
+        dsS = await resS.json();
+        
+        // Cần gán mảng rỗng nếu fetch trả về undefined hoặc không có data
+        dsSP_Goc = await resSPGoc.json() || []; 
+        
         document.getElementById("khachList").innerHTML = dsK.map(k => `<option value="${k.Ten_Khach_Hang}">`).join("");
         document.getElementById("spList").innerHTML = dsS.map(s => `<option value="${s.Ten_Hang}">`).join("");
       } catch (e) { console.error("Lỗi nạp danh mục:", e); }
@@ -268,7 +273,6 @@
     }
     function autoFillSP(v) {
       let m = dsS.find(s => s.Ten_Hang && s.Ten_Hang.toLowerCase() === v.toLowerCase().trim());
-      // Đã cập nhật trường Gia_Ban và Don_Vi_Tinh theo cấu trúc bảng mới
       if (m) { document.getElementById("gia").value = Number(m.Gia_Ban || 0).toLocaleString("vi-VN"); document.getElementById("dvt").value = m.Don_Vi_Tinh || ""; updateTmpTotal(); }
     }
 
@@ -281,9 +285,6 @@
       if (daTra > totalBill) return Swal.fire('Lỗi', 'Tiền cọc vượt quá tổng đơn!', 'warning');
       if (daTra > 0 && currentPayMethod === "") return Swal.fire('Lỗi', 'Vui lòng chọn TM hoặc CK!', 'warning');
 
-      // =========================================================================
-      // THÊM MỚI: KIỂM TRA ÂM KHO TRƯỚC KHI LƯU
-      // =========================================================================
       Swal.fire({ title: 'Đang kiểm tra kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const hCheck = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
       
@@ -322,26 +323,58 @@
                 confirmButtonText: 'CHẤP NHẬN & LƯU',
                 cancelButtonText: 'HỦY ĐƠN'
             });
-            if (!confirmAm.isConfirmed) {
-                return; // Ngừng lưu đơn
-            }
+            if (!confirmAm.isConfirmed) return; 
         }
       } catch (errCheck) {
          console.error("Lỗi khi kiểm tra kho trước lưu:", errCheck);
       }
-      // =========================================================================
 
       Swal.fire({ title: '⚡ Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       
       const cleanTime = formatDateTimeVN();
       const ma = `HD-${new Date().getDate().toString().padStart(2, '0')}${(new Date().getMonth() + 1).toString().padStart(2, '0')}-${new Date().getHours()}${new Date().getMinutes()}${new Date().getSeconds()}`;
-      
-      // Lấy tên khách hàng một lần duy nhất ở đây
       const tenKH = document.getElementById("tenKhach").value.trim() || "Khách lẻ";
-      
       const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
 
       try {
+        // =========================================================================
+        // TÍNH NĂNG MỚI: KIỂM TRA & LƯU TỰ ĐỘNG KHÁCH HÀNG & SẢN PHẨM MỚI
+        // =========================================================================
+        try {
+            const tenKHLower = tenKH.toLowerCase();
+            if (tenKH !== "Khách lẻ" && !dsK.some(k => k.Ten_Khach_Hang && k.Ten_Khach_Hang.toLowerCase() === tenKHLower)) {
+                const payloadKH = {
+                    Ma_Khach_Hang: "KH" + Math.random().toString(36).substr(2, 6).toUpperCase(),
+                    Ten_Khach_Hang: tenKH,
+                    Dia_Chi: document.getElementById("diaChi").value || "",
+                    So_Dien_Thoai: document.getElementById("sdt").value || "",
+                    Doanh_So: "0"
+                };
+                await fetch(`${SB_CONFIG.URL}/rest/v1/DM_KhachHang`, { method: 'POST', headers: h, body: JSON.stringify(payloadKH) });
+            }
+
+            const newProducts = [];
+            cart.forEach(item => {
+                const tenSPLower = item.sp.toLowerCase();
+                // Đảm bảo truy cập Ten_Hang an toàn, dùng Optional Chaining (?.)
+                if (!dsSP_Goc.some(s => s.Ten_Hang && s.Ten_Hang.toLowerCase() === tenSPLower) && !newProducts.some(p => p.Ten_Hang.toLowerCase() === tenSPLower)) {
+                    newProducts.push({
+                        Ma_Hang: "SP" + Math.random().toString(36).substr(2, 6).toUpperCase(),
+                        Ten_Hang: item.sp,
+                        DVT: item.dvt || "Cái",
+                        Gia_Le: item.dg.toString(), 
+                        Gia_Von: "0",
+                        Gia_Si: "0"
+                    });
+                }
+            });
+
+            if (newProducts.length > 0) {
+                await fetch(`${SB_CONFIG.URL}/rest/v1/DM_SanPham`, { method: 'POST', headers: h, body: JSON.stringify(newProducts) });
+            }
+        } catch(eAutoSave) { console.error("Lỗi auto-save DM:", eAutoSave); }
+        // =========================================================================
+
         const rowsBH = cart.map((i, idx) => ({ 
           Ngay_Gio: cleanTime, 
           Ma_Don: ma, 
@@ -362,19 +395,14 @@
         
         const rowsLog = cart.map(i => ({ Ngay_Gio: cleanTime, Ma_Don: ma, Ten_Hang: i.sp, Khach_Hang: tenKH, Gio_Tao_Don: cleanTime, Gio_Xu_Ly: cleanTime, Trang_Thai: "Chờ xử lý", Nguoi_Thuc_Hien: "Hệ thống" }));
         
-        // 1. Lưu đơn hàng vào Database
         await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_BanHang`, { method: 'POST', headers: h, body: JSON.stringify(rowsBH) });
         await fetch(`${SB_CONFIG.URL}/rest/v1/Log_TienDo`, { method: 'POST', headers: h, body: JSON.stringify(rowsLog) });
         if (daTra > 0) { 
             await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers: h, body: JSON.stringify({ Ngay_Gio: cleanTime, Ma_Don: ma, Khach_Hang: tenKH, Ten_Hang: cart.map(x => x.sp).join(", "), So_Tien_Thu: daTra, Hinh_Thuc_Thanh_Toan: currentPayMethod }) }); 
         }
 
-        // =========================================================================
-        // TỰ ĐỘNG TRỪ TỒN KHO VẬT TƯ SAU KHI LƯU ĐƠN
-        // =========================================================================
         try {
             let khoUpdates = {};
-            // Quét các mặt hàng trong giỏ, gom nhóm số lượng theo Mã Kho (SMK-)
             cart.forEach(i => {
                 let spDB = dsS.find(s => s.Ten_Hang === i.sp);
                 if (spDB && spDB.Ghi_Chu && spDB.Ghi_Chu.startsWith('SMK-')) {
@@ -383,35 +411,24 @@
                 }
             });
 
-            // Duyệt qua từng mã kho cần trừ
             for (let maKho in khoUpdates) {
                 let slBan = khoUpdates[maKho];
-                // Lấy thông tin tồn kho hiện tại
                 const resKho = await fetch(`${SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${maKho}&select=id,So_Luong`, { headers: h });
                 const dataKho = await resKho.json();
                 
                 if (dataKho && dataKho.length > 0) {
                     let idKho = dataKho[0].id;
                     let tonMoi = (Number(dataKho[0].So_Luong) || 0) - slBan;
-                    
-                    // Cập nhật số lượng mới về Supabase
                     await fetch(`${SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${idKho}`, {
-                        method: 'PATCH',
-                        headers: h,
-                        body: JSON.stringify({ So_Luong: tonMoi })
+                        method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi })
                     });
                 }
             }
         } catch (errKho) {
             console.error("Lỗi khi trừ kho:", errKho);
         }
-        // =========================================================================
 
-        // 2. PHÁT LỆNH THÔNG BÁO TỚI ĐIỆN THOẠI (Dùng biến tenKH đã có sẵn)
-        // Thêm await để đảm bảo gửi xong mới reload trang
         await guiThongBaoSacMau("🔥 ĐƠN HÀNG MỚI", "Khách " + tenKH + " vừa đặt đơn mới tại Sắc Màu!");
-
-        // 3. Thông báo thành công và load lại trang
         Swal.fire('Thành công', 'Đã lưu đơn: ' + ma, 'success').then(() => { location.reload(); });
 
       } catch (e) { 

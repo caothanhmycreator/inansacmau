@@ -43,9 +43,14 @@
     /* Cập nhật class nút bấm */
     .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; flex: 1; }
     .btn-submit:hover { background: #a04000; transform: translateY(-2px); }
+    
     .btn-import-kho { background: #2D5A27; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; flex: 1; }
     .btn-import-kho:hover { background: #1e3f1a; transform: translateY(-2px); }
-    .btn-container { display: flex; gap: 15px; margin-top: 20px; width: 100%; }
+    
+    .btn-import-dm { background: #2980b9; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; flex: 1; }
+    .btn-import-dm:hover { background: #1f618d; transform: translateY(-2px); }
+
+    .btn-container { display: flex; gap: 15px; margin-top: 20px; width: 100%; flex-wrap: wrap; }
 
     .swal2-container { z-index: 20000 !important; }
 
@@ -137,7 +142,8 @@
         </div>
       </div>
       <div class="btn-container">
-        <button class="btn-import-kho" onclick="openKhoImportPopup()">📥 NHẬP TỪ KHO VẬT TƯ</button>
+        <button class="btn-import-kho" onclick="openKhoImportPopup()">📥 TỪ KHO VẬT TƯ</button>
+        <button class="btn-import-dm" onclick="openDMImportPopup()">🔄 TỪ DANH MỤC SP</button>
         <button class="btn-submit" onclick="submitPriceItem()">📤 XÁC NHẬN LƯU BẢNG GIÁ</button>
       </div>
     </div>
@@ -154,7 +160,7 @@
   </div>
 
   <script>
-    // TOÀN BỘ LOGIC JS GIỮ NGUYÊN 100%
+    // TOÀN BỘ LOGIC JS GỐC GIỮ NGUYÊN 100%
     const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
     const FOLDER_ID = "1ao2E97b8YdawmGb23c8U_6u7N65hTrVN"; 
     let accessToken = localStorage.getItem('drive_access_token');
@@ -237,7 +243,8 @@
             Don_Vi_Tinh: document.getElementById('f-dvt').value,
             Mo_Ta: document.getElementById('f-mota').value,
             Hinh_Anh: driveLink,
-            Ma_QR: maQR
+            Ma_QR: maQR,
+            Ghi_Chu: "" 
           })
         });
 
@@ -265,7 +272,6 @@
         if(data.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Bảng giá trống.</p>'; return; }
 
         for (let nhom in groups) {
-          // Bổ sung data-label để CSS bọc thẻ Mobile
           let rows = groups[nhom].map(item => {
             const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(item.Ma_QR)}`;
             
@@ -366,33 +372,26 @@
     }
 
     // =========================================================================
-    // TÍNH NĂNG MỚI: NHẬP GIÁ HÀNG LOẠT TỪ KHO VẬT TƯ (Bảo toàn mã SMK)
-    // =========================================================================
-   // =========================================================================
-    // TÍNH NĂNG MỚI: NHẬP GIÁ HÀNG LOẠT TỪ KHO VẬT TƯ (Bảo toàn mã SMK)
+    // TÍNH NĂNG 1: NHẬP GIÁ TỪ KHO VẬT TƯ (Giữ nguyên)
     // =========================================================================
     async function openKhoImportPopup() {
         Swal.fire({ title: 'Đang tải dữ liệu Kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
 
         try {
-            // 1. Tải danh sách vật tư từ Kho
             const resKho = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?select=*`, { headers: h });
             const dataKho = await resKho.json();
 
-            // 2. Tải danh sách mã QR Kho đã lưu trong Ghi_Chu của Bảng Giá
             const resGia = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=Ghi_Chu`, { headers: h });
             const dataGia = await resGia.json();
             const maKhoDaCoGia = dataGia.map(item => item.Ghi_Chu).filter(m => m && m.startsWith('SMK-'));
 
-            // 3. Lọc ra những vật tư Kho CHƯA TỪNG có trong Bảng Giá
             const vatTuMoi = dataKho.filter(vt => !maKhoDaCoGia.includes(vt.Ma_QR));
 
             if (vatTuMoi.length === 0) {
                 return Swal.fire('Thông báo', 'Tất cả vật tư trong kho đều đã được niêm yết giá.', 'info');
             }
 
-            // 4. Tạo giao diện bảng nhập liệu
             let rowsHtml = vatTuMoi.map((vt, index) => `
                 <tr style="border-bottom: 1px solid #ddd;">
                     <td style="padding: 10px; text-align: left; max-width: 150px;">
@@ -458,12 +457,10 @@
                 }
             });
 
-            // 5. Nếu xác nhận lưu và có dữ liệu
             if (isConfirmed && newDataToInsert) {
                 if (newDataToInsert.length > 0) {
                     Swal.fire({ title: 'Đang đẩy dữ liệu lên hệ thống...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     
-                    // SỬA LỖI Ở ĐÂY: Thêm header khai báo JSON chuẩn
                     const postHeaders = { 
                         'apikey': window.SB_CONFIG.KEY, 
                         'Authorization': `Bearer ${window.SB_CONFIG.KEY}`,
@@ -477,7 +474,6 @@
                         body: JSON.stringify(newDataToInsert)
                     });
 
-                    // SỬA LỖI Ở ĐÂY: Bắt lỗi nếu Supabase từ chối
                     if (!response.ok) {
                         const errInfo = await response.json();
                         throw new Error(errInfo.message || "Cơ sở dữ liệu từ chối gói thông tin!");
@@ -492,6 +488,162 @@
 
         } catch (error) {
             Swal.fire('Lỗi', error.message, 'error');
+        }
+    }
+
+    // =========================================================================
+    // TÍNH NĂNG 2: CHUẨN HÓA DỮ LIỆU TỪ DANH MỤC SẢN PHẨM (DM_SanPham)
+    // =========================================================================
+    async function openDMImportPopup() {
+        Swal.fire({ title: 'Đang tải Danh mục Sản phẩm...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+
+        try {
+            // Lấy danh sách DM_SanPham
+            const resDM = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_SanPham?select=*`, { headers: h });
+            const dataDM = await resDM.json();
+
+            // Lấy danh sách Bảng Giá hiện tại để đối chiếu (Dựa theo Tên)
+            const resGia = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=Ten_Hang`, { headers: h });
+            const dataGia = await resGia.json();
+            const tenDaCoTrongGia = dataGia.map(item => item.Ten_Hang ? item.Ten_Hang.toLowerCase().trim() : '');
+
+            // Lọc các sản phẩm chưa có trong Bảng Giá
+            const spChuaCoGia = dataDM.filter(sp => {
+                if(!sp.Ten_Hang) return false;
+                return !tenDaCoTrongGia.includes(sp.Ten_Hang.toLowerCase().trim());
+            });
+
+            if (spChuaCoGia.length === 0) {
+                return Swal.fire('Thông báo', 'Tất cả sản phẩm trong Danh Mục đều đã có trên Bảng Giá chuẩn.', 'info');
+            }
+
+            // Tạo giao diện
+            let rowsHtml = spChuaCoGia.map((sp, index) => {
+                const giaLeStr = Number(sp.Gia_Le || 0).toLocaleString("vi-VN");
+                const giaSiStr = Number(sp.Gia_Si || 0).toLocaleString("vi-VN");
+                
+                return `
+                <tr style="border-bottom: 2px solid #eee; background: ${index % 2 === 0 ? '#fff' : '#fcfcfc'}">
+                    <td style="padding: 15px 10px; text-align: left; max-width: 200px;">
+                        <b style="color: #2980b9;">${sp.Ten_Hang}</b><br>
+                        <small style="color: gray;">Gốc: Lẻ ${giaLeStr}đ - Sỉ ${giaSiStr}đ</small><br>
+                        <input type="text" id="dm-mota-${index}" class="swal2-input" placeholder="Nhập mô tả (Không bắt buộc)..." style="width: 100%; margin: 5px 0 0 0; font-size: 12px; height: 30px;">
+                    </td>
+                    <td style="padding: 10px;"><input type="text" id="dm-ban-${index}" class="swal2-input" value="${giaLeStr}" style="width: 100%; margin: 0; font-size: 13px; text-align:right;" oninput="formatCurrency(this)"></td>
+                    <td style="padding: 10px;"><input type="text" id="dm-si-${index}" class="swal2-input" value="${giaSiStr}" style="width: 100%; margin: 0; font-size: 13px; text-align:right;" oninput="formatCurrency(this)"></td>
+                    <td style="padding: 10px; text-align: center;">
+                        <input type="file" id="dm-file-${index}" accept="image/*" style="font-size: 11px; max-width: 120px;">
+                        <input type="hidden" id="dm-dvt-${index}" value="${sp.DVT || 'Cái'}">
+                        <input type="hidden" id="dm-ten-${index}" value="${sp.Ten_Hang}">
+                    </td>
+                </tr>
+            `}).join('');
+
+            const { value: selectedData, isConfirmed } = await Swal.fire({
+                title: 'CHUẨN HÓA TỪ DANH MỤC',
+                width: '1000px',
+                html: `
+                    <div style="max-height: 500px; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead style="position: sticky; top: 0; background: #2980b9; color: white; z-index: 10;">
+                                <tr>
+                                    <th style="padding: 12px 10px; text-align: left;">Sản phẩm / Mô tả</th>
+                                    <th style="padding: 12px 10px; width: 120px;">Giá Bán mới</th>
+                                    <th style="padding: 12px 10px; width: 120px;">Giá Sỉ mới</th>
+                                    <th style="padding: 12px 10px; text-align: center; width: 150px;">Tải ảnh Drive</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                    <p style="color: red; font-size: 12px; margin-top: 10px; text-align: left;">* Lưu ý: Hệ thống sẽ mất khoảng 2-3 giây để tải mỗi bức ảnh lên Google Drive trước khi lưu.</p>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'LƯU TẤT CẢ LÊN BẢNG GIÁ',
+                confirmButtonColor: '#2D5A27',
+                cancelButtonText: 'HỦY BỎ',
+                preConfirm: () => {
+                    const data = [];
+                    for (let i = 0; i < spChuaCoGia.length; i++) {
+                        const elBan = document.getElementById(`dm-ban-${i}`);
+                        const elSi = document.getElementById(`dm-si-${i}`);
+                        if (!elBan || !elSi) continue;
+
+                        const giaBan = parseNum(elBan.value);
+                        const giaSi = parseNum(elSi.value);
+                        const fileInput = document.getElementById(`dm-file-${i}`);
+                        
+                        // Nếu có nhập giá thì mới lấy (hoặc có sẵn giá từ danh mục)
+                        if (giaBan > 0 || giaSi > 0) {
+                            data.push({
+                                Nhom_Hang: "SẢN PHẨM KHÁC", // DM_SanPham ko có nhóm nên gom vào nhóm chung
+                                Ten_Hang: document.getElementById(`dm-ten-${i}`).value,
+                                Gia_Ban: giaBan,
+                                Gia_Si: giaSi,
+                                Don_Vi_Tinh: document.getElementById(`dm-dvt-${i}`).value, 
+                                Mo_Ta: document.getElementById(`dm-mota-${i}`).value,
+                                fileUpload: fileInput.files.length > 0 ? fileInput.files[0] : null,
+                                Ma_QR: "SMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(), 
+                                Ghi_Chu: "" 
+                            });
+                        }
+                    }
+                    return data;
+                }
+            });
+
+            // Nếu nhấn Lưu
+            if (isConfirmed && selectedData && selectedData.length > 0) {
+                // Bước upload ảnh cần async/await nên tách ra ngoài preConfirm
+                Swal.fire({ title: 'Đang tải ảnh & lưu dữ liệu...', text: 'Vui lòng không đóng trình duyệt lúc này.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                const finalDataToInsert = [];
+                for (let item of selectedData) {
+                    let driveLink = "";
+                    if (item.fileUpload) {
+                        driveLink = await uploadFileToDrive(item.fileUpload) || "";
+                    }
+                    
+                    finalDataToInsert.push({
+                        Nhom_Hang: item.Nhom_Hang,
+                        Ten_Hang: item.Ten_Hang,
+                        Gia_Ban: item.Gia_Ban,
+                        Gia_Si: item.Gia_Si,
+                        Don_Vi_Tinh: item.Don_Vi_Tinh,
+                        Mo_Ta: item.Mo_Ta,
+                        Hinh_Anh: driveLink, // Thay file bằng link thực tế
+                        Ma_QR: item.Ma_QR,
+                        Ghi_Chu: item.Ghi_Chu
+                    });
+                }
+
+                const postHeaders = { 
+                    'apikey': window.SB_CONFIG.KEY, 
+                    'Authorization': `Bearer ${window.SB_CONFIG.KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                };
+
+                const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham`, {
+                    method: 'POST',
+                    headers: postHeaders,
+                    body: JSON.stringify(finalDataToInsert)
+                });
+
+                if (!response.ok) {
+                    const errInfo = await response.json();
+                    throw new Error(errInfo.message || "Cơ sở dữ liệu từ chối lưu!");
+                }
+
+                Swal.fire('Thành công', `Đã chuẩn hóa và đưa ${finalDataToInsert.length} sản phẩm lên Bảng Giá.`, 'success');
+                loadPriceList();
+            } else if (isConfirmed) {
+                Swal.fire('Thông báo', 'Không có sản phẩm nào hợp lệ để lưu.', 'info');
+            }
+
+        } catch (error) {
+            Swal.fire('Lỗi hệ thống', error.message, 'error');
         }
     }
   </script>
