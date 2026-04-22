@@ -32,6 +32,7 @@
     .btn-add:hover { background: #219653; transform: translateY(-2px); }
     
     .btn-edit { color: #3498db; border: none; background: none; cursor: pointer; font-weight: bold; padding: 5px; }
+    .btn-huy { color: #f39c12; border: none; background: none; cursor: pointer; font-weight: bold; padding: 5px; }
     .btn-del { color: #e74c3c; border: none; background: none; cursor: pointer; font-weight: bold; padding: 5px; }
     
     .badge { background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; border: 1px solid #cbd5e1; }
@@ -86,7 +87,11 @@
     <div class="inventory-card">
       <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <input type="text" id="searchInput" class="search-box" placeholder="🔍 Tìm theo Tên, Mã NL, ĐVT..." onkeyup="filterTable()">
-        <button onclick="loadMaterials()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold;">🔄 Làm mới</button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button onclick="viewHistory('[XUẤT HỦY]')" style="background:#f39c12; border:none; color:white; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 13px;">🗑️ Lịch sử Hủy</button>
+            <button onclick="viewHistory('[ĐÃ SỬ DỤNG]')" style="background:#3498db; border:none; color:white; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 13px;">⚙️ Lịch sử Dùng</button>
+            <button onclick="loadMaterials()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold;">🔄 Làm mới</button>
+        </div>
       </div>
       
       <div class="table-wrapper">
@@ -97,8 +102,8 @@
               <th style="width: 25%;">Tên Nguyên Liệu</th>
               <th style="width: 10%;">ĐVT</th>
               <th style="width: 15%; text-align: center;">Tồn Kho</th>
-              <th style="width: 20%;">Ghi Chú</th>
-              <th style="width: 15%; text-align: center;">Thao tác</th>
+              <th style="width: 15%;">Ghi Chú</th>
+              <th style="width: 20%; text-align: center;">Thao tác</th>
             </tr>
           </thead>
           <tbody id="material-body">
@@ -111,6 +116,7 @@
 
   <script>
     let materialsData = [];
+    window.currentHistoryData = []; 
 
     document.addEventListener("DOMContentLoaded", () => {
       loadMaterials();
@@ -125,7 +131,6 @@
     async function loadMaterials() {
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
       try {
-        // Chỉ tải những dòng có ghi chú là [TỒN KHO GỐC] để làm danh mục gốc
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ghi_Chu=eq.[TỒN KHO GỐC]&select=*&order=id.desc`, { headers: h });
         materialsData = await res.json();
         renderTable(materialsData);
@@ -154,6 +159,7 @@
             <td data-label="Ghi Chú"><span class="badge badge-ton">${item.Ghi_Chu || '-'}</span></td>
             <td data-label="Thao tác" style="text-align: center;">
               <button class="btn-edit" onclick="editMaterial(${index})">SỬA</button> | 
+              <button class="btn-huy" onclick="xuatHuyMaterial(${index})">HỦY</button> | 
               <button class="btn-del" onclick="deleteMaterial(${item.id})">XÓA</button>
             </td>
           </tr>
@@ -293,7 +299,6 @@
               }
           }
 
-          // CẬP NHẬT Ở ĐÂY: Truyền dữ liệu giả định cho các cột không được Null
           return {
             id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000), 
             Ngay_Gio: getCleanVNTime(),
@@ -333,6 +338,95 @@
       }
     }
 
+    async function xuatHuyMaterial(index) {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      let currentList = materialsData;
+      if(query) {
+          currentList = materialsData.filter(item => {
+            const ma = (item.Ma_Nguyen_Lieu || "").toLowerCase();
+            const ten = (item.Ten_Nguyen_Lieu || "").toLowerCase();
+            const dvt = (item.DVT || "").toLowerCase();
+            return ma.includes(query) || ten.includes(query) || dvt.includes(query);
+          });
+      }
+      
+      const item = currentList[index];
+
+      const { value: slHuy } = await Swal.fire({
+        title: 'XUẤT HỦY NGUYÊN LIỆU',
+        html: `Nhập số lượng <b>${item.Ten_Nguyen_Lieu}</b> cần xuất hủy (Tồn hiện tại: <b style="color:red">${item.So_Luong}</b>):`,
+        input: 'number',
+        inputAttributes: {
+          min: 1,
+          max: item.So_Luong,
+          step: 'any'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'XÁC NHẬN HỦY',
+        confirmButtonColor: '#f39c12',
+        cancelButtonText: 'ĐÓNG',
+        inputValidator: (value) => {
+          if (!value || value <= 0) {
+            return 'Số lượng xuất hủy phải lớn hơn 0!';
+          }
+          if (Number(value) > Number(item.So_Luong)) {
+            return 'Không thể xuất hủy vượt quá số lượng tồn kho!';
+          }
+        }
+      });
+
+      if (slHuy) {
+        Swal.fire({ title: 'Đang xử lý xuất hủy...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+          const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+          
+          const tonMoi = Number(item.So_Luong) - Number(slHuy);
+          
+          const patchRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${item.id}`, {
+            method: 'PATCH',
+            headers: h,
+            body: JSON.stringify({ So_Luong: tonMoi })
+          });
+          
+          if (!patchRes.ok) {
+              const err = await patchRes.json();
+              throw new Error(err.message || "Cơ sở dữ liệu từ chối trừ tồn kho gốc!");
+          }
+
+          let maHuyMoi = "HUY" + (item.Ma_Nguyen_Lieu ? item.Ma_Nguyen_Lieu.substring(2) : "-" + Math.random().toString(36).substr(2, 6).toUpperCase());
+          
+          const logData = {
+            id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000), 
+            Ngay_Gio: getCleanVNTime(),
+            Ma_Don: "XUẤT HỦY",        
+            Khach_Hang: "Hệ thống",    
+            Ten_Hang: "Xuất hủy nguyên liệu",   
+            Ma_Nguyen_Lieu: maHuyMoi,
+            Ten_Nguyen_Lieu: item.Ten_Nguyen_Lieu,
+            DVT: item.DVT,
+            So_Luong: Number(slHuy),
+            Ghi_Chu: "[XUẤT HỦY]"
+          };
+
+          const postRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, {
+            method: 'POST',
+            headers: h,
+            body: JSON.stringify(logData)
+          });
+
+          if (!postRes.ok) {
+              const err = await postRes.json();
+              throw new Error(err.message || "Cơ sở dữ liệu từ chối lưu nhật ký hủy!");
+          }
+
+          Swal.fire({icon: 'success', title: 'Đã ghi nhận xuất hủy!', timer: 1200, showConfirmButton: false});
+          loadMaterials(); 
+        } catch (e) {
+          Swal.fire('Lỗi xử lý', e.message, 'error');
+        }
+      }
+    }
+
     async function deleteMaterial(id) {
       const r = await Swal.fire({ 
           title: 'Xóa nguyên liệu này?', 
@@ -364,6 +458,199 @@
         }
       }
     }
+
+    // =========================================================================
+    // XỬ LÝ NÚT XEM LỊCH SỬ XUẤT HỦY / SỬ DỤNG
+    // =========================================================================
+    window.viewHistory = async function(type) {
+        Swal.fire({ title: 'Đang tải dữ liệu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ghi_Chu=eq.${type}&select=*&order=id.desc`, { headers: h });
+            const data = await res.json();
+
+            window.currentHistoryData = data; 
+            window.currentHistoryType = type; // Lưu lại loại lịch sử đang xem
+
+            let title = type === '[XUẤT HỦY]' ? 'LỊCH SỬ XUẤT HỦY' : 'LỊCH SỬ SỬ DỤNG';
+
+            let html = `
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; font-size: 13px;">
+                    <span>Từ:</span> <input type="date" id="hist-start" class="swal2-input" style="margin:0; height: 35px; font-size: 13px;">
+                    <span>Đến:</span> <input type="date" id="hist-end" class="swal2-input" style="margin:0; height: 35px; font-size: 13px;">
+                    <button onclick="filterHistory()" style="background:#2D5A27; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">LỌC</button>
+                </div>
+                <div style="max-height: 400px; overflow-y: auto; text-align: left;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead style="position: sticky; top: 0; background: #f1f5f9; z-index: 10;">
+                            <tr>
+                                <th style="padding: 8px; border-bottom: 1px solid #ddd; width: 15%;">Ngày giờ</th>
+                                <th style="padding: 8px; border-bottom: 1px solid #ddd; width: 18%;">Mã NL</th>
+                                <th style="padding: 8px; border-bottom: 1px solid #ddd; width: auto;">Tên NL</th>
+                                <th style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center; width: 10%;">SL</th>
+                                <th style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center; width: 15%;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            ${renderHistoryRows(data)}
+                        </tbody>
+                    </table>
+                    <p style="color: #27ae60; font-size: 11px; margin-top: 10px; font-style: italic;">* Lưu ý: Việc Sửa/Xóa lịch sử ở đây sẽ TỰ ĐỘNG hoàn/trừ lại số lượng tương ứng vào Tồn Kho gốc.</p>
+                </div>
+            `;
+
+            Swal.fire({
+                title: title,
+                width: '900px', 
+                html: html,
+                showCloseButton: true,
+                showConfirmButton: false
+            });
+
+        } catch (error) {
+            Swal.fire('Lỗi', 'Không thể tải dữ liệu lịch sử!', 'error');
+        }
+    };
+
+    window.renderHistoryRows = function(data) {
+        if (!data || data.length === 0) return `<tr><td colspan="5" style="text-align:center; padding: 20px;">Không có dữ liệu.</td></tr>`;
+        return data.map((item, idx) => `
+            <tr id="hist-row-${item.id}">
+                <td style="padding: 8px; border-bottom: 1px solid #eee; white-space: nowrap;">${item.Ngay_Gio ? item.Ngay_Gio.split(' ')[0] : ''}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 12px;"><b>${item.Ma_Nguyen_Lieu || ''}</b></td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; line-height: 1.4;">${item.Ten_Nguyen_Lieu || ''}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center; color: red; font-weight: bold;">${item.So_Luong || 0}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center; white-space: nowrap;">
+                    <button onclick="editHistoryItem(${item.id}, '${item.Ten_Nguyen_Lieu}', ${item.So_Luong}, '${item.Ma_Nguyen_Lieu}')" style="background: none; border: none; color: #3498db; cursor: pointer; font-weight: bold; padding: 2px;">Sửa</button> |
+                    <button onclick="deleteHistoryItem(${item.id}, '${item.Ma_Nguyen_Lieu}', ${item.So_Luong})" style="background: none; border: none; color: #e74c3c; cursor: pointer; font-weight: bold; padding: 2px;">Xóa</button>
+                </td>
+            </tr>
+        `).join('');
+    };
+
+    window.filterHistory = function() {
+        let start = document.getElementById('hist-start').value;
+        let end = document.getElementById('hist-end').value;
+        
+        let filtered = window.currentHistoryData;
+
+        if (start || end) {
+            filtered = window.currentHistoryData.filter(item => {
+                if (!item.Ngay_Gio) return false;
+                
+                let parts = item.Ngay_Gio.split(' ')[0].split('/'); 
+                if (parts.length !== 3) return false;
+                
+                let itemDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                itemDate.setHours(0,0,0,0);
+
+                let pass = true;
+                if (start) {
+                    let sDate = new Date(start);
+                    sDate.setHours(0,0,0,0);
+                    if (itemDate < sDate) pass = false;
+                }
+                if (end) {
+                    let eDate = new Date(end);
+                    eDate.setHours(0,0,0,0);
+                    if (itemDate > eDate) pass = false;
+                }
+                return pass;
+            });
+        }
+
+        document.getElementById('history-body').innerHTML = renderHistoryRows(filtered);
+    };
+
+    window.editHistoryItem = async function(id, tenNL, slCu, maNL) {
+        const result = await Swal.fire({
+            title: 'SỬA SỐ LƯỢNG LỊCH SỬ',
+            html: `Nhập số lượng thực tế mới cho:<br><b style="color:#2980b9">${tenNL}</b>`,
+            input: 'number',
+            inputValue: slCu,
+            showCancelButton: true,
+            confirmButtonText: 'LƯU SỬA',
+            cancelButtonText: 'ĐÓNG',
+            inputValidator: (value) => {
+                if (!value || value <= 0) return 'Số lượng phải lớn hơn 0!';
+            }
+        });
+
+        if (result.isConfirmed && result.value && result.value != slCu) {
+            try {
+                const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+                let slMoi = Number(result.value);
+                let delta = slMoi - slCu;
+                
+                // 1. Cập nhật tồn kho gốc
+                let maGoc = maNL.replace('SD-', 'NL-').replace('HUY-', 'NL-');
+                const resGoc = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${maGoc}&select=id,So_Luong`, { headers: h });
+                const dataGoc = await resGoc.json();
+                
+                if(dataGoc && dataGoc.length > 0) {
+                    let tonMoi = Number(dataGoc[0].So_Luong) - delta;
+                    await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${dataGoc[0].id}`, {
+                        method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi })
+                    });
+                }
+
+                // 2. Cập nhật lịch sử
+                const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${id}`, {
+                    method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: slMoi })
+                });
+                
+                if (!res.ok) throw new Error("Database từ chối cập nhật!");
+
+                Swal.fire({icon: 'success', title: 'Đã sửa lịch sử & Cập nhật kho!', timer: 1500, showConfirmButton: false}).then(() => {
+                    viewHistory(window.currentHistoryType); 
+                    loadMaterials(); // Cập nhật bảng ngoài
+                });
+            } catch (e) {
+                Swal.fire('Lỗi', e.message, 'error');
+            }
+        } else if (result.isDismissed) {
+            viewHistory(window.currentHistoryType); 
+        }
+    };
+
+    window.deleteHistoryItem = async function(id, maNL, slCu) {
+        const r = await Swal.fire({ 
+            title: 'Xóa dòng lịch sử này?', 
+            icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA NGAY', cancelButtonText: 'ĐÓNG'
+        });
+        
+        if (r.isConfirmed) {
+            try {
+                const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+                
+                // 1. Hoàn lại tồn kho gốc
+                let maGoc = maNL.replace('SD-', 'NL-').replace('HUY-', 'NL-');
+                const resGoc = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${maGoc}&select=id,So_Luong`, { headers: h });
+                const dataGoc = await resGoc.json();
+                
+                if(dataGoc && dataGoc.length > 0) {
+                    let tonMoi = Number(dataGoc[0].So_Luong) + Number(slCu);
+                    await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${dataGoc[0].id}`, {
+                        method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi })
+                    });
+                }
+
+                // 2. Xóa dòng lịch sử
+                const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` } });
+                if (!res.ok) throw new Error("Database từ chối xóa!");
+
+                Swal.fire({icon: 'success', title: 'Đã xóa & Hoàn số lượng kho!', timer: 1500, showConfirmButton: false}).then(() => {
+                    viewHistory(window.currentHistoryType); 
+                    loadMaterials(); 
+                });
+
+            } catch (e) {
+                Swal.fire('Lỗi', e.message, 'error');
+            }
+        } else if (r.isDismissed) {
+            viewHistory(window.currentHistoryType); 
+        }
+    };
   </script>
 </body>
 </html>

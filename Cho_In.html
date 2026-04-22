@@ -41,8 +41,8 @@
     .btn-file { background: #f1f5f9; color: #2563eb; border: 1px solid #cbd5e1; height: 40px; }
     .btn-file:hover { background: #e2e8f0; }
 
-    /* Cập nhật lưới hiển thị (Bỏ ô nhập Mã NL) */
-    .nl-row { display: grid; grid-template-columns: 2fr 1fr 0.8fr 1fr 40px; gap: 5px; margin-bottom: 8px; align-items: center; }
+    /* Cập nhật lưới hiển thị */
+    .nl-row { display: grid; grid-template-columns: 2fr 1fr 0.8fr 1.5fr 40px; gap: 5px; margin-bottom: 8px; align-items: center; }
     .nl-input { padding: 8px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; width: 100%; box-sizing: border-box; }
 
     .swal2-container { z-index: 20000 !important; }
@@ -63,35 +63,27 @@
         .f5-header > div { width: 100%; }
         .f5-header button { width: 100%; padding: 12px; font-size: 14px; }
 
-        /* Biến bảng thành Dạng Thẻ (Card) */
         .f5-table, .f5-table thead, .f5-table tbody, .f5-table th, .f5-table td { display: block; width: 100%; box-sizing: border-box; }
         .f5-table thead { display: none; }
         
-        /* Đẩy cột ảnh lên trên */
         .f5-row { display: flex; flex-direction: column; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #eee; border-left: 4px solid var(--primary-f5); position: relative; }
         .f5-row td { padding: 12px; border: none; border-bottom: 1px solid #f9f9f9; text-align: left; }
         .f5-row td:last-child { border-bottom: none; border-radius: 0 0 8px 8px; background: #fafafa; padding: 15px 12px; }
         
-        /* 1. Cột Ảnh */
         .f5-row td:nth-child(3) { order: -1; display: flex; justify-content: center; padding-bottom: 10px; border-bottom: none; background: #f8fafc; border-radius: 8px 8px 0 0; }
         .img-container { width: 100%; height: 200px; border: 1px solid #e2e8f0; max-width: 350px; } 
         
-        /* 2. Cột Đơn & Khách */
         .f5-row td:nth-child(1), .f5-row td:nth-child(2) { padding-top: 8px; padding-bottom: 8px; }
         .f5-row td:nth-child(1):before { content: "Mã Đơn: "; font-weight: bold; color: #555; font-size: 12px; }
         .f5-row td:nth-child(2):before { content: "Khách / SP: "; font-weight: bold; color: #555; font-size: 12px; display: block; margin-bottom: 2px; }
         
-        /* 3. Cột Kỹ thuật */
         .f5-row td:nth-child(4) { padding-top: 10px; padding-bottom: 10px; }
         .badge { font-size: 13px; padding: 6px 10px; margin-bottom: 5px; }
         
-        /* 4. Nút Thao Tác */
         .btn-action { font-size: 13px; margin-bottom: 10px; }
         
-        /* --- SỬA LỖI POPUP XUẤT KHO TRÊN MOBILE --- */
         .swal2-popup { width: 95% !important; padding: 15px !important; border-radius: 12px !important; }
         
-        /* Chuyển grid ngang thành list dọc, bỏ ô mã */
         .nl-row { 
           display: flex; flex-wrap: wrap; background: #fff; padding: 10px; 
           border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 10px; 
@@ -158,20 +150,16 @@
         }
 
         tbody.innerHTML = data.map(item => {
-          // --- CẬP NHẬT LOGIC NHẬN DIỆN THÔNG MINH (GIỐNG DUYỆT FILE) ---
           const link = item.Link_Anh || "";
           let imgHtml = "";
 
           if (!link) {
             imgHtml = `<div style="font-size:10px; color:#94a3b8; text-align:center">📂 Ổ Z:/</div>`;
           } else if (link.toLowerCase().includes('/folders/')) {
-            // Trường hợp Link Thư mục
             imgHtml = `<div onclick="window.open('${link}', '_blank')" style="cursor:pointer; color:#f39c12; font-weight:bold; font-size:11px; text-align:center; padding: 10px;">📁 Click xem Thư mục</div>`;
           } else if (link.toLowerCase().includes('.pdf')) {
-            // Trường hợp File PDF
             imgHtml = `<div onclick="window.open('${link}', '_blank')" style="cursor:pointer; color:#27ae60; font-weight:bold; font-size:11px; text-align:center; padding: 10px;">📄 Click để xem PDF</div>`;
           } else {
-            // Trường hợp Ảnh Drive (JPG/PNG...)
             const driveIdMatch = link.match(/[-\w]{25,}/);
             const previewUrl = driveIdMatch ? `https://drive.google.com/thumbnail?id=${driveIdMatch[0]}&sz=w500` : link;
             
@@ -211,85 +199,196 @@
       }
     }
 
-    /** 3. MỞ FORM VẬT TƯ (Đã bỏ cột Mã NL) */
-    function openMaterialForm(itemStr) {
+    /** 3. MỞ FORM VẬT TƯ (BẢN ĐẠI TU: TRỪ TỒN KHO & THÊM MỚI) */
+    async function openMaterialForm(itemStr) {
       const item = JSON.parse(decodeURIComponent(itemStr));
+      
+      Swal.fire({ title: 'Đang tải dữ liệu kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      let inventory = [];
+      try {
+          // Tải toàn bộ vật tư gốc
+          const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ghi_Chu=eq.[TỒN KHO GỐC]&select=*&order=id.desc`, { headers: h });
+          inventory = await res.json();
+      } catch (e) {
+          console.error(e);
+      }
+
+      // Render Bảng kho trực tiếp
+      let invHtml = inventory.map(inv => `
+          <tr class="inv-row" data-search="${(inv.Ma_Nguyen_Lieu + ' ' + inv.Ten_Nguyen_Lieu + ' ' + (inv.DVT||'')).toLowerCase()}">
+              <td style="padding:8px 5px; border-bottom:1px solid #eee; font-size:11px;">${inv.Ma_Nguyen_Lieu}</td>
+              <td style="padding:8px 5px; border-bottom:1px solid #eee; font-size:13px; font-weight:bold; color:#2D5A27;">${inv.Ten_Nguyen_Lieu}</td>
+              <td style="padding:8px 5px; border-bottom:1px solid #eee; font-size:12px; text-align:center;">${inv.DVT || '-'}</td>
+              <td style="padding:8px 5px; border-bottom:1px solid #eee; font-size:14px; text-align:center; color:#d35400; font-weight:bold;">${inv.So_Luong}</td>
+              <td style="padding:4px 5px; border-bottom:1px solid #eee;">
+                  <input type="number" class="nl-input inv-dung" placeholder="0" min="0" style="width:100%; padding:8px; border:1px solid #3498db; border-radius:4px; text-align:center; font-weight:bold; font-size: 14px;"
+                      data-id="${inv.id}" data-ma="${inv.Ma_Nguyen_Lieu}" data-ten="${inv.Ten_Nguyen_Lieu}" data-dvt="${inv.DVT}" data-ton="${inv.So_Luong}">
+              </td>
+          </tr>
+      `).join('');
+
       Swal.fire({
-        title: 'XÁC NHẬN HOÀN TẤT & XUẤT KHO',
-        width: '850px',
+        title: 'XUẤT KHO VẬT TƯ & HOÀN TẤT',
+        width: '900px',
         html: `
           <div style="text-align:left; font-size:13px; margin-bottom:15px; padding:10px; background:#f8fafc; border-radius:6px; border-left:4px solid #e67e22;">
             📌 Đơn: <b>${item.Ma_Don}</b> - SP: <b>${item.Ten_Hang}</b>
           </div>
+
+          <div style="text-align:left; margin-bottom:8px; font-weight:bold; font-size:14px; color:#2c3e50; border-bottom: 2px solid #3498db; display:inline-block; padding-bottom:3px;">1. TRỪ TRỰC TIẾP TỪ KHO</div>
+          <input type="text" id="inv-search" placeholder="🔍 Nhập Tên hoặc Mã vật tư để tìm nhanh..." onkeyup="filterInv()" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; margin-bottom:10px; box-sizing:border-box;">
+          
+          <div style="max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 25px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+              <table style="width:100%; border-collapse:collapse; text-align:left;">
+                  <thead style="position:sticky; top:0; background:#f1f5f9; z-index:10; border-bottom: 1px solid #cbd5e1;">
+                      <tr>
+                          <th style="padding:10px 5px; font-size:11px;">Mã NL</th>
+                          <th style="padding:10px 5px; font-size:11px;">Tên Nguyên Liệu</th>
+                          <th style="padding:10px 5px; font-size:11px; text-align:center;">ĐVT</th>
+                          <th style="padding:10px 5px; font-size:11px; text-align:center;">Tồn Kho</th>
+                          <th style="padding:10px 5px; font-size:11px; width:90px; text-align:center;">SL SỬ DỤNG</th>
+                      </tr>
+                  </thead>
+                  <tbody>${invHtml || '<tr><td colspan="5" style="text-align:center; padding:15px;">Kho trống</td></tr>'}</tbody>
+              </table>
+          </div>
+
+          <div style="text-align:left; margin-bottom:8px; font-weight:bold; font-size:14px; color:#e74c3c; border-bottom: 2px solid #e74c3c; display:inline-block; padding-bottom:3px;">2. NHẬP PHÁT SINH MỚI NGOÀI KHO (Nếu có)</div>
           <div id="material-list">
             <div class="nl-row header-mobile-hide" style="font-weight:bold; font-size:11px; border-bottom:2px solid #e2e8f0; padding-bottom:5px; margin-bottom:10px;">
-              <div>Tên Nguyên Liệu</div><div>Đơn vị tính</div><div>SL</div><div>Ghi chú</div><div></div>
+              <div>Tên Nguyên Liệu</div><div>Đơn vị tính</div><div>SL Dùng</div><div>Ghi chú phát sinh</div><div></div>
             </div>
             <div class="nl-row item-row">
               <input class="nl-input m-ten" placeholder="Tên vật tư"><input class="nl-input m-loai" placeholder="Cuộn/Tấm"><input class="nl-input m-sl" type="number" placeholder="SL"><input class="nl-input m-note" placeholder="Ghi chú">
               <button onclick="this.parentElement.remove()" style="border:none; color:red; background:none; cursor:pointer; font-size:16px;">✕</button>
             </div>
           </div>
-          <button onclick="window.addNLRow()" style="margin-top:15px; background:#34495e; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">+ THÊM VẬT TƯ</button>
+          <button onclick="window.addNLRow()" style="margin-top:10px; background:#34495e; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px; display:block; margin-right:auto;">+ THÊM DÒNG MỚI</button>
         `,
         showCancelButton: true, confirmButtonText: '🚀 XÁC NHẬN HOÀN TẤT', confirmButtonColor: '#27ae60',
         preConfirm: async () => {
+          const existingData = [];
+          document.querySelectorAll('.inv-dung').forEach(input => {
+              const val = Number(input.value);
+              if (val > 0) {
+                  existingData.push({
+                      id: input.getAttribute('data-id'),
+                      maNL: input.getAttribute('data-ma'),
+                      tenNL: input.getAttribute('data-ten'),
+                      dvt: input.getAttribute('data-dvt'),
+                      tonCu: Number(input.getAttribute('data-ton')),
+                      slDung: val
+                  });
+              }
+          });
+
+          const newData = [];
           const rows = document.querySelectorAll('.item-row');
-          const materials = [];
-          
           for(let row of rows) {
             const ten = row.querySelector('.m-ten').value.trim();
-            if(ten) {
-              // --- TỰ ĐỘNG SINH MÃ NL NGẪU NHIÊN VÀ ĐẢM BẢO DUY NHẤT ---
-              let isDuplicate = true;
-              let maMoi = "";
-              while(isDuplicate) {
-                  maMoi = "NL-" + Math.random().toString(36).substr(2, 6).toUpperCase();
-                  try {
-                      const resCheck = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${maMoi}&select=id`, {
-                          headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` }
-                      });
-                      const checkData = await resCheck.json();
-                      if(checkData.length === 0) isDuplicate = false; // Mã chưa tồn tại
-                  } catch(e) {
-                      console.error("Lỗi check mã NL:", e);
-                      isDuplicate = false; // Bỏ qua nếu lỗi mạng để khỏi treo form
-                  }
-              }
-
-              materials.push({
-                maNL: maMoi,
+            const sl = Number(row.querySelector('.m-sl').value);
+            if(ten && sl > 0) {
+              newData.push({
                 tenNL: ten,
-                loaiNL: row.querySelector('.m-loai').value,
-                slNL: row.querySelector('.m-sl').value,
-                noteNL: row.querySelector('.m-note').value
+                dvt: row.querySelector('.m-loai').value.trim(),
+                slDung: sl,
+                ghiChu: row.querySelector('.m-note').value.trim()
               });
             }
           }
-          if(materials.length === 0) { Swal.showValidationMessage('Nhập ít nhất 1 loại vật tư!'); return false; }
-          return materials;
+
+          if(existingData.length === 0 && newData.length === 0) { 
+              Swal.showValidationMessage('Vui lòng nhập số lượng cho ít nhất 1 loại vật tư (ở kho hoặc mới)!'); 
+              return false; 
+          }
+          return { existingData, newData };
         }
       }).then((r) => { if (r.isConfirmed) processCompleteIn(item, r.value); });
     }
 
-    /** 4. THỰC THI CẬP NHẬT 3 BẢNG */
-    async function processCompleteIn(item, materials) {
+    // Lọc realtime bảng kho
+    window.filterInv = function() {
+        const query = document.getElementById('inv-search').value.toLowerCase().trim();
+        document.querySelectorAll('.inv-row').forEach(row => {
+            if (row.getAttribute('data-search').includes(query)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    /** 4. THỰC THI CẬP NHẬT ĐA BẢNG VỚI LOGIC XUẤT KHO MỚI */
+    async function processCompleteIn(item, data) {
       Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const cleanNow = window.formatDateTimeVN();
       const statusMoi = "Chờ thanh toán";
 
       try {
-        const materialData = materials.map(m => ({
-          Ngay_Gio: cleanNow, Ma_Don: item.Ma_Don, Khach_Hang: item.Ten_Khach_Hang, Ten_Hang: item.Ten_Hang,
-          Ma_Nguyen_Lieu: m.maNL, Ten_Nguyen_Lieu: m.tenNL, DVT: m.loaiNL, So_Luong: m.slNL, Ghi_Chu: m.noteNL,
-          id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000)
-        }));
+        // --- 1. XỬ LÝ TRỪ KHO CÓ SẴN ---
+        for (let ext of data.existingData) {
+            const newTon = ext.tonCu - ext.slDung;
+            // Trừ số tồn của dòng gốc
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${ext.id}`, {
+                method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: newTon })
+            });
+            
+            // Ghi log [ĐÃ SỬ DỤNG]
+            const sdMa = ext.maNL.replace('NL-', 'SD-');
+            const usedLog = {
+                id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000),
+                Ngay_Gio: cleanNow,
+                Ma_Don: item.Ma_Don,
+                Khach_Hang: item.Ten_Khach_Hang,
+                Ten_Hang: item.Ten_Hang,
+                Ma_Nguyen_Lieu: sdMa,
+                Ten_Nguyen_Lieu: ext.tenNL,
+                DVT: ext.dvt,
+                So_Luong: ext.slDung,
+                Ghi_Chu: "[ĐÃ SỬ DỤNG]"
+            };
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, { method: 'POST', headers: h, body: JSON.stringify(usedLog) });
+        }
 
-        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, { 
-          method: 'POST', headers: h, body: JSON.stringify(materialData) 
-        });
+        // --- 2. XỬ LÝ NGUYÊN LIỆU PHÁT SINH MỚI ---
+        for (let nd of data.newData) {
+            const suffix = Math.random().toString(36).substr(2, 6).toUpperCase();
+            
+            // Ghi log báo âm kho [TỒN KHO GỐC]
+            const negStock = {
+                id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000),
+                Ngay_Gio: cleanNow,
+                Ma_Don: "NHẬP KHO", 
+                Khach_Hang: "Hệ thống",
+                Ten_Hang: "Tồn kho gốc",
+                Ma_Nguyen_Lieu: "NL-" + suffix,
+                Ten_Nguyen_Lieu: nd.tenNL,
+                DVT: nd.dvt,
+                So_Luong: -nd.slDung, // Số âm
+                Ghi_Chu: "[TỒN KHO GỐC]"
+            };
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, { method: 'POST', headers: h, body: JSON.stringify(negStock) });
+            
+            // Ghi log [ĐÃ SỬ DỤNG]
+            const usedLogNew = {
+                id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000) + 1,
+                Ngay_Gio: cleanNow,
+                Ma_Don: item.Ma_Don,
+                Khach_Hang: item.Ten_Khach_Hang,
+                Ten_Hang: item.Ten_Hang,
+                Ma_Nguyen_Lieu: "SD-" + suffix,
+                Ten_Nguyen_Lieu: nd.tenNL,
+                DVT: nd.dvt,
+                So_Luong: nd.slDung,
+                Ghi_Chu: "[ĐÃ SỬ DỤNG]"
+            };
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, { method: 'POST', headers: h, body: JSON.stringify(usedLogNew) });
+        }
 
+        // --- 3. CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG ---
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${item.id}`, {
           method: 'PATCH', headers: h, body: JSON.stringify({ Trang_Thai: statusMoi })
         });
@@ -311,7 +410,6 @@
       }
     }
 
-    // Đã bỏ ô input nhập mã ở hàm thêm mới
     window.addNLRow = function() {
       const div = document.createElement('div'); div.className = 'nl-row item-row';
       div.innerHTML = `<input class="nl-input m-ten" placeholder="Tên vật tư"><input class="nl-input m-loai" placeholder="Cuộn/Tấm"><input class="nl-input m-sl" type="number" placeholder="SL"><input class="nl-input m-note" placeholder="Ghi chú"><button onclick="this.parentElement.remove()" style="border:none; color:red; background:none; cursor:pointer; font-size:16px;">✕</button>`;
