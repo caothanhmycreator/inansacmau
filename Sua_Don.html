@@ -258,6 +258,9 @@
 var f12_prods = []; var f12_hinhThuc = ""; var f12_id_money_row = null;
 var f12_originalItems = {}; // Lưu trữ số lượng ban đầu để tính delta
 
+// KHAI BÁO BIẾN TOÀN CỤC ĐỂ LƯU DỮ LIỆU SẢN PHẨM GỐC
+var dsSP_Goc = [];
+
 document.addEventListener("DOMContentLoaded", function() {
   setTimeout(() => { loadSua_DonData(); }, 500);
 });
@@ -273,13 +276,18 @@ async function loadSua_DonData() {
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">⚡ Đang đồng bộ dữ liệu đơn hàng...</td></tr>';
   const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
   try {
-    const [resBH, resBG] = await Promise.all([
-      fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*&order=Ngay_Gio.desc`, { headers }),
-      // Sửa nguồn lấy gọi ý từ Bang_Gia_San_Pham
-      fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*`, { headers })
+    const [resBH, resBG, resSPGoc] = await Promise.all([
+      // Tải tối đa 10000 dòng để không sót đơn cũ
+      fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*&limit=10000&order=Ngay_Gio.desc`, { headers }),
+      // Sửa nguồn lấy gọi ý từ Bang_Gia_San_Pham, lấy max 10000 dòng
+      fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*&limit=10000`, { headers }),
+      // Tải bảng gốc để kiểm tra khi lưu món mới
+      fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_SanPham?select=*&limit=10000`, { headers })
     ]);
     
-    window.dsGia = await resBG.json(); // Lưu tạm danh sách Bảng giá để map Ghi_Chu
+    window.dsGia = await resBG.json() || []; // Lưu tạm danh sách Bảng giá để map Ghi_Chu
+    dsSP_Goc = await resSPGoc.json() || [];
+
     f12_prods = window.dsGia.map(s => ({ ten: s.Ten_Hang, dvt: s.Don_Vi_Tinh, dongia: s.Gia_Ban }));
 
     // Tự động tạo thẻ datalist nếu chưa có để hiển thị gợi ý
@@ -415,13 +423,9 @@ async function f12_saveFinal() {
   // =========================================================================
   Swal.fire({ title: 'Đang kiểm tra kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
   
-  // SỬA LỖI: Định nghĩa headers chuẩn
   const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
   let khoDelta = {};
 
-  // Tính chênh lệch (Delta) giữa số mới và số cũ
-  // Nếu Delta > 0: Tức là mua thêm -> Trừ kho
-  // Nếu Delta < 0: Tức là giảm số lượng / xóa -> Hoàn lại kho
   for (let spName in newItemsCount) {
       let slMoi = newItemsCount[spName];
       let slCu = f12_originalItems[spName] || 0;
@@ -436,10 +440,9 @@ async function f12_saveFinal() {
       }
   }
 
-  // Quét các món cũ đã bị xóa hoàn toàn khỏi bảng
   for (let spName in f12_originalItems) {
       if (!newItemsCount[spName]) {
-          let delta = -f12_originalItems[spName]; // Hoàn toàn bộ về kho
+          let delta = -f12_originalItems[spName]; 
           let spDB = window.dsGia.find(s => s.Ten_Hang === spName);
           if (spDB && spDB.Ghi_Chu && spDB.Ghi_Chu.startsWith('SMK-')) {
               if (!khoDelta[spDB.Ghi_Chu]) khoDelta[spDB.Ghi_Chu] = 0;
@@ -448,10 +451,9 @@ async function f12_saveFinal() {
       }
   }
 
-  // Kiểm tra cảnh báo âm kho (Chỉ cảnh báo khi Delta > 0 và Kho ko đủ)
   try {
       let amKhoCaches = [];
-      let finalKhoUpdates = []; // Lưu lại thông tin ID và số tồn mới để update sau
+      let finalKhoUpdates = []; 
 
       for (let maKho in khoDelta) {
           let deltaBan = khoDelta[maKho];
@@ -485,7 +487,6 @@ async function f12_saveFinal() {
           }
       }
 
-      // Gán kết quả tính toán kho để dùng cập nhật thật ở phần sau
       window.khoUpdatesFinal = finalKhoUpdates;
 
   } catch (errCheck) {
@@ -497,6 +498,40 @@ async function f12_saveFinal() {
   const cleanNow = getCleanVNTime();
   const maDon = window.f12_current_info.maDon;
   const tenKH = window.f12_current_info.kh;
+
+  // =========================================================================
+  // TÍNH NĂNG MỚI: TỰ ĐỘNG THÊM SẢN PHẨM MỚI VÀO DM_SanPham KHI SỬA
+  // =========================================================================
+  try {
+      const newProductsToSave = [];
+      document.querySelectorAll('#view-table-body tr').forEach(tr => {
+          const inpSp = tr.querySelector('.f12-edit-sp');
+          const tenSPLower = inpSp.value.toLowerCase().trim();
+          const gia = Number(tr.querySelector('.f12-edit-dg').value.replace(/\./g, "")) || 0;
+          const dvt = tr.querySelector('.f12-edit-dvt').value || "Cái";
+
+          // Nếu gõ tên SP chưa từng tồn tại trong DM_SanPham (bảng gốc)
+          if (tenSPLower !== "" && !dsSP_Goc.some(s => s.Ten_Hang && s.Ten_Hang.toLowerCase().trim() === tenSPLower) && !newProductsToSave.some(p => p.Ten_Hang.toLowerCase().trim() === tenSPLower)) {
+              newProductsToSave.push({
+                  Ma_Hang: "SP" + Math.random().toString(36).substr(2, 6).toUpperCase(),
+                  Ten_Hang: inpSp.value.trim(),
+                  DVT: dvt,
+                  Gia_Le: gia.toString(), 
+                  Gia_Von: "0",
+                  Gia_Si: "0"
+              });
+          }
+      });
+
+      if (newProductsToSave.length > 0) {
+          await fetch(`${SB_CONFIG.URL}/rest/v1/DM_SanPham`, { 
+              method: 'POST', 
+              headers: headers, 
+              body: JSON.stringify(newProductsToSave) 
+          });
+      }
+  } catch(eAutoSaveSP) { console.error("Lỗi auto-save sản phẩm mới khi sửa đơn:", eAutoSaveSP); }
+  // =========================================================================
 
   let itemsToUpdate = []; let itemsToCreate = []; 
   document.querySelectorAll('#view-table-body tr').forEach(tr => {
@@ -525,9 +560,6 @@ async function f12_saveFinal() {
       await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang`, { method: 'POST', headers, body: JSON.stringify(itemsToCreate) });
     }
 
-    // =========================================================================
-    // CẬP NHẬT THỰC TẾ VÀO KHO
-    // =========================================================================
     if (window.khoUpdatesFinal && window.khoUpdatesFinal.length > 0) {
         for (let update of window.khoUpdatesFinal) {
             await fetch(`${SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${update.id}`, {
@@ -537,7 +569,6 @@ async function f12_saveFinal() {
             });
         }
     }
-    // =========================================================================
 
     if (extraDeposit > 0) {
       await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers, body: JSON.stringify({ 

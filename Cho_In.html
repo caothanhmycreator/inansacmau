@@ -41,7 +41,8 @@
     .btn-file { background: #f1f5f9; color: #2563eb; border: 1px solid #cbd5e1; height: 40px; }
     .btn-file:hover { background: #e2e8f0; }
 
-    .nl-row { display: grid; grid-template-columns: 1fr 1.5fr 1fr 0.8fr 1fr 40px; gap: 5px; margin-bottom: 8px; align-items: center; }
+    /* Cập nhật lưới hiển thị (Bỏ ô nhập Mã NL) */
+    .nl-row { display: grid; grid-template-columns: 2fr 1fr 0.8fr 1fr 40px; gap: 5px; margin-bottom: 8px; align-items: center; }
     .nl-input { padding: 8px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; width: 100%; box-sizing: border-box; }
 
     .swal2-container { z-index: 20000 !important; }
@@ -90,7 +91,7 @@
         /* --- SỬA LỖI POPUP XUẤT KHO TRÊN MOBILE --- */
         .swal2-popup { width: 95% !important; padding: 15px !important; border-radius: 12px !important; }
         
-        /* Chuyển grid ngang thành list dọc */
+        /* Chuyển grid ngang thành list dọc, bỏ ô mã */
         .nl-row { 
           display: flex; flex-wrap: wrap; background: #fff; padding: 10px; 
           border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 10px; 
@@ -99,11 +100,10 @@
         .nl-row.header-mobile-hide { display: none !important; }
         
         .nl-input { font-size: 14px; padding: 10px 8px; }
-        .nl-row .m-ma { width: 35%; order: 1; }
-        .nl-row .m-ten { width: calc(65% - 10px); order: 2; }
-        .nl-row .m-loai { width: 35%; order: 3; }
-        .nl-row .m-sl { width: 25%; order: 4; }
-        .nl-row .m-note { width: calc(40% - 16px); order: 5; }
+        .nl-row .m-ten { width: 100%; order: 1; }
+        .nl-row .m-loai { width: 48%; order: 2; }
+        .nl-row .m-sl { width: 48%; order: 3; }
+        .nl-row .m-note { width: 100%; order: 4; }
         
         .nl-row button { position: absolute; right: -5px; top: -10px; background: #fee2e2 !important; width: 25px; height: 25px; border-radius: 50%; border: 1px solid #fca5a5 !important; display: flex; align-items: center; justify-content: center; font-size: 12px !important; }
         
@@ -211,7 +211,7 @@
       }
     }
 
-    /** 3. MỞ FORM VẬT TƯ */
+    /** 3. MỞ FORM VẬT TƯ (Đã bỏ cột Mã NL) */
     function openMaterialForm(itemStr) {
       const item = JSON.parse(decodeURIComponent(itemStr));
       Swal.fire({
@@ -223,31 +223,49 @@
           </div>
           <div id="material-list">
             <div class="nl-row header-mobile-hide" style="font-weight:bold; font-size:11px; border-bottom:2px solid #e2e8f0; padding-bottom:5px; margin-bottom:10px;">
-              <div>Mã NL</div><div>Tên Nguyên Liệu</div><div>Phân loại</div><div>SL</div><div>Ghi chú</div><div></div>
+              <div>Tên Nguyên Liệu</div><div>Phân loại</div><div>SL</div><div>Ghi chú</div><div></div>
             </div>
             <div class="nl-row item-row">
-              <input class="nl-input m-ma" placeholder="Mã"><input class="nl-input m-ten" placeholder="Tên vật tư"><input class="nl-input m-loai" placeholder="Cuộn/Tấm"><input class="nl-input m-sl" type="number" placeholder="SL"><input class="nl-input m-note" placeholder="Ghi chú">
+              <input class="nl-input m-ten" placeholder="Tên vật tư"><input class="nl-input m-loai" placeholder="Cuộn/Tấm"><input class="nl-input m-sl" type="number" placeholder="SL"><input class="nl-input m-note" placeholder="Ghi chú">
               <button onclick="this.parentElement.remove()" style="border:none; color:red; background:none; cursor:pointer; font-size:16px;">✕</button>
             </div>
           </div>
           <button onclick="window.addNLRow()" style="margin-top:15px; background:#34495e; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">+ THÊM VẬT TƯ</button>
         `,
         showCancelButton: true, confirmButtonText: '🚀 XÁC NHẬN HOÀN TẤT', confirmButtonColor: '#27ae60',
-        preConfirm: () => {
+        preConfirm: async () => {
           const rows = document.querySelectorAll('.item-row');
           const materials = [];
-          rows.forEach(row => {
+          
+          for(let row of rows) {
             const ten = row.querySelector('.m-ten').value.trim();
             if(ten) {
+              // --- TỰ ĐỘNG SINH MÃ NL NGẪU NHIÊN VÀ ĐẢM BẢO DUY NHẤT ---
+              let isDuplicate = true;
+              let maMoi = "";
+              while(isDuplicate) {
+                  maMoi = "NL-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+                  try {
+                      const resCheck = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${maMoi}&select=id`, {
+                          headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` }
+                      });
+                      const checkData = await resCheck.json();
+                      if(checkData.length === 0) isDuplicate = false; // Mã chưa tồn tại
+                  } catch(e) {
+                      console.error("Lỗi check mã NL:", e);
+                      isDuplicate = false; // Bỏ qua nếu lỗi mạng để khỏi treo form
+                  }
+              }
+
               materials.push({
-                maNL: row.querySelector('.m-ma').value,
+                maNL: maMoi,
                 tenNL: ten,
                 loaiNL: row.querySelector('.m-loai').value,
                 slNL: row.querySelector('.m-sl').value,
                 noteNL: row.querySelector('.m-note').value
               });
             }
-          });
+          }
           if(materials.length === 0) { Swal.showValidationMessage('Nhập ít nhất 1 loại vật tư!'); return false; }
           return materials;
         }
@@ -293,9 +311,10 @@
       }
     }
 
+    // Đã bỏ ô input nhập mã ở hàm thêm mới
     window.addNLRow = function() {
       const div = document.createElement('div'); div.className = 'nl-row item-row';
-      div.innerHTML = `<input class="nl-input m-ma" placeholder="Mã"><input class="nl-input m-ten" placeholder="Tên vật tư"><input class="nl-input m-loai" placeholder="Cuộn/Tấm"><input class="nl-input m-sl" type="number" placeholder="SL"><input class="nl-input m-note" placeholder="Ghi chú"><button onclick="this.parentElement.remove()" style="border:none; color:red; background:none; cursor:pointer; font-size:16px;">✕</button>`;
+      div.innerHTML = `<input class="nl-input m-ten" placeholder="Tên vật tư"><input class="nl-input m-loai" placeholder="Cuộn/Tấm"><input class="nl-input m-sl" type="number" placeholder="SL"><input class="nl-input m-note" placeholder="Ghi chú"><button onclick="this.parentElement.remove()" style="border:none; color:red; background:none; cursor:pointer; font-size:16px;">✕</button>`;
       document.getElementById('material-list').appendChild(div);
     };
   </script>
