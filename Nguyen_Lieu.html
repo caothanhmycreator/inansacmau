@@ -227,16 +227,21 @@
         try {
           const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
           
-          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${item.id}`, {
+          const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${item.id}`, {
             method: 'PATCH',
             headers: h,
             body: JSON.stringify(formValues)
           });
           
+          if (!response.ok) {
+              const err = await response.json();
+              throw new Error(err.message || "Cơ sở dữ liệu từ chối cập nhật!");
+          }
+
           Swal.fire({icon: 'success', title: 'Đã cập nhật!', timer: 1000, showConfirmButton: false});
           loadMaterials(); 
         } catch (e) {
-          Swal.fire('Lỗi', e.message, 'error');
+          Swal.fire('Lỗi cập nhật', e.message, 'error');
         }
       }
     }
@@ -273,7 +278,6 @@
               return false;
           }
           
-          // Tự động sinh mã NL chống trùng lặp
           let maMoi = "";
           let isDuplicate = true;
           while(isDuplicate) {
@@ -285,12 +289,17 @@
                   const checkData = await resCheck.json();
                   if(checkData.length === 0) isDuplicate = false; 
               } catch(e) {
-                  isDuplicate = false; // Bỏ qua nếu lỗi mạng
+                  isDuplicate = false; 
               }
           }
 
+          // CẬP NHẬT Ở ĐÂY: Truyền dữ liệu giả định cho các cột không được Null
           return {
+            id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000), 
             Ngay_Gio: getCleanVNTime(),
+            Ma_Don: "NHẬP KHO",        
+            Khach_Hang: "Hệ thống",    
+            Ten_Hang: "Tồn kho gốc",   
             Ma_Nguyen_Lieu: maMoi,
             Ten_Nguyen_Lieu: ten,
             DVT: document.getElementById('a-dvt').value.trim(),
@@ -305,16 +314,21 @@
         try {
           const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
           
-          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, {
+          const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, {
             method: 'POST',
             headers: h,
             body: JSON.stringify(formValues)
           });
+
+          if (!response.ok) {
+              const err = await response.json();
+              throw new Error(err.message || "Cơ sở dữ liệu từ chối lưu bản ghi này!");
+          }
           
           Swal.fire({icon: 'success', title: 'Đã thêm nguyên liệu!', timer: 1000, showConfirmButton: false});
           loadMaterials(); 
         } catch (e) {
-          Swal.fire('Lỗi', e.message, 'error');
+          Swal.fire('Lỗi tạo mới', e.message, 'error');
         }
       }
     }
@@ -333,14 +347,20 @@
         Swal.fire({ title: 'Đang xóa...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${id}`, { 
+            const response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${id}`, { 
                 method: 'DELETE', 
                 headers: h 
             });
+
+            if (!response.ok) {
+              const err = await response.json();
+              throw new Error(err.message || "Xóa thất bại!");
+            }
+
             Swal.fire({icon: 'success', title: 'Đã xóa!', timer: 1000, showConfirmButton: false});
             loadMaterials();
         } catch (e) {
-            Swal.fire('Lỗi', 'Không thể xóa dữ liệu', 'error');
+            Swal.fire('Lỗi xóa dữ liệu', e.message, 'error');
         }
       }
     }
