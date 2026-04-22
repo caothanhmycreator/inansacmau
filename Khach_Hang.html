@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Khách Hàng - Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+  <script src="js/sidebar_loader.js"></script> 
+  <style>
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC
+       ======================================================== */
+    :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; --accent: #2980b9; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
+
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+    .search-box { width: 100%; max-width: 400px; padding: 12px 15px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+    .search-box:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(45, 90, 39, 0.1); }
+
+    .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .table-wrapper { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 700px; }
+    th, td { border-bottom: 1px solid #eee; padding: 12px 10px; text-align: left; }
+    th { background: var(--primary); color: white; font-size: 13px; text-transform: uppercase; position: sticky; top: 0; z-index: 10; }
+    
+    .btn-add { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; }
+    .btn-add:hover { background: #1f618d; transform: translateY(-2px); }
+    
+    .btn-edit { color: #3498db; border: none; background: none; cursor: pointer; font-weight: bold; padding: 5px; }
+    .btn-del { color: #e74c3c; border: none; background: none; cursor: pointer; font-weight: bold; padding: 5px; }
+
+    .swal2-container { z-index: 20000 !important; }
+
+    /* ========================================================
+       2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       ======================================================== */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        
+        .mobile-nav-btn {
+            display: block; position: fixed; top: 10px; left: 10px; 
+            z-index: 1000; background: var(--primary); color: white; 
+            padding: 8px 12px; border: none; border-radius: 4px;
+        }
+
+        .header-top { flex-direction: column; align-items: stretch !important; }
+        .search-box { max-width: 100%; box-sizing: border-box; }
+        .btn-add { width: 100%; }
+
+        /* Biến bảng thành Card trên mobile */
+        table, thead, tbody, th, td, tr { display: block; width: 100%; box-sizing: border-box; }
+        thead { display: none; }
+        
+        tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: flex-start; text-align: left; word-break: break-word; }
+        
+        td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
+        
+        .swal2-popup { width: 95% !important; padding: 10px !important; border-radius: 12px !important; }
+        .swal2-html-container div[style*="display: grid"] { grid-template-columns: 1fr !important; gap: 10px !important; }
+    }
+
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+  </style>
+</head>
+<body>
+
+  <div class="main-content">
+    <div class="header-top">
+      <div>
+        <h2 style="margin:0; color: var(--primary);">👥 CHUẨN HÓA KHÁCH HÀNG</h2>
+        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Quản lý và cập nhật danh bạ khách hàng</p>
+      </div>
+      <button class="btn-add" onclick="addCustomer()">+ THÊM KHÁCH MỚI</button>
+    </div>
+
+    <div class="inventory-card">
+      <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Tìm theo Tên, SĐT, Mã KH..." onkeyup="filterTable()">
+        <button onclick="loadCustomers()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold;">🔄 Làm mới</button>
+      </div>
+      
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 15%;">Mã Khách Hàng</th>
+              <th style="width: 25%;">Tên Khách Hàng</th>
+              <th style="width: 15%;">Số Điện Thoại</th>
+              <th style="width: 25%;">Địa Chỉ</th>
+              <th style="width: 10%;">Doanh Số</th>
+              <th style="width: 10%; text-align: center;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="customer-body">
+            <tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let customersData = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadCustomers();
+    });
+
+    async function loadCustomers() {
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_KhachHang?select=*&order=id.desc`, { headers: h });
+        customersData = await res.json();
+        renderTable(customersData);
+      } catch (e) { 
+          console.error(e); 
+          Swal.fire('Lỗi', 'Không thể tải danh sách khách hàng!', 'error');
+      }
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('customer-body');
+      tbody.innerHTML = "";
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">Không tìm thấy khách hàng nào.</td></tr>';
+        return;
+      }
+
+      const rows = data.map((item, index) => {
+        return `
+          <tr>
+            <td data-label="Mã KH"><b>${item.Ma_Khach_Hang || '-'}</b></td>
+            <td data-label="Tên KH"><b style="color: #2980b9;">${item.Ten_Khach_Hang || '-'}</b></td>
+            <td data-label="SĐT">${item.So_Dien_Thoai || '-'}</td>
+            <td data-label="Địa Chỉ">${item.Dia_Chi || '-'}</td>
+            <td data-label="Doanh Số" style="color: #d35400; font-weight: bold;">${item.Doanh_So ? Number(item.Doanh_So).toLocaleString() : '0'}</td>
+            <td data-label="Thao tác" style="text-align: center;">
+              <button class="btn-edit" onclick="editCustomer(${index})">SỬA</button> | 
+              <button class="btn-del" onclick="deleteCustomer(${item.id})">XÓA</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.innerHTML = rows;
+    }
+
+    // Tính năng bộ lọc tìm kiếm thông minh
+    function filterTable() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = customersData.filter(item => {
+        const ma = (item.Ma_Khach_Hang || "").toLowerCase();
+        const ten = (item.Ten_Khach_Hang || "").toLowerCase();
+        const sdt = (item.So_Dien_Thoai || "").toLowerCase();
+        return ma.includes(query) || ten.includes(query) || sdt.includes(query);
+      });
+      renderTable(filtered);
+    }
+
+    async function editCustomer(index) {
+      // Lấy data từ mảng đang hiển thị (phải dò lại id đúng)
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      let currentList = customersData;
+      if(query) {
+          currentList = customersData.filter(item => {
+            const ma = (item.Ma_Khach_Hang || "").toLowerCase();
+            const ten = (item.Ten_Khach_Hang || "").toLowerCase();
+            const sdt = (item.So_Dien_Thoai || "").toLowerCase();
+            return ma.includes(query) || ten.includes(query) || sdt.includes(query);
+          });
+      }
+      
+      const item = currentList[index];
+
+      const { value: formValues } = await Swal.fire({
+        title: 'CẬP NHẬT THÔNG TIN',
+        width: '600px',
+        html: `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; font-size: 13px; padding: 10px;">
+            <div><label><b>Mã Khách Hàng:</b></label><input id="e-ma" class="swal2-input" value="${item.Ma_Khach_Hang || ''}" style="width:100%; margin-top: 5px;"></div>
+            <div><label><b>Tên Khách Hàng:</b></label><input id="e-ten" class="swal2-input" value="${item.Ten_Khach_Hang || ''}" style="width:100%; margin-top: 5px;"></div>
+            <div><label><b>Số Điện Thoại:</b></label><input id="e-sdt" class="swal2-input" value="${item.So_Dien_Thoai || ''}" style="width:100%; margin-top: 5px;"></div>
+            <div><label><b>Doanh Số Tích Lũy:</b></label><input id="e-ds" class="swal2-input" value="${item.Doanh_So || '0'}" style="width:100%; margin-top: 5px;"></div>
+            <div style="grid-column: span 2;"><label><b>Địa Chỉ:</b></label><input id="e-diachi" class="swal2-input" value="${item.Dia_Chi || ''}" style="width:100%; margin-top: 5px;"></div>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'LƯU THAY ĐỔI',
+        confirmButtonColor: '#2D5A27',
+        cancelButtonText: 'HỦY',
+        preConfirm: () => {
+          return {
+            Ma_Khach_Hang: document.getElementById('e-ma').value.trim(),
+            Ten_Khach_Hang: document.getElementById('e-ten').value.trim(),
+            So_Dien_Thoai: document.getElementById('e-sdt').value.trim(),
+            Doanh_So: document.getElementById('e-ds').value.trim(),
+            Dia_Chi: document.getElementById('e-diachi').value.trim()
+          }
+        }
+      });
+
+      if (formValues) {
+        Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+          const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+          
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_KhachHang?id=eq.${item.id}`, {
+            method: 'PATCH',
+            headers: h,
+            body: JSON.stringify(formValues)
+          });
+          
+          Swal.fire({icon: 'success', title: 'Đã cập nhật!', timer: 1000, showConfirmButton: false});
+          loadCustomers(); // Tải lại bảng
+        } catch (e) {
+          Swal.fire('Lỗi', e.message, 'error');
+        }
+      }
+    }
+
+    async function addCustomer() {
+      const { value: formValues } = await Swal.fire({
+        title: 'THÊM KHÁCH HÀNG MỚI',
+        width: '600px',
+        html: `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; font-size: 13px; padding: 10px;">
+            <div><label><b>Mã Khách Hàng:</b></label><input id="a-ma" class="swal2-input" value="KH${Math.random().toString(36).substr(2, 6).toUpperCase()}" style="width:100%; margin-top: 5px;"></div>
+            <div><label><b>Tên Khách Hàng * :</b></label><input id="a-ten" class="swal2-input" placeholder="Nhập tên..." style="width:100%; margin-top: 5px;"></div>
+            <div><label><b>Số Điện Thoại:</b></label><input id="a-sdt" class="swal2-input" placeholder="Nhập SĐT..." style="width:100%; margin-top: 5px;"></div>
+            <div><label><b>Doanh Số:</b></label><input id="a-ds" class="swal2-input" value="0" style="width:100%; margin-top: 5px;"></div>
+            <div style="grid-column: span 2;"><label><b>Địa Chỉ:</b></label><input id="a-diachi" class="swal2-input" placeholder="Nhập địa chỉ..." style="width:100%; margin-top: 5px;"></div>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'TẠO MỚI',
+        confirmButtonColor: '#2980b9',
+        cancelButtonText: 'HỦY',
+        preConfirm: () => {
+          const ten = document.getElementById('a-ten').value.trim();
+          if (!ten) {
+              Swal.showValidationMessage('Vui lòng nhập tên khách hàng!');
+              return false;
+          }
+          return {
+            Ma_Khach_Hang: document.getElementById('a-ma').value.trim(),
+            Ten_Khach_Hang: ten,
+            So_Dien_Thoai: document.getElementById('a-sdt').value.trim(),
+            Doanh_So: document.getElementById('a-ds').value.trim(),
+            Dia_Chi: document.getElementById('a-diachi').value.trim()
+          }
+        }
+      });
+
+      if (formValues) {
+        Swal.fire({ title: 'Đang tạo...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+          const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+          
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_KhachHang`, {
+            method: 'POST',
+            headers: h,
+            body: JSON.stringify(formValues)
+          });
+          
+          Swal.fire({icon: 'success', title: 'Đã tạo khách hàng mới!', timer: 1000, showConfirmButton: false});
+          loadCustomers(); 
+        } catch (e) {
+          Swal.fire('Lỗi', e.message, 'error');
+        }
+      }
+    }
+
+    async function deleteCustomer(id) {
+      const r = await Swal.fire({ 
+          title: 'Xóa khách hàng này?', 
+          text: 'Thao tác này sẽ xóa vĩnh viễn dữ liệu khách hàng!',
+          icon: 'warning', 
+          showCancelButton: true, 
+          confirmButtonColor: '#e74c3c', 
+          confirmButtonText: 'XÓA NGAY' 
+      });
+      
+      if (r.isConfirmed) {
+        Swal.fire({ title: 'Đang xóa...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_KhachHang?id=eq.${id}`, { 
+                method: 'DELETE', 
+                headers: h 
+            });
+            Swal.fire({icon: 'success', title: 'Đã xóa!', timer: 1000, showConfirmButton: false});
+            loadCustomers();
+        } catch (e) {
+            Swal.fire('Lỗi', 'Không thể xóa dữ liệu', 'error');
+        }
+      }
+    }
+  </script>
+</body>
+</html>
