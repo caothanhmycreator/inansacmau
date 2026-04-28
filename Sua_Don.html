@@ -124,9 +124,12 @@
 
 <div class="main-content">
   <div class="f12-container no-print">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
       <h3 style="margin:0; color: #2D5A27; font-size: 20px; text-transform: uppercase;">📋 QUẢN LÝ CHI TIẾT ĐƠN HÀNG</h3>
-      <button class="btn-view" onclick="loadSua_DonData()" style="background:#2D5A27;">🔄 Tải lại</button>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <input type="text" id="f12-search" placeholder="🔍 Tìm mã đơn, SĐT, Tên..." style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; width: 220px;" onkeyup="f12_searchOrders()">
+        <button class="btn-view" onclick="loadSua_DonData()" style="background:#2D5A27;">🔄 Tải lại</button>
+      </div>
     </div>
     <table class="f12-table">
       <thead>
@@ -303,14 +306,25 @@ async function loadSua_DonData() {
     const grouped = {};
     data.forEach(item => {
       const ma = item.Ma_Don; if (!ma) return;
-      if (!grouped[ma]) grouped[ma] = { ngay: item.Ngay_Gio, maDon: ma, sdt: item.So_Dien_Thoai || "", kh: item.Ten_Khach_Hang || "", items: [], tongTien: 0, daTra: 0 };
+      if (!grouped[ma]) grouped[ma] = { ngay: item.Ngay_Gio, maDon: ma, sdt: item.So_Dien_Thoai || "", kh: item.Ten_Khach_Hang || "", items: [], tongTien: 0, daTra: 0, statuses: new Set() };
       grouped[ma].items.push(item.Ten_Hang);
       grouped[ma].tongTien += Number(item.Thanh_Tien) || 0;
       if (Number(item.Khach_Da_Tra) > grouped[ma].daTra) grouped[ma].daTra = Number(item.Khach_Da_Tra);
+      if (item.Trang_Thai) grouped[ma].statuses.add(item.Trang_Thai); // Lấy trạng thái của từng sản phẩm trong đơn
     });
     tbody.innerHTML = "";
     const temp = document.getElementById('f12-row-temp');
     Object.values(grouped).forEach(order => {
+      
+      // LỌC ĐƠN HÀNG: Không hiển thị đơn có dính trạng thái Công nợ hoặc Hoàn tất
+      if (order.statuses.has('Công nợ') || order.statuses.has('Hoàn tất')) {
+          return;
+      }
+      // LỌC ĐƠN HÀNG: Nếu có trạng thái Chờ thanh toán thì bắt buộc tất cả sản phẩm trong đơn đều phải là Chờ thanh toán
+      if (order.statuses.has('Chờ thanh toán') && order.statuses.size > 1) {
+          return;
+      }
+
       const clone = temp.content.cloneNode(true);
       clone.querySelector('.t-ma').textContent = order.maDon;
       clone.querySelector('.t-ngay').textContent = order.ngay;
@@ -604,6 +618,16 @@ function f12_autoFill(input) { var item = f12_prods.find(x => x.ten === input.va
 function f12_fm(input) { var v = input.value.replace(/\D/g, ""); input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
 function f12_addNewRowToEdit() { f12_renderEditRow(null); }
 function f12_setPay(val) { f12_hinhThuc = val; const slider = document.getElementById('f12-slider'); ['f12-opt-tm','f12-opt-mid','f12-opt-ck'].forEach(id => document.getElementById(id).classList.remove('active')); if (val === 'TM') { slider.className = 'pay-sld-f12 tm'; document.getElementById('f12-opt-tm').classList.add('active'); } else if (val === 'CK') { slider.className = 'pay-sld-f12 ck'; document.getElementById('f12-opt-ck').classList.add('active'); } else { slider.className = 'pay-sld-f12 mid'; document.getElementById('f12-opt-mid').classList.add('active'); } }
+
+// Hàm tìm kiếm trực tiếp (TÍNH NĂNG MỚI BỔ SUNG)
+function f12_searchOrders() {
+  const val = document.getElementById('f12-search').value.toLowerCase();
+  const rows = document.querySelectorAll('#f12-list-body tr');
+  rows.forEach(row => {
+    const text = row.innerText.toLowerCase();
+    row.style.display = text.includes(val) ? '' : 'none';
+  });
+}
 </script>
 </body>
 </html>
