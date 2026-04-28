@@ -46,6 +46,7 @@
     .btn-payslip { background: #8e44ad; }
 
     .badge { font-size: 11px; background: #e2e8f0; color: #475569; padding: 4px 10px; border-radius: 12px; font-weight: normal; }
+    .badge-tuan { background: #fef08a; color: #9a3412; border: 1px solid #fde047; }
     .swal2-container { z-index: 20000 !important; }
 
     /* ========================================================
@@ -101,10 +102,11 @@
   </div>
 
   <script>
-    // TOÀN BỘ LOGIC JS CỦA MỸ GIỮ NGUYÊN 100%
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
     let totalRevenue = 0;
+    let totalRevenueWeek = 0; // Thêm biến lưu doanh thu tuần
     let currentTcData = []; 
+    let currentTcWeekData = []; // Giao dịch tài chính trong tuần
     let globalAbsentData = {}; 
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
@@ -115,33 +117,88 @@
       loadPayroll();
     });
 
+    // Hàm hỗ trợ: Lấy ngày Thứ Hai của tuần chứa một ngày bất kỳ
+    function getMonday(d) {
+        d = new Date(d);
+        var day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6:1); // Chủ nhật (0) thì lùi 6 ngày
+        return new Date(d.setDate(diff));
+    }
+
     async function loadPayroll() {
       const monthVal = document.getElementById('month-selector').value; 
       const [year, month] = monthVal.split('-');
       const firstDay = `${year}-${month}-01`;
       const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
 
+      // Tính ngày Thứ Hai của tuần hiện tại (dựa vào ngày cuối cùng của tháng được chọn, hoặc ngày hôm nay nếu xem tháng hiện tại)
+      const today = new Date();
+      let refDate = new Date(year, month - 1, new Date(year, month, 0).getDate());
+      if(today.getFullYear() == year && today.getMonth() + 1 == month) {
+          refDate = today;
+      }
+      
+      const monday = getMonday(refDate);
+      const strMonday = `${monday.getFullYear()}-${String(monday.getMonth()+1).padStart(2,'0')}-${String(monday.getDate()).padStart(2,'0')}`;
+      const strSunday = new Date(year, month, 0).toISOString().split('T')[0]; // Lấy tạm đến cuối tháng để cover hết tuần
+
       try {
+        // Tải doanh thu
         const resRev = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=Ngay_Gio,Tong_Don`, { headers: h });
         const revData = await resRev.json();
-        totalRevenue = revData.reduce((sum, item) => {
-          if (item.Ngay_Gio && (item.Ngay_Gio.includes(`${month}/${year}`) || item.Ngay_Gio.includes(`${year}-${month}`))) return sum + (Number(item.Tong_Don) || 0);
-          return sum;
-        }, 0);
+        
+        totalRevenue = 0;
+        totalRevenueWeek = 0;
+
+        revData.forEach((item) => {
+          const tDon = Number(item.Tong_Don) || 0;
+          if (item.Ngay_Gio && (item.Ngay_Gio.includes(`${month}/${year}`) || item.Ngay_Gio.includes(`${year}-${month}`))) {
+              totalRevenue += tDon;
+          }
+          
+          // Tính riêng doanh thu cho tuần hiện tại (từ thứ 2)
+          if(item.Ngay_Gio) {
+              const nDateStr = item.Ngay_Gio.split(' ')[0]; // yyyy-mm-dd hoặc dd/mm/yyyy
+              let dt;
+              if(nDateStr.includes('/')) {
+                  const parts = nDateStr.split('/');
+                  dt = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+              } else {
+                  dt = new Date(nDateStr);
+              }
+              
+              if(dt >= monday && dt <= refDate) {
+                  totalRevenueWeek += tDon;
+              }
+          }
+        });
+
         document.getElementById('lbl-doanh-thu').innerText = totalRevenue.toLocaleString('vi-VN') + 'đ';
 
+        // Tải danh sách nhân sự
         const resEmp = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?select=*`, { headers: h });
         const empData = await resEmp.json();
+        
+        // Tải chấm công cả tháng
         const resCC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=gte.${firstDay}&Ngay=lte.${lastDay}&select=*`, { headers: h });
         const ccData = await resCC.json();
+        
+        // Tải chấm công của tuần hiện tại (để lọc cho nhóm tính theo tuần)
+        const resCCWeek = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=gte.${strMonday}&Ngay=lte.${strSunday}&select=*`, { headers: h });
+        const ccWeekData = await resCCWeek.json();
+
+        // Tải Tài chính cả tháng
         const resTC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?Ngay_Ghi=gte.${firstDay}&Ngay_Ghi=lte.${lastDay} 23:59:59&select=*`, { headers: h });
         currentTcData = await resTC.json(); 
+        
+        // Tải tài chính của tuần
+        const resTCWeek = await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?Ngay_Ghi=gte.${strMonday}&Ngay_Ghi=lte.${strSunday} 23:59:59&select=*`, { headers: h });
+        currentTcWeekData = await resTCWeek.json();
 
-        renderPayrollGrid(empData, ccData, currentTcData, year, month);
+        renderPayrollGrid(empData, ccData, ccWeekData, currentTcData, currentTcWeekData, year, month, monday);
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
-    function renderPayrollGrid(empData, ccData, tcData, year, month) {
+    function renderPayrollGrid(empData, ccData, ccWeekData, tcData, tcWeekData, year, month, monday) {
       const container = document.getElementById('payroll-container');
       container.innerHTML = "";
       globalAbsentData = {};
@@ -150,59 +207,92 @@
       todayDate.setHours(23, 59, 59, 999);
 
       filteredEmp.forEach(emp => {
-        const myCC = ccData.filter(c => String(c.User_ID) === String(emp.id));
-        const myTC = tcData.filter(t => String(t.User_ID) === String(emp.id));
+        // Phân loại nhân viên
+        const isMonthBasis = emp.Ho_Ten.includes("Nhung") || emp.Ho_Ten.includes("Thư");
+        
+        // Dữ liệu dùng để tính toán (Tháng hay Tuần tùy đối tượng)
+        const workingCCData = isMonthBasis ? ccData : ccWeekData;
+        const workingTCData = isMonthBasis ? tcData : tcWeekData;
+        const workingRevenue = isMonthBasis ? totalRevenue : totalRevenueWeek;
+
+        const myCC = workingCCData.filter(c => String(c.User_ID) === String(emp.id));
+        const myTC = workingTCData.filter(t => String(t.User_ID) === String(emp.id));
 
         let luongCoBan = 0, phuCapViec = 0, tamUng = 0, hoaHong = 0, tongNhan = 0;
         let infoCong = "";
         let absents = [];
 
-        const daysInMonth = new Date(year, month, 0).getDate();
-        for (let d = 1; d <= daysInMonth; d++) {
-            const checkDate = new Date(year, month - 1, d);
-            if (checkDate > todayDate) continue; 
-            if (checkDate.getDay() === 0) continue; 
+        // Tính lịch nghỉ
+        if (isMonthBasis) {
+            // Theo tháng
+            const daysInMonth = new Date(year, month, 0).getDate();
+            for (let d = 1; d <= daysInMonth; d++) {
+              const checkDate = new Date(year, month - 1, d);
+              if (checkDate > todayDate) continue; 
+              if (checkDate.getDay() === 0) continue; 
 
-            const dateStr = `${year}-${month}-${String(d).padStart(2, '0')}`;
-            const logsDay = myCC.filter(c => c.Ngay === dateStr);
-            const hasMorning = logsDay.some(l => parseInt(l.Gio_Vao.split(':')[0]) < 12);
-            const hasAfternoon = logsDay.some(l => parseInt(l.Gio_Vao.split(':')[0]) >= 12);
+              const dateStr = `${year}-${month}-${String(d).padStart(2, '0')}`;
+              const logsDay = myCC.filter(c => c.Ngay === dateStr);
+              const hasMorning = logsDay.some(l => parseInt(l.Gio_Vao.split(':')[0]) < 12);
+              const hasAfternoon = logsDay.some(l => parseInt(l.Gio_Vao.split(':')[0]) >= 12);
 
-            if (!hasMorning) absents.push(`Ngày ${d} (Sáng)`);
-            if (!hasAfternoon) absents.push(`Ngày ${d} (Chiều)`);
+              if (!hasMorning) absents.push(`Ngày ${d} (Sáng)`);
+              if (!hasAfternoon) absents.push(`Ngày ${d} (Chiều)`);
+            }
+        } else {
+            // Theo tuần (Trọng, Như...)
+            for(let i=0; i<7; i++) {
+                let checkDate = new Date(monday);
+                checkDate.setDate(monday.getDate() + i);
+                
+                if(checkDate > todayDate) continue;
+                if(checkDate.getDay() === 0) continue; // Bỏ qua chủ nhật
+                
+                const d = checkDate.getDate();
+                const m = checkDate.getMonth() + 1;
+                const y = checkDate.getFullYear();
+                const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                
+                const logsDay = myCC.filter(c => c.Ngay === dateStr);
+                const hasMorning = logsDay.some(l => parseInt(l.Gio_Vao.split(':')[0]) < 12);
+                const hasAfternoon = logsDay.some(l => parseInt(l.Gio_Vao.split(':')[0]) >= 12);
+
+                if (!hasMorning) absents.push(`${d}/${m} (Sáng)`);
+                if (!hasAfternoon) absents.push(`${d}/${m} (Chiều)`);
+            }
         }
         
         globalAbsentData[emp.id] = absents;
 
-        if (emp.Ho_Ten.includes("Nhung") || emp.Ho_Ten.includes("Thư")) {
+        // Tính Lương Cơ Bản
+        if (isMonthBasis) {
+          // Lương tháng (Nhung, Thư)
           const soNgay = myCC.length * 0.5;
           luongCoBan = (emp.Luong_Co_Ban / 26) * soNgay;
           infoCong = `${soNgay} ngày`;
-        } else if (emp.Ho_Ten.includes("Như")) {
-          let tongGio = 0;
-          myCC.forEach(c => { if (c.Gio_Vao && c.Gio_Ra) {
-            const [h1, m1] = c.Gio_Vao.split(':'); const [h2, m2] = c.Gio_Ra.split(':');
-            tongGio += ((h2*60 + Number(m2)) - (h1*60 + Number(m1))) / 60;
-          }});
-          luongCoBan = tongGio * emp.Luong_Co_Ban;
-          infoCong = `${tongGio.toFixed(1)} giờ`;
         } else {
+          // Lương tuần (Trọng, Như)
+          // emp.Luong_Co_Ban chính là lương 1 buổi
           let soBuoi = myCC.length;
           luongCoBan = emp.Luong_Co_Ban * soBuoi;
           infoCong = `${soBuoi} buổi`;
         }
 
+        // Tính Hoa Hồng
         let phanTramHH = 0;
-        let bacDoanhThu = Math.floor(totalRevenue / 100000000);
+        let bacDoanhThu = Math.floor(workingRevenue / 100000000);
         if (bacDoanhThu >= 1) phanTramHH = 1 + (bacDoanhThu - 1) * 0.5;
-        if (emp.Huong_Hoa_Hong && phanTramHH > 0) hoaHong = totalRevenue * (phanTramHH / 100);
+        if (emp.Huong_Hoa_Hong && phanTramHH > 0) hoaHong = workingRevenue * (phanTramHH / 100);
 
+        // Tính Giao dịch tài chính
         myTC.forEach(tc => { if (tc.Loai === "Tạm ứng") tamUng += tc.So_Tien; else phuCapViec += tc.So_Tien; });
         tongNhan = luongCoBan + hoaHong + phuCapViec - tamUng;
 
+        const titleBage = isMonthBasis ? '<span class="badge">Kết theo Tháng</span>' : '<span class="badge badge-tuan">Kết theo Tuần</span>';
+
         container.innerHTML += `
           <div class="staff-card">
-            <h3 class="staff-name">${emp.Ho_Ten} <span class="badge">${emp.Ho_Ten.match(/Nhung|Thư/) ? 'Tháng' : (emp.Ho_Ten.includes('Như') ? 'Giờ' : 'Buổi')}</span></h3>
+            <h3 class="staff-name">${emp.Ho_Ten} ${titleBage}</h3>
             <div class="salary-row"><span>Công thực tế:</span> <b>${infoCong}</b></div>
             <div class="salary-row"><span>Lương cứng:</span> <b>${Math.round(luongCoBan).toLocaleString('vi-VN')}đ</b></div>
             ${(emp.Huong_Hoa_Hong && phanTramHH > 0) ? `<div class="salary-row"><span>Hoa hồng (${phanTramHH}%):</span> <b class="val-plus">+ ${Math.round(hoaHong).toLocaleString('vi-VN')}đ</b></div>` : ''}
@@ -211,10 +301,10 @@
             <div class="salary-row total"><span>THỰC NHẬN:</span> <span>${Math.round(tongNhan).toLocaleString('vi-VN')}đ</span></div>
             
             <div class="action-group no-print">
-              <button class="btn btn-finance" onclick="openFinanceModal('${emp.id}', '${emp.Ho_Ten}')">💰 Nhập</button>
-              <button class="btn btn-details" onclick="viewFinanceDetails('${emp.id}', '${emp.Ho_Ten}')">👀 Kê khai</button>
+              <button class="btn btn-finance" onclick="openFinanceModal('${emp.id}', '${emp.Ho_Ten}', ${isMonthBasis})">💰 Nhập</button>
+              <button class="btn btn-details" onclick="viewFinanceDetails('${emp.id}', '${emp.Ho_Ten}', ${isMonthBasis})">👀 Kê khai</button>
               <button class="btn btn-absent" onclick="showAbsentDetails('${emp.id}', '${emp.Ho_Ten}')">🚫 Nghỉ</button>
-              <button class="btn btn-payslip" onclick="showPayslip('${emp.id}', '${emp.Ho_Ten}', '${infoCong}', ${luongCoBan}, ${hoaHong}, ${phanTramHH}, ${phuCapViec}, ${tamUng}, ${tongNhan})">📄 Phiếu</button>
+              <button class="btn btn-payslip" onclick="showPayslip('${emp.id}', '${emp.Ho_Ten}', '${infoCong}', ${luongCoBan}, ${hoaHong}, ${phanTramHH}, ${phuCapViec}, ${tamUng}, ${tongNhan}, ${isMonthBasis})">📄 Phiếu</button>
             </div>
           </div>`;
       });
@@ -229,20 +319,23 @@
         });
     }
 
-    function showPayslip(empId, name, cong, luong, hh, hhPct, pc, ung, tong) {
+    function showPayslip(empId, name, cong, luong, hh, hhPct, pc, ung, tong, isMonthBasis) {
         const monthVal = document.getElementById('month-selector').value;
         const [year, month] = monthVal.split('-');
-        const myTC = currentTcData.filter(t => String(t.User_ID) === String(empId));
+        const tcSource = isMonthBasis ? currentTcData : currentTcWeekData;
+        const myTC = tcSource.filter(t => String(t.User_ID) === String(empId));
         const absents = globalAbsentData[empId] || [];
         
         let absentHtml = absents.length > 0 ? `
             <div style="margin-top:10px; padding:10px; background:#fff5f5; border-radius:8px; border:1px solid #fed7d7;">
-                <p style="font-weight:bold; color:#c53030; font-size:12px; margin-bottom:5px; text-align:left;">CÁC BUỔI NGHỈ TRONG THÁNG:</p>
+                <p style="font-weight:bold; color:#c53030; font-size:12px; margin-bottom:5px; text-align:left;">CÁC BUỔI NGHỈ:</p>
                 <div style="font-size:11px; color:#c53030; text-align:left;">${absents.join(', ')}</div>
             </div>` : '';
 
+        const titlePrint = isMonthBasis ? `PHIẾU LƯƠNG THÁNG ${month}/${year}` : `PHIẾU LƯƠNG TUẦN NÀY`;
+
         Swal.fire({
-            title: `<span style="color:var(--primary)">PHIẾU LƯƠNG THÁNG ${month}/${year}</span>`,
+            title: `<span style="color:var(--primary)">${titlePrint}</span>`,
             html: `<div style="text-align: left; font-size: 14px; border: 1px solid #eee; padding: 15px; border-radius: 10px; background: #fff;">
                     <p><b>Nhân viên:</b> ${name}</p><hr style="border: 0.5px dashed #ccc">
                     <div style="display:flex; justify-content: space-between; margin: 8px 0;"><span>Lương cứng (${cong}):</span><b>${Math.round(luong).toLocaleString('vi-VN')}đ</b></div>
@@ -257,9 +350,9 @@
         });
     }
 
-    // ĐÃ FIX BẰNG CẤU TRÚC CLASS CHỐNG LỖI XUỐNG DÒNG
-    function viewFinanceDetails(empId, empName) {
-      const myTC = currentTcData.filter(t => String(t.User_ID) === String(empId));
+    function viewFinanceDetails(empId, empName, isMonthBasis) {
+      const tcSource = isMonthBasis ? currentTcData : currentTcWeekData;
+      const myTC = tcSource.filter(t => String(t.User_ID) === String(empId));
       if(myTC.length === 0) return Swal.fire('Thông báo', 'Không có khoản kê khai nào.', 'info');
       
       let rows = myTC.map(tc => {
