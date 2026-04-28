@@ -149,15 +149,15 @@
   <div id="vung-in-f9"></div>
 
   <script>
-    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100%
-    window.listF9 = [];
+    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN VÀ MỞ RỘNG GOM NHÓM
+    window.groupedF9 = [];
     let currentPayF9 = "";
 
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => { loadF9Data(); }, 600);
     });
 
-    /** 1. TẢI DỮ LIỆU CÔNG NỢ */
+    /** 1. TẢI VÀ GOM NHÓM DỮ LIỆU CÔNG NỢ */
     async function loadF9Data() {
       const tbody = document.getElementById('f9-table-body');
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
@@ -165,46 +165,69 @@
       try {
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?order=id.desc`, { headers: h });
         const data = await res.json();
-        window.listF9 = data.filter(row => parseFloat(row.Con_Lai) > 0);
+        const rawList = data.filter(row => parseFloat(row.Con_Lai) > 0);
 
-        if (window.listF9.length === 0) {
+        // Gom nhóm theo Khách Hàng
+        let groupedObj = {};
+        rawList.forEach(it => {
+            let kh = (it.Khach_Hang || "Khách lẻ").trim();
+            if(!groupedObj[kh]) {
+                groupedObj[kh] = { Khach_Hang: kh, orders: [], Tong_Don: 0, Da_Tra: 0, Con_Lai: 0, Ngay_Gio: it.Ngay_Gio };
+            }
+            groupedObj[kh].orders.push(it);
+            groupedObj[kh].Tong_Don += parseFloat(it.Tong_Don || 0);
+            groupedObj[kh].Da_Tra += parseFloat(it.Da_Tra || 0);
+            groupedObj[kh].Con_Lai += parseFloat(it.Con_Lai || 0);
+        });
+        window.groupedF9 = Object.values(groupedObj);
+
+        if (window.groupedF9.length === 0) {
           tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px; font-weight:bold; color:#27ae60;">🎉 Tuyệt vời! Hiện không có công nợ tồn đọng.</td></tr>';
           return;
         }
 
-        tbody.innerHTML = window.listF9.map((it, idx) => `
+        tbody.innerHTML = window.groupedF9.map((it, idx) => {
+          let maDonTxt = it.orders.length > 1 ? `<span style="color:#e67e22;">Gộp ${it.orders.length} đơn</span>` : it.orders[0].Ma_Don;
+          return `
           <tr class="f9-row">
-            <td onclick="viewOrderDetails('${it.Ma_Don}')"><b style="color:#2c3e50;">${it.Ma_Don}</b></td>
-            <td onclick="viewOrderDetails('${it.Ma_Don}')"><b>${it.Khach_Hang}</b></td>
+            <td onclick="viewOrderDetails_Group(${idx})"><b style="color:#2c3e50;">${maDonTxt}</b></td>
+            <td onclick="viewOrderDetails_Group(${idx})"><b>${it.Khach_Hang}</b></td>
             <td style="color:#64748b;">${it.Ngay_Gio}</td>
-            <td>T: ${parseFloat(it.Tong_Don).toLocaleString()}<br><small style="color:#27ae60; font-weight:bold;">Đ: ${parseFloat(it.Da_Tra).toLocaleString()}</small></td>
-            <td style="color:#e74c3c; font-weight:bold; font-size:14px;">${parseFloat(it.Con_Lai).toLocaleString()} đ</td>
+            <td>T: ${it.Tong_Don.toLocaleString()}<br><small style="color:#27ae60; font-weight:bold;">Đ: ${it.Da_Tra.toLocaleString()}</small></td>
+            <td style="color:#e74c3c; font-weight:bold; font-size:14px;">${it.Con_Lai.toLocaleString()} đ</td>
             <td style="text-align:center"><button class="btn-debt" onclick="openDebtPopup(${idx})">💵 THU NỢ</button></td>
-          </tr>`).join('');
+          </tr>`
+        }).join('');
       } catch (e) { console.error(e); }
     }
 
-    /** 2. XEM CHI TIẾT ĐƠN HÀNG */
-    async function viewOrderDetails(maDon) {
+    /** 2. XEM CHI TIẾT ĐƠN HÀNG (MỞ RỘNG CHO NHIỀU ĐƠN) */
+    async function viewOrderDetails_Group(idx) {
+      const it = window.groupedF9[idx];
       Swal.fire({ title: 'Đang tải chi tiết...', didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
       
       try {
-        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${maDon}`, { headers: h });
-        const items = await res.json();
+        let allItems = [];
+        for(let o of it.orders) {
+            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${o.Ma_Don}`, { headers: h });
+            const items = await res.json();
+            items.forEach(i => i._Ma_Don = o.Ma_Don); // Dán nhãn mã đơn
+            allItems = allItems.concat(items);
+        }
         
-        if (items.length === 0) return Swal.fire('Thông báo', 'Không tìm thấy chi tiết sản phẩm cho mã này (Đơn nhập nợ tay).', 'info');
+        if (allItems.length === 0) return Swal.fire('Thông báo', 'Không tìm thấy chi tiết sản phẩm cho mã này (Đơn nhập nợ tay).', 'info');
 
-        let rowsHtml = items.map(m => `
+        let rowsHtml = allItems.map(m => `
           <div style="display:grid; grid-template-columns: 2fr 0.5fr 1fr 1fr; gap:10px; padding:10px 8px; border-bottom:1px dashed #eee; font-size:13px; align-items:center;">
-            <div style="text-align:left;">${m.Ten_Hang}</div>
+            <div style="text-align:left;"><b>[${m._Ma_Don}]</b> ${m.Ten_Hang}</div>
             <div style="text-align:center;">${m.So_Luong}</div>
             <div style="text-align:right; color:#7f8c8d;">${(m.Don_Gia || 0).toLocaleString()}</div>
             <div style="text-align:right; font-weight:bold; color:#2c3e50;">${(m.Thanh_Tien || 0).toLocaleString()}</div>
           </div>`).join('');
 
         Swal.fire({
-          title: `<span style="font-size: 18px; color: #c0392b; text-transform: uppercase;">CHI TIẾT ĐƠN: ${maDon}</span>`,
+          title: `<span style="font-size: 18px; color: #c0392b; text-transform: uppercase;">CHI TIẾT: ${it.Khach_Hang}</span>`,
           width: '700px',
           html: `
             <div style="background:#fdf2f2; padding:12px 8px; font-weight:bold; display:grid; grid-template-columns: 2fr 0.5fr 1fr 1fr; gap:10px; font-size:12px; color:#c0392b; border-bottom:2px solid #fecaca; border-radius:6px 6px 0 0;">
@@ -216,7 +239,7 @@
       } catch (e) { console.error(e); }
     }
 
-    /** 3. FORM NHẬP CÔNG NỢ MỚI (BỔ SUNG Ô GHI CHÚ) */
+    /** 3. FORM NHẬP CÔNG NỢ MỚI (GIỮ NGUYÊN) */
     function openAddDebtPopup() {
       Swal.fire({
         title: '<span style="color:#c0392b;">NHẬP CÔNG NỢ MỚI</span>',
@@ -263,9 +286,7 @@
           return { ma, kh, tong, datra, conlai, ghichu };
         }
       }).then(async (r) => {
-        if (r.isConfirmed) {
-          saveDebtToDB(r.value);
-        }
+        if (r.isConfirmed) saveDebtToDB(r.value);
       });
     }
 
@@ -290,22 +311,42 @@
       } catch (e) { console.error(e); }
     }
 
-    /** 4. THU NỢ & GHI NHẬT KÝ THU NỢ */
+    /** 4. THU NỢ & GHI NHẬT KÝ THU NỢ (XỬ LÝ ĐA ĐƠN) */
     window.openDebtPopup = function(idx) {
-      const it = window.listF9[idx];
-      const nợHiệnTại = parseFloat(it.Con_Lai);
+      const it = window.groupedF9[idx];
+      const nợHiệnTại = it.Con_Lai;
       currentPayF9 = "";
 
+      // Render danh sách ô nhập tiền thành phần nếu có nhiều đơn
+      let partialHtml = '';
+      if (it.orders.length > 1) {
+          partialHtml = `
+            <div style="margin-top:15px; border-top: 1px dashed #fecaca; padding-top: 10px;">
+              <p style="font-size:12px; font-weight:bold; color:#c0392b; margin-bottom: 5px;">THU TỪNG PHẦN (CÁC ĐƠN NỢ TỒN):</p>
+              <div style="max-height: 150px; overflow-y: auto; padding-right: 5px;">
+              ${it.orders.map((o, i) => `
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                      <span style="font-size: 13px; font-weight:bold;">${o.Ma_Don} <br><small style="color:gray; font-weight:normal;">Nợ: ${parseFloat(o.Con_Lai).toLocaleString()}</small></span>
+                      <input type="text" class="swal2-input partial-pay-inp" data-id="${o.id}" data-madon="${o.Ma_Don}" data-no="${o.Con_Lai}" style="width:120px; text-align:right; margin:0; height: 35px; font-size:14px;" value="${parseFloat(o.Con_Lai).toLocaleString('vi-VN')}" oninput="syncPartialToTotal()">
+                  </div>
+              `).join('')}
+              </div>
+            </div>
+          `;
+      }
+
       Swal.fire({
-        title: `<span style="color:#c0392b;">THU NỢ: ${it.Ma_Don}</span>`,
+        title: `<span style="color:#c0392b;">THU NỢ: ${it.Khach_Hang}</span>`,
         html: `
           <div style="text-align:left; border:1px solid #ddd; padding:15px; border-radius:8px; background:#fff;">
             <p style="margin-top:0;">👤 <b>Khách hàng:</b> <span style="color:#34495e;">${it.Khach_Hang}</span></p>
-            <p style="color:#c0392b; font-weight:bold; font-size:18px; margin-bottom:0;">Nợ tồn: ${nợHiệnTại.toLocaleString()} đ</p>
+            <p style="color:#c0392b; font-weight:bold; font-size:18px; margin-bottom:0;">Tổng nợ tồn: ${nợHiệnTại.toLocaleString()} đ</p>
             <div style="background:#fff5f5; padding:15px; border-radius:8px; border:1px solid #fecaca; margin-top:15px;">
-               <label style="font-weight:bold; color:#c0392b; font-size:12px; display:block; margin-bottom:5px;">SỐ TIỀN KHÁCH ĐÓNG:</label>
+               <label style="font-weight:bold; color:#c0392b; font-size:12px; display:block; margin-bottom:5px;">SỐ TIỀN KHÁCH ĐÓNG (TỔNG):</label>
                <input type="text" id="pay_f9" class="swal2-input" style="margin:0; width:100%; font-size:24px; border:2px solid #c0392b; text-align:right; font-weight:bold; color:#c0392b; border-radius:6px; box-sizing:border-box;" value="${nợHiệnTại.toLocaleString('vi-VN')}">
                
+               ${partialHtml}
+
                <label style="font-weight:bold; color:#c0392b; font-size:12px; display:block; margin-top:15px; margin-bottom:5px;">HÌNH THỨC GIAO DỊCH:</label>
                <div class="pay-toggle-f9" style="width:100%; height:40px;">
                   <div id="f9-slider" class="pay-sld-f9 mid"></div>
@@ -322,42 +363,106 @@
             let v = cleanF9Money(this.value);
             if (v > nợHiệnTại) v = nợHiệnTại;
             this.value = v.toLocaleString('vi-VN');
+            syncTotalToPartial(v);
           });
+          syncTotalToPartial(nợHiệnTại);
         },
         preConfirm: () => {
           const val = cleanF9Money(document.getElementById('pay_f9').value);
           if (val <= 0 || currentPayF9 === "") return Swal.showValidationMessage('Vui lòng nhập số tiền > 0 và chọn Hình thức!');
-          return val;
+          
+          let paymentList = [];
+          if (it.orders.length > 1) {
+              document.querySelectorAll('.partial-pay-inp').forEach(el => {
+                  let pVal = cleanF9Money(el.value);
+                  if (pVal > 0) {
+                      paymentList.push({
+                          id: el.getAttribute('data-id'), Ma_Don: el.getAttribute('data-madon'), ThanhToan: pVal, NoCu: parseFloat(el.getAttribute('data-no'))
+                      });
+                  }
+              });
+          } else {
+              paymentList.push({ id: it.orders[0].id, Ma_Don: it.orders[0].Ma_Don, ThanhToan: val, NoCu: parseFloat(it.orders[0].Con_Lai) });
+          }
+
+          let sumPartial = paymentList.reduce((acc, curr) => acc + curr.ThanhToan, 0);
+          if (it.orders.length > 1 && sumPartial !== val) return Swal.showValidationMessage('Tổng các phần thu đang không khớp với TỔNG TIỀN ĐÓNG!');
+
+          return { totalPay: val, paymentList: paymentList };
         }
-      }).then(r => { if(r.isConfirmed) executeDebtPayment(idx, r.value, currentPayF9); });
+      }).then(r => { if(r.isConfirmed) executeGroupDebtPayment(idx, r.value.totalPay, r.value.paymentList, currentPayF9); });
     };
 
-    async function executeDebtPayment(idx, soTienThu, hinhThuc) {
-      const it = window.listF9[idx];
+    // Hàm đồng bộ ngược từ đơn lẻ lên tổng
+    window.syncPartialToTotal = function() {
+        let total = 0;
+        document.querySelectorAll('.partial-pay-inp').forEach(el => {
+            let noMax = parseFloat(el.getAttribute('data-no'));
+            let v = cleanF9Money(el.value);
+            if (v > noMax) v = noMax; 
+            el.value = v.toLocaleString('vi-VN');
+            total += v;
+        });
+        document.getElementById('pay_f9').value = total.toLocaleString('vi-VN');
+    }
+
+    // Hàm phân bổ tự động từ tổng xuống đơn lẻ
+    window.syncTotalToPartial = function(totalVal) {
+        let remain = totalVal;
+        document.querySelectorAll('.partial-pay-inp').forEach(el => {
+            let noMax = parseFloat(el.getAttribute('data-no'));
+            let payForThis = 0;
+            if (remain >= noMax) {
+                payForThis = noMax;
+                remain -= noMax;
+            } else if (remain > 0) {
+                payForThis = remain;
+                remain = 0;
+            }
+            el.value = payForThis.toLocaleString('vi-VN');
+        });
+    }
+
+    async function executeGroupDebtPayment(idx, soTienThu_Total, paymentList, hinhThuc) {
+      const it = window.groupedF9[idx];
       Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const nowFull = window.formatDateTimeVN();
 
       try {
-        const moiDaTra = parseFloat(it.Da_Tra) + soTienThu;
-        const moiConLai = parseFloat(it.Con_Lai) - soTienThu;
+        let maDonList = [];
+        for (let payItem of paymentList) {
+            const targetOrder = it.orders.find(o => o.id == payItem.id);
+            if(!targetOrder) continue;
+            
+            const moiDaTra = parseFloat(targetOrder.Da_Tra || 0) + payItem.ThanhToan;
+            const moiConLai = parseFloat(targetOrder.Con_Lai || 0) - payItem.ThanhToan;
 
-        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?id=eq.${it.id}`, {
-          method: 'PATCH', headers: h,
-          body: JSON.stringify({ Da_Tra: String(moiDaTra), Con_Lai: String(moiConLai < 0 ? 0 : moiConLai) })
-        });
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?id=eq.${payItem.id}`, {
+              method: 'PATCH', headers: h,
+              body: JSON.stringify({ Da_Tra: String(moiDaTra), Con_Lai: String(moiConLai < 0 ? 0 : moiConLai) })
+            });
 
+            maDonList.push(payItem.Ma_Don);
+        }
+
+        let strMaDon = maDonList.join(", ");
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, {
           method: 'POST', headers: h,
           body: JSON.stringify({
-            Ngay_Gio: nowFull, Ma_Don: it.Ma_Don, Khach_Hang: it.Khach_Hang,
-            Ten_Hang: "Thu nợ đơn: " + it.Ma_Don, So_Tien_Thu: soTienThu,
-            Hinh_Thuc_Thanh_Toan: hinhThuc, id: Math.floor(Date.now() / 1000)
+            Ngay_Gio: nowFull, 
+            Ma_Don: strMaDon.length > 50 ? strMaDon.substring(0,47) + "..." : strMaDon, 
+            Khach_Hang: it.Khach_Hang,
+            Ten_Hang: "Thu nợ: " + strMaDon, 
+            So_Tien_Thu: soTienThu_Total,
+            Hinh_Thuc_Thanh_Toan: hinhThuc, 
+            id: Math.floor(Date.now() / 1000)
           })
         });
 
         Swal.close();
-        showPrintPreviewF9(it, soTienThu, (moiConLai < 0 ? 0 : moiConLai));
+        const tongNoConLai_SauThu = parseFloat(it.Con_Lai) - soTienThu_Total;
+        showPrintPreviewF9_Group(it, soTienThu_Total, (tongNoConLai_SauThu < 0 ? 0 : tongNoConLai_SauThu), paymentList);
         loadF9Data();
       } catch (e) { console.error(e); }
     }
@@ -382,16 +487,22 @@
       else document.getElementById('f9-opt-mid').classList.add('active');
     }
 
-    // ĐÃ CHỈNH LẠI HIỂN THỊ "CÒN LẠI" VỪA KHÍT MÀN HÌNH ĐIỆN THOẠI
-    function showPrintPreviewF9(it, soTienThu, conLai) {
+    function showPrintPreviewF9_Group(it, soTienThu_Total, conLai, paymentList) {
       const isCleared = conLai <= 10;
+      
+      let listDaThuHtml = paymentList.map(p => `
+          <div style="display:flex; justify-content:space-between; font-size: 13px; color: #555; margin-left: 10px;">
+              <span>- Đơn ${p.Ma_Don}:</span><span>${p.ThanhToan.toLocaleString()} đ</span>
+          </div>
+      `).join('');
+
       const billHtml = `
         <div style="padding:20px; font-family:Arial, sans-serif; background:#fff;">
           <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #c0392b; padding-bottom: 10px;">
             <div><h1 style="color: #c0392b; margin: 0; font-size: 22px;">IN ẤN SẮC MÀU ĐỒNG THÁP</h1><p style="font-size:12px;">📞 0399.221.753 - 0337.663.113</p></div>
             <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 80px;">
           </div>
-          <div style="text-align: center; margin: 15px 0;"><h2 style="color: #c0392b; text-transform: uppercase;">PHIẾU THU TIỀN NỢ</h2><p>Mã nợ: ${it.Ma_Don}</p></div>
+          <div style="text-align: center; margin: 15px 0;"><h2 style="color: #c0392b; text-transform: uppercase;">PHIẾU THU TIỀN NỢ</h2></div>
           <div style="background:#fdf2f2; padding:15px; border-radius:8px; border:1px solid #fecaca; margin-bottom:15px;">
             <p style="margin-top:0;">👤 <b>Khách hàng:</b> ${it.Khach_Hang}</p>
             <p style="margin-bottom:0;">📅 <b>Ngày thu:</b> ${new Date().toLocaleString('vi-VN')}</p>
@@ -399,8 +510,9 @@
           
           <div style="margin-top: 15px; width: 100%; box-sizing: border-box; background: #fff5f5; padding: 15px; border-radius: 8px; border: 1px solid #fecaca; position: relative;">
             ${isCleared ? '<div style="position:absolute; left:10px; top:-15px; color:#c0392b; border:3px double #c0392b; padding:5px 10px; font-weight:bold; transform:rotate(-15deg); background:rgba(255,255,255,0.9); font-size:12px; z-index:10;">ĐÃ TẤT TOÁN</div>' : ''}
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Nợ cũ:</span><b>${parseFloat(it.Con_Lai).toLocaleString()} đ</b></div>
-            <div style="display:flex; justify-content:space-between; color:#c0392b;"><span>Thu đợt này:</span><b>-${soTienThu.toLocaleString()} đ</b></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Tổng nợ cũ:</span><b>${parseFloat(it.Con_Lai).toLocaleString()} đ</b></div>
+            <div style="display:flex; justify-content:space-between; color:#c0392b;"><span>Thu đợt này:</span><b>-${soTienThu_Total.toLocaleString()} đ</b></div>
+            ${paymentList.length > 1 ? `<div style="margin-top: 5px; margin-bottom: 5px;">${listDaThuHtml}</div>` : `<div style="font-size: 13px; color: #555; margin-left: 10px;">(Thu cho đơn: ${paymentList[0].Ma_Don})</div>`}
             <div style="display:flex; justify-content:space-between; border-top:1px dashed #c0392b; margin-top:10px; padding-top:10px;">
               <span><b>CÒN LẠI:</b></span><b style="color:red; font-size:18px;">${conLai.toLocaleString()} đ</b>
             </div>
