@@ -126,8 +126,8 @@
           <input type="text" id="f-qc" class="input-modern" placeholder="Vd: Cuộn, Cái, Thùng...">
         </div>
         <div class="input-group" style="grid-column: span 2;">
-          <label>Hình ảnh (Chụp từ điện thoại)</label>
-          <input type="file" id="f-hinh" class="input-modern" accept="image/*" capture="environment">
+          <label>Hình ảnh (Chụp hoặc tải lên từ điện thoại)</label>
+          <input type="file" id="f-hinh" class="input-modern" accept="image/*">
         </div>
       </div>
       <button class="btn-submit" onclick="submitInventory()">📤 XÁC NHẬN NHẬP KHO</button>
@@ -298,7 +298,7 @@
             <div><label><b>Chất liệu:</b></label><input id="e-cl" class="swal2-input" value="${item.Chat_Lieu || ''}" style="margin: 5px 0; width: 100%;"></div>
             <div style="grid-column: span 2;">
                 <label><b>Thay đổi hình ảnh:</b></label>
-                <input type="file" id="e-hinh" class="swal2-file" accept="image/*" capture="environment" style="margin: 5px 0; width: 100%;">
+                <input type="file" id="e-hinh" class="swal2-file" accept="image/*" style="margin: 5px 0; width: 100%;">
             </div>
           </div>`,
         showCancelButton: true,
