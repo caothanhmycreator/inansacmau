@@ -119,6 +119,9 @@
         <div>
           <h2 style="margin:0; font-size: 20px;">💰 QUẢN LÝ CÔNG NỢ</h2>
           <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Danh sách nợ cũ & Nhập nợ mới</p>
+          <div style="margin-top: 10px; background: rgba(255,255,255,0.25); display: inline-block; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: bold; border: 1px solid rgba(255,255,255,0.3);">
+            🔥 Tổng nợ cần thu: <span id="f9-tong-no" style="color: #ffeb3b; font-size: 15px;">0</span> đ
+          </div>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <input type="text" id="f9-search" placeholder="🔍 Tìm khách hàng, mã đơn..." style="padding: 9px 12px; border-radius: 8px; border: none; width: 220px; outline: none; font-size: 14px; color: #333;" onkeyup="f9_searchOrders()">
@@ -150,7 +153,7 @@
   <div id="vung-in-f9"></div>
 
   <script>
-    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN VÀ MỞ RỘNG GOM NHÓM
+    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN VÀ MỞ RỘNG GOM NHÓM + TỔNG NỢ
     window.groupedF9 = [];
     let currentPayF9 = "";
 
@@ -168,19 +171,31 @@
         const data = await res.json();
         const rawList = data.filter(row => parseFloat(row.Con_Lai) > 0);
 
-        // Gom nhóm theo Khách Hàng
+        // Gom nhóm theo Khách Hàng và Tính tổng số nợ
         let groupedObj = {};
+        let tongTatCaNo = 0;
+
         rawList.forEach(it => {
             let kh = (it.Khach_Hang || "Khách lẻ").trim();
+            let conLaiPart = parseFloat(it.Con_Lai || 0);
+            
             if(!groupedObj[kh]) {
                 groupedObj[kh] = { Khach_Hang: kh, orders: [], Tong_Don: 0, Da_Tra: 0, Con_Lai: 0, Ngay_Gio: it.Ngay_Gio };
             }
             groupedObj[kh].orders.push(it);
             groupedObj[kh].Tong_Don += parseFloat(it.Tong_Don || 0);
             groupedObj[kh].Da_Tra += parseFloat(it.Da_Tra || 0);
-            groupedObj[kh].Con_Lai += parseFloat(it.Con_Lai || 0);
+            groupedObj[kh].Con_Lai += conLaiPart;
+            
+            tongTatCaNo += conLaiPart;
         });
         window.groupedF9 = Object.values(groupedObj);
+
+        // Cập nhật thẻ hiển thị Tổng nợ
+        const elTongNo = document.getElementById('f9-tong-no');
+        if (elTongNo) {
+            elTongNo.innerText = tongTatCaNo.toLocaleString('vi-VN');
+        }
 
         if (window.groupedF9.length === 0) {
           tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px; font-weight:bold; color:#27ae60;">🎉 Tuyệt vời! Hiện không có công nợ tồn đọng.</td></tr>';
