@@ -76,7 +76,7 @@
         .f9-header { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; border-radius: 8px; }
         .f9-header > div { width: 100%; }
         .f9-header > div:nth-child(2) { display: flex; flex-direction: column; width: 100%; gap: 10px; }
-        .f9-header button { width: 100%; padding: 12px; font-size: 13px; }
+        .f9-header button, #f9-search { width: 100% !important; padding: 12px; font-size: 13px; box-sizing: border-box; }
 
         .f9-table, .f9-table thead, .f9-table tbody, .f9-table th, .f9-table td { display: block; width: 100%; box-sizing: border-box; }
         .f9-table thead { display: none; }
@@ -120,7 +120,8 @@
           <h2 style="margin:0; font-size: 20px;">💰 QUẢN LÝ CÔNG NỢ</h2>
           <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Danh sách nợ cũ & Nhập nợ mới</p>
         </div>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="f9-search" placeholder="🔍 Tìm khách hàng, mã đơn..." style="padding: 9px 12px; border-radius: 8px; border: none; width: 220px; outline: none; font-size: 14px; color: #333;" onkeyup="f9_searchOrders()">
           <button onclick="openAddDebtPopup()" style="background:#fff; color:#c0392b; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:700; transition: 0.2s;">➕ NHẬP NỢ TAY</button>
           <button onclick="loadF9Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:600; transition: 0.2s;">🔄 LÀM MỚI</button>
         </div>
@@ -520,6 +521,16 @@
         </div>`;
       document.getElementById('vung-in-f9').innerHTML = billHtml;
       Swal.fire({ title: '<span style="color:#c0392b;">XEM TRƯỚC PHIẾU</span>', html: `<div style="text-align:left; border:1px solid #fecaca; border-radius:8px;">${billHtml}</div>`, confirmButtonText: '🖨️ IN PHIẾU', confirmButtonColor: '#c0392b', showCancelButton: true, cancelButtonText: 'ĐÓNG', width: '700px' }).then(r => { if(r.isConfirmed) window.print(); });
+    }
+
+    // TÍNH NĂNG MỚI BỔ SUNG: TÌM KIẾM LỌC ĐƠN TRỰC TIẾP
+    function f9_searchOrders() {
+      const val = document.getElementById('f9-search').value.toLowerCase();
+      const rows = document.querySelectorAll('#f9-table-body tr.f9-row');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(val) ? '' : 'none';
+      });
     }
   </script>
 </body>
