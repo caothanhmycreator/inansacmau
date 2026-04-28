@@ -46,7 +46,6 @@
 
   <script>
     let user = JSON.parse(localStorage.getItem('currentUser'));
-    let currentLog = null;
     let API_URL = "";
     let headers = {};
 
@@ -73,6 +72,13 @@
         const now = new Date();
         document.getElementById('display-clock').innerText = now.toLocaleTimeString('vi-VN');
         document.getElementById('display-date').innerText = now.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+        
+        // Tự động làm mới trạng thái UI tại các mốc giờ quan trọng (Nếu nhân viên treo màn hình)
+        const h = now.getHours();
+        const m = now.getMinutes();
+        const s = now.getSeconds();
+        if ((h === 11 || h === 17) && m === 0 && s === 0) checkStatus(); // Giờ tự động ra ca
+        if ((h === 7 || h === 13) && m === 30 && s === 0) checkStatus(); // Giờ bắt đầu vào ca
       };
       update(); setInterval(update, 1000);
     }
@@ -84,54 +90,91 @@
       const label = document.getElementById('status-label');
 
       try {
-        // Lấy tất cả lượt chấm công trong ngày của nhân viên này
+        // 1. TỰ ĐỘNG CHỐT CA NẾU ĐÃ ĐẾN GIỜ (11h Sáng / 17h Chiều)
+        const resUnfinished = await fetch(`${API_URL}?User_ID=eq.${user.id}&Status=eq.Đang làm`, { headers });
+        const unfinished = await resUnfinished.json();
+        
+        for (let record of unfinished) {
+            // Xác định ca sáng hay chiều dựa trên giờ vào
+            let limitTime = new Date(record.Ngay + 'T17:00:00');
+            let targetRa = "17:00:00";
+            if (parseInt(record.Gio_Vao.split(':')[0]) < 12) {
+                limitTime = new Date(record.Ngay + 'T11:00:00');
+                targetRa = "11:00:00";
+            }
+            
+            // Nếu thời gian hiện tại đã vượt qua giờ chốt ca -> Cập nhật CSDl
+            if (now >= limitTime) {
+                await fetch(`${API_URL}?id=eq.${record.id}`, { 
+                    method: 'PATCH', headers, 
+                    body: JSON.stringify({ Gio_Ra: targetRa, Status: 'Đã về' }) 
+                });
+            }
+        }
+
+        // 2. TẢI LẠI DỮ LIỆU CHẤM CÔNG HÔM NAY SAU KHI ĐÃ CẬP NHẬT
         const res = await fetch(`${API_URL}?User_ID=eq.${user.id}&Ngay=eq.${today}&order=id.desc`, { headers });
         const data = await res.json();
 
-        // Tìm xem có lượt nào đang "Đang làm" (chưa bấm ra) hay không
-        currentLog = data.find(item => item.Status === "Đang làm");
+        const currentHour = now.getHours();
+        const currentMin = now.getMinutes();
+        const timeFloat = currentHour + currentMin / 60;
+        
+        const hasMorning = data.some(item => parseInt(item.Gio_Vao.split(':')[0]) < 12);
+        const hasAfternoon = data.some(item => parseInt(item.Gio_Vao.split(':')[0]) >= 12);
 
-        if (currentLog) {
-          btnBox.innerHTML = `<button class="btn-main btn-ra" onclick="doAction('OUT')">XÁC NHẬN VỀ</button>`;
-          label.innerText = "ĐANG TRONG CA LÀM";
-          label.className = "status-text status-working";
-        } else {
-          // Nếu không có ca nào đang làm, cho phép "Vào ca" lần tiếp theo
-          const countDone = data.filter(item => item.Status === "Đã về").length;
-          if (countDone >= 2) {
-            btnBox.innerHTML = `<button class="btn-main btn-done">XONG 2 CA</button>`;
-            label.innerText = "ĐÃ HOÀN TẤT CÔNG VIỆC HÔM NAY";
+        // 3. XỬ LÝ HIỂN THỊ UI (MỖI BUỔI CHỈ VÀO CA 1 LẦN, KHÔNG CÓ NÚT RA CA)
+        if (timeFloat < 11) { // Khung giờ Ca Sáng (00:00 - 11:00)
+            if (hasMorning) {
+                btnBox.innerHTML = `<button class="btn-main btn-done">ĐANG LÀM</button>`;
+                label.innerText = "Hệ thống tự động kết thúc lúc 11:00";
+                label.className = "status-text status-working";
+            } else {
+                if (timeFloat < 7.5) {
+                    btnBox.innerHTML = `<button class="btn-main btn-done">CHƯA ĐẾN GIỜ</button>`;
+                    label.innerText = "Ca sáng bắt đầu từ 07:30";
+                    label.className = "status-text status-off";
+                } else {
+                    btnBox.innerHTML = `<button class="btn-main btn-vao" onclick="doAction('IN')">VÀO CA SÁNG</button>`;
+                    label.innerText = "Sẵn sàng vào làm ca sáng!";
+                    label.className = "status-text status-off";
+                }
+            }
+        } 
+        else if (timeFloat >= 11 && timeFloat < 13.5) { // Khung giờ Nghỉ Trưa (11:00 - 13:30)
+            btnBox.innerHTML = `<button class="btn-main btn-done">NGHỈ TRƯA</button>`;
+            label.innerText = "Ca chiều bắt đầu từ 13:30";
             label.className = "status-text status-off";
-          } else {
-            btnBox.innerHTML = `<button class="btn-main btn-vao" onclick="doAction('IN')">VÀO CA</button>`;
-            label.innerText = countDone === 0 ? "CHƯA VÀO CA SÁNG" : "CHƯA VÀO CA CHIỀU";
-            label.className = "status-text status-off";
-          }
         }
+        else if (timeFloat >= 13.5 && timeFloat < 17) { // Khung giờ Ca Chiều (13:30 - 17:00)
+            if (hasAfternoon) {
+                btnBox.innerHTML = `<button class="btn-main btn-done">ĐANG LÀM</button>`;
+                label.innerText = "Hệ thống tự động kết thúc lúc 17:00";
+                label.className = "status-text status-working";
+            } else {
+                btnBox.innerHTML = `<button class="btn-main btn-vao" onclick="doAction('IN')">VÀO CA CHIỀU</button>`;
+                label.innerText = "Sẵn sàng vào làm ca chiều!";
+                label.className = "status-text status-off";
+            }
+        }
+        else { // Tối / Hết Giờ (Sau 17:00)
+            btnBox.innerHTML = `<button class="btn-main btn-done">XONG CA</button>`;
+            label.innerText = "Đã kết thúc giờ làm việc hôm nay";
+            label.className = "status-text status-off";
+        }
+
       } catch (e) {
         btnBox.innerHTML = `<button class="btn-main btn-error" onclick="checkStatus()">THỬ LẠI</button>`;
+        label.innerText = "Lỗi kết nối máy chủ";
+        label.className = "status-text status-err";
       }
     }
 
     async function doAction(type) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const currentMin = now.getMinutes();
-      const timeStr = now.toLocaleTimeString('en-GB'); 
-      const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-
       if (type === 'IN') {
-        // KIỂM TRA GIỜ VÀO CA
-        const isMorning = currentHour < 12;
-        if (isMorning) {
-            if (currentHour < 7 || (currentHour === 7 && currentMin < 30)) {
-                return Swal.fire('Chưa đến giờ', 'Ca sáng bắt đầu từ 07:30 nhé!', 'warning');
-            }
-        } else {
-            if (currentHour < 13 || (currentHour === 13 && currentMin < 30)) {
-                return Swal.fire('Chưa đến giờ', 'Ca chiều bắt đầu từ 13:30 nhé!', 'warning');
-            }
-        }
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('en-GB'); 
+        const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
         const res = await Swal.fire({ title: 'Bắt đầu ca làm?', icon: 'question', showCancelButton: true, confirmButtonText: 'ĐỒNG Ý' });
         if (!res.isConfirmed) return;
@@ -141,18 +184,13 @@
           method: 'POST', headers,
           body: JSON.stringify({ User_ID: user.id, Ngay: dateStr, Gio_Vao: timeStr, Status: 'Đang làm' })
         });
-        if (postRes.ok) { Swal.fire({ icon: 'success', title: 'Đã vào ca!', timer: 1000, showConfirmButton: false }); checkStatus(); }
-      } else {
-        // RA CA
-        const res = await Swal.fire({ title: 'Kết thúc ca làm?', icon: 'warning', showCancelButton: true, confirmButtonText: 'XÁC NHẬN VỀ' });
-        if (!res.isConfirmed) return;
 
-        Swal.showLoading();
-        const patchRes = await fetch(`${API_URL}?id=eq.${currentLog.id}`, {
-          method: 'PATCH', headers,
-          body: JSON.stringify({ Gio_Ra: timeStr, Status: 'Đã về' })
-        });
-        if (patchRes.ok) { Swal.fire({ icon: 'success', title: 'Hẹn gặp lại!', timer: 1000, showConfirmButton: false }); checkStatus(); }
+        if (postRes.ok) { 
+            Swal.fire({ icon: 'success', title: 'Đã vào ca!', timer: 1000, showConfirmButton: false }); 
+            checkStatus(); 
+        } else {
+            Swal.fire('Lỗi', 'Không thể lưu chấm công', 'error');
+        }
       }
     }
   </script>
