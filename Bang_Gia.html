@@ -12,7 +12,7 @@
   <script src="js/sidebar_loader.js"></script> 
   <style>
     /* ========================================================
-       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       1. GIAO DIỆN CHUNG & PC
        ======================================================== */
     :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; --accent: #d35400; }
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
@@ -23,31 +23,40 @@
     .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
     .input-group { display: flex; flex-direction: column; }
     .input-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
-    .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; }
+    .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; }
     .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(211, 84, 0, 0.1); }
 
     .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .group-header { background: #f8fafc; padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 10px; transition: 0.2s; }
+    
+    /* Thiết kế lại phần Nhóm (Group) */
+    .group-header { background: #f8fafc; padding: 15px 20px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px; transition: 0.2s; border-left: 5px solid var(--accent); align-items: center; }
     .group-header:hover { background: #edf2f7; color: var(--accent); }
-    .group-content { display: none; margin-top: 5px; }
+    .group-content { display: none; margin-top: 5px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; padding: 5px; }
     .group-content.show { display: block; }
 
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: left; }
-    th { background: #f1f5f9; color: #64748b; font-size: 11px; text-transform: uppercase; }
+    /* Thiết kế lại Bảng cho khoa học & đẹp mắt hơn */
+    .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+    .table-modern th { background: #f1f5f9; color: #64748b; font-size: 12px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; }
+    .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .table-modern tr { transition: 0.2s; }
+    .table-modern tr:hover { background: #f8fafc; }
     
-    .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
-    .img-preview:hover { transform: scale(1.1); }
-    .qr-preview { width: 40px; height: 40px; cursor: pointer; background: white; padding: 2px; border: 1px solid #eee; }
+    /* Nhãn giá cho nổi bật */
+    .price-badge-le { background: #fee2e2; color: #b91c1c; padding: 5px 10px; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 13px; border: 1px solid #fecaca; }
+    .price-badge-si { background: #dcfce7; color: #15803d; padding: 5px 10px; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 13px; border: 1px solid #bbf7d0; }
+
+    .img-preview { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
+    .img-preview:hover { transform: scale(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .qr-preview { width: 45px; height: 45px; cursor: pointer; background: white; padding: 3px; border: 1px solid #eee; border-radius: 6px; }
     
     /* Cập nhật class nút bấm */
-    .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; flex: 1; }
+    .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.3s; flex: 1; }
     .btn-submit:hover { background: #a04000; transform: translateY(-2px); }
     
-    .btn-import-kho { background: #2D5A27; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; flex: 1; }
+    .btn-import-kho { background: #2D5A27; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.3s; flex: 1; }
     .btn-import-kho:hover { background: #1e3f1a; transform: translateY(-2px); }
     
-    .btn-import-dm { background: #2980b9; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; flex: 1; }
+    .btn-import-dm { background: #2980b9; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.3s; flex: 1; }
     .btn-import-dm:hover { background: #1f618d; transform: translateY(-2px); }
 
     .btn-container { display: flex; gap: 15px; margin-top: 20px; width: 100%; flex-wrap: wrap; }
@@ -77,15 +86,15 @@
         .btn-container { flex-direction: column; gap: 10px; }
 
         /* Biến bảng thành Card để tra cứu giá dễ dàng */
-        .group-content { overflow-x: hidden; }
-        table, thead, tbody, th, td, tr { display: block; width: 100%; }
-        thead { display: none; }
+        .group-content { overflow-x: hidden; padding: 10px 0; border: none; }
+        .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; }
+        .table-modern thead { display: none; }
         
-        tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: flex-start; text-align: left; }
+        .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .table-modern td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: flex-start; text-align: left; }
         
         /* Nhãn hiển thị cột */
-        td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
+        .table-modern td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
         
         .img-preview { width: 60px; height: 60px; }
         .qr-preview { width: 50px; height: 50px; }
@@ -149,9 +158,12 @@
     </div>
 
     <div class="inventory-card">
-      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
         <h3 style="margin:0;">📊 CHI TIẾT ĐƠN GIÁ</h3>
-        <button onclick="loadPriceList()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">🔄 Làm mới bảng</button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end;">
+          <input type="text" id="searchPrice" class="input-modern" placeholder="🔍 Tìm tên, nhóm, mô tả, mã SP..." style="max-width: 350px; flex: 1;" onkeyup="filterPriceList()">
+          <button onclick="loadPriceList()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">🔄 Làm mới bảng</button>
+        </div>
       </div>
       <div id="price-list-container">
         <p style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu bảng giá...</p>
@@ -165,6 +177,9 @@
     const FOLDER_ID = "1ao2E97b8YdawmGb23c8U_6u7N65hTrVN"; 
     let accessToken = localStorage.getItem('drive_access_token');
     let tokenClient;
+    
+    // Biến toàn cục để lưu trữ dữ liệu phục vụ tìm kiếm
+    let priceListData = [];
 
     function initTokenClient() {
         tokenClient = google.accounts.oauth2.initTokenClient({
@@ -259,17 +274,26 @@
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
       try {
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*&order=Nhom_Hang.asc`, { headers: h });
-        const data = await res.json();
+        priceListData = await res.json();
+        renderPriceTable(priceListData);
+      } catch (e) { console.error(e); }
+    }
+
+    // Hàm render bảng riêng biệt để dùng chung cho Lọc & Load
+    window.renderPriceTable = function(data, isSearching = false) {
+        const container = document.getElementById('price-list-container');
+        container.innerHTML = "";
         
+        if(data.length === 0) { 
+            container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Không tìm thấy sản phẩm nào.</p>'; 
+            return; 
+        }
+
         const groups = {};
         data.forEach(item => {
           if (!groups[item.Nhom_Hang]) groups[item.Nhom_Hang] = [];
           groups[item.Nhom_Hang].push(item);
         });
-
-        const container = document.getElementById('price-list-container');
-        container.innerHTML = "";
-        if(data.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Bảng giá trống.</p>'; return; }
 
         for (let nhom in groups) {
           let rows = groups[nhom].map(item => {
@@ -287,33 +311,58 @@
               <td data-label="Mã QR"><img src="${qrImageUrl}" class="qr-preview" onclick="Swal.fire({title: 'QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 250})"></td>
               <td data-label="Ảnh">${thumbDisplay}</td>
               <td data-label="Tên hàng">
-                <b>${item.Ten_Hang}</b><br>
-                <small style="color:#888">${item.Mo_Ta || ''}</small><br>
+                <b style="font-size:14px; color:#2c3e50;">${item.Ten_Hang}</b><br>
+                <small style="color:#7f8c8d">${item.Mo_Ta || ''}</small><br>
                 <small style="color:#2D5A27; font-weight:bold;">${item.Ghi_Chu ? '🔗 Liên kết kho: ' + item.Ghi_Chu : ''}</small>
               </td>
-              <td data-label="ĐVT">${item.Don_Vi_Tinh || ''}</td>
-              <td data-label="Giá lẻ" style="color:red; font-weight:bold;">${(item.Gia_Ban || 0).toLocaleString()}</td>
-              <td data-label="Giá sỉ" style="color:green; font-weight:bold;">${(item.Gia_Si || 0).toLocaleString()}</td>
-              <td data-label="Thao tác">
-                <button onclick='editPrice(${JSON.stringify(item)})' style="color:#2980b9; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px;">SỬA</button> | 
-                <button onclick="deletePrice(${item.Id})" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px;">XÓA</button>
+              <td data-label="ĐVT"><span style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:12px;">${item.Don_Vi_Tinh || '-'}</span></td>
+              <td data-label="Giá lẻ"><span class="price-badge-le">${(item.Gia_Ban || 0).toLocaleString()}</span></td>
+              <td data-label="Giá sỉ"><span class="price-badge-si">${(item.Gia_Si || 0).toLocaleString()}</span></td>
+              <td data-label="Thao tác" style="text-align: center;">
+                <button onclick='editPrice(${JSON.stringify(item)})' style="color:#2980b9; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px; font-size:13px;">SỬA</button> | 
+                <button onclick="deletePrice(${item.Id})" style="color:#e74c3c; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px; font-size:13px;">XÓA</button>
               </td>
             </tr>`}).join('');
 
+          // Mở thư mục nếu đang tìm kiếm
+          const showClass = isSearching ? 'show' : '';
+
           container.innerHTML += `
             <div class="group-header" onclick="this.nextElementSibling.classList.toggle('show')">
-              <span>➕ ${nhom.toUpperCase()} (${groups[nhom].length} mặt hàng)</span>
+              <span>📁 Nhóm: ${nhom.toUpperCase()} <span style="color:#64748b; font-size:13px;">(${groups[nhom].length} sản phẩm)</span></span>
               <span>▼</span>
             </div>
-            <div class="group-content">
-              <table>
-                <thead><tr><th>QR</th><th>Ảnh</th><th>Tên hàng</th><th>ĐVT</th><th>Giá lẻ</th><th>Giá sỉ</th><th>Thao tác</th></tr></thead>
+            <div class="group-content ${showClass}">
+              <table class="table-modern">
+                <thead><tr>
+                    <th style="width:60px; text-align:center;">Mã QR</th>
+                    <th style="width:70px; text-align:center;">Ảnh</th>
+                    <th>Tên Sản Phẩm & Quy Cách</th>
+                    <th style="width:80px;">ĐVT</th>
+                    <th style="width:110px;">Giá Lẻ</th>
+                    <th style="width:110px;">Giá Sỉ</th>
+                    <th style="width:120px; text-align:center;">Thao tác</th>
+                </tr></thead>
                 <tbody>${rows}</tbody>
               </table>
             </div>`;
         }
-      } catch (e) { console.error(e); }
-    }
+    };
+
+    // Hàm Lọc/Tìm kiếm
+    window.filterPriceList = function() {
+        const query = document.getElementById("searchPrice").value.toLowerCase().trim();
+        const filteredData = priceListData.filter(item => {
+            const ten = (item.Ten_Hang || "").toLowerCase();
+            const ma = (item.Ma_QR || "").toLowerCase();
+            const nhom = (item.Nhom_Hang || "").toLowerCase();
+            const mota = (item.Mo_Ta || "").toLowerCase();
+            return ten.includes(query) || ma.includes(query) || nhom.includes(query) || mota.includes(query);
+        });
+        
+        // Truyền true để tự động mở các thẻ Group khi đang tìm kiếm
+        renderPriceTable(filteredData, query.length > 0);
+    };
 
     async function editPrice(item) {
       const { value: formValues } = await Swal.fire({
