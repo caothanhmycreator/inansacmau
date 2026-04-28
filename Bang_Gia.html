@@ -421,7 +421,7 @@
     }
 
     // =========================================================================
-    // TÍNH NĂNG 1: NHẬP GIÁ TỪ KHO VẬT TƯ (Giữ nguyên)
+    // TÍNH NĂNG 1: NHẬP GIÁ TỪ KHO VẬT TƯ (Đã bổ sung hiển thị hình ảnh)
     // =========================================================================
     async function openKhoImportPopup() {
         Swal.fire({ title: 'Đang tải dữ liệu Kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -441,8 +441,19 @@
                 return Swal.fire('Thông báo', 'Tất cả vật tư trong kho đều đã được niêm yết giá.', 'info');
             }
 
-            let rowsHtml = vatTuMoi.map((vt, index) => `
+            let rowsHtml = vatTuMoi.map((vt, index) => {
+                let thumbDisplay = '<span style="color:#ccc; font-size:11px;">N/A</span>';
+                if (vt.Hinh_Anh && vt.Hinh_Anh.includes('/d/')) {
+                    const fileId = vt.Hinh_Anh.split('/d/')[1]?.split('/')[0];
+                    const finalThumb = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+                    thumbDisplay = `<img src="${finalThumb}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #ddd;" onclick="window.open('${vt.Hinh_Anh}', '_blank')" title="Mở ảnh Drive">`;
+                } else if (vt.Hinh_Anh) {
+                    thumbDisplay = `<img src="${vt.Hinh_Anh}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #ddd;" onclick="window.open('${vt.Hinh_Anh}', '_blank')" title="Mở ảnh">`;
+                }
+
+                return `
                 <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; text-align: center;">${thumbDisplay}</td>
                     <td style="padding: 10px; text-align: left; max-width: 150px;">
                         <b>${vt.Ten_Hang}</b><br>
                         <small style="color: gray;">Mã kho: ${vt.Ma_QR}</small>
@@ -451,7 +462,8 @@
                     <td style="padding: 10px;"><input type="text" id="imp-ban-${index}" class="swal2-input" placeholder="Giá lẻ" style="width: 100%; margin: 0; font-size: 13px;" oninput="formatCurrency(this)"></td>
                     <td style="padding: 10px;"><input type="text" id="imp-si-${index}" class="swal2-input" placeholder="Giá sỉ" style="width: 100%; margin: 0; font-size: 13px;" oninput="formatCurrency(this)"></td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
 
             const { value: newDataToInsert, isConfirmed } = await Swal.fire({
                 title: 'ĐỒNG BỘ GIÁ TỪ KHO',
@@ -461,6 +473,7 @@
                         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                             <thead style="position: sticky; top: 0; background: #2D5A27; color: white;">
                                 <tr>
+                                    <th style="padding: 10px; text-align: center; width: 60px;">Ảnh</th>
                                     <th style="padding: 10px; text-align: left;">Tên Vật Tư</th>
                                     <th style="padding: 10px; text-align: center;">ĐVT</th>
                                     <th style="padding: 10px;">Giá Lẻ (Nhập tay)</th>
