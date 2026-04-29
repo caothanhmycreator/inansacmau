@@ -388,15 +388,15 @@
             roleMoi = "Thiet_Ke";
         } else if (p.newStatus === "Chờ in") {
             titleTB = "🖨️ ĐƠN CHỜ IN ẤN"; 
-            msgTB = `Đơn ${p.maDon} đã xong file, chuyển qua máy in!`; 
+            msgTB = `Đơn ${p.maDon} đã xong file, cần in ngay!`; 
             roleMoi = "Nhan_Vien_In";
         } else if (p.newStatus === "Chờ gia công") {
             titleTB = "🛠️ ĐƠN CHỜ GIA CÔNG"; 
-            msgTB = `Đơn ${p.maDon} đã in xong, cần được gia công!`; 
+            msgTB = `Đơn ${p.maDon} cần được gửi gia công!`; 
             roleMoi = "Gia_Cong";
         } else if (p.newStatus === "Chờ thanh toán") {
             titleTB = "📦 HÀNG ĐÃ SẴN SÀNG"; 
-            msgTB = `Đơn ${p.maDon} hoàn tất, chờ thu ngân thu tiền/giao hàng!`; 
+            msgTB = `Đơn ${p.maDon} đã có sẵn cần thanh toán, giao hàng!`; 
             roleMoi = "Thu_Ngan";
         }
         
