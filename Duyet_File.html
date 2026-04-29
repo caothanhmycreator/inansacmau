@@ -6,9 +6,9 @@
   <title>Trạm kiểm duyệt file - Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/config.js"></script>
+  <script src="js/config.js?v=2000"></script>
   <script src="js/auth_guard.js"></script>
-  <script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js?v=2000"></script> 
   
   <style>
     /* ========================================================
@@ -226,7 +226,7 @@
       });
     }
 
-    /** 4. THỰC THI CẬP NHẬT 2 BẢNG */
+    /** 4. THỰC THI CẬP NHẬT 2 BẢNG & GỬI THÔNG BÁO */
     async function processUpdate(ma, sp, stt, feedback) {
       Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
@@ -260,6 +260,22 @@
         }
 
         Swal.fire({ icon: 'success', title: 'Đã hoàn tất!', timer: 1000, showConfirmButton: false });
+
+        // TÍNH NĂNG THÔNG BÁO TỰ ĐỘNG CHIA NHÁNH PHÒNG BAN
+        try {
+            if (stt === "Chờ thiết kế") {
+                await guiThongBaoSacMau("❌ TRẢ SỬA FILE", `Đơn hàng ${ma} bị trả lại với lý do: ${feedback}. Vui lòng sửa lại!`, "Thiet_Ke");
+            } 
+            else if (stt === "Chờ in") {
+                await guiThongBaoSacMau("🖨️ CÓ ĐƠN CẦN IN", `File in đơn ${ma} đã duyệt. Tiến hành in ấn ngay!`, "Nhan_Vien_In");
+            } 
+            else if (stt === "Chờ gia công") {
+                await guiThongBaoSacMau("⚙️ CẦN GIA CÔNG", `Đơn hàng ${ma} đã xuất mộc xong. Nhận hàng gia công liên kết!`, "Gia_Cong");
+            }
+        } catch (etb) {
+            console.log("Lỗi TB:", etb);
+        }
+
         loadF4Data();
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
