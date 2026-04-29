@@ -160,7 +160,6 @@
 
         Swal.close();
         if (response.ok) {
-            // TÍNH NĂNG THÔNG BÁO - BÁO CHO QUẢN TRỊ BIẾT BIẾN ĐỘNG TIỀN MẶT
             try {
                 const titleTB = payload.loai === "Két đầu ngày" ? "💰 MỞ SỔ ĐẦU NGÀY" : "💸 PHÁT SINH KHOẢN CHI";
                 const msgTB = payload.loai === "Két đầu ngày" 
@@ -209,7 +208,7 @@
                 <small style="color:#666">${item.Loai === "Chi TM" ? "💸 Chi" : "💰 Két"}</small>
               </td>
               <td style="text-align:center; width:30px">
-                <button class="btn-del" onclick="deleteItemF14('${item.id}', '${item.Noi_Dung}')">🗑️</button>
+                <button class="btn-del" onclick="deleteItemF14('${item.id}', '${item.Noi_Dung}', ${item.So_Tien})">🗑️</button>
               </td>
             </tr>
         `).join("");
@@ -218,7 +217,7 @@
     }
   }
 
-  async function deleteItemF14(id, content) {
+  async function deleteItemF14(id, content, amount) {
     const { isConfirmed } = await Swal.fire({
       title: 'Xóa khoản này?',
       text: content,
@@ -240,6 +239,11 @@
 
         Swal.close();
         if (response.ok) {
+            // THÔNG BÁO KHI XÓA DỮ LIỆU THU CHI
+            try {
+                await guiThongBaoSacMau("🗑️ XÓA DỮ LIỆU THU CHI", `Một khoản dữ liệu "${content}" trị giá ${amount.toLocaleString()}đ vừa bị xóa khỏi hệ thống bởi nhân viên.`, "Quan_Ly_Don");
+            } catch(etb) { console.log(etb); }
+
             loadHistoryF14();
         } else {
             Swal.fire("Lỗi", "Không thể xóa dòng này", "error");
