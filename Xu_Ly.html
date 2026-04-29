@@ -6,10 +6,10 @@
   <title>Xử lý đơn hàng - Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/config.js?v=1000"></script>
+  <script src="js/config.js?v=2000"></script>
   <script src="js/auth_guard.js"></script>
   <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
-  <script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js?v=2000"></script> 
   
   <style>
     /* ========================================================
@@ -356,7 +356,8 @@
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const cleanNow = window.formatDateTimeVN();
       try {
-        const searchBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.tenSP)}&select=id`, { headers: h });
+        // Cập nhật truy vấn để tự động lấy thêm Ten_Khach_Hang
+        const searchBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.tenSP)}&select=id,Ten_Khach_Hang`, { headers: h });
         const rowBH = await searchBH.json();
         if (rowBH.length > 0) {
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${rowBH[0].id}`, {
@@ -378,31 +379,31 @@
         Swal.fire({ icon: 'success', title: 'Thành công!', timer: 800, showConfirmButton: false });
 
         // =========================================================
-        // XỬ LÝ GỬI THÔNG BÁO THEO TỪNG PHÒNG BAN CHUYÊN BIỆT
+        // XỬ LÝ GỬI THÔNG BÁO THEO TỪNG PHÒNG BAN CHUYÊN BIỆT (ĐÃ BỔ SUNG TÊN KHÁCH HÀNG)
         // =========================================================
         let titleTB = ""; let msgTB = ""; let roleMoi = "";
+        let tenKH = rowBH.length > 0 ? rowBH[0].Ten_Khach_Hang : "Khách";
         
         if (p.newStatus === "Chờ thiết kế") {
             titleTB = "🎨 ĐƠN CHỜ THIẾT KẾ"; 
-            msgTB = `Đơn ${p.maDon} cần lên file thiết kế ngay!`; 
+            msgTB = `Đơn ${p.maDon} của khách ${tenKH} cần lên file thiết kế ngay!`; 
             roleMoi = "Thiet_Ke";
         } else if (p.newStatus === "Chờ in") {
             titleTB = "🖨️ ĐƠN CHỜ IN ẤN"; 
-            msgTB = `Đơn ${p.maDon} đã xong file, cần in ngay!`; 
+            msgTB = `Đơn ${p.maDon} của khách ${tenKH} đã xong file, cần in ngay!`; 
             roleMoi = "Nhan_Vien_In";
         } else if (p.newStatus === "Chờ gia công") {
             titleTB = "🛠️ ĐƠN CHỜ GIA CÔNG"; 
-            msgTB = `Đơn ${p.maDon} cần được gửi gia công!`; 
+            msgTB = `Đơn ${p.maDon} của khách ${tenKH} cần được gửi gia công!`; 
             roleMoi = "Gia_Cong";
         } else if (p.newStatus === "Chờ thanh toán") {
             titleTB = "📦 HÀNG ĐÃ SẴN SÀNG"; 
-            msgTB = `Đơn ${p.maDon} đã có sẵn cần thanh toán, giao hàng!`; 
+            msgTB = `Đơn ${p.maDon} của khách ${tenKH} đã có sẵn cần thanh toán, giao hàng!`; 
             roleMoi = "Thu_Ngan";
         }
         
         if (titleTB !== "") {
             try {
-               // Gọi hàm gửi thông báo, truyền thêm tham số roleMoi để phân loại
                await guiThongBaoSacMau(titleTB, msgTB, roleMoi);
             } catch(etb) { console.log(etb); }
         }

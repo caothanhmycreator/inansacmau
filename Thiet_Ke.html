@@ -375,7 +375,8 @@
       const status = "Chờ duyệt file";
       const cleanNow = window.formatDateTimeVN();
       try {
-        const resBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.sanPham)}&select=id`, { headers: h });
+        // Cập nhật truy vấn để lấy thêm Ten_Khach_Hang tự động (không đổi tham số hàm cũ)
+        const resBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.sanPham)}&select=id,Ten_Khach_Hang`, { headers: h });
         const rowBH = await resBH.json();
         if (rowBH.length > 0) {
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${rowBH[0].id}`, {
@@ -394,9 +395,10 @@
         
         Swal.fire({icon:'success', title:'Thành công!', timer:1500, showConfirmButton:false});
 
-        // TÍNH NĂNG THÔNG BÁO - BÁO CHO QUẢN LÝ ĐƠN VÀO DUYỆT FILE
+        // TÍNH NĂNG THÔNG BÁO - BÁO CHO QUẢN LÝ ĐƠN VÀO DUYỆT FILE (ĐÃ BỔ SUNG TÊN KHÁCH HÀNG)
         try {
-            await guiThongBaoSacMau("✅ FILE ĐÃ THIẾT KẾ XONG", `Đơn hàng ${p.maDon} đã có file, vui lòng kiểm tra và duyệt in!`, "Quan_Ly_Don");
+            let tenKH = rowBH.length > 0 ? rowBH[0].Ten_Khach_Hang : "Khách";
+            await guiThongBaoSacMau("✅ FILE ĐÃ THIẾT KẾ XONG", `Đơn hàng ${p.maDon} của khách ${tenKH} đã có file, vui lòng kiểm tra và duyệt in!`, "Quan_Ly_Don");
         } catch (etb) {
             console.log("Lỗi TB:", etb);
         }

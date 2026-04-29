@@ -235,7 +235,8 @@
       const fullNote = stt === 'Chờ thiết kế' ? "LÝ DO SỬA: " + feedback : "DẶN DÒ: " + feedback;
 
       try {
-        const resBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${ma}&Ten_Hang=eq.${encodeURIComponent(sp)}&select=id`, { headers: h });
+        // Cập nhật câu truy vấn để tự động lấy thêm Ten_Khach_Hang từ Database (không ảnh hưởng tới biến truyền vào của hàm cũ)
+        const resBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${ma}&Ten_Hang=eq.${encodeURIComponent(sp)}&select=id,Ten_Khach_Hang`, { headers: h });
         const rowBH = await resBH.json();
 
         if (rowBH.length > 0) {
@@ -261,16 +262,17 @@
 
         Swal.fire({ icon: 'success', title: 'Đã hoàn tất!', timer: 1000, showConfirmButton: false });
 
-        // TÍNH NĂNG THÔNG BÁO TỰ ĐỘNG CHIA NHÁNH PHÒNG BAN
+        // TÍNH NĂNG THÔNG BÁO TỰ ĐỘNG CHIA NHÁNH PHÒNG BAN (ĐÃ BỔ SUNG TÊN KHÁCH HÀNG)
         try {
+            let tenKH = rowBH.length > 0 ? rowBH[0].Ten_Khach_Hang : "Khách";
             if (stt === "Chờ thiết kế") {
-                await guiThongBaoSacMau("❌ TRẢ SỬA FILE", `Đơn hàng ${ma} bị trả lại với lý do: ${feedback}. Vui lòng sửa lại!`, "Thiet_Ke");
+                await guiThongBaoSacMau("❌ TRẢ SỬA FILE", `Đơn hàng ${ma} của khách ${tenKH} bị trả lại với lý do: ${feedback}. Vui lòng sửa lại!`, "Thiet_Ke");
             } 
             else if (stt === "Chờ in") {
-                await guiThongBaoSacMau("🖨️ CÓ ĐƠN CẦN IN", `File in đơn ${ma} đã duyệt. Tiến hành in ấn ngay!`, "Nhan_Vien_In");
+                await guiThongBaoSacMau("🖨️ CÓ ĐƠN CẦN IN", `File in đơn ${ma} của khách ${tenKH} đã duyệt. Tiến hành in ấn ngay!`, "Nhan_Vien_In");
             } 
             else if (stt === "Chờ gia công") {
-                await guiThongBaoSacMau("⚙️ CẦN GIA CÔNG", `Đơn hàng ${ma} đã xuất mộc xong. Nhận hàng gia công liên kết!`, "Gia_Cong");
+                await guiThongBaoSacMau("⚙️ CẦN GIA CÔNG", `Đơn hàng ${ma} của khách ${tenKH} đã xuất mộc xong. Nhận hàng gia công liên kết!`, "Gia_Cong");
             }
         } catch (etb) {
             console.log("Lỗi TB:", etb);
