@@ -30,7 +30,8 @@
         if (document.getElementById('sm-sidebar')) return;
 
         const user = JSON.parse(localStorage.getItem('currentUser'));
-        if (!user) { window.location.href = 'login.html'; return; }
+        // Đã sửa 'login.html' thành 'Login.html'
+        if (!user) { window.location.href = 'Login.html'; return; }
 
         const userName = user.Ho_Ten || user.name || "Người dùng";
         const userRole = user.Vai_Tro || user.role || "N/A";
@@ -141,7 +142,8 @@
     }
 
     window.toggleMobileSidebar = function() { document.body.classList.toggle('sm-open'); };
-    window.logoutAction = function() { localStorage.removeItem('currentUser'); window.location.href = 'login.html'; };
+    // Đã sửa 'login.html' thành 'Login.html'
+    window.logoutAction = function() { localStorage.removeItem('currentUser'); window.location.href = 'Login.html'; }; 
 const style = document.createElement('style');
     style.textContent = `
         .sm-sidebar { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; background: #2D5A27; color: white; z-index: 10001; transition: 0.3s; display: flex; flex-direction: column; }
@@ -200,4 +202,3 @@ const style = document.createElement('style');
         document.addEventListener('DOMContentLoaded', initSidebar);
     }
 })();
-
