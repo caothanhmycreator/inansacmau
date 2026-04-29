@@ -250,7 +250,7 @@
 
         // TÍNH NĂNG THÔNG BÁO - BÁO CHO THU NGÂN HÀNG GIA CÔNG ĐÃ VỀ
         try {
-            await guiThongBaoSacMau("🔨 HÀNG GIA CÔNG ĐÃ VỀ", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã về từ xưởng ${gcData.dvLK}. Sẵn sàng giao!`, "Thu_Ngan");
+            await guiThongBaoSacMau("🔨 HÀNG GIA CÔNG ĐÃ VỀ", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã về từ xưởng ${gcData.dvLK}. Sẵn sàng giao!`, "Quan_Ly_Don");
         } catch (etb) {
             console.log("Lỗi TB:", etb);
         }
