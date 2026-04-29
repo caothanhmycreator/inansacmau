@@ -103,13 +103,14 @@
           }
         }
 
-        // Nhắc nhở nhân viên lúc 08:00 và 14:00 qua OneSignal
+        // --- THÔNG BÁO NHẮC NHỞ NHÂN VIÊN ---
         const remindTimes = ['08:00', '14:00'];
         if (remindTimes.includes(hm) && lastRemindTime !== hm) {
           lastRemindTime = hm;
           const btnContainer = document.getElementById('btn-container');
+          // Chỉ nhắc nếu nút hiện tại vẫn là nút "VÀO CA" (class btn-vao)
           if (btnContainer.querySelector('.btn-vao')) {
-            guiThongBaoSacMau("⏰ NHẮC NHỞ CHẤM CÔNG", `Bạn ơi, đã ${hm} rồi mà chưa thấy bạn điểm danh. Nhớ chấm công nhé!`, user.username || user.User_Name || "");
+            guiThongBaoSacMau("⏰ NHẮC NHỞ CHẤM CÔNG", `Bạn ơi, đã ${hm} rồi mà hệ thống chưa thấy bạn điểm danh. Nhớ chấm công ngay nhé!`, user.username || user.User_Name || "");
           }
         }
       };
@@ -214,7 +215,7 @@
         });
 
         if (postRes.ok) { 
-            // Thông báo cho Admin qua OneSignal
+            // --- THÔNG BÁO CHO ADMIN KHI NHÂN VIÊN ĐÃ CHẤM CÔNG ---
             const empName = user.name || user.Ho_Ten || "Nhân viên";
             guiThongBaoSacMau("📍 CHẤM CÔNG MỚI", `${empName} đã có mặt và điểm danh vào lúc ${timeStr}.`, "Quan_Ly_Don");
             
