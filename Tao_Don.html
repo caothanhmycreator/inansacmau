@@ -54,7 +54,7 @@
     .sp-item-hover:hover { background: #e8f5e9 !important; }
 
     /* ========================================================
-       MOBILE RESPONSIVE (TỰ ĐỘNG XẾP DỌC TRÊN ĐIỆN THOẠI)
+       MOBILE RESPONSIVE (TỰ ĐỘNG XẾP DỌC TRÊN ĐIỆF THOẠI)
        ======================================================== */
     @media (max-width: 768px) {
       .main-content { margin-left: 0 !important; padding: 15px; padding-top: 60px; }
@@ -488,12 +488,17 @@ async function napDuLieuTrang() {
         if (hasImg) {
             let finalImgUrl = rawImg;
             
-            // TỰ ĐỘNG CHUYỂN ĐỔI LINK GOOGLE DRIVE THÀNH ĐỊNH DẠNG DIRECT URL
-            if (rawImg.includes("drive.google.com/file/d/")) {
-                let match = rawImg.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                if (match && match[1]) {
-                    finalImgUrl = "https://drive.google.com/uc?id=" + match[1];
-                }
+            // XỬ LÝ LINK GOOGLE DRIVE THÀNH THUMBNAIL (ỔN ĐỊNH NHẤT)
+            let fileId = "";
+            if (rawImg.includes("drive.google.com")) {
+                let matchD = rawImg.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                let matchId = rawImg.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                fileId = (matchD && matchD[1]) || (matchId && matchId[1]);
+            }
+
+            if (fileId) {
+                // Sử dụng API thumbnail của Google để hiển thị ảnh ổn định hơn direct link
+                finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
             }
 
             imgTag = `
