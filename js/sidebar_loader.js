@@ -9,7 +9,10 @@
         document.head.appendChild(osScript);
     }
 
-    // 2. Khởi tạo OneSignal
+    // Lấy thông tin user hiện tại để gán vào OneSignal
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+
+    // 2. Khởi tạo OneSignal và hoàn thiện tính năng thông báo
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(oneSignal) {
         // Kiểm tra xem đã khởi tạo chưa (v16 dùng .initialized)
@@ -19,9 +22,20 @@
                 allowLocalhostAsSecureOrigin: true,
             });
         }
+
+        // Kích hoạt Slidedown xin quyền gửi thông báo (đặc biệt quan trọng cho web app trên điện thoại)
+        await oneSignal.Slidedown.promptPush();
+
+        // Định danh người dùng để gửi thông báo chính xác cho từng nhân viên/bộ phận
+        if (user && user.name) {
+            await oneSignal.login(user.name); // Liên kết thiết bị này với tên nhân viên
+            await oneSignal.User.addTags({
+                role: user.role || "N/A"
+            });
+        }
     });
 })();
-// ... Các đoạn code nạp Sidebar cũ của Mỹ giữ nguyên phía dưới ...
+
 /**
  * SIDEBAR LOADER - BẢN KHÔI PHỤC LOGIC CỦA MỸ
  */
@@ -30,7 +44,6 @@
         if (document.getElementById('sm-sidebar')) return;
 
         const user = JSON.parse(localStorage.getItem('currentUser'));
-        // Đã sửa 'login.html' thành 'Login.html'
         if (!user) { window.location.href = 'Login.html'; return; }
 
         const userName = user.Ho_Ten || user.name || "Người dùng";
@@ -120,7 +133,6 @@
         if (document.body) {
             document.body.insertAdjacentHTML('afterbegin', sidebarHTML);
             
-            // KHÔI PHỤC Y CHANG HÀM CHECK CŨ CỦA MỸ
             myModules.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -142,7 +154,6 @@
     }
 
     window.toggleMobileSidebar = function() { document.body.classList.toggle('sm-open'); };
-    // Đã sửa 'login.html' thành 'Login.html'
     window.logoutAction = function() { localStorage.removeItem('currentUser'); window.location.href = 'Login.html'; }; 
 const style = document.createElement('style');
     style.textContent = `
@@ -150,7 +161,6 @@ const style = document.createElement('style');
         .sm-header { padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .sm-user-info { font-size: 11px; color: #a5d6a7; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 4px; display: block; margin-top: 8px; }
         
-        /* Chỉnh lại khung cuộn để không đè lên nút đăng xuất */
         .sm-menu-box { flex: 1; overflow-y: auto; scrollbar-width: none; }
         .sm-menu-box::-webkit-scrollbar { display: none; }
         
@@ -163,13 +173,12 @@ const style = document.createElement('style');
         .nav-link:hover { background: #1a3617; color: white; border-left-color: #FF8C00; }
         .nav-link.always-show { display: block !important; padding: 15px 20px; font-weight: bold; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); }
         
-        /* 🛠️ SỬA LẠI NÚT ĐĂNG XUẤT CHO GỌN ĐẸP VÀ KHÔNG BỊ LỖI VIỀN */
         .sm-logout-box { 
             width: 100%; 
             padding: 15px 20px; 
             background: #2D5A27; 
             box-sizing: border-box; 
-            border-top: 1px solid rgba(255,255,255,0.1); /* Vạch kẻ ngăn cách mờ */
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
         .sm-logout-box button { 
             width: 100%; 
@@ -183,7 +192,7 @@ const style = document.createElement('style');
             font-size: 13px; 
             transition: 0.2s; 
         }
-        .sm-logout-box button:hover { background: #e74c3c; } /* Đổi màu khi rê chuột */
+        .sm-logout-box button:hover { background: #e74c3c; }
 
         .sm-mobile-btn { display: none; position: fixed; top: 10px; left: 10px; z-index: 10002; background: #2D5A27; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor:pointer; }
         #sm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 10000; }
