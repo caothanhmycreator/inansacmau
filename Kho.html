@@ -10,6 +10,9 @@
   <script src="js/auth_guard.js"></script>
   <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
   <script src="js/sidebar_loader.js"></script> 
+  
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
   <style>
     /* ========================================================
        1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
@@ -158,7 +161,8 @@
     <div class="inventory-card no-print">
       <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
         <h3 style="margin:0;">🗂️ CHI TIẾT TỒN KHO</h3>
-        <div style="display: flex; gap: 10px; align-items: center;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <button onclick="startQRScanner()" style="background:#3498db; border:none; color:white; padding: 8px 15px; border-radius: 6px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">📷 QUÉT QR TÌM KIẾM</button>
           <button onclick="printSelectedItems()" style="background:#f39c12; border:none; color:white; padding: 8px 15px; border-radius: 6px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">🖨️ IN TEM ĐÃ CHỌN</button>
           <button onclick="loadInventory()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold;">🔄 Làm mới bảng</button>
         </div>
@@ -177,7 +181,8 @@
     const FOLDER_ID = "1ao2E97b8YdawmGb23c8U_6u7N65hTrVN"; 
     let accessToken = localStorage.getItem('drive_access_token');
     let tokenClient;
-    let globalInventoryData = []; // BIẾN MỚI LƯU TẠM DỮ LIỆU ĐỂ RENDER KHI IN
+    let globalInventoryData = []; // BIẾN GLOBAL ĐỂ LẤY DỮ LIỆU KHI IN VÀ TÌM KIẾM
+    let html5QrcodeScanner = null; // Biến cho máy quét QR
 
     function initTokenClient() {
         tokenClient = google.accounts.oauth2.initTokenClient({
@@ -260,7 +265,7 @@
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?select=*&order=Nhom_Hang.asc,id.desc`, { headers: h });
         const data = await res.json();
         
-        globalInventoryData = data; // GÁN BIẾN GLOBAL ĐỂ LẤY DỮ LIỆU KHI IN
+        globalInventoryData = data; 
 
         const groups = {};
         data.forEach(item => {
@@ -273,7 +278,6 @@
         if(data.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Kho trống.</p>'; return; }
 
         for (let nhom in groups) {
-          // Bổ sung checkbox vào cột "Chọn in"
           let rows = groups[nhom].map(item => {
             const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(item.Ma_QR)}`;
             let thumbDisplay = '<span style="color:#ccc">N/A</span>';
@@ -301,7 +305,6 @@
               </td>
             </tr>`}).join('');
 
-          // Bổ sung header "Chọn"
           container.innerHTML += `
             <div class="group-header" onclick="toggleGroup('${nhom}')">
               <span>➕ ${nhom.toUpperCase()} (${groups[nhom].length} món)</span>
@@ -375,9 +378,6 @@
       }
     }
 
-    /* =========================================================
-       HÀM MỚI BỔ SUNG: XỬ LÝ IN TEM MÃ QR LÊN KHỔ A4
-       ========================================================= */
     function printSelectedItems() {
         const checkboxes = document.querySelectorAll('.cb-print:checked');
         if (checkboxes.length === 0) {
@@ -391,10 +391,7 @@
             const item = globalInventoryData.find(x => x.id === id);
             
             if (item) {
-                // Tạo link ảnh QR độ nét cao
                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(item.Ma_QR)}`;
-                
-                // Lấy thumbnail từ Drive nếu có
                 let imgHtml = '';
                 if (item.Hinh_Anh && item.Hinh_Anh.includes('drive.google.com')) {
                     const fileId = item.Hinh_Anh.split('/d/')[1]?.split('/')[0] || item.Hinh_Anh.split('id=')[1]?.split('&')[0];
@@ -415,10 +412,72 @@
         });
 
         printHtml += '</div>';
-        
-        // Đẩy nội dung vào thẻ div chờ in và gọi lệnh in của trình duyệt
         document.getElementById('vung-in-tem').innerHTML = printHtml;
         window.print();
+    }
+
+    /* =========================================================
+       HÀM MỚI BỔ SUNG: XỬ LÝ QUÉT QR TÌM KIẾM
+       ========================================================= */
+    function startQRScanner() {
+        Swal.fire({
+            title: 'HƯỚNG CAMERA VÀO MÃ QR',
+            html: '<div id="qr-reader" style="width:100%; max-width:400px; margin:auto; overflow: hidden; border-radius: 8px;"></div>',
+            showCancelButton: true,
+            cancelButtonText: 'ĐÓNG TẮT CAMERA',
+            showConfirmButton: false,
+            didOpen: () => {
+                html5QrcodeScanner = new Html5QrcodeScanner(
+                    "qr-reader", 
+                    { fps: 10, qrbox: {width: 250, height: 250} }, 
+                    /* verbose= */ false
+                );
+                html5QrcodeScanner.render(onScanSuccess);
+            },
+            willClose: () => {
+                if (html5QrcodeScanner) {
+                    html5QrcodeScanner.clear().catch(e => console.error(e));
+                }
+            }
+        });
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.clear().catch(e => console.error(e));
+        }
+        Swal.close(); 
+        
+        const item = globalInventoryData.find(x => x.Ma_QR === decodedText);
+        
+        if (item) {
+            let thumbDisplay = '<div style="width:120px; height:120px; background:#eee; display:flex; align-items:center; justify-content:center; border-radius:8px; margin: 0 auto 15px auto; color:#888;">Không có ảnh</div>';
+            if (item.Hinh_Anh && item.Hinh_Anh.includes('drive.google.com')) {
+                const fileId = item.Hinh_Anh.split('/d/')[1]?.split('/')[0] || item.Hinh_Anh.split('id=')[1]?.split('&')[0];
+                const finalThumb = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+                thumbDisplay = `<img src="${finalThumb}" style="width:120px; height:120px; object-fit:cover; border-radius:8px; margin: 0 auto 15px auto; display:block; border: 1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">`;
+            }
+
+            Swal.fire({
+                title: 'THÔNG TIN VẬT TƯ',
+                html: `
+                    ${thumbDisplay}
+                    <div style="text-align: left; font-size: 14px; line-height: 1.6; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                        <p style="margin: 5px 0;"><b>Tên hàng:</b> <span style="color:var(--primary); font-size:16px; font-weight:bold;">${item.Ten_Hang}</span></p>
+                        <p style="margin: 5px 0;"><b>Mã QR:</b> ${item.Ma_QR}</p>
+                        <p style="margin: 5px 0;"><b>Nhóm hàng:</b> ${item.Nhom_Hang}</p>
+                        <p style="margin: 5px 0;"><b>Số lượng tồn:</b> <span style="color:red; font-weight:bold; font-size:16px;">${item.So_Luong}</span></p>
+                        <p style="margin: 5px 0;"><b>Kích thước:</b> ${item.Kich_Thuoc || '---'}</p>
+                        <p style="margin: 5px 0;"><b>Quy cách:</b> ${item.Quy_Cach || '---'}</p>
+                        <p style="margin: 5px 0;"><b>Chất liệu:</b> ${item.Chat_Lieu || '---'}</p>
+                    </div>
+                `,
+                confirmButtonText: 'ĐÓNG',
+                confirmButtonColor: '#2D5A27'
+            });
+        } else {
+            Swal.fire('Không tìm thấy', `Không có vật tư nào khớp với mã QR: <b>${decodedText}</b>`, 'error');
+        }
     }
   </script>
 </body>
