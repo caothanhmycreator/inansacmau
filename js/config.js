@@ -49,31 +49,21 @@ window.formatDateTimeVN = function() {
   const pad = (n) => n.toString().padStart(2, '0');
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
-
 async function guiThongBaoSacMau(tieude, noidung) {
-    // App ID lấy từ cấu hình OneSignal của Sắc Màu
-    const appId = "e06b8b48-2adf-4970-b2b3-9b509e5357d8"; 
-    // REST API Key bạn vừa mới tạo
-    const restApiKey = "os_v2_org_nq52uqzptnc73i6wg2mut4pzqei26jztbj3e25e7bbscbbvmu4lylbvhzspuizbxnrdy7v6nf44lwrh4slev6dnqoypuo5mnbgeodaq"; 
-
+    // Gọi lên hàm bright-handler đã được cấu hình CORS ở trên
+    const URL_FUNCTION = "https://zatxvklirqvyacslkpgy.supabase.co/functions/v1/bright-handler";
+    
     try {
-        const response = await fetch("https://api.onesignal.com/notifications", {
+        const response = await fetch(URL_FUNCTION, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Basic " + restApiKey
+                "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                app_id: appId,
-                included_segments: ["Total Subscriptions"], // Phát thông báo đến tất cả thiết bị đã cấp quyền
-                headings: { "en": tieude },
-                contents: { "en": noidung }
-            })
+            body: JSON.stringify({ tieude: tieude, noidung: noidung })
         });
-        
         const resData = await response.json();
-        console.log("Sắc Màu: Kết quả gửi thông báo:", resData);
+        console.log("Sắc Màu: Đã gửi thông báo qua Supabase", resData);
     } catch (e) {
-        console.error("Sắc Màu: Lỗi gửi thông báo trực tiếp:", e);
+        console.error("Sắc Màu: Lỗi kết nối Supabase Edge Function:", e);
     }
 }
