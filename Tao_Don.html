@@ -487,6 +487,7 @@ async function napDuLieuTrang() {
         
         if (hasImg) {
             let finalImgUrl = rawImg;
+            let fullImgUrl = rawImg;
             
             // XỬ LÝ LINK GOOGLE DRIVE THÀNH THUMBNAIL (ỔN ĐỊNH NHẤT)
             let fileId = "";
@@ -499,14 +500,15 @@ async function napDuLieuTrang() {
             if (fileId) {
                 // Sử dụng API thumbnail của Google để hiển thị ảnh ổn định hơn direct link
                 finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+                fullImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`; // Ảnh kích thước lớn hơn khi xem
             }
 
             imgTag = `
-            <img src="${finalImgUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width:36px; height:36px; object-fit:cover; border-radius:4px; margin-right:12px; flex-shrink:0; border: 1px solid #eee;">
-            <div style="display:none; width:36px; height:36px; background:#f0f0f0; border-radius:4px; margin-right:12px; flex-shrink:0; align-items:center; justify-content:center; font-size:12px; color:#aaa; border: 1px solid #eee;">🖼️</div>
+            <img src="${finalImgUrl}" onclick="event.stopPropagation(); Swal.fire({imageUrl: '${fullImgUrl}', imageAlt: 'Ảnh sản phẩm', showConfirmButton: false, width: 'auto'})" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width:55px; height:55px; object-fit:cover; border-radius:4px; margin-right:12px; flex-shrink:0; border: 1px solid #eee; cursor: zoom-in;">
+            <div style="display:none; width:55px; height:55px; background:#f0f0f0; border-radius:4px; margin-right:12px; flex-shrink:0; align-items:center; justify-content:center; font-size:12px; color:#aaa; border: 1px solid #eee;">🖼️</div>
             `;
         } else {
-            imgTag = `<div style="width:36px; height:36px; background:#f0f0f0; border-radius:4px; margin-right:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:#aaa; border: 1px solid #eee;">🖼️</div>`;
+            imgTag = `<div style="width:55px; height:55px; background:#f0f0f0; border-radius:4px; margin-right:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:#aaa; border: 1px solid #eee;">🖼️</div>`;
         }
         
         return `<div class="sp-item-hover" onclick="selectSP('${s.Ten_Hang.replace(/'/g, "\\'")}')" style="display:flex; align-items:center; padding:10px 12px; border-bottom:1px solid #f4f4f4; cursor:pointer; transition:background 0.2s;">
