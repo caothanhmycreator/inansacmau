@@ -6,9 +6,9 @@
   <title>Công nợ - Tiệm In Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/config.js"></script>
+  <script src="js/config.js?v=2000"></script>
   <script src="js/auth_guard.js"></script>
-  <script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js?v=2000"></script> 
   <style>
     /* ========================================================
        1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
@@ -97,7 +97,7 @@
 
         .swal2-popup { width: 95% !important; padding: 15px !important; border-radius: 12px !important; }
         
-        .f9-form-grid { display: flex !important; flex-direction: column !important; gap: 12px !important; padding: 5px !important; }
+        .f9-form-grid { display: flex !important; flex-direction: column !important; gap: 12px !padding: 5px !important; }
         .f9-input-group { width: 100% !important; }
         .f9-input-group input { padding: 12px !important; font-size: 15px !important; }
         
@@ -153,7 +153,6 @@
   <div id="vung-in-f9"></div>
 
   <script>
-    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN VÀ MỞ RỘNG GOM NHÓM + TỔNG NỢ
     window.groupedF9 = [];
     let currentPayF9 = "";
 
@@ -171,7 +170,6 @@
         const data = await res.json();
         const rawList = data.filter(row => parseFloat(row.Con_Lai) > 0);
 
-        // Gom nhóm theo Khách Hàng và Tính tổng số nợ
         let groupedObj = {};
         let tongTatCaNo = 0;
 
@@ -191,7 +189,6 @@
         });
         window.groupedF9 = Object.values(groupedObj);
 
-        // Cập nhật thẻ hiển thị Tổng nợ
         const elTongNo = document.getElementById('f9-tong-no');
         if (elTongNo) {
             elTongNo.innerText = tongTatCaNo.toLocaleString('vi-VN');
@@ -217,7 +214,7 @@
       } catch (e) { console.error(e); }
     }
 
-    /** 2. XEM CHI TIẾT ĐƠN HÀNG (MỞ RỘNG CHO NHIỀU ĐƠN) */
+    /** 2. XEM CHI TIẾT ĐƠN HÀNG */
     async function viewOrderDetails_Group(idx) {
       const it = window.groupedF9[idx];
       Swal.fire({ title: 'Đang tải chi tiết...', didOpen: () => Swal.showLoading() });
@@ -228,7 +225,7 @@
         for(let o of it.orders) {
             const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${o.Ma_Don}`, { headers: h });
             const items = await res.json();
-            items.forEach(i => i._Ma_Don = o.Ma_Don); // Dán nhãn mã đơn
+            items.forEach(i => i._Ma_Don = o.Ma_Don);
             allItems = allItems.concat(items);
         }
         
@@ -255,7 +252,7 @@
       } catch (e) { console.error(e); }
     }
 
-    /** 3. FORM NHẬP CÔNG NỢ MỚI (GIỮ NGUYÊN) */
+    /** 3. FORM NHẬP CÔNG NỢ MỚI */
     function openAddDebtPopup() {
       Swal.fire({
         title: '<span style="color:#c0392b;">NHẬP CÔNG NỢ MỚI</span>',
@@ -315,25 +312,29 @@
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No`, {
           method: 'POST', headers: h,
           body: JSON.stringify({
-            Ngay_Gio: nowFull,
-            Ma_Don: data.ma, Khach_Hang: data.kh,
+            Ngay_Gio: nowFull, Ma_Don: data.ma, Khach_Hang: data.kh,
             Tong_Don: String(data.tong), Da_Tra: String(data.datra), 
             Con_Lai: String(data.conlai), Ghi_Chu: data.ghichu,
             id: Math.floor(Date.now() / 1000)
           })
         });
+
+        // THÔNG BÁO - NHẬP NỢ MỚI
+        try {
+            await guiThongBaoSacMau("💸 PHÁT SINH CÔNG NỢ", `Khách ${data.kh} vừa được ghi nhận nợ mới: ${data.conlai.toLocaleString()}đ.`, "Quan_Ly_Don");
+        } catch(etb) { console.log(etb); }
+
         Swal.fire({ icon: 'success', title: 'Đã lưu nợ!', timer: 1000, showConfirmButton: false });
         loadF9Data();
       } catch (e) { console.error(e); }
     }
 
-    /** 4. THU NỢ & GHI NHẬT KÝ THU NỢ (XỬ LÝ ĐA ĐƠN) */
+    /** 4. THU NỢ (XỬ LÝ ĐA ĐƠN) */
     window.openDebtPopup = function(idx) {
       const it = window.groupedF9[idx];
       const nợHiệnTại = it.Con_Lai;
       currentPayF9 = "";
 
-      // Render danh sách ô nhập tiền thành phần nếu có nhiều đơn
       let partialHtml = '';
       if (it.orders.length > 1) {
           partialHtml = `
@@ -360,9 +361,7 @@
             <div style="background:#fff5f5; padding:15px; border-radius:8px; border:1px solid #fecaca; margin-top:15px;">
                <label style="font-weight:bold; color:#c0392b; font-size:12px; display:block; margin-bottom:5px;">SỐ TIỀN KHÁCH ĐÓNG (TỔNG):</label>
                <input type="text" id="pay_f9" class="swal2-input" style="margin:0; width:100%; font-size:24px; border:2px solid #c0392b; text-align:right; font-weight:bold; color:#c0392b; border-radius:6px; box-sizing:border-box;" value="${nợHiệnTại.toLocaleString('vi-VN')}">
-               
                ${partialHtml}
-
                <label style="font-weight:bold; color:#c0392b; font-size:12px; display:block; margin-top:15px; margin-bottom:5px;">HÌNH THỨC GIAO DỊCH:</label>
                <div class="pay-toggle-f9" style="width:100%; height:40px;">
                   <div id="f9-slider" class="pay-sld-f9 mid"></div>
@@ -392,9 +391,7 @@
               document.querySelectorAll('.partial-pay-inp').forEach(el => {
                   let pVal = cleanF9Money(el.value);
                   if (pVal > 0) {
-                      paymentList.push({
-                          id: el.getAttribute('data-id'), Ma_Don: el.getAttribute('data-madon'), ThanhToan: pVal, NoCu: parseFloat(el.getAttribute('data-no'))
-                      });
+                      paymentList.push({ id: el.getAttribute('data-id'), Ma_Don: el.getAttribute('data-madon'), ThanhToan: pVal, NoCu: parseFloat(el.getAttribute('data-no')) });
                   }
               });
           } else {
@@ -403,13 +400,11 @@
 
           let sumPartial = paymentList.reduce((acc, curr) => acc + curr.ThanhToan, 0);
           if (it.orders.length > 1 && sumPartial !== val) return Swal.showValidationMessage('Tổng các phần thu đang không khớp với TỔNG TIỀN ĐÓNG!');
-
           return { totalPay: val, paymentList: paymentList };
         }
       }).then(r => { if(r.isConfirmed) executeGroupDebtPayment(idx, r.value.totalPay, r.value.paymentList, currentPayF9); });
     };
 
-    // Hàm đồng bộ ngược từ đơn lẻ lên tổng
     window.syncPartialToTotal = function() {
         let total = 0;
         document.querySelectorAll('.partial-pay-inp').forEach(el => {
@@ -422,26 +417,20 @@
         document.getElementById('pay_f9').value = total.toLocaleString('vi-VN');
     }
 
-    // Hàm phân bổ tự động từ tổng xuống đơn lẻ
     window.syncTotalToPartial = function(totalVal) {
         let remain = totalVal;
         document.querySelectorAll('.partial-pay-inp').forEach(el => {
             let noMax = parseFloat(el.getAttribute('data-no'));
             let payForThis = 0;
-            if (remain >= noMax) {
-                payForThis = noMax;
-                remain -= noMax;
-            } else if (remain > 0) {
-                payForThis = remain;
-                remain = 0;
-            }
+            if (remain >= noMax) { payForThis = noMax; remain -= noMax; } 
+            else if (remain > 0) { payForThis = remain; remain = 0; }
             el.value = payForThis.toLocaleString('vi-VN');
         });
     }
 
     async function executeGroupDebtPayment(idx, soTienThu_Total, paymentList, hinhThuc) {
       const it = window.groupedF9[idx];
-      Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      Swal.fire({ title: 'Đang xử lý...', didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
       const nowFull = window.formatDateTimeVN();
 
@@ -450,31 +439,25 @@
         for (let payItem of paymentList) {
             const targetOrder = it.orders.find(o => o.id == payItem.id);
             if(!targetOrder) continue;
-            
             const moiDaTra = parseFloat(targetOrder.Da_Tra || 0) + payItem.ThanhToan;
             const moiConLai = parseFloat(targetOrder.Con_Lai || 0) - payItem.ThanhToan;
-
             await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?id=eq.${payItem.id}`, {
               method: 'PATCH', headers: h,
               body: JSON.stringify({ Da_Tra: String(moiDaTra), Con_Lai: String(moiConLai < 0 ? 0 : moiConLai) })
             });
-
             maDonList.push(payItem.Ma_Don);
         }
 
         let strMaDon = maDonList.join(", ");
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, {
           method: 'POST', headers: h,
-          body: JSON.stringify({
-            Ngay_Gio: nowFull, 
-            Ma_Don: strMaDon.length > 50 ? strMaDon.substring(0,47) + "..." : strMaDon, 
-            Khach_Hang: it.Khach_Hang,
-            Ten_Hang: "Thu nợ: " + strMaDon, 
-            So_Tien_Thu: soTienThu_Total,
-            Hinh_Thuc_Thanh_Toan: hinhThuc, 
-            id: Math.floor(Date.now() / 1000)
-          })
+          body: JSON.stringify({ Ngay_Gio: nowFull, Ma_Don: strMaDon.length > 50 ? strMaDon.substring(0,47) + "..." : strMaDon, Khach_Hang: it.Khach_Hang, Ten_Hang: "Thu nợ: " + strMaDon, So_Tien_Thu: soTienThu_Total, Hinh_Thuc_Thanh_Toan: hinhThuc, id: Math.floor(Date.now() / 1000) })
         });
+
+        // THÔNG BÁO - THU NỢ THÀNH CÔNG
+        try {
+            await guiThongBaoSacMau("💰 THU NỢ THÀNH CÔNG", `Vừa thu ${soTienThu_Total.toLocaleString()}đ nợ của khách ${it.Khach_Hang}. Hình thức: ${hinhThuc}.`, "Quan_Ly_Don");
+        } catch(etb) { console.log(etb); }
 
         Swal.close();
         const tongNoConLai_SauThu = parseFloat(it.Con_Lai) - soTienThu_Total;
@@ -505,13 +488,7 @@
 
     function showPrintPreviewF9_Group(it, soTienThu_Total, conLai, paymentList) {
       const isCleared = conLai <= 10;
-      
-      let listDaThuHtml = paymentList.map(p => `
-          <div style="display:flex; justify-content:space-between; font-size: 13px; color: #555; margin-left: 10px;">
-              <span>- Đơn ${p.Ma_Don}:</span><span>${p.ThanhToan.toLocaleString()} đ</span>
-          </div>
-      `).join('');
-
+      let listDaThuHtml = paymentList.map(p => `<div style="display:flex; justify-content:space-between; font-size: 13px; color: #555; margin-left: 10px;"><span>- Đơn ${p.Ma_Don}:</span><span>${p.ThanhToan.toLocaleString()} đ</span></div>`).join('');
       const billHtml = `
         <div style="padding:20px; font-family:Arial, sans-serif; background:#fff;">
           <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #c0392b; padding-bottom: 10px;">
@@ -519,33 +496,23 @@
             <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" style="width: 80px;">
           </div>
           <div style="text-align: center; margin: 15px 0;"><h2 style="color: #c0392b; text-transform: uppercase;">PHIẾU THU TIỀN NỢ</h2></div>
-          <div style="background:#fdf2f2; padding:15px; border-radius:8px; border:1px solid #fecaca; margin-bottom:15px;">
-            <p style="margin-top:0;">👤 <b>Khách hàng:</b> ${it.Khach_Hang}</p>
-            <p style="margin-bottom:0;">📅 <b>Ngày thu:</b> ${new Date().toLocaleString('vi-VN')}</p>
-          </div>
-          
+          <div style="background:#fdf2f2; padding:15px; border-radius:8px; border:1px solid #fecaca; margin-bottom:15px;"><p style="margin-top:0;">👤 <b>Khách hàng:</b> ${it.Khach_Hang}</p><p style="margin-bottom:0;">📅 <b>Ngày thu:</b> ${new Date().toLocaleString('vi-VN')}</p></div>
           <div style="margin-top: 15px; width: 100%; box-sizing: border-box; background: #fff5f5; padding: 15px; border-radius: 8px; border: 1px solid #fecaca; position: relative;">
             ${isCleared ? '<div style="position:absolute; left:10px; top:-15px; color:#c0392b; border:3px double #c0392b; padding:5px 10px; font-weight:bold; transform:rotate(-15deg); background:rgba(255,255,255,0.9); font-size:12px; z-index:10;">ĐÃ TẤT TOÁN</div>' : ''}
             <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Tổng nợ cũ:</span><b>${parseFloat(it.Con_Lai).toLocaleString()} đ</b></div>
             <div style="display:flex; justify-content:space-between; color:#c0392b;"><span>Thu đợt này:</span><b>-${soTienThu_Total.toLocaleString()} đ</b></div>
             ${paymentList.length > 1 ? `<div style="margin-top: 5px; margin-bottom: 5px;">${listDaThuHtml}</div>` : `<div style="font-size: 13px; color: #555; margin-left: 10px;">(Thu cho đơn: ${paymentList[0].Ma_Don})</div>`}
-            <div style="display:flex; justify-content:space-between; border-top:1px dashed #c0392b; margin-top:10px; padding-top:10px;">
-              <span><b>CÒN LẠI:</b></span><b style="color:red; font-size:18px;">${conLai.toLocaleString()} đ</b>
-            </div>
+            <div style="display:flex; justify-content:space-between; border-top:1px dashed #c0392b; margin-top:10px; padding-top:10px;"><span><b>CÒN LẠI:</b></span><b style="color:red; font-size:18px;">${conLai.toLocaleString()} đ</b></div>
           </div>
         </div>`;
       document.getElementById('vung-in-f9').innerHTML = billHtml;
       Swal.fire({ title: '<span style="color:#c0392b;">XEM TRƯỚC PHIẾU</span>', html: `<div style="text-align:left; border:1px solid #fecaca; border-radius:8px;">${billHtml}</div>`, confirmButtonText: '🖨️ IN PHIẾU', confirmButtonColor: '#c0392b', showCancelButton: true, cancelButtonText: 'ĐÓNG', width: '700px' }).then(r => { if(r.isConfirmed) window.print(); });
     }
 
-    // TÍNH NĂNG MỚI BỔ SUNG: TÌM KIẾM LỌC ĐƠN TRỰC TIẾP
     function f9_searchOrders() {
       const val = document.getElementById('f9-search').value.toLowerCase();
       const rows = document.querySelectorAll('#f9-table-body tr.f9-row');
-      rows.forEach(row => {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(val) ? '' : 'none';
-      });
+      rows.forEach(row => { row.style.display = row.innerText.toLowerCase().includes(val) ? '' : 'none'; });
     }
   </script>
 </body>

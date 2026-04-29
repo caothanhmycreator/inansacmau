@@ -6,9 +6,9 @@
   <title>Quản trị đơn hàng - Tiệm In Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/config.js"></script>
+  <script src="js/config.js?v=2000"></script>
   <script src="js/auth_guard.js"></script>
-  <script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js?v=2000"></script> 
   <style>
     /* ========================================================
        1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
@@ -133,7 +133,6 @@
   </div>
 
   <script>
-    // TOÀN BỘ LOGIC JS GIỮ NGUYÊN 100% (CHỈ THÊM DATA-LABEL ĐỂ MOBILE HIỂN THỊ)
     window.listAllF10 = [];
     const statuses = ["Chờ xử lý", "Chờ thiết kế", "Chờ duyệt file", "Chờ in", "Chờ gia công", "Chờ giao hàng", "Chờ thanh toán", "Công nợ", "Hoàn tất"];
 
@@ -166,7 +165,7 @@
           <td data-label="Khách hàng"><b>${item.Ten_Khach_Hang}</b></td>
           <td data-label="Sản phẩm" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color:#2980b9;">${item.Ten_Hang}</td>
           <td data-label="Trạng thái">
-            <select class="status-select" onchange="changeStatusF10(${item.id}, this.value, '${item.Ma_Don}', '${item.Ten_Hang.replace(/'/g, "\\'")}')">
+            <select class="status-select" onchange="changeStatusF10(${item.id}, this.value, '${item.Ma_Don}', '${item.Ten_Hang.replace(/'/g, "\\'")}', '${item.Ten_Khach_Hang.replace(/'/g, "\\'")}')">
               ${options}
             </select>
           </td>
@@ -193,7 +192,7 @@
       renderF10Table(filtered);
     }
 
-    async function changeStatusF10(id, newStatus, maDon, tenHang) {
+    async function changeStatusF10(id, newStatus, maDon, tenHang, tenKhach) {
       const confirmResult = await Swal.fire({
         title: 'CHUYỂN TRẠNG THÁI?',
         text: `Xác nhận chuyển đơn ${maDon} sang "${newStatus}"?`,
@@ -212,16 +211,11 @@
 
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
-      // =========================================================================
-      // BẮT ĐẦU ĐOẠN MÃ XỬ LÝ GHI NỢ (ĐÃ THÊM MỚI THEO CẤU TRÚC BẢNG Cong_No)
-      // =========================================================================
       if (newStatus === "Công nợ") {
-        // Lấy thông tin tổng đơn hàng từ danh sách hiện tại
         const dsMon = window.listAllF10.filter(it => it.Ma_Don === maDon);
         const khachHang = dsMon.length > 0 ? dsMon[0].Ten_Khach_Hang : "";
         const tongDon = dsMon.reduce((sum, it) => sum + (Number(it.Thanh_Tien) || 0), 0);
         
-        // Kiểm tra xem mã đơn này đã tồn tại trong bảng Cong_No chưa
         Swal.fire({ title: 'Đang kiểm tra công nợ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const checkRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(maDon)}`, { headers: h });
         const checkData = await checkRes.json();
@@ -241,25 +235,20 @@
             cancelButtonText: 'KHÔNG, CHỈ ĐỔI TRẠNG THÁI'
           });
           
-          if (overwriteConfirm.isConfirmed) {
-            isUpdate = true;
-          } else {
-            proceedGhiNo = false; // Bỏ qua phần ghi nợ, đi tiếp xuống đổi trạng thái
-          }
+          if (overwriteConfirm.isConfirmed) isUpdate = true;
+          else proceedGhiNo = false;
         }
 
         if (proceedGhiNo) {
           Swal.fire({ title: 'Đang ghi nhận nợ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-          
           const noData = {
             "Ngay_Gio": window.formatDateTimeVN(),
             "Ma_Don": maDon,
             "Khach_Hang": khachHang,
             "Tong_Don": tongDon.toString(),
-            "Da_Tra": "0", // Mặc định khách chưa trả
+            "Da_Tra": "0",
             "Con_Lai": tongDon.toString()
           };
-
           if (isUpdate) {
             await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(maDon)}`, {
               method: 'PATCH', headers: h, body: JSON.stringify(noData)
@@ -271,13 +260,9 @@
           }
         }
       }
-      // =========================================================================
-      // KẾT THÚC ĐOẠN MÃ XỬ LÝ GHI NỢ
-      // =========================================================================
 
       Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const nowVN = window.formatDateTimeVN();
-
       const colMap = { 
         "Chờ xử lý": "Gio_Xu_Ly", "Chờ thiết kế": "Gio_Thiet_Ke", "Chờ duyệt file": "Gio_Duyet_File", 
         "Chờ in": "Gio_In", "Chờ gia công": "Gio_Gia_Cong", "Chờ giao hàng": "Gio_Giao_Hang", 
@@ -295,12 +280,28 @@
           "Gio_Xu_Ly": null, "Gio_Thiet_Ke": null, "Gio_Duyet_File": null, "Gio_In": null,
           "Gio_Gia_Cong": null, "Gio_Giao_Hang": null, "Gio_Thanh_Toan": null, "Gio_Hoan_Tat": null, "Cong_No": null
         };
-
         if (colMap[newStatus]) logData[colMap[newStatus]] = nowVN;
 
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(maDon)}&Ten_Hang=eq.${encodeURIComponent(tenHang)}`, {
           method: 'PATCH', headers: h, body: JSON.stringify(logData)
         });
+
+        // =========================================================
+        // TÍNH NĂNG THÔNG BÁO TỰ ĐỘNG THEO TRẠNG THÁI MỚI
+        // =========================================================
+        try {
+            let roleTB = ""; let titleTB = "🛠 QUẢN TRỊ CẬP NHẬT";
+            if (newStatus === "Chờ xử lý") roleTB = "Quan_Ly_Don";
+            else if (newStatus === "Chờ thiết kế") roleTB = "Thiet_Ke";
+            else if (newStatus === "Chờ duyệt file") roleTB = "Quan_Ly_Don";
+            else if (newStatus === "Chờ in") roleTB = "Nhan_Vien_In";
+            else if (newStatus === "Chờ gia công") roleTB = "Gia_Cong";
+            else if (newStatus === "Chờ thanh toán" || newStatus === "Hoàn tất" || newStatus === "Công nợ") roleTB = "Thu_Ngan";
+
+            if (roleTB !== "") {
+                await guiThongBaoSacMau(titleTB, `Đơn ${maDon} của khách ${tenKhach} vừa được Admin chuyển sang: ${newStatus.toUpperCase()}`, roleTB);
+            }
+        } catch (etb) { console.log(etb); }
 
         Swal.fire({ icon: 'success', title: 'Đã cập nhật!', timer: 800, showConfirmButton: false });
         loadF10Data();

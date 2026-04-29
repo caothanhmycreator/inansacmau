@@ -6,9 +6,9 @@
   <title>Thu Chi Phát Sinh - Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/config.js"></script>
+  <script src="js/config.js?v=2000"></script>
   <script src="js/auth_guard.js"></script>
-<script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js?v=2000"></script> 
   <style>
     /* --- PHẦN GIAO DIỆN CHUNG (ĐỂ CHẠY SIDEBAR) --- */
     body { margin: 0; background: #f4f7f6; display: flex; font-family: sans-serif; }
@@ -29,35 +29,33 @@
     .btn-del { color: #e74c3c; border: none; background: none; cursor: pointer; font-size: 16px; padding: 0 5px; }
 
     @media (max-width: 768px) { .main-content { margin-left: 0; } }
-  
-  
     
     /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
-
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
-
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
-    
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
+    #sidebar-frame { 
+        width: 250px; height: 100vh; position: fixed; 
+        left: 0; top: 0; z-index: 9999; border: none; 
     }
-}
 
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    .main-content { 
+        margin-left: 250px; 
+        transition: 0.3s; 
+        padding: 20px; 
+    }
+
+    /* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        
+        .mobile-nav-btn {
+            display: block; position: fixed; top: 10px; left: 10px; 
+            z-index: 1000; background: #2D5A27; color: white; 
+            padding: 8px 12px; border: none; border-radius: 4px;
+        }
+    }
+
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
@@ -162,6 +160,16 @@
 
         Swal.close();
         if (response.ok) {
+            // TÍNH NĂNG THÔNG BÁO - BÁO CHO QUẢN TRỊ BIẾT BIẾN ĐỘNG TIỀN MẶT
+            try {
+                const titleTB = payload.loai === "Két đầu ngày" ? "💰 MỞ SỔ ĐẦU NGÀY" : "💸 PHÁT SINH KHOẢN CHI";
+                const msgTB = payload.loai === "Két đầu ngày" 
+                    ? `Két đầu ngày vừa được xác nhận: ${payload.soTien.toLocaleString()}đ.` 
+                    : `Vừa chi ${payload.soTien.toLocaleString()}đ cho nội dung: ${payload.noiDung}. Người nhận: ${payload.doiTuong}.`;
+                
+                await guiThongBaoSacMau(titleTB, msgTB, "Quan_Ly_Don");
+            } catch(etb) { console.log("Lỗi TB:", etb); }
+
             document.getElementById("chi_noi_dung").value = "";
             document.getElementById("chi_so_tien").value = "";
             document.getElementById("chi_doi_tuong").value = "";
