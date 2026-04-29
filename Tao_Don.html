@@ -50,6 +50,9 @@
     .pay-deposit { width: 150px; }
     .pay-totals { text-align: right; min-width: 250px; }
 
+    /* Hiệu ứng hover cho menu sản phẩm */
+    .sp-item-hover:hover { background: #e8f5e9 !important; }
+
     /* ========================================================
        MOBILE RESPONSIVE (TỰ ĐỘNG XẾP DỌC TRÊN ĐIỆN THOẠI)
        ======================================================== */
@@ -124,10 +127,10 @@
 
         <div style="padding: 15px; margin-top: 15px; border-left: 4px solid #FF8C00; background: #fffaf5; border-radius: 8px;">
           <div class="sacmau-row">
-            <div class="col-lg">
+            <div class="col-lg" style="position: relative;">
               <label class="sacmau-label">Sản phẩm</label>
-              <input id="sanPham" list="spList" class="sacmau-input" placeholder="Tìm sản phẩm..." oninput="autoFillSP(this.value)">
-              <datalist id="spList"></datalist>
+              <input id="sanPham" class="sacmau-input" placeholder="Tìm sản phẩm..." autocomplete="off" oninput="autoFillSP(this.value); showSPSuggestions(this.value)" onfocus="showSPSuggestions(this.value)" onblur="setTimeout(()=>closeSPSuggestions(), 200)">
+              <datalist id="spList"></datalist> <div id="spDropdown" style="display:none; position:absolute; top:calc(100% + 2px); left:0; right:0; background:white; border:1px solid #ddd; border-radius:6px; max-height:250px; overflow-y:auto; z-index:1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
             </div>
             <div class="col-xs">
               <label class="sacmau-label">ĐVT</label>
@@ -466,6 +469,55 @@ async function napDuLieuTrang() {
       document.getElementById("p-coc-in").innerText = c.toLocaleString() + " đ";
       document.getElementById("p-no-in").innerText = (t - c).toLocaleString() + " đ";
       window.print();
+    }
+
+    /* =========================================================
+       THÊM MỚI: CÁC HÀM XỬ LÝ DROPDOWN SẢN PHẨM CÓ HÌNH ẢNH
+       ========================================================= */
+    function showSPSuggestions(v) {
+      const dropdown = document.getElementById("spDropdown");
+      const keyword = (v || "").toLowerCase().trim();
+      
+      // Lọc danh sách sản phẩm theo từ khóa
+      let filtered = dsS;
+      if (keyword) {
+         filtered = dsS.filter(s => s.Ten_Hang && s.Ten_Hang.toLowerCase().includes(keyword));
+      }
+      filtered = filtered.slice(0, 50); // Giới hạn 50 kết quả để tránh giật lag
+      
+      if (filtered.length === 0) { dropdown.style.display = "none"; return; }
+      
+      dropdown.innerHTML = filtered.map(s => {
+        // Giả định trường hình ảnh từ Supabase là Hinh_Anh
+        let imgTag = '';
+        if (s.Hinh_Anh) {
+            imgTag = `<img src="${s.Hinh_Anh}" style="width:36px; height:36px; object-fit:cover; border-radius:4px; margin-right:12px; flex-shrink:0; border: 1px solid #eee;">`;
+        } else {
+            // Icon mặc định nếu không có ảnh
+            imgTag = `<div style="width:36px; height:36px; background:#f0f0f0; border-radius:4px; margin-right:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:#aaa; border: 1px solid #eee;">🖼️</div>`;
+        }
+        
+        return `<div class="sp-item-hover" onclick="selectSP('${s.Ten_Hang.replace(/'/g, "\\'")}')" style="display:flex; align-items:center; padding:10px 12px; border-bottom:1px solid #f4f4f4; cursor:pointer; transition:background 0.2s;">
+                  ${imgTag}
+                  <div style="display:flex; flex-direction:column;">
+                    <span style="font-size:13px; font-weight:600; color:#333;">${s.Ten_Hang}</span>
+                    <span style="font-size:11px; color:#888;">Giá: ${Number(s.Gia_Ban || 0).toLocaleString("vi-VN")}đ | ĐVT: ${s.Don_Vi_Tinh || "---"}</span>
+                  </div>
+                </div>`;
+      }).join("");
+      
+      dropdown.style.display = "block";
+    }
+
+    function selectSP(ten) {
+      document.getElementById("sanPham").value = ten;
+      document.getElementById("spDropdown").style.display = "none";
+      autoFillSP(ten); // Gọi lại hàm cũ để tự động điền giá và ĐVT
+    }
+
+    function closeSPSuggestions() {
+      // Dùng setTimeout ở HTML onblur để đảm bảo sự kiện click (chọn SP) được chạy trước khi ẩn dropdown
+      document.getElementById("spDropdown").style.display = "none";
     }
 
     napDuLieuTrang();
