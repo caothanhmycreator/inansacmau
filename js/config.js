@@ -3,13 +3,9 @@ window.SB_CONFIG = {
   KEY: "sb_publishable_BTEsky-YqE0YVrEtTb91vA_V1XfrtyW"
 };
 
-/**
- * DANH SÁCH MODULE HỆ THỐNG IN ẤN SẮC MÀU
- * Được phân loại theo nhóm chức năng để quản lý khoa học hơn
- */
 window.APP_MODULES = [
   // --- NHÓM KINH DOANH & BÁN HÀNG ---
-  { id: "Tao_Don",              label: "Tạo đơn hàng",           icon: "🧾", file: "Tao_Don.html",      group: "Kinh doanh" },
+  { id: "Tao_Don",              label: "Tạo đơn hàng",       icon: "🧾", file: "Tao_Don.html",      group: "Kinh doanh" },
   { id: "Sua_Phieu_Dat_Hang",   label: "Sửa phiếu đặt hàng",     icon: "📋", file: "Sua_Don.html",      group: "Kinh doanh" },
   { id: "Bang_Gia_San_Pham",    label: "Bảng giá sản phẩm",      icon: "🏷️", file: "Bang_Gia.html",     group: "Kinh doanh" },
   { id: "Cong_No",              label: "Công nợ khách hàng",     icon: "💸", file: "Cong_No.html",      group: "Kinh doanh" },
@@ -24,7 +20,7 @@ window.APP_MODULES = [
   { id: "Quan_Ly_Tien_Do",      label: "Quản lý tiến độ",        icon: "🛰️", file: "Tien_Do.html",       group: "Sản xuất" },
 
   // --- NHÓM KHO & NGUYÊN LIỆU ---
-  { id: "Kho_Vat_Tu",           label: "Kho vật tư",             icon: "🏗️", file: "Kho.html",           group: "Kho" },
+  { id: "Kho_Vat_Tu",           label: "Kho vật tư",             icon: "🏗️", file: "Kho.html",          group: "Kho" },
   { id: "Dinh_Muc_Nguyen_Lieu", label: "Định mức nguyên liệu",   icon: "🧪", file: "Nguyen_Lieu.html",   group: "Kho" },
 
   // --- NHÓM KẾ TOÁN & TÀI CHÍNH ---
@@ -41,24 +37,20 @@ window.APP_MODULES = [
   { id: "Admin_Quan_Ly_Nhan_Su",label: "Quản trị nhân sự",       icon: "🛠️", file: "Admin_Quan_Ly_Nhan_Su.html", group: "Quản trị" },
 ];
 
-/**
- * Hàm định dạng ngày giờ Việt Nam
- */
 window.formatDateTimeVN = function() {
   const d = new Date();
   const pad = (n) => n.toString().padStart(2, '0');
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
+
 async function guiThongBaoSacMau(tieude, noidung, targetRole = "") {
     const URL_FUNCTION = "https://zatxvklirqvyacslkpgy.supabase.co/functions/v1/bright-handler";
     try {
-        const response = await fetch(URL_FUNCTION, {
+        await fetch(URL_FUNCTION, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            // Truyền thêm targetRole xuống Supabase
             body: JSON.stringify({ tieude: tieude, noidung: noidung, targetRole: targetRole })
         });
-        const resData = await response.json();
     } catch (e) {
         console.error("Lỗi gửi thông báo:", e);
     }
