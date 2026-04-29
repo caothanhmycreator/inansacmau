@@ -6,7 +6,7 @@
   <title>Xử lý đơn hàng - Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/config.js"></script>
+  <script src="js/config.js?v=1000"></script>
   <script src="js/auth_guard.js"></script>
   <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
   <script src="js/sidebar_loader.js"></script> 
@@ -128,8 +128,6 @@
   </div>
 
   <script>
-    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100% (KHÔNG ĐỔI MỘT CHỮ)
-    
     // 1. CẤU HÌNH DRIVE API
     const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
     const FOLDER_ID = "1Cn8AyIJvMxkEC4-UQnBdZOS_vhvkrnF_";
@@ -376,7 +374,39 @@
           else if (p.newStatus === "Chờ thanh toán") updateData.Gio_Giao_Hang = cleanNow;
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, { method: 'PATCH', headers: h, body: JSON.stringify(updateData) });
         }
+        
         Swal.fire({ icon: 'success', title: 'Thành công!', timer: 800, showConfirmButton: false });
+
+        // =========================================================
+        // XỬ LÝ GỬI THÔNG BÁO THEO TỪNG PHÒNG BAN CHUYÊN BIỆT
+        // =========================================================
+        let titleTB = ""; let msgTB = ""; let roleMoi = "";
+        
+        if (p.newStatus === "Chờ thiết kế") {
+            titleTB = "🎨 ĐƠN CHỜ THIẾT KẾ"; 
+            msgTB = `Đơn ${p.maDon} cần lên file thiết kế ngay!`; 
+            roleMoi = "Thiet_Ke";
+        } else if (p.newStatus === "Chờ in") {
+            titleTB = "🖨️ ĐƠN CHỜ IN ẤN"; 
+            msgTB = `Đơn ${p.maDon} đã xong file, chuyển qua máy in!`; 
+            roleMoi = "Nhan_Vien_In";
+        } else if (p.newStatus === "Chờ gia công") {
+            titleTB = "🛠️ ĐƠN CHỜ GIA CÔNG"; 
+            msgTB = `Đơn ${p.maDon} đã in xong, cần được gia công!`; 
+            roleMoi = "Gia_Cong";
+        } else if (p.newStatus === "Chờ thanh toán") {
+            titleTB = "📦 HÀNG ĐÃ SẴN SÀNG"; 
+            msgTB = `Đơn ${p.maDon} hoàn tất, chờ thu ngân thu tiền/giao hàng!`; 
+            roleMoi = "Thu_Ngan";
+        }
+        
+        if (titleTB !== "") {
+            try {
+               // Gọi hàm gửi thông báo, truyền thêm tham số roleMoi để phân loại
+               await guiThongBaoSacMau(titleTB, msgTB, roleMoi);
+            } catch(etb) { console.log(etb); }
+        }
+
         loadF2Data();
       } catch (e) { Swal.fire('Lỗi hệ thống', e.message, 'error'); }
     }

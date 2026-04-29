@@ -49,21 +49,17 @@ window.formatDateTimeVN = function() {
   const pad = (n) => n.toString().padStart(2, '0');
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
-async function guiThongBaoSacMau(tieude, noidung) {
-    // Gọi lên hàm bright-handler đã được cấu hình CORS ở trên
+async function guiThongBaoSacMau(tieude, noidung, targetRole = "") {
     const URL_FUNCTION = "https://zatxvklirqvyacslkpgy.supabase.co/functions/v1/bright-handler";
-    
     try {
         const response = await fetch(URL_FUNCTION, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ tieude: tieude, noidung: noidung })
+            headers: { "Content-Type": "application/json" },
+            // Truyền thêm targetRole xuống Supabase
+            body: JSON.stringify({ tieude: tieude, noidung: noidung, targetRole: targetRole })
         });
         const resData = await response.json();
-        console.log("Sắc Màu: Đã gửi thông báo qua Supabase", resData);
     } catch (e) {
-        console.error("Sắc Màu: Lỗi kết nối Supabase Edge Function:", e);
+        console.error("Lỗi gửi thông báo:", e);
     }
 }
