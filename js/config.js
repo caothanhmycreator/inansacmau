@@ -50,23 +50,30 @@ window.formatDateTimeVN = function() {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
-
 async function guiThongBaoSacMau(tieude, noidung) {
-    // Đây là URL đã khớp với Project ID và Function Name trong ảnh của Mỹ
-    const URL_FUNCTION = "https://zatxvklirqvyacslkpgy.supabase.co/functions/v1/bright-handler";
+    // App ID lấy từ cấu hình OneSignal của Sắc Màu
+    const appId = "e06b8b48-2adf-4970-b2b3-9b509e5357d8"; 
+    // REST API Key bạn vừa mới tạo
+    const restApiKey = "os_v2_org_nq52uqzptnc73i6wg2mut4pzqei26jztbj3e25e7bbscbbvmu4lylbvhzspuizbxnrdy7v6nf44lwrh4slev6dnqoypuo5mnbgeodaq"; 
 
     try {
-        const response = await fetch(URL_FUNCTION, {
+        const response = await fetch("https://api.onesignal.com/notifications", {
             method: "POST",
-            headers: { 
-                "Content-Type": "application/json"
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Basic " + restApiKey
             },
-            body: JSON.stringify({ tieude, noidung })
+            body: JSON.stringify({
+                app_id: appId,
+                included_segments: ["Total Subscriptions"], // Phát thông báo đến tất cả thiết bị đã cấp quyền
+                headings: { "en": tieude },
+                contents: { "en": noidung }
+            })
         });
         
         const resData = await response.json();
-        console.log("Sắc Màu: Kết quả gửi tin:", resData);
+        console.log("Sắc Màu: Kết quả gửi thông báo:", resData);
     } catch (e) {
-        console.error("Sắc Màu: Lỗi gọi Edge Function:", e);
+        console.error("Sắc Màu: Lỗi gửi thông báo trực tiếp:", e);
     }
 }
