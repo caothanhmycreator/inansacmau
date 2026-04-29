@@ -48,6 +48,7 @@
     let user = JSON.parse(localStorage.getItem('currentUser'));
     let API_URL = "";
     let headers = {};
+    let lastAutoTrigger = ""; // Biến chống gọi hàm lặp lại nhiều lần trong cùng 1 phút
 
     document.addEventListener("DOMContentLoaded", async () => {
       if(!user) return window.location.href = 'login.html';
@@ -63,6 +64,10 @@
           if (dataSearch.length > 0) { user.id = dataSearch[0].id; localStorage.setItem('currentUser', JSON.stringify(user)); }
         } catch (e) { console.error(e); }
       }
+      
+      // Bổ sung sự kiện tự động kiểm tra trạng thái khi tab được mở lại
+      window.addEventListener('focus', checkStatus);
+
       startClock();
       checkStatus();
     });
@@ -73,12 +78,16 @@
         document.getElementById('display-clock').innerText = now.toLocaleTimeString('vi-VN');
         document.getElementById('display-date').innerText = now.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
         
-        // Tự động làm mới trạng thái UI tại các mốc giờ quan trọng (Nếu nhân viên treo màn hình)
-        const h = now.getHours();
-        const m = now.getMinutes();
-        const s = now.getSeconds();
-        if ((h === 11 || h === 17) && m === 0 && s === 0) checkStatus(); // Giờ tự động ra ca
-        if ((h === 7 || h === 13) && m === 30 && s === 0) checkStatus(); // Giờ bắt đầu vào ca
+        // CẬP NHẬT CHỐNG NGỦ ĐÔNG: Xét theo Phút thay vì đúng Giây số 0
+        const hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        const triggerTimes = ['07:30', '11:00', '13:30', '17:00'];
+        
+        if (triggerTimes.includes(hm)) {
+          if (lastAutoTrigger !== hm) {
+            lastAutoTrigger = hm;
+            checkStatus(); 
+          }
+        }
       };
       update(); setInterval(update, 1000);
     }
@@ -90,8 +99,8 @@
       const label = document.getElementById('status-label');
 
       try {
-        // 1. TỰ ĐỘNG CHỐT CA NẾU ĐÃ ĐẾN GIỜ (11h Sáng / 17h Chiều)
-        const resUnfinished = await fetch(`${API_URL}?User_ID=eq.${user.id}&Status=eq.Đang làm`, { headers });
+        // CẬP NHẬT: Mã hóa URL để không lỗi với chữ "Đang làm"
+        const resUnfinished = await fetch(`${API_URL}?User_ID=eq.${user.id}&Status=eq.${encodeURIComponent('Đang làm')}`, { headers });
         const unfinished = await resUnfinished.json();
         
         for (let record of unfinished) {
