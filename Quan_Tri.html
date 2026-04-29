@@ -322,7 +322,7 @@
 
           // THÔNG BÁO - HỦY ĐƠN HÀNG
           try {
-              await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${maDon} của khách ${tenKhach} đã bị xóa vĩnh viễn bởi Admin.`, "Quan_Ly_Don");
+              await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${maDon} của khách ${tenKhach} đã bị xóa vĩnh viễn.`, "Quan_Ly_Don");
           } catch (etb) { console.log(etb); }
 
           Swal.fire('Đã xóa!', 'Mọi dấu vết của đơn hàng đã được loại bỏ.', 'success');
