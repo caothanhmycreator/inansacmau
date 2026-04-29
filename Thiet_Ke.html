@@ -398,7 +398,7 @@
         // TÍNH NĂNG THÔNG BÁO - BÁO CHO QUẢN LÝ ĐƠN VÀO DUYỆT FILE (ĐÃ BỔ SUNG TÊN KHÁCH HÀNG)
         try {
             let tenKH = rowBH.length > 0 ? rowBH[0].Ten_Khach_Hang : "Khách";
-            await guiThongBaoSacMau("✅ FILE ĐÃ THIẾT KẾ XONG", `Đơn hàng ${p.maDon} của khách ${tenKH} đã có file, vui lòng kiểm tra và duyệt in!`, "Quan_Ly_Don");
+            await guiThongBaoSacMau("✅ FILE ĐÃ THIẾT KẾ XONG", `Đơn hàng ${p.maDon} của khách ${tenKH} đã có file, vui lòng kiểm tra và duyệt file!`, "Quan_Ly_Don");
         } catch (etb) {
             console.log("Lỗi TB:", etb);
         }

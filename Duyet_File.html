@@ -272,7 +272,7 @@
                 await guiThongBaoSacMau("🖨️ CÓ ĐƠN CẦN IN", `File in đơn ${ma} của khách ${tenKH} đã duyệt. Tiến hành in ấn ngay!`, "Nhan_Vien_In");
             } 
             else if (stt === "Chờ gia công") {
-                await guiThongBaoSacMau("⚙️ CẦN GIA CÔNG", `Đơn hàng ${ma} của khách ${tenKH} đã xuất mộc xong. Nhận hàng gia công liên kết!`, "Gia_Cong");
+                await guiThongBaoSacMau("⚙️ CẦN GIA CÔNG", `Đơn hàng ${ma} của khách ${tenKH} đã duyệt file. Cần gửi đơn vị in gia công liên kết!`, "Gia_Cong");
             }
         } catch (etb) {
             console.log("Lỗi TB:", etb);
