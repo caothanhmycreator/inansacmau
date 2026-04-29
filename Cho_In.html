@@ -6,9 +6,9 @@
   <title>Máy in - Tiệm In Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/config.js"></script>
+  <script src="js/config.js?v=2000"></script>
   <script src="js/auth_guard.js"></script>
-  <script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js?v=2000"></script> 
   <style>
     /* ========================================================
        1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
@@ -404,6 +404,14 @@
         }
 
         Swal.fire({ icon: 'success', title: 'Hoàn tất in!', timer: 1000, showConfirmButton: false });
+
+        // TÍNH NĂNG THÔNG BÁO - BÁO CHO THU NGÂN ĐƠN ĐÃ IN XONG
+        try {
+            await guiThongBaoSacMau("🖨️ ĐÃ IN HOÀN TẤT", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã in xong, sẵn sàng giao!`, "Thu_Ngan");
+        } catch (etb) {
+            console.log("Lỗi TB:", etb);
+        }
+
         loadF5Data();
       } catch (e) {
         Swal.fire('Lỗi', e.message, 'error');

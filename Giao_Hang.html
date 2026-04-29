@@ -6,9 +6,9 @@
   <title>Giao hàng - Tiệm In Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/config.js"></script>
+  <script src="js/config.js?v=2000"></script>
   <script src="js/auth_guard.js"></script>
-  <script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js?v=2000"></script> 
   <style>
     /* ========================================================
        1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
@@ -78,7 +78,7 @@
         
         .f8-row { margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #eee; border-left: 4px solid #2980b9; background: #fff; }
         .f8-row td { padding: 12px; border: none; border-bottom: 1px solid #f9f9f9; text-align: left; position: relative; padding-left: 110px; min-height: 20px; }
-        .f8-row td:last-child { border-bottom: none; border-radius: 0 0 8px 8px; background: #fafafa; padding-left: 12px; text-align: center; margin-top: 5px; }
+        .f8-row td:last-child { border-bottom: none; border-radius: 0 0 8px 8px; background: #fafafa; padding: 12px; text-align: center; margin-top: 5px; }
         
         /* Nhãn tự động cho thẻ Mobile */
         .f8-row td:before { position: absolute; left: 12px; top: 12px; font-weight: bold; color: #555; font-size: 12px; text-transform: uppercase; }
@@ -113,7 +113,7 @@
           <h2 style="margin:0; font-size: 20px;">🚚 KIỂM SOÁT ĐƠN CHỜ GIAO</h2>
           <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Tách biệt Lưu hệ thống & In phiếu vận chuyển Sắc Màu</p>
         </div>
-        <button onclick="loadF8Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition: 0.2s;">🔄 LÀM MỚI</button>
+        <button onclick="loadF8Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition: 0.2s;">🔄 LÀM MỚI</button>
       </div>
 
       <div style="overflow-x: auto;">
@@ -139,7 +139,7 @@
   <div id="vung-in-f8"></div>
 
   <script>
-    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100% (KHÔNG ĐỔI 1 CHỮ)
+    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100%
     window.listF8 = [];
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -213,7 +213,7 @@
       });
     }
 
-    /** 3. CẬP NHẬT CƠ SỞ DỮ LIỆU */
+    /** 3. CẬP NHẬT CƠ SỞ DỮ LIỆU & THÔNG BÁO */
     async function processUpdate(it) {
       Swal.fire({ title: 'Đang lưu hệ thống...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
@@ -244,7 +244,16 @@
             });
           }
         }
+
         Swal.fire({ icon: 'success', title: 'Đơn hàng đã hoàn tất!', timer: 1000, showConfirmButton: false });
+
+        // TÍNH NĂNG THÔNG BÁO - BÁO CHO QUẢN LÝ ĐƠN ĐÃ GIAO XONG
+        try {
+            await guiThongBaoSacMau("🚚 ĐÃ GIAO HÀNG", `Đơn ${it.maDon} của khách ${it.khachHang} đã giao thành công và hoàn tất!`, "Quan_Ly_Don");
+        } catch (etb) {
+            console.log("Lỗi TB:", etb);
+        }
+
         loadF8Data();
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
@@ -298,7 +307,7 @@
           </div>
           
           <div style="margin-top: 50px; text-align: center; border-top: 1px dashed #bbb; padding-top: 20px;">
-             <p style="font-size: 14px; font-weight: bold; color: #2980b9;">Cảm ơn Quý khách đã tin tưởng Sắc Màu Đồng Tháp!</p>
+              <p style="font-size: 14px; font-weight: bold; color: #2980b9;">Cảm ơn Quý khách đã tin tưởng Sắc Màu Đồng Tháp!</p>
           </div>
         </div>`;
     }

@@ -6,9 +6,9 @@
   <title>Gia công liên kết - Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/config.js"></script>
+  <script src="js/config.js?v=2000"></script>
   <script src="js/auth_guard.js"></script>
-  <script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js?v=2000"></script> 
   <style>
     /* ========================================================
        1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
@@ -132,7 +132,6 @@
           return;
         }
         tbody.innerHTML = data.map(item => {
-          // --- CẬP NHẬT LOGIC NHẬN DIỆN THÔNG MINH BẰNG CẤU TRÚC DIV AN TOÀN ---
           const link = item.Link_Anh || "";
           let imgHtml = "";
 
@@ -216,7 +215,7 @@
       }).then((r) => { if (r.isConfirmed) processCompleteOutsource(item, r.value); });
     }
 
-    /** 4. THỰC THI CẬP NHẬT */
+    /** 4. THỰC THI CẬP NHẬT & THÔNG BÁO */
     async function processCompleteOutsource(item, gcData) {
       Swal.fire({ title: 'Đang lưu dữ liệu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
@@ -246,7 +245,16 @@
             body: JSON.stringify({ Trang_Thai: sttMoi, Gio_Giao_Hang: cleanNow, Nguoi_Thuc_Hien: "Gia công (Hàng về)" })
           });
         }
+
         Swal.fire({ icon: 'success', title: 'Đã nhập kho xong!', timer: 1500, showConfirmButton: false });
+
+        // TÍNH NĂNG THÔNG BÁO - BÁO CHO THU NGÂN HÀNG GIA CÔNG ĐÃ VỀ
+        try {
+            await guiThongBaoSacMau("🔨 HÀNG GIA CÔNG ĐÃ VỀ", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã về từ xưởng ${gcData.dvLK}. Sẵn sàng giao!`, "Thu_Ngan");
+        } catch (etb) {
+            console.log("Lỗi TB:", etb);
+        }
+
         loadF6Data();
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
