@@ -130,7 +130,9 @@
             <div class="col-lg" style="position: relative;">
               <label class="sacmau-label">Sản phẩm</label>
               <input id="sanPham" class="sacmau-input" placeholder="Tìm sản phẩm..." autocomplete="off" oninput="autoFillSP(this.value); showSPSuggestions(this.value)" onfocus="showSPSuggestions(this.value)" onblur="setTimeout(()=>closeSPSuggestions(), 200)">
-              <datalist id="spList"></datalist> <div id="spDropdown" style="display:none; position:absolute; top:calc(100% + 2px); left:0; right:0; background:white; border:1px solid #ddd; border-radius:6px; max-height:250px; overflow-y:auto; z-index:1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
+              <datalist id="spList"></datalist>
+              
+              <div id="spDropdown" style="display:none; position:absolute; top:calc(100% + 2px); left:0; right:0; background:white; border:1px solid #ddd; border-radius:6px; max-height:250px; overflow-y:auto; z-index:1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
             </div>
             <div class="col-xs">
               <label class="sacmau-label">ĐVT</label>
@@ -248,14 +250,12 @@
   </div>
 
   <script>
-    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100% (Đã bổ sung tính năng lưu khách và sản phẩm mới)
     var cart = []; var dsK = []; var dsS = []; var dsSP_Goc = []; var currentPayMethod = "";
 
 async function napDuLieuTrang() {
       const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
       try {
         const [resK, resS, resSPGoc] = await Promise.all([
-          // Đã thêm limit=10000 và ưu tiên khách mới tạo (order=id.desc)
           fetch(`${SB_CONFIG.URL}/rest/v1/DM_KhachHang?select=*&limit=10000&order=id.desc`, { headers: h }),
           fetch(`${SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*&limit=10000`, { headers: h }),
           fetch(`${SB_CONFIG.URL}/rest/v1/DM_SanPham?select=*&limit=10000`, { headers: h })
@@ -263,7 +263,6 @@ async function napDuLieuTrang() {
         dsK = await resK.json(); 
         dsS = await resS.json();
         
-        // Cần gán mảng rỗng nếu fetch trả về undefined hoặc không có data
         dsSP_Goc = await resSPGoc.json() || []; 
         
         document.getElementById("khachList").innerHTML = dsK.map(k => `<option value="${k.Ten_Khach_Hang}">`).join("");
@@ -341,9 +340,6 @@ async function napDuLieuTrang() {
       const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
 
       try {
-        // =========================================================================
-        // TÍNH NĂNG MỚI: KIỂM TRA & LƯU TỰ ĐỘNG KHÁCH HÀNG & SẢN PHẨM MỚI
-        // =========================================================================
         try {
             const tenKHLower = tenKH.toLowerCase();
             if (tenKH !== "Khách lẻ" && !dsK.some(k => k.Ten_Khach_Hang && k.Ten_Khach_Hang.toLowerCase() === tenKHLower)) {
@@ -360,7 +356,6 @@ async function napDuLieuTrang() {
             const newProducts = [];
             cart.forEach(item => {
                 const tenSPLower = item.sp.toLowerCase();
-                // Đảm bảo truy cập Ten_Hang an toàn, dùng Optional Chaining (?.)
                 if (!dsSP_Goc.some(s => s.Ten_Hang && s.Ten_Hang.toLowerCase() === tenSPLower) && !newProducts.some(p => p.Ten_Hang.toLowerCase() === tenSPLower)) {
                     newProducts.push({
                         Ma_Hang: "SP" + Math.random().toString(36).substr(2, 6).toUpperCase(),
@@ -377,7 +372,6 @@ async function napDuLieuTrang() {
                 await fetch(`${SB_CONFIG.URL}/rest/v1/DM_SanPham`, { method: 'POST', headers: h, body: JSON.stringify(newProducts) });
             }
         } catch(eAutoSave) { console.error("Lỗi auto-save DM:", eAutoSave); }
-        // =========================================================================
 
         const rowsBH = cart.map((i, idx) => ({ 
           Ngay_Gio: cleanTime, 
@@ -472,28 +466,38 @@ async function napDuLieuTrang() {
     }
 
     /* =========================================================
-       THÊM MỚI: CÁC HÀM XỬ LÝ DROPDOWN SẢN PHẨM CÓ HÌNH ẢNH
+       HÀM XỬ LÝ DROPDOWN SẢN PHẨM CÓ HÌNH ẢNH (ĐÃ CẬP NHẬT)
        ========================================================= */
     function showSPSuggestions(v) {
       const dropdown = document.getElementById("spDropdown");
       const keyword = (v || "").toLowerCase().trim();
       
-      // Lọc danh sách sản phẩm theo từ khóa
       let filtered = dsS;
       if (keyword) {
          filtered = dsS.filter(s => s.Ten_Hang && s.Ten_Hang.toLowerCase().includes(keyword));
       }
-      filtered = filtered.slice(0, 50); // Giới hạn 50 kết quả để tránh giật lag
+      filtered = filtered.slice(0, 50); 
       
       if (filtered.length === 0) { dropdown.style.display = "none"; return; }
       
       dropdown.innerHTML = filtered.map(s => {
         let imgTag = '';
-        let hasImg = s.Hinh_Anh && String(s.Hinh_Anh).trim() !== "" && String(s.Hinh_Anh) !== "null" && String(s.Hinh_Anh) !== "undefined";
+        let rawImg = s.Hinh_Anh;
+        let hasImg = rawImg && String(rawImg).trim() !== "" && String(rawImg) !== "null" && String(rawImg) !== "undefined";
         
         if (hasImg) {
+            let finalImgUrl = rawImg;
+            
+            // TỰ ĐỘNG CHUYỂN ĐỔI LINK GOOGLE DRIVE THÀNH ĐỊNH DẠNG DIRECT URL
+            if (rawImg.includes("drive.google.com/file/d/")) {
+                let match = rawImg.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    finalImgUrl = "https://drive.google.com/uc?id=" + match[1];
+                }
+            }
+
             imgTag = `
-            <img src="${s.Hinh_Anh}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width:36px; height:36px; object-fit:cover; border-radius:4px; margin-right:12px; flex-shrink:0; border: 1px solid #eee;">
+            <img src="${finalImgUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width:36px; height:36px; object-fit:cover; border-radius:4px; margin-right:12px; flex-shrink:0; border: 1px solid #eee;">
             <div style="display:none; width:36px; height:36px; background:#f0f0f0; border-radius:4px; margin-right:12px; flex-shrink:0; align-items:center; justify-content:center; font-size:12px; color:#aaa; border: 1px solid #eee;">🖼️</div>
             `;
         } else {
@@ -515,11 +519,10 @@ async function napDuLieuTrang() {
     function selectSP(ten) {
       document.getElementById("sanPham").value = ten;
       document.getElementById("spDropdown").style.display = "none";
-      autoFillSP(ten); // Gọi lại hàm cũ để tự động điền giá và ĐVT
+      autoFillSP(ten);
     }
 
     function closeSPSuggestions() {
-      // Dùng setTimeout ở HTML onblur để đảm bảo sự kiện click (chọn SP) được chạy trước khi ẩn dropdown
       document.getElementById("spDropdown").style.display = "none";
     }
 
