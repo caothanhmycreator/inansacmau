@@ -49,6 +49,7 @@
     let API_URL = "";
     let headers = {};
     let lastAutoTrigger = "";
+    let lastRemindTime = "";
 
     document.addEventListener("DOMContentLoaded", async () => {
       if(!user) return window.location.href = 'login.html';
@@ -71,19 +72,44 @@
       checkStatus();
     });
 
+    async function guiThongBaoSacMau(tieude, noidung, targetRole = "") {
+        const URL_FUNCTION = "https://zatxvklirqvyacslkpgy.supabase.co/functions/v1/bright-handler";
+        try {
+            await fetch(URL_FUNCTION, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tieude: tieude, noidung: noidung, targetRole: targetRole })
+            });
+        } catch (e) {
+            console.error("Lỗi gửi thông báo:", e);
+        }
+    }
+
     function startClock() {
       const update = () => {
         const now = new Date();
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const hm = h + ':' + m;
+
         document.getElementById('display-clock').innerText = now.toLocaleTimeString('vi-VN');
         document.getElementById('display-date').innerText = now.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
         
-        const hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
         const triggerTimes = ['07:30', '11:00', '13:30', '17:00'];
-        
         if (triggerTimes.includes(hm)) {
           if (lastAutoTrigger !== hm) {
             lastAutoTrigger = hm;
             checkStatus(); 
+          }
+        }
+
+        // Nhắc nhở nhân viên lúc 08:00 và 14:00 qua OneSignal
+        const remindTimes = ['08:00', '14:00'];
+        if (remindTimes.includes(hm) && lastRemindTime !== hm) {
+          lastRemindTime = hm;
+          const btnContainer = document.getElementById('btn-container');
+          if (btnContainer.querySelector('.btn-vao')) {
+            guiThongBaoSacMau("⏰ NHẮC NHỞ CHẤM CÔNG", `Bạn ơi, đã ${hm} rồi mà chưa thấy bạn điểm danh. Nhớ chấm công nhé!`, user.username || user.User_Name || "");
           }
         }
       };
@@ -97,7 +123,6 @@
       const label = document.getElementById('status-label');
 
       try {
-        // Dự phòng: Code UI vẫn giữ lệnh tự chốt ca nếu nhân viên đang mở máy đúng lúc chuyển giờ
         const resUnfinished = await fetch(`${API_URL}?User_ID=eq.${user.id}&Status=eq.${encodeURIComponent('Đang làm')}`, { headers });
         const unfinished = await resUnfinished.json();
         
@@ -189,6 +214,10 @@
         });
 
         if (postRes.ok) { 
+            // Thông báo cho Admin qua OneSignal
+            const empName = user.name || user.Ho_Ten || "Nhân viên";
+            guiThongBaoSacMau("📍 CHẤM CÔNG MỚI", `${empName} đã có mặt và điểm danh vào lúc ${timeStr}.`, "Quan_Ly_Don");
+            
             Swal.fire({ icon: 'success', title: 'Đã vào ca!', timer: 1000, showConfirmButton: false }); 
             checkStatus(); 
         } else {
