@@ -48,7 +48,7 @@
     let user = JSON.parse(localStorage.getItem('currentUser'));
     let API_URL = "";
     let headers = {};
-    let lastAutoTrigger = ""; // Biến chống gọi hàm lặp lại nhiều lần trong cùng 1 phút
+    let lastAutoTrigger = "";
 
     document.addEventListener("DOMContentLoaded", async () => {
       if(!user) return window.location.href = 'login.html';
@@ -65,7 +65,6 @@
         } catch (e) { console.error(e); }
       }
       
-      // Bổ sung sự kiện tự động kiểm tra trạng thái khi tab được mở lại
       window.addEventListener('focus', checkStatus);
 
       startClock();
@@ -78,7 +77,6 @@
         document.getElementById('display-clock').innerText = now.toLocaleTimeString('vi-VN');
         document.getElementById('display-date').innerText = now.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
         
-        // CẬP NHẬT CHỐNG NGỦ ĐÔNG: Xét theo Phút thay vì đúng Giây số 0
         const hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
         const triggerTimes = ['07:30', '11:00', '13:30', '17:00'];
         
@@ -99,12 +97,11 @@
       const label = document.getElementById('status-label');
 
       try {
-        // CẬP NHẬT: Mã hóa URL để không lỗi với chữ "Đang làm"
+        // Dự phòng: Code UI vẫn giữ lệnh tự chốt ca nếu nhân viên đang mở máy đúng lúc chuyển giờ
         const resUnfinished = await fetch(`${API_URL}?User_ID=eq.${user.id}&Status=eq.${encodeURIComponent('Đang làm')}`, { headers });
         const unfinished = await resUnfinished.json();
         
         for (let record of unfinished) {
-            // Xác định ca sáng hay chiều dựa trên giờ vào
             let limitTime = new Date(record.Ngay + 'T17:00:00');
             let targetRa = "17:00:00";
             if (parseInt(record.Gio_Vao.split(':')[0]) < 12) {
@@ -112,7 +109,6 @@
                 targetRa = "11:00:00";
             }
             
-            // Nếu thời gian hiện tại đã vượt qua giờ chốt ca -> Cập nhật CSDl
             if (now >= limitTime) {
                 await fetch(`${API_URL}?id=eq.${record.id}`, { 
                     method: 'PATCH', headers, 
@@ -121,7 +117,6 @@
             }
         }
 
-        // 2. TẢI LẠI DỮ LIỆU CHẤM CÔNG HÔM NAY SAU KHI ĐÃ CẬP NHẬT
         const res = await fetch(`${API_URL}?User_ID=eq.${user.id}&Ngay=eq.${today}&order=id.desc`, { headers });
         const data = await res.json();
 
@@ -132,8 +127,7 @@
         const hasMorning = data.some(item => parseInt(item.Gio_Vao.split(':')[0]) < 12);
         const hasAfternoon = data.some(item => parseInt(item.Gio_Vao.split(':')[0]) >= 12);
 
-        // 3. XỬ LÝ HIỂN THỊ UI (MỖI BUỔI CHỈ VÀO CA 1 LẦN, KHÔNG CÓ NÚT RA CA)
-        if (timeFloat < 11) { // Khung giờ Ca Sáng (00:00 - 11:00)
+        if (timeFloat < 11) { 
             if (hasMorning) {
                 btnBox.innerHTML = `<button class="btn-main btn-done">ĐANG LÀM</button>`;
                 label.innerText = "Hệ thống tự động kết thúc lúc 11:00";
@@ -150,12 +144,12 @@
                 }
             }
         } 
-        else if (timeFloat >= 11 && timeFloat < 13.5) { // Khung giờ Nghỉ Trưa (11:00 - 13:30)
+        else if (timeFloat >= 11 && timeFloat < 13.5) { 
             btnBox.innerHTML = `<button class="btn-main btn-done">NGHỈ TRƯA</button>`;
             label.innerText = "Ca chiều bắt đầu từ 13:30";
             label.className = "status-text status-off";
         }
-        else if (timeFloat >= 13.5 && timeFloat < 17) { // Khung giờ Ca Chiều (13:30 - 17:00)
+        else if (timeFloat >= 13.5 && timeFloat < 17) { 
             if (hasAfternoon) {
                 btnBox.innerHTML = `<button class="btn-main btn-done">ĐANG LÀM</button>`;
                 label.innerText = "Hệ thống tự động kết thúc lúc 17:00";
@@ -166,7 +160,7 @@
                 label.className = "status-text status-off";
             }
         }
-        else { // Tối / Hết Giờ (Sau 17:00)
+        else { 
             btnBox.innerHTML = `<button class="btn-main btn-done">XONG CA</button>`;
             label.innerText = "Đã kết thúc giờ làm việc hôm nay";
             label.className = "status-text status-off";
