@@ -18,10 +18,20 @@
     .radar-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
     
     .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 15px 0; }
-    .stat-card { padding: 12px; border-radius: 10px; text-align: center; font-weight: 800; border: 1px solid rgba(0,0,0,0.05); }
+    .stat-card { padding: 12px; border-radius: 10px; text-align: center; font-weight: 800; border: 1px solid rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+    .stat-card.dimmed { opacity: 0.4; }
+    
     .stat-xanh { background: #f1f8f4; color: #28a745; border-color: #d4edda; }
     .stat-cam { background: #fffdf5; color: #ffc107; border-color: #ffeeba; }
     .stat-do { background: #fff5f5; color: #dc3545; border-color: #f8d7da; }
+
+    /* CSS cho thanh lọc Trạng thái */
+    .filter-container { display: flex; gap: 8px; overflow-x: auto; margin: 10px 0 15px 0; padding-bottom: 5px; scrollbar-width: none; }
+    .filter-container::-webkit-scrollbar { display: none; }
+    .filter-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; border: 1px solid #cbd5e1; background: white; color: #475569; transition: 0.2s; }
+    .filter-btn:hover { background: #f1f5f9; }
+    .filter-btn.active { background: var(--primary-radar); color: white; border-color: var(--primary-radar); }
 
     .radar-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
     .radar-card { background: white; border-radius: 8px; padding: 12px 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-left: 6px solid #eee; transition: 0.2s; }
@@ -81,6 +91,9 @@
         <div class="stat-card stat-do">🔴 CẦN GẤP: --</div>
       </div>
 
+      <!-- Khu vực bộ lọc trạng thái -->
+      <div id="status-filters" class="filter-container"></div>
+
       <div id="radar-list" class="radar-list">
         <div style="text-align:center; padding:50px; color:#64748b;">📡 Đang quét tín hiệu đơn hàng...</div>
       </div>
@@ -90,13 +103,14 @@
   <script>
     const STATUS_STYLE = {
       "Chờ xử lý":     { icon: "⏳", color: "#607d8b" },
-      "Chờ thiết kế":   { icon: "🎨", color: "#2196f3" },
+      "Chờ thiết kế":  { icon: "🎨", color: "#2196f3" },
       "Chờ duyệt file": { icon: "📝", color: "#9c27b0" },
-      "Chờ in":         { icon: "🖨️", color: "#009688" },
-      "Chờ gia công":   { icon: "🛠️", color: "#ff9800" },
+      "Chờ in":        { icon: "🖨️", color: "#009688" },
+      "Chờ gia công":  { icon: "🛠️", color: "#ff9800" },
       "Chờ giao hàng":  { icon: "🚚", color: "#4caf50" },
       "Chờ thanh toán": { icon: "💰", color: "#ffc107" },
-      "Đã giao lẻ":     { icon: "📦", color: "#2980b9" }
+      "Đã giao lẻ":    { icon: "📦", color: "#2980b9" },
+      "Công nợ":       { icon: "💳", color: "#8e44ad" } // Bổ sung icon cho công nợ
     };
 
     const SLA_CONFIG = {
@@ -109,8 +123,13 @@
     const COL_MAP = { 
       "Chờ xử lý": "Gio_Xu_Ly", "Chờ thiết kế": "Gio_Thiet_Ke", "Chờ duyệt file": "Gio_Duyet_File", 
       "Chờ in": "Gio_In", "Chờ gia công": "Gio_Gia_Cong", "Chờ giao hàng": "Gio_Giao_Hang", 
-      "Chờ thanh toán": "Gio_Thanh_Toan", "Đã giao lẻ": "Gio_Giao_Hang"
+      "Chờ thanh toán": "Gio_Thanh_Toan", "Đã giao lẻ": "Gio_Giao_Hang", "Công nợ": "Cong_No"
     };
+
+    let globalItems = [];
+    let globalStats = { xanh: 0, cam: 0, do: 0 };
+    let filterUrgency = 'all';
+    let filterStatus = 'all';
 
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => { loadRadarData(); }, 600);
@@ -119,21 +138,25 @@
     async function loadRadarData() {
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
       try {
-        /** 🚀 LẤY DỮ LIỆU TỪ BẢNG LOG_TIENDO THAY VÌ NHATKY_BANHANG */
-        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Trang_Thai=not.in.("Hoàn tất","Công nợ")&order=id.desc`, { headers: h });
+        /** 🚀 CHỈ BỎ QUA "Hoàn tất" ĐỂ QUÉT LUÔN CẢ CÔNG NỢ */
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Trang_Thai=not.in.("Hoàn tất")&order=id.desc`, { headers: h });
         const data = await res.json();
         processRadar(data);
       } catch (e) { console.error(e); }
     }
 
     function processRadar(data) {
-      let stats = { xanh: 0, cam: 0, do: 0 };
+      globalStats = { xanh: 0, cam: 0, do: 0 };
       let items = [];
 
       data.forEach(item => {
         const now = new Date();
         
-        /** 🚀 LẤY MỐC GIỜ CHÍNH XÁC CỦA TRẠNG THÁI HIỆN TẠI */
+        /** XỬ LÝ SỰ TRÙNG LẶP: NẾU ĐÃ GHI NHẬN CÔNG NỢ THÌ ƯU TIÊN LÀ CÔNG NỢ */
+        if (item.Cong_No && item.Cong_No !== "EMPTY" && item.Cong_No !== null) {
+            item.Trang_Thai = "Công nợ";
+        }
+        
         const colName = COL_MAP[item.Trang_Thai];
         const timeVal = item[colName] || item.Ngay_Gio; // Nếu cột giờ trống thì lấy giờ tạo đơn
         const startTime = parseVNTime(timeVal);
@@ -143,38 +166,85 @@
         
         let level = "xanh";
         let alertColor = "#28a745";
+        let percent = 0;
 
-        if (diffMins >= limit) {
-          level = "do"; alertColor = "#dc3545"; stats.do++;
-        } else if (diffMins >= limit / 2) {
-          level = "cam"; alertColor = "#FF9800"; stats.cam++;
+        if (item.Trang_Thai === "Công nợ") {
+            level = "cong_no";
+            alertColor = "#8e44ad"; // Chuyển sang màu Tím riêng biệt
+            percent = 100;
         } else {
-          stats.xanh++;
+            if (diffMins >= limit) {
+              level = "do"; alertColor = "#dc3545"; globalStats.do++;
+            } else if (diffMins >= limit / 2) {
+              level = "cam"; alertColor = "#FF9800"; globalStats.cam++;
+            } else {
+              globalStats.xanh++;
+            }
+            percent = Math.min(Math.floor((diffMins / limit) * 100), 100);
         }
 
-        const percent = Math.min(Math.floor((diffMins / limit) * 100), 100);
         const displayTime = formatDuration(diffMins);
 
         items.push({ ...item, level, alertColor, percent, displayTime });
       });
 
+      // SẮP XẾP THEO ƯU TIÊN: Đỏ -> Cam -> Xanh -> Công nợ
       items.sort((a, b) => {
-        const priority = { 'do': 1, 'cam': 2, 'xanh': 3 };
+        const priority = { 'do': 1, 'cam': 2, 'xanh': 3, 'cong_no': 4 };
         return priority[a.level] - priority[b.level];
       });
 
-      renderRadar(items, stats);
+      globalItems = items;
+      renderFilterBar();
+      applyFilters();
     }
 
-    function renderRadar(items, s) {
-      document.getElementById('radar-stats').innerHTML = `
-        <div class="stat-card stat-xanh">🟢 AN TOÀN: ${s.xanh}</div>
-        <div class="stat-card stat-cam">🟠 CẢNH BÁO: ${s.cam}</div>
-        <div class="stat-card stat-do">🔴 CẦN GẤP: ${s.do}</div>
-      `;
+    // --- CÁC HÀM XỬ LÝ LỌC TRẠNG THÁI (MỚI THÊM) ---
+    function applyFilters() {
+        let filtered = globalItems;
+        
+        if (filterUrgency !== 'all') {
+            filtered = filtered.filter(it => it.level === filterUrgency);
+        }
+        if (filterStatus !== 'all') {
+            filtered = filtered.filter(it => it.Trang_Thai === filterStatus);
+        }
+        
+        renderRadarStats(globalStats);
+        renderRadarList(filtered);
+    }
 
+    window.toggleUrgency = function(u) {
+        filterUrgency = filterUrgency === u ? 'all' : u;
+        applyFilters();
+    }
+
+    window.toggleStatus = function(s) {
+        filterStatus = filterStatus === s ? 'all' : s;
+        applyFilters();
+        renderFilterBar(); // Render lại để highlight nút đang chọn
+    }
+
+    function renderFilterBar() {
+        const uniqueStatuses = [...new Set(globalItems.map(i => i.Trang_Thai))];
+        let html = `<div class="filter-btn ${filterStatus === 'all' ? 'active' : ''}" onclick="toggleStatus('all')">Tất cả trạng thái</div>`;
+        uniqueStatuses.forEach(st => {
+            html += `<div class="filter-btn ${filterStatus === st ? 'active' : ''}" onclick="toggleStatus('${st}')">${st}</div>`;
+        });
+        document.getElementById('status-filters').innerHTML = html;
+    }
+
+    function renderRadarStats(s) {
+      document.getElementById('radar-stats').innerHTML = `
+        <div class="stat-card stat-xanh ${filterUrgency !== 'all' && filterUrgency !== 'xanh' ? 'dimmed' : ''}" onclick="toggleUrgency('xanh')">🟢 AN TOÀN: ${s.xanh}</div>
+        <div class="stat-card stat-cam ${filterUrgency !== 'all' && filterUrgency !== 'cam' ? 'dimmed' : ''}" onclick="toggleUrgency('cam')">🟠 CẢNH BÁO: ${s.cam}</div>
+        <div class="stat-card stat-do ${filterUrgency !== 'all' && filterUrgency !== 'do' ? 'dimmed' : ''}" onclick="toggleUrgency('do')">🔴 CẦN GẤP: ${s.do}</div>
+      `;
+    }
+
+    function renderRadarList(items) {
       if (items.length === 0) {
-        document.getElementById('radar-list').innerHTML = '<div style="text-align:center; padding:50px;">✅ Tuyệt vời! Không còn đơn hàng nào tồn đọng.</div>';
+        document.getElementById('radar-list').innerHTML = '<div style="text-align:center; padding:50px;">✅ Tuyệt vời! Không còn đơn hàng nào tồn đọng theo bộ lọc.</div>';
         return;
       }
 
@@ -211,6 +281,7 @@
     function parseVNTime(vnStr) {
       if (!vnStr || vnStr === "EMPTY") return new Date();
       const parts = vnStr.split(' ');
+      if(parts.length < 2) return new Date(); // Safeguard format
       const dateParts = parts[0].split('/');
       const timeParts = parts[1].split(':');
       return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
