@@ -11,7 +11,7 @@
   <script src="js/sidebar_loader.js?v=2000"></script> 
   <style>
     /* ========================================================
-       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100% + THÊM CSS MỚI)
        ======================================================== */
     :root { --primary-f10: #34495e; --header-gradient: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); --bg-light: #f8fafc; }
     body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
@@ -36,6 +36,20 @@
     .btn-del { background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 14px; }
     .btn-del:hover { background: #c0392b; }
     .btn-detail { background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-right: 5px; font-size: 14px; }
+
+    /* CSS GOM NHÓM VÀ PHÂN TRANG */
+    .group-row { background: #f1f5f9; cursor: pointer; font-weight: bold; }
+    .group-row td { border-top: 2px solid #cbd5e1 !important; border-bottom: 2px solid #cbd5e1 !important; color: #2c3e50; }
+    .group-row:hover { background: #e2e8f0; }
+    .child-row { display: none; }
+    .child-row.show { display: table-row; }
+    .child-row td:first-child { padding-left: 30px; border-left: 4px solid #3498db !important; }
+    .toggle-icon { display: inline-block; width: 20px; transition: 0.3s; color: #3498db; }
+
+    .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 20px; flex-wrap: wrap; }
+    .page-btn { padding: 6px 12px; border: 1px solid #cbd5e1; background: white; border-radius: 4px; cursor: pointer; transition: 0.2s; font-size: 13px; }
+    .page-btn.active { background: var(--primary-f10); color: white; border-color: var(--primary-f10); font-weight: bold; }
+    .page-btn:hover:not(.active) { background: #f1f5f9; }
 
     /* Fix Sidebar lề PC */
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
@@ -74,6 +88,10 @@
         
         .status-select { font-size: 14px; padding: 10px; height: 45px; }
         .btn-detail, .btn-del { flex: 1; padding: 12px; font-size: 16px; display: flex; justify-content: center; align-items: center; }
+
+        .child-row.show { display: block; } /* Fix hiển thị child row trên mobile */
+        .group-row td { padding-left: 15px !important; }
+        .group-row td:before { display: none; }
         
         /* SweetAlert Popup Mobile */
         .swal2-popup { width: 95% !important; border-radius: 15px !important; }
@@ -91,7 +109,7 @@
       <div class="f10-header">
         <div>
           <h2 style="margin:0; font-size: 18px;">🛠 QUẢN TRỊ ĐƠN HÀNG</h2>
-          <p style="margin:5px 0 0 0; font-size: 11px; opacity: 0.9;">Hệ thống truy quét & Cập nhật trạng thái thống nhất</p>
+          <p style="margin:5px 0 0 0; font-size: 11px; opacity: 0.9;">Hệ thống truy quét, Hoàn kho & Cập nhật trạng thái</p>
         </div>
         <button onclick="loadF10Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 TẢI LẠI</button>
       </div>
@@ -129,11 +147,18 @@
           </tbody>
         </table>
       </div>
+      
+      <!-- Component Phân trang -->
+      <div id="pagination-container" class="pagination"></div>
     </div>
   </div>
 
   <script>
     window.listAllF10 = [];
+    window.filteredGroupedData = []; // Dữ liệu sau khi lọc, đã được gom nhóm
+    let currentPage = 1;
+    const itemsPerPage = 50;
+
     const statuses = ["Chờ xử lý", "Chờ thiết kế", "Chờ duyệt file", "Chờ in", "Chờ gia công", "Chờ giao hàng", "Chờ thanh toán", "Công nợ", "Hoàn tất"];
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -146,42 +171,113 @@
       try {
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*&order=id.desc`, { headers: h });
         window.listAllF10 = await res.json();
-        renderF10Table(window.listAllF10);
+        filterF10(); // Gọi filter để gom nhóm và render
       } catch (e) {
         tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Lỗi: ${e.message}</td></tr>`;
       }
     }
 
-    function renderF10Table(data) {
+    // Hàm gom nhóm dữ liệu theo Mã Đơn
+    function groupData(dataArray) {
+        const grouped = {};
+        dataArray.forEach(item => {
+            if (!grouped[item.Ma_Don]) {
+                grouped[item.Ma_Don] = {
+                    Ma_Don: item.Ma_Don,
+                    Ngay_Gio: item.Ngay_Gio,
+                    Ten_Khach_Hang: item.Ten_Khach_Hang,
+                    items: []
+                };
+            }
+            grouped[item.Ma_Don].items.push(item);
+        });
+        return Object.values(grouped);
+    }
+
+    function renderF10Table() {
       const tbody = document.getElementById('f10-table-body');
-      if (data.length === 0) {
+      const pagination = document.getElementById('pagination-container');
+      
+      if (window.filteredGroupedData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;">❌ Không có dữ liệu đơn hàng.</td></tr>';
+        pagination.innerHTML = '';
         return;
       }
-      tbody.innerHTML = data.map((item, index) => {
-        let options = statuses.map(s => `<option value="${s}" ${item.Trang_Thai === s ? 'selected' : ''}>${s}</option>`).join('');
-        return `<tr class="f10-row">
-          <td data-label="Mã/Ngày" onclick="viewF10Detail(${index})"><b>${item.Ma_Don}</b><br><small style="color:#7f8c8d;">${item.Ngay_Gio ? item.Ngay_Gio.split(' ')[0] : ""}</small></td>
-          <td data-label="Khách hàng"><b>${item.Ten_Khach_Hang}</b></td>
-          <td data-label="Sản phẩm" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color:#2980b9;">${item.Ten_Hang}</td>
-          <td data-label="Trạng thái">
-            <select class="status-select" onchange="changeStatusF10(${item.id}, this.value, '${item.Ma_Don}', '${item.Ten_Hang.replace(/'/g, "\\'")}', '${item.Ten_Khach_Hang.replace(/'/g, "\\'")}')">
-              ${options}
-            </select>
-          </td>
-          <td data-label="Thao tác" style="text-align:center">
-            <button class="btn-detail" onclick="viewF10Detail(${index})" title="Chi tiết">👁️</button>
-            <button class="btn-del" onclick="confirmDeleteF10(${item.id}, '${item.Ma_Don}', '${item.Ten_Hang.replace(/'/g, "\\'")}', '${item.Ten_Khach_Hang.replace(/'/g, "\\'")}')" title="Xóa vĩnh viễn">🗑️</button>
-          </td>
-        </tr>`;
-      }).join('');
+
+      // Tính toán phân trang
+      const totalPages = Math.ceil(window.filteredGroupedData.length / itemsPerPage);
+      if (currentPage > totalPages) currentPage = totalPages;
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const paginatedGroups = window.filteredGroupedData.slice(startIndex, startIndex + itemsPerPage);
+
+      let html = '';
+      paginatedGroups.forEach(group => {
+          // Render dòng Cha (Group)
+          html += `
+          <tr class="f10-row group-row" onclick="toggleOrderGroup('${group.Ma_Don}')">
+            <td colspan="4">
+              <span class="toggle-icon" id="icon-${group.Ma_Don}">▶</span>
+              <b style="color:#e67e22;">${group.Ma_Don}</b> - <b>${group.Ten_Khach_Hang}</b> <small style="color:#7f8c8d; margin-left:10px;">(${group.items.length} mặt hàng)</small>
+            </td>
+            <td style="text-align:center;">
+              <button class="btn-detail" onclick="event.stopPropagation(); viewF10Detail('${group.Ma_Don}')" title="Xem chi tiết thanh toán">👁️ XEM CHI TIẾT</button>
+            </td>
+          </tr>`;
+
+          // Render các dòng Con (Items)
+          group.items.forEach(item => {
+              let options = statuses.map(s => `<option value="${s}" ${item.Trang_Thai === s ? 'selected' : ''}>${s}</option>`).join('');
+              html += `
+              <tr class="f10-row child-row child-of-${group.Ma_Don}">
+                <td data-label="Mã/Ngày"><small style="color:#7f8c8d;">${item.Ngay_Gio ? item.Ngay_Gio.split(' ')[0] : ""}</small></td>
+                <td data-label="Khách hàng"><span style="color:#7f8c8d;">---</span></td>
+                <td data-label="Sản phẩm" style="color:#2980b9;"><b>${item.Ten_Hang}</b></td>
+                <td data-label="Trạng thái">
+                  <select class="status-select" onchange="changeStatusF10(${item.id}, this.value, '${item.Ma_Don}', '${item.Ten_Hang.replace(/'/g, "\\'")}', '${item.Ten_Khach_Hang.replace(/'/g, "\\'")}')">
+                    ${options}
+                  </select>
+                </td>
+                <td data-label="Thao tác" style="text-align:center">
+                  <button class="btn-del" onclick="confirmDeleteF10(${item.id})" title="Xóa vĩnh viễn mặt hàng này">🗑️ XÓA MÓN & HOÀN KHO</button>
+                </td>
+              </tr>`;
+          });
+      });
+
+      tbody.innerHTML = html;
+      renderPagination(totalPages);
+    }
+
+    function toggleOrderGroup(maDon) {
+        const rows = document.querySelectorAll(`.child-of-${maDon}`);
+        rows.forEach(r => r.classList.toggle('show'));
+        const icon = document.getElementById(`icon-${maDon}`);
+        if (icon.innerText === '▶') icon.innerText = '▼';
+        else icon.innerText = '▶';
+    }
+
+    function renderPagination(totalPages) {
+        const container = document.getElementById('pagination-container');
+        if (totalPages <= 1) { container.innerHTML = ''; return; }
+        
+        let html = '';
+        for (let i = 1; i <= totalPages; i++) {
+            html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+        }
+        container.innerHTML = html;
+    }
+
+    window.changePage = function(page) {
+        currentPage = page;
+        renderF10Table();
     }
 
     function filterF10() {
       const search = document.getElementById('f10-search').value.toLowerCase();
       const status = document.getElementById('f10-status-filter').value;
       const date = document.getElementById('f10-date-filter').value;
-      const filtered = window.listAllF10.filter(it => {
+      
+      const filteredItems = window.listAllF10.filter(it => {
         const matchSearch = it.Ma_Don.toLowerCase().includes(search) || it.Ten_Khach_Hang.toLowerCase().includes(search);
         const matchStatus = status === "" || it.Trang_Thai === status;
         const parts = it.Ngay_Gio ? it.Ngay_Gio.split(' ')[0].split('/') : [];
@@ -189,25 +285,172 @@
         const matchDate = date === "" || formattedDate === date;
         return matchSearch && matchStatus && matchDate;
       });
-      renderF10Table(filtered);
+
+      window.filteredGroupedData = groupData(filteredItems);
+      currentPage = 1; // Reset về trang 1 khi lọc
+      renderF10Table();
     }
 
+    // TÍNH NĂNG XÓA VÀ HOÀN KHO (ĐÃ CẬP NHẬT THEO LOGIC MỚI)
+    async function confirmDeleteF10(itemId) {
+      // 1. Tìm thông tin mặt hàng cần xóa
+      const item = window.listAllF10.find(i => i.id === itemId);
+      if (!item) return;
+
+      const result = await Swal.fire({
+        title: 'XÓA MÓN & HOÀN KHO?',
+        text: `Mặt hàng "${item.Ten_Hang}" thuộc đơn ${item.Ma_Don} sẽ bị xóa. Hệ thống sẽ tự động hoàn trả nguyên liệu và vật tư (nếu có). Hành động này không thể hoàn tác!`,
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'ĐỒNG Ý XÓA'
+      });
+
+      if (result.isConfirmed) {
+        Swal.fire({ title: 'Đang xử lý hoàn kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+        
+        try {
+          // 🔥 PHA 1: XỬ LÝ NGUYÊN LIỆU (Nhatky_nguyenlieu)
+          const resNL = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, {headers: h});
+          const nlData = await resNL.json();
+          // Tìm các dòng Đã sử dụng (SD-)
+          const sdItems = nlData.filter(nl => nl.Ma_Nguyen_Lieu && nl.Ma_Nguyen_Lieu.startsWith('SD-'));
+
+          for (let sd of sdItems) {
+              const soLuongSD = Number(sd.So_Luong) || 0;
+              const maGoc = sd.Ma_Nguyen_Lieu.replace('SD-', 'NL-');
+
+              // Tìm dòng tồn kho gốc
+              const resGoc = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${encodeURIComponent(maGoc)}`, {headers: h});
+              const gocData = await resGoc.json();
+              
+              if (gocData && gocData.length > 0) {
+                  const tonGoc = Number(gocData[0].So_Luong) || 0;
+                  // Cộng trả số lượng vào kho gốc
+                  await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${gocData[0].id}`, {
+                      method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonGoc + soLuongSD })
+                  });
+              }
+              // Xoá dòng lịch sử SD-
+              await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${sd.id}`, { method: 'DELETE', headers: h });
+          }
+
+          // 🔥 PHA 2: XỬ LÝ VẬT TƯ (Kho_Vat_Tu)
+          if (item.Ma_VT && item.Ma_VT.startsWith('SMK-')) {
+              const resVT = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${encodeURIComponent(item.Ma_VT)}`, {headers: h});
+              const vtData = await resVT.json();
+              if (vtData && vtData.length > 0) {
+                  const tonVT = Number(vtData[0].So_Luong) || 0;
+                  const traVT = Number(item.So_Luong) || 0;
+                  // Cộng trả số lượng vào kho vật tư
+                  await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${vtData[0].id}`, {
+                      method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonVT + traVT })
+                  });
+              }
+          }
+
+          // 🔥 PHA 3: DỌN DẸP DỮ LIỆU & CÂN ĐỐI CÔNG NỢ
+          // Xóa Log Tiến Độ và Gia Công
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { method: 'DELETE', headers: h });
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_giacong?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { method: 'DELETE', headers: h });
+
+          // Xóa bản ghi trong NhatKy_BanHang
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${item.id}`, { method: 'DELETE', headers: h });
+
+          // Xử lý Công nợ
+          const remainingItems = window.listAllF10.filter(i => i.Ma_Don === item.Ma_Don && i.id !== item.id);
+          
+          if (remainingItems.length === 0) {
+              // Nếu xóa món này là xóa sạch đơn hàng -> Xóa thu nợ và công nợ
+              await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
+              await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
+              try { await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã bị xóa vĩnh viễn.`, "Quan_Ly_Don"); } catch(e){}
+          } else {
+              // Cập nhật lại công nợ do tổng đơn giảm
+              const tongDonMoi = remainingItems.reduce((sum, i) => sum + (Number(i.Thanh_Tien) || 0), 0);
+              const resCN = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, {headers: h});
+              const cnData = await resCN.json();
+              if (cnData && cnData.length > 0) {
+                  const daTra = Number(cnData[0].Da_Tra) || 0;
+                  let conLai = tongDonMoi - daTra;
+                  if (conLai < 0) conLai = 0;
+                  await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, {
+                      method: 'PATCH', headers: h, body: JSON.stringify({ Tong_Don: tongDonMoi.toString(), Con_Lai: conLai.toString() })
+                  });
+              }
+          }
+
+          Swal.fire('Hoàn tất!', 'Đã thu hồi kho và dọn dẹp dữ liệu.', 'success');
+          loadF10Data(); // Tải lại bảng
+        } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
+      }
+    }
+
+    // TÍNH NĂNG XEM CHI TIẾT NÂNG CẤP TÀI CHÍNH
+    window.viewF10Detail = function(maDon) {
+      const dsMon = window.listAllF10.filter(it => it.Ma_Don === maDon);
+      if (dsMon.length === 0) return;
+
+      const khachHang = dsMon[0].Ten_Khach_Hang;
+      let tongDon = 0;
+      let khachDaTra = 0;
+
+      let rowsHtml = dsMon.map(mon => {
+          const tien = Number(mon.Thanh_Tien) || 0;
+          const sl = Number(mon.So_Luong) || 1;
+          const donGia = tien / sl;
+          
+          tongDon += tien;
+          if ((Number(mon.Khach_Da_Tra) || 0) > khachDaTra) khachDaTra = Number(mon.Khach_Da_Tra);
+
+          return `<tr>
+              <td style="padding:10px; border-bottom: 1px solid #e2e8f0;">${mon.Ten_Hang}</td>
+              <td style="text-align:right; border-bottom: 1px solid #e2e8f0;">${Math.round(donGia).toLocaleString()}</td>
+              <td style="text-align:center; border-bottom: 1px solid #e2e8f0;">${sl}</td>
+              <td style="text-align:right; font-weight:bold; border-bottom: 1px solid #e2e8f0; color:#2c3e50;">${tien.toLocaleString()}</td>
+          </tr>`;
+      }).join('');
+
+      let conNo = tongDon - khachDaTra;
+      if(conNo < 0) conNo = 0;
+
+      Swal.fire({
+        title: `<span style="font-size:18px;">MÃ ĐƠN: ${maDon}</span>`,
+        width: '700px',
+        html: `
+          <div style="text-align:left; font-size:14px; margin-bottom:15px; background:#f8fafc; padding:10px; border-radius:8px;">
+              👤 Khách hàng: <b>${khachHang}</b>
+          </div>
+          <div style="overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:13px; border: 1px solid #e2e8f0;">
+                  <thead style="background:#f1f5f9;">
+                      <tr style="color:#64748b; text-transform:uppercase; font-size:11px;">
+                          <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Sản phẩm</th>
+                          <th style="text-align:right; border-bottom: 1px solid #e2e8f0;">Đơn giá</th>
+                          <th style="text-align:center; border-bottom: 1px solid #e2e8f0;">SL</th>
+                          <th style="text-align:right; border-bottom: 1px solid #e2e8f0;">Thành tiền</th>
+                      </tr>
+                  </thead>
+                  <tbody>${rowsHtml}</tbody>
+              </table>
+          </div>
+          <div style="margin-top: 15px; padding: 15px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; text-align: right; font-size: 14px;">
+              <div style="margin-bottom: 5px;">Tổng cộng đơn: <b style="color:#2c3e50">${tongDon.toLocaleString()} đ</b></div>
+              <div style="margin-bottom: 5px; color: #27ae60;">Khách đã trả: <b>-${khachDaTra.toLocaleString()} đ</b></div>
+              <div style="border-top: 1px dashed #f59e0b; padding-top: 5px; margin-top: 5px; color: #e74c3c; font-size: 16px;">Khách còn nợ: <b>${conNo.toLocaleString()} đ</b></div>
+          </div>`,
+        confirmButtonColor: '#34495e',
+        confirmButtonText: 'ĐÓNG'
+      });
+    };
+
+    // GIỮ NGUYÊN LOGIC ĐỔI TRẠNG THÁI (ĐÃ CÓ XỬ LÝ CÔNG NỢ)
     async function changeStatusF10(id, newStatus, maDon, tenHang, tenKhach) {
       const confirmResult = await Swal.fire({
         title: 'CHUYỂN TRẠNG THÁI?',
-        text: `Xác nhận chuyển đơn ${maDon} sang "${newStatus}"?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#34495e',
-        cancelButtonColor: '#95a5a6',
-        confirmButtonText: 'XÁC NHẬN',
-        cancelButtonText: 'HUỶ'
+        text: `Xác nhận chuyển sản phẩm "${tenHang}" sang "${newStatus}"?`,
+        icon: 'question', showCancelButton: true, confirmButtonColor: '#34495e', cancelButtonColor: '#95a5a6', confirmButtonText: 'XÁC NHẬN', cancelButtonText: 'HUỶ'
       });
 
-      if (!confirmResult.isConfirmed) {
-        loadF10Data(); 
-        return;
-      }
+      if (!confirmResult.isConfirmed) { loadF10Data(); return; }
 
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
@@ -220,129 +463,47 @@
         const checkRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(maDon)}`, { headers: h });
         const checkData = await checkRes.json();
         
-        let isUpdate = false;
-        let proceedGhiNo = true;
+        let isUpdate = false; let proceedGhiNo = true;
 
         if (checkData && checkData.length > 0) {
           const overwriteConfirm = await Swal.fire({
             title: 'ĐÃ TỒN TẠI CÔNG NỢ!',
             text: `Mã đơn ${maDon} đã có trong danh sách nợ. Bạn có muốn ghi đè để cập nhật lại không?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#e74c3c',
-            cancelButtonColor: '#95a5a6',
-            confirmButtonText: 'CÓ, GHI ĐÈ',
-            cancelButtonText: 'KHÔNG, CHỈ ĐỔI TRẠNG THÁI'
+            icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', cancelButtonColor: '#95a5a6', confirmButtonText: 'CÓ, GHI ĐÈ', cancelButtonText: 'KHÔNG, CHỈ ĐỔI TRẠNG THÁI'
           });
-          
-          if (overwriteConfirm.isConfirmed) isUpdate = true;
-          else proceedGhiNo = false;
+          if (overwriteConfirm.isConfirmed) isUpdate = true; else proceedGhiNo = false;
         }
 
         if (proceedGhiNo) {
           Swal.fire({ title: 'Đang ghi nhận nợ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-          const noData = {
-            "Ngay_Gio": window.formatDateTimeVN(),
-            "Ma_Don": maDon,
-            "Khach_Hang": khachHang,
-            "Tong_Don": tongDon.toString(),
-            "Da_Tra": "0",
-            "Con_Lai": tongDon.toString()
-          };
-          if (isUpdate) {
-            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(maDon)}`, {
-              method: 'PATCH', headers: h, body: JSON.stringify(noData)
-            });
-          } else {
-            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No`, {
-              method: 'POST', headers: h, body: JSON.stringify(noData)
-            });
-          }
+          const noData = { "Ngay_Gio": window.formatDateTimeVN(), "Ma_Don": maDon, "Khach_Hang": khachHang, "Tong_Don": tongDon.toString(), "Da_Tra": "0", "Con_Lai": tongDon.toString() };
+          if (isUpdate) await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(maDon)}`, { method: 'PATCH', headers: h, body: JSON.stringify(noData) });
+          else await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No`, { method: 'POST', headers: h, body: JSON.stringify(noData) });
         }
       }
 
       Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const nowVN = window.formatDateTimeVN();
-      const colMap = { 
-        "Chờ xử lý": "Gio_Xu_Ly", "Chờ thiết kế": "Gio_Thiet_Ke", "Chờ duyệt file": "Gio_Duyet_File", 
-        "Chờ in": "Gio_In", "Chờ gia công": "Gio_Gia_Cong", "Chờ giao hàng": "Gio_Giao_Hang", 
-        "Chờ thanh toán": "Gio_Thanh_Toan", "Hoàn tất": "Gio_Hoan_Tat", "Công nợ": "Cong_No" 
-      };
+      const colMap = { "Chờ xử lý": "Gio_Xu_Ly", "Chờ thiết kế": "Gio_Thiet_Ke", "Chờ duyệt file": "Gio_Duyet_File", "Chờ in": "Gio_In", "Chờ gia công": "Gio_Gia_Cong", "Chờ giao hàng": "Gio_Giao_Hang", "Chờ thanh toán": "Gio_Thanh_Toan", "Hoàn tất": "Gio_Hoan_Tat", "Công nợ": "Cong_No" };
 
       try {
-        await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, {
-          method: 'PATCH', headers: h, body: JSON.stringify({ "Trang_Thai": newStatus })
-        });
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ "Trang_Thai": newStatus }) });
 
-        let logData = { 
-          "Trang_Thai": newStatus, 
-          "Nguoi_Thuc_Hien": "Quản trị (F10)",
-          "Gio_Xu_Ly": null, "Gio_Thiet_Ke": null, "Gio_Duyet_File": null, "Gio_In": null,
-          "Gio_Gia_Cong": null, "Gio_Giao_Hang": null, "Gio_Thanh_Toan": null, "Gio_Hoan_Tat": null, "Cong_No": null
-        };
+        let logData = { "Trang_Thai": newStatus, "Nguoi_Thuc_Hien": "Quản trị (F10)", "Gio_Xu_Ly": null, "Gio_Thiet_Ke": null, "Gio_Duyet_File": null, "Gio_In": null, "Gio_Gia_Cong": null, "Gio_Giao_Hang": null, "Gio_Thanh_Toan": null, "Gio_Hoan_Tat": null, "Cong_No": null };
         if (colMap[newStatus]) logData[colMap[newStatus]] = nowVN;
 
-        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(maDon)}&Ten_Hang=eq.${encodeURIComponent(tenHang)}`, {
-          method: 'PATCH', headers: h, body: JSON.stringify(logData)
-        });
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(maDon)}&Ten_Hang=eq.${encodeURIComponent(tenHang)}`, { method: 'PATCH', headers: h, body: JSON.stringify(logData) });
 
         try {
             let roleTB = ""; let titleTB = "🛠 QUẢN TRỊ CẬP NHẬT";
-            if (newStatus === "Chờ xử lý") roleTB = "Quan_Ly_Don";
-            else if (newStatus === "Chờ thiết kế") roleTB = "Thiet_Ke";
-            else if (newStatus === "Chờ duyệt file") roleTB = "Quan_Ly_Don";
-            else if (newStatus === "Chờ in") roleTB = "Nhan_Vien_In";
-            else if (newStatus === "Chờ gia công") roleTB = "Quan_Ly_Don";
-            else if (newStatus === "Chờ thanh toán" || newStatus === "Hoàn tất" || newStatus === "Công nợ") roleTB = "Thu_Ngan";
-
-            if (roleTB !== "") {
-                await guiThongBaoSacMau(titleTB, `Đơn ${maDon} của khách ${tenKhach} vừa được chuyển sang: ${newStatus.toUpperCase()}`, roleTB);
-            }
+            if (newStatus === "Chờ xử lý") roleTB = "Quan_Ly_Don"; else if (newStatus === "Chờ thiết kế") roleTB = "Thiet_Ke"; else if (newStatus === "Chờ duyệt file") roleTB = "Quan_Ly_Don"; else if (newStatus === "Chờ in") roleTB = "Nhan_Vien_In"; else if (newStatus === "Chờ gia công") roleTB = "Quan_Ly_Don"; else if (newStatus === "Chờ thanh toán" || newStatus === "Hoàn tất" || newStatus === "Công nợ") roleTB = "Thu_Ngan";
+            if (roleTB !== "") await guiThongBaoSacMau(titleTB, `Sản phẩm ${tenHang} của đơn ${maDon} vừa chuyển sang: ${newStatus.toUpperCase()}`, roleTB);
         } catch (etb) { console.log(etb); }
 
         Swal.fire({ icon: 'success', title: 'Đã cập nhật!', timer: 800, showConfirmButton: false });
         loadF10Data();
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
-
-    async function confirmDeleteF10(id, maDon, tenHang, tenKhach) {
-      const result = await Swal.fire({
-        title: 'XÓA VĨNH VIỄN?',
-        text: `Đơn ${maDon} sẽ bị xóa sạch khỏi mọi Nhật ký hệ thống!`,
-        icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA NGAY'
-      });
-      if (result.isConfirmed) {
-        Swal.fire({ title: 'Đang dọn dẹp dữ liệu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-        try {
-          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(maDon)}&Ten_Hang=eq.${encodeURIComponent(tenHang)}`, { method: 'DELETE', headers: h });
-          const tables = ["Nhatky_giacong", "Nhatky_nguyenlieu", "NhatKy_ThuNo", "Cong_No"];
-          await Promise.all(tables.map(t => fetch(`${window.SB_CONFIG.URL}/rest/v1/${t}?Ma_Don=eq.${encodeURIComponent(maDon)}`, { method: 'DELETE', headers: h })));
-          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, { method: 'DELETE', headers: h });
-
-          // THÔNG BÁO - HỦY ĐƠN HÀNG
-          try {
-              await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${maDon} của khách ${tenKhach} đã bị xóa vĩnh viễn.`, "Quan_Ly_Don");
-          } catch (etb) { console.log(etb); }
-
-          Swal.fire('Đã xóa!', 'Mọi dấu vết của đơn hàng đã được loại bỏ.', 'success');
-          loadF10Data();
-        } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
-      }
-    }
-
-    window.viewF10Detail = function(idx) {
-      const item = window.listAllF10[idx];
-      const dsMon = window.listAllF10.filter(it => it.Ma_Don === item.Ma_Don);
-      let rowsHtml = dsMon.map(mon => `<tr><td style="padding:10px 0;">${mon.Ten_Hang}</td><td style="text-align:center;">${mon.So_Luong}</td><td style="text-align:right; font-weight:bold;">${(mon.Thanh_Tien || 0).toLocaleString()}</td></tr>`).join('');
-      Swal.fire({
-        title: `<span style="font-size:18px;">MÃ ĐƠN: ${item.Ma_Don}</span>`,
-        width: '650px',
-        html: `<div style="text-align:left; font-size:14px; margin-bottom:15px; background:#f8fafc; padding:10px; border-radius:8px;">👤 Khách: <b>${item.Ten_Khach_Hang}</b></div><div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:13px;"><thead style="background:#f1f5f9;"><tr style="color:#64748b; text-transform:uppercase; font-size:11px;"><th style="text-align:left; padding:10px;">Sản phẩm</th><th>SL</th><th style="text-align:right;">Tiền (đ)</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`,
-        confirmButtonColor: '#34495e',
-        confirmButtonText: 'ĐÓNG'
-      });
-    };
   </script>
 </body>
 </html>
