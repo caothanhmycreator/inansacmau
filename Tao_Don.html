@@ -388,7 +388,9 @@ async function napDuLieuTrang() {
           Con_No: (idx === 0 ? (totalBill - daTra) : 0), 
           Dia_Chi: document.getElementById("diaChi").value, 
           Hinh_Thuc_Thanh_Toan: (idx === 0 ? currentPayMethod : ""),
-          Tong_Don: (idx === 0 ? totalBill : 0)
+          Tong_Don: (idx === 0 ? totalBill : 0),
+          Ma_SP: i.ma_sp,
+          Ma_VT: i.ma_vt
         }));
         
         const rowsLog = cart.map(i => ({ Ngay_Gio: cleanTime, Ma_Don: ma, Ten_Hang: i.sp, Khach_Hang: tenKH, Gio_Tao_Don: cleanTime, Gio_Xu_Ly: cleanTime, Trang_Thai: "Chờ xử lý", Nguoi_Thuc_Hien: "Hệ thống" }));
@@ -438,7 +440,7 @@ async function napDuLieuTrang() {
     function formatInput(el) { let v = el.value.replace(/\D/g, ""); if (v !== "") el.value = Number(v).toLocaleString("vi-VN"); }
     function getRaw(id) { return Number(document.getElementById(id).value.replace(/\./g, "")) || 0; }
     function updateTmpTotal() { document.getElementById("tmpTotal").value = (getRaw("sl") * getRaw("gia")).toLocaleString("vi-VN"); }
-    function addItem() { let sp = document.getElementById("sanPham").value; let sl = getRaw("sl"); let gia = getRaw("gia"); let dvt = document.getElementById("dvt").value; if (!sp || sl <= 0) return Swal.fire('Lỗi', 'Chọn SP và SL > 0', 'error'); cart.push({sp, sl, dg: gia, dvt}); render(); ["sanPham","dvt","gia","sl","tmpTotal"].forEach(id => document.getElementById(id).value = (id=="sl"||id=="tmpTotal"?"0":"")); }
+    function addItem() { let sp = document.getElementById("sanPham").value; let sl = getRaw("sl"); let gia = getRaw("gia"); let dvt = document.getElementById("dvt").value; if (!sp || sl <= 0) return Swal.fire('Lỗi', 'Chọn SP và SL > 0', 'error'); let spDB = dsS.find(s => s.Ten_Hang === sp); let ma_sp = spDB ? (spDB.Ma_QR || "") : ""; let ma_vt = spDB ? (spDB.Ghi_Chu || "") : ""; cart.push({sp, sl, dg: gia, dvt, ma_sp, ma_vt}); render(); ["sanPham","dvt","gia","sl","tmpTotal"].forEach(id => document.getElementById(id).value = (id=="sl"||id=="tmpTotal"?"0":"")); }
     function render() { document.getElementById("cart-body").innerHTML = cart.map((i, idx) => `<tr><td><b>${i.sp}</b></td><td style="text-align:center">${i.dvt}</td><td style="text-align:center">${i.sl.toLocaleString()}</td><td style="text-align:right">${i.dg.toLocaleString()}</td><td style="text-align:right; font-weight:bold">${(i.sl*i.dg).toLocaleString()}</td><td onclick="cart.splice(${idx},1);render()" style="color:red; cursor:pointer; text-align:center; font-weight:bold;">✕</td></tr>`).join(""); calc(); }
     
     function calc() { 
