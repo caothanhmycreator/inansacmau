@@ -21,6 +21,10 @@
     .f6-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
     .f6-table th { padding: 12px 15px; color: #64748b; font-size: 13px; text-transform: uppercase; text-align: left; }
     .f6-row { background: white; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    
+    /* CLASS THÊM CHO TRẠNG THÁI ĐÃ XỬ LÝ */
+    .f6-row.processed { background: #fdfaef; border-left: 4px solid #f39c12; }
+    
     .f6-row td { padding: 15px; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); vertical-align: middle; }
     .f6-row td:first-child { border-left: 1px solid var(--border-color); border-radius: 10px 0 0 10px; }
     .f6-row td:last-child { border-right: 1px solid var(--border-color); border-radius: 0 10px 10px 0; }
@@ -32,6 +36,12 @@
     .btn-group { display: flex; flex-direction: column; gap: 5px; }
     .btn-copy { background: #34495e; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: bold; width: 100%; transition: 0.2s; }
     .btn-copy:hover { filter: brightness(110%); }
+    
+    /* STYLE NÚT MỚI */
+    .btn-send { background: #e67e22; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: bold; width: 100%; transition: 0.2s; }
+    .btn-send:hover { background: #d35400; }
+    .btn-send:disabled { background: #bdc3c7; cursor: not-allowed; }
+    
     .btn-done { background: #27ae60; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%; transition: 0.2s; box-shadow: 0 4px 0 #1e8449; }
     .btn-done:active { transform: translateY(2px); box-shadow: 0 2px 0 #1e8449; }
     .swal2-container { z-index: 20000 !important; }
@@ -57,6 +67,7 @@
         .f6-table thead { display: none; }
         
         .f6-row { display: flex; flex-direction: column; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #eee; border-left: 4px solid var(--primary-f6); position: relative; }
+        .f6-row.processed { border-left: 4px solid #f39c12; }
         .f6-row td { padding: 12px; border: none; border-bottom: 1px solid #f9f9f9; text-align: left; }
         .f6-row td:last-child { border-bottom: none; border-radius: 0 0 8px 8px; background: #fafafa; padding: 15px 12px; }
         
@@ -75,7 +86,7 @@
         
         /* 4. Nút Thao Tác (dưới cùng) */
         .btn-group { flex-direction: column; gap: 8px; }
-        .btn-copy { padding: 14px; font-size: 13px; }
+        .btn-copy, .btn-send { padding: 14px; font-size: 13px; }
         .btn-done { padding: 14px; font-size: 14px; }
 
         /* --- SỬA LỖI POPUP XÁC NHẬN GIA CÔNG TRÊN MOBILE --- */
@@ -127,10 +138,12 @@
       try {
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=eq.Chờ gia công&select=*&order=id.desc`, { headers: h });
         const data = await res.json();
+        
         if (!data || data.length === 0) {
           tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; font-weight:bold; color:#8e44ad;">✨ Hiện không có đơn nào đang chờ gia công.</td></tr>';
           return;
         }
+        
         tbody.innerHTML = data.map(item => {
           const link = item.Link_Anh || "";
           let imgHtml = "";
@@ -151,19 +164,26 @@
                        </div>`;
           }
 
-          return `<tr class="f6-row">
+          // KIỂM TRA TRẠNG THÁI GHI CHÚ
+          let ghiChuHienTai = item.Ghi_Chu || "";
+          let isSent = ghiChuHienTai.includes("[Đã gửi file]");
+          let rowClass = isSent ? "f6-row processed" : "f6-row";
+
+          return `<tr class="${rowClass}">
             <td><small style="color:#64748b;">#${item.Ngay_Gio.split(' ')[0]}</small><br><b style="font-size:15px; color:#2c3e50;">${item.Ma_Don}</b></td>
             <td><b>${item.Ten_Khach_Hang}</b><br><small style="color:#8e44ad; font-weight:500;">${item.Ten_Hang}</small></td>
             <td><div class="img-container">${imgHtml}</div></td>
             <td>
               <div class="badge">📏 ${item.Kich_Thuoc || 'N/A'}</div> <div class="badge">🧪 ${item.Chat_Lieu || 'N/A'}</div>
               ${item.Ghi_Chu_San_Xuat ? `<div class="note-x">💬 ${item.Ghi_Chu_San_Xuat}</div>` : ''}
+              ${isSent ? `<div style="color:#d35400; font-weight:bold; font-size:12px; margin-top:8px;">✅ Đã gửi file gia công</div>` : ''}
             </td>
             <td>
               <div class="btn-group">
                 <button class="btn-copy" style="background:#2980b9;" onclick="window.open('${item.Link_File}', '_blank')">📥 TẢI FILE / XEM ĐÍNH KÈM</button>
-                <button class="btn-copy" onclick="handleCopy('${item.Link_File}')">🔗 COPY LINK GỬI XƯỞNG</button>
-                <button class="btn-done" onclick="openConfirmForm('${encodeURIComponent(JSON.stringify(item))}')">✅ ĐÃ NHẬP KHO</button>
+                <button class="btn-copy" onclick="handleCopy('${item.Link_File}')">🔗 COPY LINK</button>
+                <button class="btn-send" onclick="markAsSent('${item.id}', '${ghiChuHienTai}')" ${isSent ? 'disabled' : ''}>${isSent ? 'ĐÃ GỬI FILE XƯỞNG' : '🛫 ĐÁNH DẤU ĐÃ GỬI'}</button>
+                <button class="btn-done" style="margin-top: 10px;" onclick="openConfirmForm('${encodeURIComponent(JSON.stringify(item))}')">✅ ĐÃ NHẬP KHO</button>
               </div>
             </td></tr>`;
         }).join('');
@@ -175,6 +195,29 @@
       const el = document.createElement('textarea'); el.value = path; document.body.appendChild(el); el.select();
       document.execCommand('copy'); document.body.removeChild(el);
       Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã copy link!', showConfirmButton: false, timer: 1500 });
+    }
+
+    /** TÍNH NĂNG MỚI: ĐÁNH DẤU ĐÃ GỬI FILE */
+    async function markAsSent(id, currentNotes) {
+        Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+        
+        let newNotes = currentNotes ? currentNotes + " | [Đã gửi file]" : "[Đã gửi file]";
+
+        try {
+            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, {
+                method: 'PATCH',
+                headers: h,
+                body: JSON.stringify({ Ghi_Chu: newNotes })
+            });
+
+            if (!res.ok) throw new Error("Không thể cập nhật trạng thái");
+
+            Swal.fire({ icon: 'success', title: 'Đã đánh dấu!', timer: 1000, showConfirmButton: false });
+            loadF6Data(); // Tải lại bảng để đổi màu
+        } catch (e) {
+            Swal.fire('Lỗi', e.message, 'error');
+        }
     }
 
     /** 3. FORM XÁC NHẬN NHẬP KHO */
@@ -260,4 +303,4 @@
     }
   </script>
 </body>
-</html>
+</html>"
