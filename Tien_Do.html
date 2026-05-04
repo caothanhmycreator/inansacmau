@@ -20,7 +20,7 @@
     .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 15px 0; }
     .stat-card { padding: 12px; border-radius: 10px; text-align: center; font-weight: 800; border: 1px solid rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; }
     .stat-card:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-    .stat-card.dimmed { opacity: 0.4; }
+    .stat-card.dimmed { opacity: 0.4; filter: grayscale(50%); } /* Làm mờ rõ hơn khi bị deselected */
     
     .stat-xanh { background: #f1f8f4; color: #28a745; border-color: #d4edda; }
     .stat-cam { background: #fffdf5; color: #ffc107; border-color: #ffeeba; }
@@ -42,7 +42,14 @@
 
     .status-badge { padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; }
 
-    @media (max-width: 768px) { .main-content { margin-left: 0; } .radar-card { flex-direction: column; align-items: flex-start; gap: 8px; } }
+    @media (max-width: 768px) { 
+      .main-content { margin-left: 0; } 
+      .radar-card { flex-direction: column; align-items: flex-start; gap: 8px; } 
+      .radar-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+      .header-actions { flex-direction: column; align-items: stretch !important; width: 100%; }
+      #searchRadar { width: 100%; box-sizing: border-box; }
+      .radar-header button { width: 100%; padding: 12px; font-size: 14px; }
+    }
  
  
     /* PC: Chừa lề 250px cố định */
@@ -78,11 +85,14 @@
   <div class="main-content">
     <div class="radar-container">
       <div class="radar-header">
-        <div>
+        <div style="flex: 1;">
           <h2 style="margin:0; font-size: 18px;">📡 RADAR TIẾN ĐỘ ƯU TIÊN</h2>
           <p style="margin:5px 0 0 0; font-size: 11px; opacity: 0.9;">Phân tích thời gian thực đơn hàng tồn đọng</p>
         </div>
-        <button onclick="loadRadarData()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 CẬP NHẬT</button>
+        <div class="header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="searchRadar" placeholder="🔍 Tìm khách hàng..." style="padding: 8px 12px; border: none; border-radius: 8px; outline: none; font-size: 13px; min-width: 200px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); color: #333;" oninput="applyFilters()">
+          <button onclick="loadRadarData()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600; transition: 0.2s;">🔄 CẬP NHẬT</button>
+        </div>
       </div>
 
       <div class="stats-grid" id="radar-stats">
@@ -91,8 +101,10 @@
         <div class="stat-card stat-do">🔴 CẦN GẤP: --</div>
       </div>
 
-      <!-- Khu vực bộ lọc trạng thái -->
-      <div id="status-filters" class="filter-container"></div>
+      <!-- Khu vực bộ lọc trạng thái (Đã fixed cứng các trạng thái) -->
+      <div id="status-filters" class="filter-container">
+        <!-- Render bằng JS -->
+      </div>
 
       <div id="radar-list" class="radar-list">
         <div style="text-align:center; padding:50px; color:#64748b;">📡 Đang quét tín hiệu đơn hàng...</div>
@@ -101,6 +113,11 @@
   </div>
 
   <script>
+    const FULL_STATUSES = [
+      "Chờ xử lý", "Chờ thiết kế", "Chờ duyệt file", "Chờ in", 
+      "Chờ gia công", "Chờ giao hàng", "Chờ thanh toán", "Công nợ"
+    ];
+
     const STATUS_STYLE = {
       "Chờ xử lý":     { icon: "⏳", color: "#607d8b" },
       "Chờ thiết kế":  { icon: "🎨", color: "#2196f3" },
@@ -110,7 +127,7 @@
       "Chờ giao hàng":  { icon: "🚚", color: "#4caf50" },
       "Chờ thanh toán": { icon: "💰", color: "#ffc107" },
       "Đã giao lẻ":    { icon: "📦", color: "#2980b9" },
-      "Công nợ":       { icon: "💳", color: "#8e44ad" } // Bổ sung icon cho công nợ
+      "Công nợ":       { icon: "💳", color: "#8e44ad" } 
     };
 
     const SLA_CONFIG = {
@@ -132,6 +149,7 @@
     let filterStatus = 'all';
 
     document.addEventListener("DOMContentLoaded", () => {
+      renderFilterBar(); // Render sẵn thanh trạng thái cố định
       setTimeout(() => { loadRadarData(); }, 600);
     });
 
@@ -195,40 +213,48 @@
       });
 
       globalItems = items;
-      renderFilterBar();
       applyFilters();
     }
 
-    // --- CÁC HÀM XỬ LÝ LỌC TRẠNG THÁI (MỚI THÊM) ---
-    function applyFilters() {
+    // --- CÁC HÀM XỬ LÝ LỌC TRẠNG THÁI VÀ TÌM KIẾM ---
+    window.applyFilters = function() {
         let filtered = globalItems;
         
+        // 1. Lọc theo thanh Tìm Kiếm Khách hàng
+        const searchQuery = document.getElementById('searchRadar').value.toLowerCase().trim();
+        if (searchQuery !== "") {
+            filtered = filtered.filter(it => it.Khach_Hang.toLowerCase().includes(searchQuery) || it.Ma_Don.toLowerCase().includes(searchQuery));
+        }
+
+        // 2. Lọc theo Mức độ Cấp bách (Xanh, Cam, Đỏ)
         if (filterUrgency !== 'all') {
             filtered = filtered.filter(it => it.level === filterUrgency);
         }
+
+        // 3. Lọc theo Trạng thái (Chờ in, Gia công...)
         if (filterStatus !== 'all') {
             filtered = filtered.filter(it => it.Trang_Thai === filterStatus);
         }
         
-        renderRadarStats(globalStats);
+        renderRadarStats(globalStats); // Luôn hiện số tổng của toàn xưởng
         renderRadarList(filtered);
     }
 
     window.toggleUrgency = function(u) {
-        filterUrgency = filterUrgency === u ? 'all' : u;
+        // Nhấn lại thẻ đang chọn sẽ hủy lọc (trở về Tất cả)
+        filterUrgency = (filterUrgency === u) ? 'all' : u;
         applyFilters();
     }
 
     window.toggleStatus = function(s) {
-        filterStatus = filterStatus === s ? 'all' : s;
+        filterStatus = s; // Không toggle off chỗ này vì đã có nút "Tất cả trạng thái"
+        renderFilterBar(); // Đổi CSS active
         applyFilters();
-        renderFilterBar(); // Render lại để highlight nút đang chọn
     }
 
     function renderFilterBar() {
-        const uniqueStatuses = [...new Set(globalItems.map(i => i.Trang_Thai))];
         let html = `<div class="filter-btn ${filterStatus === 'all' ? 'active' : ''}" onclick="toggleStatus('all')">Tất cả trạng thái</div>`;
-        uniqueStatuses.forEach(st => {
+        FULL_STATUSES.forEach(st => {
             html += `<div class="filter-btn ${filterStatus === st ? 'active' : ''}" onclick="toggleStatus('${st}')">${st}</div>`;
         });
         document.getElementById('status-filters').innerHTML = html;
@@ -236,15 +262,15 @@
 
     function renderRadarStats(s) {
       document.getElementById('radar-stats').innerHTML = `
-        <div class="stat-card stat-xanh ${filterUrgency !== 'all' && filterUrgency !== 'xanh' ? 'dimmed' : ''}" onclick="toggleUrgency('xanh')">🟢 AN TOÀN: ${s.xanh}</div>
-        <div class="stat-card stat-cam ${filterUrgency !== 'all' && filterUrgency !== 'cam' ? 'dimmed' : ''}" onclick="toggleUrgency('cam')">🟠 CẢNH BÁO: ${s.cam}</div>
-        <div class="stat-card stat-do ${filterUrgency !== 'all' && filterUrgency !== 'do' ? 'dimmed' : ''}" onclick="toggleUrgency('do')">🔴 CẦN GẤP: ${s.do}</div>
+        <div class="stat-card stat-xanh ${filterUrgency !== 'all' && filterUrgency !== 'xanh' ? 'dimmed' : ''}" onclick="toggleUrgency('xanh')" title="Nhấn để lọc">🟢 AN TOÀN: ${s.xanh}</div>
+        <div class="stat-card stat-cam ${filterUrgency !== 'all' && filterUrgency !== 'cam' ? 'dimmed' : ''}" onclick="toggleUrgency('cam')" title="Nhấn để lọc">🟠 CẢNH BÁO: ${s.cam}</div>
+        <div class="stat-card stat-do ${filterUrgency !== 'all' && filterUrgency !== 'do' ? 'dimmed' : ''}" onclick="toggleUrgency('do')" title="Nhấn để lọc">🔴 CẦN GẤP: ${s.do}</div>
       `;
     }
 
     function renderRadarList(items) {
       if (items.length === 0) {
-        document.getElementById('radar-list').innerHTML = '<div style="text-align:center; padding:50px;">✅ Tuyệt vời! Không còn đơn hàng nào tồn đọng theo bộ lọc.</div>';
+        document.getElementById('radar-list').innerHTML = '<div style="text-align:center; padding:50px; font-weight:bold; color:#27ae60;">✅ Tuyệt vời! Không tìm thấy đơn hàng nào tồn đọng theo bộ lọc.</div>';
         return;
       }
 
