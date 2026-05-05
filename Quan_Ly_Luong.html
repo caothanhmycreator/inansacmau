@@ -65,14 +65,12 @@
         .payroll-grid { grid-template-columns: 1fr; }
         .action-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-        /* FIX LỖI XUỐNG DÒNG TRONG POPUP CHI TIẾT (ẢNH image_7f9466) */
         .swal2-popup { width: 95% !important; padding: 10px !important; border-radius: 12px !important; }
         .swal2-html-container { margin: 10px 0 !important; overflow-x: auto !important; }
         
         .finance-table { width: 100% !important; border-collapse: collapse !important; table-layout: fixed !important; }
         .finance-table td { padding: 8px 4px !important; font-size: 12px !important; border-bottom: 1px solid #eee !important; word-break: break-word !important; }
         
-        /* Cột Ngày và Số tiền bắt buộc không được xuống dòng */
         .col-date { width: 75px !important; white-space: nowrap !important; color: #666; }
         .col-amount { width: 85px !important; white-space: nowrap !important; font-weight: bold !important; text-align: right !important; color: #2c3e50; }
         .col-action { width: 45px !important; text-align: right !important; }
@@ -80,16 +78,7 @@
 
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
     
-    /* SỬA LỖI IN TRÊN CHROME / ONLINE */
-    @media print { 
-      @page { margin: 15mm; }
-      body { background: white !important; display: block !important; } 
-      #sidebar-frame, .action-group, .no-print, .mobile-nav-btn { display: none !important; } 
-      .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; display: block !important; } 
-      .summary-box { width: 100% !important; box-sizing: border-box !important; }
-      .payroll-grid { display: block !important; } /* Xếp dọc các thẻ trên giấy A4 */
-      .staff-card { break-inside: avoid; page-break-inside: avoid; border: 1px solid #ddd !important; margin-bottom: 20px !important; box-shadow: none !important; width: 100% !important; box-sizing: border-box !important; } 
-    }
+    /* GỠ BỎ PHẦN @MEDIA PRINT GÂY LỖI TRƯỚC ĐÓ VÌ NAY ĐÃ IN ĐỘC LẬP QUA JS */
   </style>
 </head>
 <body>
@@ -99,7 +88,8 @@
       <div><h2>💰 QUẢN LÝ LƯƠNG</h2><p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">In Ấn Sắc Màu - Đồng Tháp</p></div>
       <div class="header-controls">
         <input type="month" id="month-selector" class="month-picker no-print" onchange="loadPayroll()">
-        <button class="btn-export no-print" onclick="window.print()">🖨️ TẢI BẢNG LƯƠNG</button>
+        <!-- THAY ĐỔI: Gọi hàm openPrintPopup() thay vì window.print() -->
+        <button class="btn-export no-print" onclick="openPrintPopup()">🖨️ TẢI BẢNG LƯƠNG</button>
       </div>
     </div>
     <div class="summary-box"><p>TỔNG DOANH THU TRONG THÁNG</p><h3 id="lbl-doanh-thu">0đ</h3></div>
@@ -113,6 +103,8 @@
     let currentTcData = []; 
     let currentTcWeekData = []; 
     let globalAbsentData = {}; 
+    let globalPrintHTML = ""; // Biến toàn cục lưu trữ HTML để in
+
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -125,7 +117,7 @@
     // Hàm hỗ trợ: Lấy ngày Thứ Hai của tuần chứa một ngày bất kỳ
     function getMonday(d) {
         d = new Date(d);
-        var day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6:1); // Chủ nhật (0) thì lùi 6 ngày
+        var day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6:1); 
         return new Date(d.setDate(diff));
     }
 
@@ -135,7 +127,6 @@
       const firstDay = `${year}-${month}-01`;
       const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
 
-      // Tính ngày Thứ Hai của tuần hiện tại 
       const today = new Date();
       let refDate = new Date(year, month - 1, new Date(year, month, 0).getDate());
       if(today.getFullYear() == year && today.getMonth() + 1 == month) {
@@ -147,7 +138,6 @@
       const strSunday = new Date(year, month, 0).toISOString().split('T')[0];
 
       try {
-        // Tải doanh thu
         const resRev = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=Ngay_Gio,Tong_Don`, { headers: h });
         const revData = await resRev.json();
         
@@ -205,8 +195,17 @@
       const todayDate = new Date();
       todayDate.setHours(23, 59, 59, 999);
 
+      // KHỞI TẠO BIẾN LƯU GIAO DIỆN IN
+      globalPrintHTML = `
+        <div style="font-family: Arial, sans-serif; padding: 10px; max-width: 800px; margin: 0 auto; color: #333;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #2D5A27; margin: 0 0 10px 0; font-size: 24px;">BẢNG TỔNG HỢP LƯƠNG</h2>
+                <p style="margin: 0; font-size: 15px;">Tháng: <b>${month}/${year}</b> &nbsp;|&nbsp; Tổng doanh thu tháng: <b>${Math.round(totalRevenue).toLocaleString('vi-VN')}đ</b></p>
+            </div>
+            <hr style="border: 0; border-top: 2px solid #2D5A27; margin-bottom: 25px;">
+      `;
+
       filteredEmp.forEach(emp => {
-        // CÁCH TÍNH CỦA TRỌNG ĐÃ ĐƯỢC CHUYỂN SANG GIỐNG THƯ
         const isMonthBasis = emp.Ho_Ten.includes("Nhung") || emp.Ho_Ten.includes("Thư") || emp.Ho_Ten.includes("Trọng");
         
         const workingCCData = isMonthBasis ? ccData : ccWeekData;
@@ -279,6 +278,7 @@
 
         const titleBage = isMonthBasis ? '<span class="badge">Kết theo Tháng</span>' : '<span class="badge badge-tuan">Kết theo Tuần</span>';
 
+        // XUẤT HTML RA MÀN HÌNH CHÍNH
         container.innerHTML += `
           <div class="staff-card">
             <h3 class="staff-name">${emp.Ho_Ten} ${titleBage}</h3>
@@ -296,8 +296,84 @@
               <button class="btn btn-payslip" onclick="showPayslip('${emp.id}', '${emp.Ho_Ten}', '${infoCong}', ${luongCoBan}, ${hoaHong}, ${phanTramHH}, ${phuCapViec}, ${tamUng}, ${tongNhan}, ${isMonthBasis})">📄 Phiếu</button>
             </div>
           </div>`;
+
+        // LƯU CỘNG DỒN VÀO BIẾN IN ẤN (INLINE CSS CHUẨN ĐỂ IN)
+        globalPrintHTML += `
+            <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; page-break-inside: avoid; background: #fff;">
+                <h3 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px; display: flex; justify-content: space-between;">
+                    <span>${emp.Ho_Ten}</span>
+                    <span style="font-size: 12px; font-weight: normal; color: #7f8c8d; background: #f8f9fa; padding: 2px 8px; border-radius: 10px; border: 1px solid #ddd;">${isMonthBasis ? 'Hệ Tháng' : 'Hệ Tuần'}</span>
+                </h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <tr><td style="padding: 4px 0; color: #555;">Công thực tế:</td><td style="text-align: right;"><b>${infoCong}</b></td></tr>
+                    <tr><td style="padding: 4px 0; color: #555;">Lương cứng:</td><td style="text-align: right;"><b>${Math.round(luongCoBan).toLocaleString('vi-VN')}đ</b></td></tr>
+                    ${(emp.Huong_Hoa_Hong && phanTramHH > 0) ? `<tr><td style="padding: 4px 0; color: #555;">Hoa hồng (${phanTramHH}%):</td><td style="text-align: right; color: #27ae60;"><b>+ ${Math.round(hoaHong).toLocaleString('vi-VN')}đ</b></td></tr>` : ''}
+                    <tr><td style="padding: 4px 0; color: #555;">Phụ cấp việc:</td><td style="text-align: right; color: #27ae60;"><b>+ ${phuCapViec.toLocaleString('vi-VN')}đ</b></td></tr>
+                    <tr><td style="padding: 4px 0; color: #555;">Trừ tạm ứng:</td><td style="text-align: right; color: #e74c3c;"><b>- ${tamUng.toLocaleString('vi-VN')}đ</b></td></tr>
+                    <tr>
+                        <td style="padding: 10px 0 4px 0; font-weight: bold; font-size: 16px; border-top: 1px solid #eee; margin-top: 5px;">THỰC NHẬN:</td>
+                        <td style="text-align: right; font-weight: bold; font-size: 18px; color: #c0392b; border-top: 1px solid #eee; padding-top: 10px; margin-top: 5px;">${Math.round(tongNhan).toLocaleString('vi-VN')}đ</td>
+                    </tr>
+                </table>
+            </div>
+        `;
       });
+
+      globalPrintHTML += `</div>`; // Đóng thẻ bao ngoài của giao diện in
     }
+
+    // TÍNH NĂNG MỚI: MỞ POPUP TỔNG HỢP VÀ IN
+    function openPrintPopup() {
+        if (!globalPrintHTML || globalPrintHTML === "") {
+            return Swal.fire('Thông báo', 'Chưa có dữ liệu để tải/in!', 'warning');
+        }
+
+        Swal.fire({
+            title: '<span style="font-size: 20px;">TỔNG HỢP BẢNG LƯƠNG</span>',
+            html: `<div style="max-height: 60vh; overflow-y: auto; text-align: left; background: #f8fafc; padding: 10px; border-radius: 8px;">${globalPrintHTML}</div>`,
+            width: '700px',
+            showCancelButton: true,
+            confirmButtonText: '🖨️ TIẾN HÀNH IN / LƯU PDF',
+            cancelButtonText: 'ĐÓNG',
+            confirmButtonColor: '#27ae60',
+            cancelButtonColor: '#64748b'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                executePrint(globalPrintHTML);
+            }
+        });
+    }
+
+    // TÍNH NĂNG MỚI: HÀM IN ĐỘC LẬP TRÁNH LỖI GIAO DIỆN CHROME
+    function executePrint(htmlContent) {
+        // Mở một cửa sổ ẩn để in, đảm bảo sạch sẽ 100% không dính CSS của trang gốc
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>In Bảng Lương - Tiệm In Sắc Màu</title>
+                <style>
+                    body { margin: 0; padding: 0; background: #fff; }
+                    @media print {
+                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        @page { margin: 15mm; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${htmlContent}
+                <script>
+                    window.onload = function() { 
+                        window.print(); 
+                        setTimeout(function(){ window.close(); }, 500); 
+                    }
+                <\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+
 
     function showAbsentDetails(empId, name) {
         const absents = globalAbsentData[empId] || [];
