@@ -97,7 +97,7 @@
 
         .swal2-popup { width: 95% !important; padding: 15px !important; border-radius: 12px !important; }
         
-        .f9-form-grid { display: flex !important; flex-direction: column !important; gap: 12px !padding: 5px !important; }
+        .f9-form-grid { display: flex !important; flex-direction: column !important; gap: 12px !important; padding: 5px !important; }
         .f9-input-group { width: 100% !important; }
         .f9-input-group input { padding: 12px !important; font-size: 15px !important; }
         
@@ -205,49 +205,157 @@
           <tr class="f9-row">
             <td onclick="viewOrderDetails_Group(${idx})"><b style="color:#2c3e50;">${maDonTxt}</b></td>
             <td onclick="viewOrderDetails_Group(${idx})"><b>${it.Khach_Hang}</b></td>
-            <td style="color:#64748b;">${it.Ngay_Gio}</td>
-            <td>T: ${it.Tong_Don.toLocaleString()}<br><small style="color:#27ae60; font-weight:bold;">Đ: ${it.Da_Tra.toLocaleString()}</small></td>
-            <td style="color:#e74c3c; font-weight:bold; font-size:14px;">${it.Con_Lai.toLocaleString()} đ</td>
+            <td style="color:#64748b;" onclick="viewOrderDetails_Group(${idx})">${it.Ngay_Gio}</td>
+            <td onclick="viewOrderDetails_Group(${idx})">T: ${it.Tong_Don.toLocaleString()}<br><small style="color:#27ae60; font-weight:bold;">Đ: ${it.Da_Tra.toLocaleString()}</small></td>
+            <td style="color:#e74c3c; font-weight:bold; font-size:14px;" onclick="viewOrderDetails_Group(${idx})">${it.Con_Lai.toLocaleString()} đ</td>
             <td style="text-align:center"><button class="btn-debt" onclick="openDebtPopup(${idx})">💵 THU NỢ</button></td>
           </tr>`
         }).join('');
       } catch (e) { console.error(e); }
     }
 
-    /** 2. XEM CHI TIẾT ĐƠN HÀNG */
+    /** 2. XEM CHI TIẾT ĐƠN HÀNG (CẬP NHẬT THEO YÊU CẦU MỚI KÈM TÍNH NĂNG IN) */
     async function viewOrderDetails_Group(idx) {
       const it = window.groupedF9[idx];
       Swal.fire({ title: 'Đang tải chi tiết...', didOpen: () => Swal.showLoading() });
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
       
       try {
-        let allItems = [];
+        let allItemsByOrder = {}; 
+        let sdt = "---";
+        let diachi = "---";
+        let isManualDebt = true; // Cờ kiểm tra xem có phải toàn nợ tay không
+
         for(let o of it.orders) {
+            // Lấy chi tiết từng mặt hàng trong đơn
             const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${o.Ma_Don}`, { headers: h });
             const items = await res.json();
-            items.forEach(i => i._Ma_Don = o.Ma_Don);
-            allItems = allItems.concat(items);
+            
+            if (items.length > 0) {
+                isManualDebt = false;
+                // Lấy thông tin khách hàng từ dòng đầu tiên tìm được
+                if (sdt === "---" && items[0].So_Dien_Thoai) sdt = items[0].So_Dien_Thoai;
+                if (diachi === "---" && items[0].Dia_Chi) diachi = items[0].Dia_Chi;
+
+                allItemsByOrder[o.Ma_Don] = {
+                    ngayDat: items[0].Ngay_Gio,
+                    items: items,
+                    tongTienDon: items.reduce((sum, item) => sum + (parseFloat(item.Thanh_Tien) || 0), 0)
+                };
+            }
         }
         
-        if (allItems.length === 0) return Swal.fire('Thông báo', 'Không tìm thấy chi tiết sản phẩm cho mã này (Đơn nhập nợ tay).', 'info');
+        if (isManualDebt) {
+            return Swal.fire('Thông báo', `Đây là khoản nợ được nhập thủ công.<br><br><b>Nội dung:</b> ${it.orders.map(o => o.Ma_Don).join(', ')}<br><b>Tổng nợ:</b> ${it.Con_Lai.toLocaleString()} đ`, 'info');
+        }
 
-        let rowsHtml = allItems.map(m => `
-          <div style="display:grid; grid-template-columns: 2fr 0.5fr 1fr 1fr; gap:10px; padding:10px 8px; border-bottom:1px dashed #eee; font-size:13px; align-items:center;">
-            <div style="text-align:left;"><b>[${m._Ma_Don}]</b> ${m.Ten_Hang}</div>
-            <div style="text-align:center;">${m.So_Luong}</div>
-            <div style="text-align:right; color:#7f8c8d;">${(m.Don_Gia || 0).toLocaleString()}</div>
-            <div style="text-align:right; font-weight:bold; color:#2c3e50;">${(m.Thanh_Tien || 0).toLocaleString()}</div>
-          </div>`).join('');
+        // PHẦN HEADER DÙNG CHUNG CHO CẢ HIỂN THỊ VÀ IN ẤN
+        let headerHtml = `
+          <div style="background:#fdf2f2; padding:15px; border-radius:8px; border:1px solid #fecaca; margin-bottom:15px; text-align:left; font-size:14px; color:#333;">
+              <div style="margin-bottom:5px;">👤 <b>Khách hàng:</b> <span style="color:#c0392b; font-size:16px;">${it.Khach_Hang}</span></div>
+              <div style="margin-bottom:5px;">📞 <b>SĐT:</b> ${sdt}</div>
+              <div style="margin-bottom:5px;">🏠 <b>Địa chỉ:</b> ${diachi}</div>
+              <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #c0392b; font-size:16px;">
+                  💰 <b>TỔNG CÔNG NỢ TỒN: <span style="color:#c0392b;">${it.Con_Lai.toLocaleString()} đ</span></b>
+              </div>
+          </div>
+        `;
+
+        // PHẦN NỘI DUNG DANH SÁCH CHI TIẾT
+        let bodyHtml = ``;
+
+        for (const [maDon, data] of Object.entries(allItemsByOrder)) {
+            bodyHtml += `
+                <div style="border:1px solid #e2e8f0; border-radius:8px; margin-bottom:15px; overflow:hidden;">
+                    <div style="background:#f1f5f9; padding:10px 15px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; text-align:left;">
+                        <div>
+                            <b style="color:#2c3e50; font-size:15px;">MÃ ĐƠN: ${maDon}</b><br>
+                            <span style="font-size:12px; color:#64748b;">📅 Đặt lúc: ${data.ngayDat}</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:12px; color:#64748b;">Tổng đơn hàng:</span><br>
+                            <b style="color:#27ae60; font-size:14px;">${data.tongTienDon.toLocaleString()} đ</b>
+                        </div>
+                    </div>
+                    <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
+                        <thead style="background:#f8fafc; color:#64748b; font-size:11px; text-transform:uppercase;">
+                            <tr>
+                                <th style="padding:8px 15px; border-bottom:1px solid #e2e8f0;">Sản phẩm</th>
+                                <th style="padding:8px; border-bottom:1px solid #e2e8f0; text-align:center;">SL</th>
+                                <th style="padding:8px; border-bottom:1px solid #e2e8f0; text-align:right;">Đơn giá</th>
+                                <th style="padding:8px 15px; border-bottom:1px solid #e2e8f0; text-align:right;">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            data.items.forEach(m => {
+                const sl = parseFloat(m.So_Luong) || 1;
+                const tt = parseFloat(m.Thanh_Tien) || 0;
+                const dg = tt / sl;
+                
+                bodyHtml += `
+                    <tr>
+                        <td style="padding:10px 15px; border-bottom:1px dashed #eee;"><b>${m.Ten_Hang}</b></td>
+                        <td style="padding:10px 8px; border-bottom:1px dashed #eee; text-align:center;">${sl}</td>
+                        <td style="padding:10px 8px; border-bottom:1px dashed #eee; text-align:right; color:#7f8c8d;">${Math.round(dg).toLocaleString()}</td>
+                        <td style="padding:10px 15px; border-bottom:1px dashed #eee; text-align:right; font-weight:bold; color:#2c3e50;">${tt.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+
+            bodyHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // HTML ĐỂ HIỂN THỊ TRONG POPUP (CÓ THANH CUỘN CHO PHẦN DANH SÁCH)
+        let popupHtmlContent = headerHtml + `<div style="max-height: 45vh; overflow-y: auto;">` + bodyHtml + `</div>`;
 
         Swal.fire({
-          title: `<span style="font-size: 18px; color: #c0392b; text-transform: uppercase;">CHI TIẾT: ${it.Khach_Hang}</span>`,
-          width: '700px',
-          html: `
-            <div style="background:#fdf2f2; padding:12px 8px; font-weight:bold; display:grid; grid-template-columns: 2fr 0.5fr 1fr 1fr; gap:10px; font-size:12px; color:#c0392b; border-bottom:2px solid #fecaca; border-radius:6px 6px 0 0;">
-              <div style="text-align:left;">SẢN PHẨM</div><div style="text-align:center;">SL</div><div style="text-align:right;">ĐƠN GIÁ</div><div style="text-align:right;">T.TIỀN</div>
-            </div>
-            <div style="max-height:40vh; overflow-y:auto;">${rowsHtml}</div>`,
-          confirmButtonText: 'ĐÓNG', confirmButtonColor: '#34495e'
+          title: '',
+          width: '750px',
+          html: popupHtmlContent,
+          showCancelButton: true,
+          confirmButtonText: '🖨️ IN CHI TIẾT', 
+          cancelButtonText: 'ĐÓNG',
+          confirmButtonColor: '#27ae60',
+          cancelButtonColor: '#c0392b'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // TẠO TRANG IN ĐỘC LẬP ĐỂ IN FULL NỘI DUNG (KHÔNG BỊ CẮT BỞI THANH CUỘN)
+                const printWindow = window.open('', '_blank', 'width=800,height=600');
+                printWindow.document.write(`
+                    <html>
+                    <head>
+                        <title>Chi Tiết Công Nợ - ${it.Khach_Hang}</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                            @media print {
+                                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <h2 style="text-align:center; color:#c0392b; margin-bottom: 20px; text-transform: uppercase;">BẢNG KÊ CHI TIẾT CÔNG NỢ</h2>
+                        ${headerHtml}
+                        ${bodyHtml}
+                        <script>
+                            window.onload = function() { 
+                                window.print(); 
+                                setTimeout(function(){ window.close(); }, 500); 
+                            }
+                        <\/script>
+                    </body>
+                    </html>
+                `);
+                printWindow.document.close();
+                
+                // Mở lại popup chi tiết để người dùng tiếp tục xem
+                setTimeout(() => { viewOrderDetails_Group(idx); }, 500);
+            }
         });
       } catch (e) { console.error(e); }
     }
