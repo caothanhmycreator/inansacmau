@@ -316,8 +316,7 @@ async function loadSua_DonData() {
     const temp = document.getElementById('f12-row-temp');
     Object.values(grouped).forEach(order => {
       if (order.statuses.has('Công nợ') || order.statuses.has('Hoàn tất')) return;
-      if (order.statuses.has('Chờ thanh toán') && order.statuses.size > 1) return;
-
+    
       const clone = temp.content.cloneNode(true);
       clone.querySelector('.t-ma').textContent = order.maDon;
       clone.querySelector('.t-ngay').textContent = order.ngay;
