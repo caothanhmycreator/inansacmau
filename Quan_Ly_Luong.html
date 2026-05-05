@@ -207,8 +207,8 @@
       todayDate.setHours(23, 59, 59, 999);
 
       filteredEmp.forEach(emp => {
-        // Phân loại nhân viên
-        const isMonthBasis = emp.Ho_Ten.includes("Nhung") || emp.Ho_Ten.includes("Thư");
+        // Phân loại nhân viên: Đã bổ sung Trọng vào nhóm tính theo tháng
+        const isMonthBasis = emp.Ho_Ten.includes("Nhung") || emp.Ho_Ten.includes("Thư") || emp.Ho_Ten.includes("Trọng");
         
         // Dữ liệu dùng để tính toán (Tháng hay Tuần tùy đối tượng)
         const workingCCData = isMonthBasis ? ccData : ccWeekData;
@@ -240,7 +240,7 @@
               if (!hasAfternoon) absents.push(`Ngày ${d} (Chiều)`);
             }
         } else {
-            // Theo tuần (Trọng, Như...)
+            // Theo tuần (Như...)
             for(let i=0; i<7; i++) {
                 let checkDate = new Date(monday);
                 checkDate.setDate(monday.getDate() + i);
@@ -266,12 +266,12 @@
 
         // Tính Lương Cơ Bản
         if (isMonthBasis) {
-          // Lương tháng (Nhung, Thư)
+          // Lương tháng (Nhung, Thư, Trọng)
           const soNgay = myCC.length * 0.5;
           luongCoBan = (emp.Luong_Co_Ban / 26) * soNgay;
           infoCong = `${soNgay} ngày`;
         } else {
-          // Lương tuần (Trọng, Như)
+          // Lương tuần (Như...)
           // emp.Luong_Co_Ban chính là lương 1 buổi
           let soBuoi = myCC.length;
           luongCoBan = emp.Luong_Co_Ban * soBuoi;
