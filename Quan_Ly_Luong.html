@@ -79,11 +79,16 @@
     }
 
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    
+    /* SỬA LỖI IN TRÊN CHROME / ONLINE */
     @media print { 
-      body { background: white; } 
+      @page { margin: 15mm; }
+      body { background: white !important; display: block !important; } 
       #sidebar-frame, .action-group, .no-print, .mobile-nav-btn { display: none !important; } 
-      .main-content { margin-left: 0; padding: 0; } 
-      .staff-card { break-inside: avoid; border: 1px solid #ddd; margin-bottom: 20px; box-shadow: none; } 
+      .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; display: block !important; } 
+      .summary-box { width: 100% !important; box-sizing: border-box !important; }
+      .payroll-grid { display: block !important; } /* Xếp dọc các thẻ trên giấy A4 */
+      .staff-card { break-inside: avoid; page-break-inside: avoid; border: 1px solid #ddd !important; margin-bottom: 20px !important; box-shadow: none !important; width: 100% !important; box-sizing: border-box !important; } 
     }
   </style>
 </head>
@@ -104,9 +109,9 @@
   <script>
     let currentUser = JSON.parse(localStorage.getItem('currentUser'));
     let totalRevenue = 0;
-    let totalRevenueWeek = 0; // Thêm biến lưu doanh thu tuần
+    let totalRevenueWeek = 0; 
     let currentTcData = []; 
-    let currentTcWeekData = []; // Giao dịch tài chính trong tuần
+    let currentTcWeekData = []; 
     let globalAbsentData = {}; 
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
@@ -130,7 +135,7 @@
       const firstDay = `${year}-${month}-01`;
       const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
 
-      // Tính ngày Thứ Hai của tuần hiện tại (dựa vào ngày cuối cùng của tháng được chọn, hoặc ngày hôm nay nếu xem tháng hiện tại)
+      // Tính ngày Thứ Hai của tuần hiện tại 
       const today = new Date();
       let refDate = new Date(year, month - 1, new Date(year, month, 0).getDate());
       if(today.getFullYear() == year && today.getMonth() + 1 == month) {
@@ -139,7 +144,7 @@
       
       const monday = getMonday(refDate);
       const strMonday = `${monday.getFullYear()}-${String(monday.getMonth()+1).padStart(2,'0')}-${String(monday.getDate()).padStart(2,'0')}`;
-      const strSunday = new Date(year, month, 0).toISOString().split('T')[0]; // Lấy tạm đến cuối tháng để cover hết tuần
+      const strSunday = new Date(year, month, 0).toISOString().split('T')[0];
 
       try {
         // Tải doanh thu
@@ -155,9 +160,8 @@
               totalRevenue += tDon;
           }
           
-          // Tính riêng doanh thu cho tuần hiện tại (từ thứ 2)
           if(item.Ngay_Gio) {
-              const nDateStr = item.Ngay_Gio.split(' ')[0]; // yyyy-mm-dd hoặc dd/mm/yyyy
+              const nDateStr = item.Ngay_Gio.split(' ')[0]; 
               let dt;
               if(nDateStr.includes('/')) {
                   const parts = nDateStr.split('/');
@@ -174,23 +178,18 @@
 
         document.getElementById('lbl-doanh-thu').innerText = totalRevenue.toLocaleString('vi-VN') + 'đ';
 
-        // Tải danh sách nhân sự
         const resEmp = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?select=*`, { headers: h });
         const empData = await resEmp.json();
         
-        // Tải chấm công cả tháng
         const resCC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=gte.${firstDay}&Ngay=lte.${lastDay}&select=*`, { headers: h });
         const ccData = await resCC.json();
         
-        // Tải chấm công của tuần hiện tại (để lọc cho nhóm tính theo tuần)
         const resCCWeek = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=gte.${strMonday}&Ngay=lte.${strSunday}&select=*`, { headers: h });
         const ccWeekData = await resCCWeek.json();
 
-        // Tải Tài chính cả tháng
         const resTC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?Ngay_Ghi=gte.${firstDay}&Ngay_Ghi=lte.${lastDay} 23:59:59&select=*`, { headers: h });
         currentTcData = await resTC.json(); 
         
-        // Tải tài chính của tuần
         const resTCWeek = await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?Ngay_Ghi=gte.${strMonday}&Ngay_Ghi=lte.${strSunday} 23:59:59&select=*`, { headers: h });
         currentTcWeekData = await resTCWeek.json();
 
@@ -207,10 +206,9 @@
       todayDate.setHours(23, 59, 59, 999);
 
       filteredEmp.forEach(emp => {
-        // Phân loại nhân viên: Đã bổ sung Trọng vào nhóm tính theo tháng
+        // CÁCH TÍNH CỦA TRỌNG ĐÃ ĐƯỢC CHUYỂN SANG GIỐNG THƯ
         const isMonthBasis = emp.Ho_Ten.includes("Nhung") || emp.Ho_Ten.includes("Thư") || emp.Ho_Ten.includes("Trọng");
         
-        // Dữ liệu dùng để tính toán (Tháng hay Tuần tùy đối tượng)
         const workingCCData = isMonthBasis ? ccData : ccWeekData;
         const workingTCData = isMonthBasis ? tcData : tcWeekData;
         const workingRevenue = isMonthBasis ? totalRevenue : totalRevenueWeek;
@@ -222,9 +220,7 @@
         let infoCong = "";
         let absents = [];
 
-        // Tính lịch nghỉ
         if (isMonthBasis) {
-            // Theo tháng
             const daysInMonth = new Date(year, month, 0).getDate();
             for (let d = 1; d <= daysInMonth; d++) {
               const checkDate = new Date(year, month - 1, d);
@@ -240,13 +236,12 @@
               if (!hasAfternoon) absents.push(`Ngày ${d} (Chiều)`);
             }
         } else {
-            // Theo tuần (Như...)
             for(let i=0; i<7; i++) {
                 let checkDate = new Date(monday);
                 checkDate.setDate(monday.getDate() + i);
                 
                 if(checkDate > todayDate) continue;
-                if(checkDate.getDay() === 0) continue; // Bỏ qua chủ nhật
+                if(checkDate.getDay() === 0) continue; 
                 
                 const d = checkDate.getDate();
                 const m = checkDate.getMonth() + 1;
@@ -264,27 +259,21 @@
         
         globalAbsentData[emp.id] = absents;
 
-        // Tính Lương Cơ Bản
         if (isMonthBasis) {
-          // Lương tháng (Nhung, Thư, Trọng)
           const soNgay = myCC.length * 0.5;
           luongCoBan = (emp.Luong_Co_Ban / 26) * soNgay;
           infoCong = `${soNgay} ngày`;
         } else {
-          // Lương tuần (Như...)
-          // emp.Luong_Co_Ban chính là lương 1 buổi
           let soBuoi = myCC.length;
           luongCoBan = emp.Luong_Co_Ban * soBuoi;
           infoCong = `${soBuoi} buổi`;
         }
 
-        // Tính Hoa Hồng
         let phanTramHH = 0;
         let bacDoanhThu = Math.floor(workingRevenue / 100000000);
         if (bacDoanhThu >= 1) phanTramHH = 1 + (bacDoanhThu - 1) * 0.5;
         if (emp.Huong_Hoa_Hong && phanTramHH > 0) hoaHong = workingRevenue * (phanTramHH / 100);
 
-        // Tính Giao dịch tài chính
         myTC.forEach(tc => { if (tc.Loai === "Tạm ứng") tamUng += tc.So_Tien; else phuCapViec += tc.So_Tien; });
         tongNhan = luongCoBan + hoaHong + phuCapViec - tamUng;
 
