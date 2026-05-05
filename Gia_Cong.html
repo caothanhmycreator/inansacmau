@@ -126,7 +126,6 @@
   </div>
 
   <script>
-    // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100%
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => { loadF6Data(); }, 600);
     });
@@ -143,8 +142,16 @@
           tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; font-weight:bold; color:#8e44ad;">✨ Hiện không có đơn nào đang chờ gia công.</td></tr>';
           return;
         }
+
+        // Tách mảng: Đơn chưa gửi xưởng và Đơn đã gửi xưởng. 
+        // Data gốc đã được API sắp xếp id.desc (từ gần đến xa), filter sẽ giữ nguyên thứ tự này.
+        const unsentItems = data.filter(item => !(item.Ghi_Chu || "").includes("[Đã gửi file]"));
+        const sentItems = data.filter(item => (item.Ghi_Chu || "").includes("[Đã gửi file]"));
         
-        tbody.innerHTML = data.map(item => {
+        // Gộp mảng: Chưa gửi lên trước, đã gửi xuống dưới
+        const sortedData = [...unsentItems, ...sentItems];
+        
+        tbody.innerHTML = sortedData.map(item => {
           const link = item.Link_Anh || "";
           let imgHtml = "";
 
@@ -214,7 +221,7 @@
             if (!res.ok) throw new Error("Không thể cập nhật trạng thái");
 
             Swal.fire({ icon: 'success', title: 'Đã đánh dấu!', timer: 1000, showConfirmButton: false });
-            loadF6Data(); // Tải lại bảng để đổi màu
+            loadF6Data(); // Tải lại bảng để đổi màu và sắp xếp lại
         } catch (e) {
             Swal.fire('Lỗi', e.message, 'error');
         }
@@ -303,4 +310,4 @@
     }
   </script>
 </body>
-</html>"
+</html>
