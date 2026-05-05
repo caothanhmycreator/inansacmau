@@ -86,6 +86,9 @@
         /* Nhãn tự động cho Mobile */
         .f10-row td:before { position: absolute; left: 15px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
         
+        /* FIX CHỮ "THAO TÁC" ĐÈ LÊN NÚT TRÊN MOBILE */
+        .f10-row td:last-child:before { display: none !important; }
+        
         .status-select { font-size: 14px; padding: 10px; height: 45px; }
         .btn-detail, .btn-del { flex: 1; padding: 12px; font-size: 16px; display: flex; justify-content: center; align-items: center; }
 
@@ -214,13 +217,13 @@
       paginatedGroups.forEach(group => {
           // Render dòng Cha (Group)
           html += `
-          <tr class="f10-row group-row" onclick="toggleOrderGroup('${group.Ma_Don}')">
+          <tr class="f10-row group-row" onclick="toggleOrderGroup('${group.Ma_Don.replace(/'/g, "\\'")}')">
             <td colspan="4">
               <span class="toggle-icon" id="icon-${group.Ma_Don}">▶</span>
               <b style="color:#e67e22;">${group.Ma_Don}</b> - <b>${group.Ten_Khach_Hang}</b> <small style="color:#7f8c8d; margin-left:10px;">(${group.items.length} mặt hàng)</small>
             </td>
             <td style="text-align:center;">
-              <button class="btn-detail" onclick="event.stopPropagation(); viewF10Detail('${group.Ma_Don}')" title="Xem chi tiết thanh toán">👁️ XEM CHI TIẾT</button>
+              <button class="btn-detail" onclick="event.stopPropagation(); viewF10Detail('${group.Ma_Don.replace(/'/g, "\\'")}')" title="Xem chi tiết thanh toán">👁️ XEM CHI TIẾT</button>
             </td>
           </tr>`;
 
@@ -228,7 +231,7 @@
           group.items.forEach(item => {
               let options = statuses.map(s => `<option value="${s}" ${item.Trang_Thai === s ? 'selected' : ''}>${s}</option>`).join('');
               html += `
-              <tr class="f10-row child-row child-of-${group.Ma_Don}">
+              <tr class="f10-row child-row" data-group="${group.Ma_Don.replace(/"/g, '&quot;')}">
                 <td data-label="Mã/Ngày"><small style="color:#7f8c8d;">${item.Ngay_Gio ? item.Ngay_Gio.split(' ')[0] : ""}</small></td>
                 <td data-label="Khách hàng"><span style="color:#7f8c8d;">---</span></td>
                 <td data-label="Sản phẩm" style="color:#2980b9;"><b>${item.Ten_Hang}</b></td>
@@ -248,12 +251,16 @@
       renderPagination(totalPages);
     }
 
-    function toggleOrderGroup(maDon) {
-        const rows = document.querySelectorAll(`.child-of-${maDon}`);
+    // FIX LỖI TÌM CHUỖI TRÊN HTML BẰNG data-group
+    window.toggleOrderGroup = function(maDon) {
+        const safeMaDon = maDon.replace(/"/g, '\\"');
+        const rows = document.querySelectorAll(`.child-row[data-group="${safeMaDon}"]`);
         rows.forEach(r => r.classList.toggle('show'));
         const icon = document.getElementById(`icon-${maDon}`);
-        if (icon.innerText === '▶') icon.innerText = '▼';
-        else icon.innerText = '▶';
+        if (icon) {
+            if (icon.innerText === '▶') icon.innerText = '▼';
+            else icon.innerText = '▶';
+        }
     }
 
     function renderPagination(totalPages) {
