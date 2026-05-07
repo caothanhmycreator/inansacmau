@@ -50,6 +50,10 @@
     .btn-edit { background: #f39c12; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; margin-right: 5px; }
     .btn-del { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
 
+    /* Badge Trạng thái Thanh Toán */
+    .badge-paid { background: #dcfce7; color: #166534; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #bbf7d0; }
+    .badge-unpaid { background: #fee2e2; color: #b91c1c; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #fecaca; }
+
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
         .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
@@ -138,12 +142,19 @@
           </select>
         </div>
         <div class="input-group">
+          <label>Thanh Toán *</label>
+          <select id="f-thanhtoan" class="input-modern" style="cursor: pointer; color: #2c3e50; font-weight: bold;">
+            <option value="Đã thanh toán">Đã thanh toán</option>
+            <option value="Chưa thanh toán">Chưa thanh toán</option>
+          </select>
+        </div>
+        
+        <div class="input-group" style="grid-column: span 3;">
           <label>Ghi Chú</label>
           <input type="text" id="f-ghichu" class="input-modern" placeholder="Lô hàng bị lỗi, nợ tiền,...">
         </div>
-        
-        <div class="input-group" style="grid-column: span 4; align-items: flex-end;">
-          <button id="btn-save" class="btn-submit" style="width: 250px;" onclick="submitImport()">📥 XÁC NHẬN NHẬP HÀNG</button>
+        <div class="input-group" style="align-items: flex-end;">
+          <button id="btn-save" class="btn-submit" onclick="submitImport()">📥 XÁC NHẬN NHẬP</button>
         </div>
       </div>
     </div>
@@ -163,18 +174,19 @@
   </div>
 
   <script>
+    // Đã đổi lại tên bảng cho chuẩn xác theo CSDL của sếp
+    const TABLE_NHAP_HANG = "NhatKy_NhapHang";
+    
     let masterData = [];     // Lưu NhatKy_NhapHang
     let dsSanPham = [];      // Lưu Bang_Gia_San_Pham
     let isEditingMode = false; // Trạng thái sửa log
 
     document.addEventListener("DOMContentLoaded", () => {
-      // Setup tháng mặc định
       const now = new Date();
       document.getElementById('monthFilter').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       
       setTimeout(loadData, 500);
       
-      // Tắt gợi ý khi click ra ngoài
       document.addEventListener('click', function(e) {
         if (e.target.id !== 'f-ten') document.getElementById('suggestions').style.display = 'none';
       });
@@ -200,8 +212,11 @@
         dsSanPham = await resSP.json();
 
         // Tải dữ liệu Nhật Ký Nhập Hàng
-        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_NhapHang?select=*&order=id.desc`, { headers: h });
-        masterData = await res.json();
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NHAP_HANG}?select=*&order=id.desc`, { headers: h });
+        const resData = await res.json();
+        
+        if(resData.error) throw new Error(resData.error.message);
+        masterData = resData;
         
         // Tự động trích xuất các Nhà Cung Cấp đưa vào Datalist
         const nccSet = new Set(masterData.map(i => i.Nha_Cung_Cap).filter(n => n));
@@ -215,7 +230,7 @@
     // AUTOCOMPLETE THÔNG MINH TỪ BẢNG GIÁ
     // ==========================================
     function handleSearch(val) {
-        if(isEditingMode) return; // Không hiển thị gợi ý khi đang chế độ sửa
+        if(isEditingMode) return; 
 
         const box = document.getElementById('suggestions');
         const keyword = (val || "").toLowerCase().trim();
@@ -278,12 +293,48 @@
     function closeSuggestions() { document.getElementById('suggestions').style.display = 'none'; }
 
     // ==========================================
+    // LOGIC HOÀN TRẢ KHO KHI SỬA / XÓA
+    // ==========================================
+    async function revertInventory(logRecord) {
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+        let maToRevert = logRecord.Ma_Hang;
+        let loai = logRecord.Loai_Hang || "";
+        let slToRevert = parseFloat(logRecord.So_Luong) || 0;
+
+        // Nếu mã lưu trong sổ là SMP-xxx, truy ngược ra mã SMK-xxx gốc từ Bảng Giá
+        let spDB = dsSanPham.find(s => s.Ma_QR === maToRevert || s.Ten_Hang === logRecord.Ten_Hang);
+        if (spDB && spDB.Ghi_Chu && spDB.Ghi_Chu.startsWith("SMK-")) {
+            maToRevert = spDB.Ghi_Chu; 
+        }
+
+        if (loai.includes("Vật tư") || (maToRevert && maToRevert.startsWith("SMK-"))) {
+            let res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${maToRevert}`, { headers: h });
+            let data = await res.json();
+            if (data && data.length > 0) {
+                let tonMoi = (parseFloat(data[0].So_Luong) || 0) - slToRevert;
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${data[0].id}`, { 
+                    method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi }) 
+                });
+            }
+        } else if (loai.includes("Nguyên liệu") || (maToRevert && maToRevert.startsWith("NEW-"))) {
+            let res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${maToRevert}`, { headers: h });
+            let data = await res.json();
+            if (data && data.length > 0) {
+                let tonMoi = (parseFloat(data[0].So_Luong) || 0) - slToRevert;
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${data[0].id}`, { 
+                    method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi }) 
+                });
+            }
+        }
+    }
+
+    // ==========================================
     // LƯU DỮ LIỆU & PHÂN BỔ VÀO KHO
     // ==========================================
     async function submitImport() {
-        const idLog = document.getElementById('f-id').value; // Có ID = Chế độ cập nhật
+        const idLog = document.getElementById('f-id').value;
         const ten = document.getElementById('f-ten').value.trim();
-        const ma = document.getElementById('f-ma').value.trim();
+        let ma = document.getElementById('f-ma').value.trim();
         const nhom = document.getElementById('f-nhom').value.trim() || "Chưa phân loại";
         const dvt = document.getElementById('f-dvt').value.trim();
         const sl = parseFloat(document.getElementById('f-sl').value) || 0;
@@ -291,6 +342,7 @@
         const tien = parseNum(document.getElementById('f-thanhtien').value);
         const ncc = document.getElementById('f-ncc').value.trim() || "KHÁCH VÃNG LAI";
         const loaiHang = document.getElementById('f-loaihang').value;
+        const thanhToan = document.getElementById('f-thanhtoan').value;
         const gc = document.getElementById('f-ghichu').value.trim();
         
         if (!ten) return Swal.fire('Lỗi', 'Vui lòng nhập Tên hàng hóa!', 'warning');
@@ -300,33 +352,25 @@
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
         
         try {
-            // NẾU LÀ CẬP NHẬT LOG CŨ (CHỈ CẬP NHẬT THÔNG TIN CƠ BẢN LOG, KHÔNG ĐỤNG TỚI KHO ĐỂ TRÁNH LỖI)
+            const ngayGio = window.formatDateTimeVN();
+            
+            // Nếu là Sửa -> Hoàn trả lại tồn kho cũ trước khi tính toán mới
             if (isEditingMode && idLog) {
-                await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_NhapHang?id=eq.${idLog}`, {
-                    method: 'PATCH', headers: h, 
-                    body: JSON.stringify({ Ten_Hang: ten, Ma_Hang: ma, Nhom_Hang: nhom, DVT: dvt, So_Luong: sl, Don_Gia: dongia, Thanh_Tien: tien, Nha_Cung_Cap: ncc, Loai_Hang: loaiHang, Ghi_Chu: gc })
-                });
-                Swal.fire({ icon: 'success', title: 'Đã cập nhật phiếu nhập!', timer: 1500, showConfirmButton: false });
-                resetForm();
-                loadData();
-                return;
+                const oldLog = masterData.find(x => String(x.id) === String(idLog));
+                if (oldLog) await revertInventory(oldLog);
             }
 
-            // NẾU LÀ NHẬP MỚI -> THỰC THI LOGIC KHO KÉP
-            const ngayGio = window.formatDateTimeVN();
-
-            // 1. Phân tích Kho từ Bảng Giá (Tìm mã SMK)
-            let spDB = dsSanPham.find(s => (ma && s.Ma_QR === ma) || s.Ten_Hang === ten);
-            let maKhoVatTu = spDB ? spDB.Ghi_Chu : null; 
+            let finalMaHang = ma;
             let isDaCongVaoKho = false;
 
-            // Kịch bản A: Sản phẩm đã liên kết với kho (Ghi_Chu có chứa SMK-)
+            // Kịch bản A: Liên kết kho từ Bảng Giá
+            let spDB = dsSanPham.find(s => (ma && s.Ma_QR === ma) || s.Ten_Hang === ten);
+            let maKhoVatTu = spDB ? spDB.Ghi_Chu : null; 
+
             if (maKhoVatTu && maKhoVatTu.startsWith("SMK-")) {
                 let resKhoCheck = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${maKhoVatTu}`, { headers: h });
                 let khoData = await resKhoCheck.json();
-                
                 if (khoData.length > 0) {
-                    // Cộng dồn vào kho vật tư hiện có
                     let tonMoi = (parseFloat(khoData[0].So_Luong) || 0) + sl;
                     await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${khoData[0].id}`, { 
                         method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi }) 
@@ -335,46 +379,71 @@
                 }
             }
 
-            // Kịch bản B: Hàng chưa có trong kho, tự động tạo mã mới dựa trên Loại Hàng
+            // Kịch bản B: Tự động tạo kho hoặc dồn kho nếu mã đã được tạo tự động trước đó
             if (!isDaCongVaoKho) {
                 if (loaiHang.includes("Vật tư")) {
-                    let newMaSMK = "SMK-" + Math.random().toString(36).substr(2, 6).toUpperCase();
-                    let payloadVatTu = { Nhom_Hang: nhom, Ten_Hang: ten, Ma_QR: newMaSMK, Quy_Cach: dvt, So_Luong: sl, Ngay_Nhap: ngayGio };
-                    await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu`, { method: 'POST', headers: h, body: JSON.stringify(payloadVatTu) });
+                    let targetMa = (finalMaHang && finalMaHang.startsWith("SMK-")) ? finalMaHang : null;
+                    if (targetMa) {
+                        let r = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${targetMa}`, { headers: h });
+                        let d = await r.json();
+                        if (d.length > 0) {
+                            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${d[0].id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: (parseFloat(d[0].So_Luong)||0) + sl }) });
+                            isDaCongVaoKho = true;
+                        } else targetMa = null;
+                    }
+                    if (!targetMa) {
+                        finalMaHang = "SMK-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+                        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu`, { method: 'POST', headers: h, body: JSON.stringify({ Nhom_Hang: nhom, Ten_Hang: ten, Ma_QR: finalMaHang, Quy_Cach: dvt, So_Luong: sl, Ngay_Nhap: ngayGio }) });
+                    }
                 } 
                 else if (loaiHang.includes("Nguyên liệu")) {
-                    let newMaNL = "NEW-" + Math.random().toString(36).substr(2, 6).toUpperCase();
-                    let payloadNguyenLieu = { Ten_Nguyen_Lieu: ten, DVT: dvt, So_Luong: sl, Ma_Nguyen_Lieu: newMaNL, Ngay_Gio: ngayGio };
-                    await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, { method: 'POST', headers: h, body: JSON.stringify(payloadNguyenLieu) });
+                    let targetMa = (finalMaHang && finalMaHang.startsWith("NEW-")) ? finalMaHang : null;
+                    if (targetMa) {
+                        let r = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${targetMa}`, { headers: h });
+                        let d = await r.json();
+                        if (d.length > 0) {
+                            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${d[0].id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: (parseFloat(d[0].So_Luong)||0) + sl }) });
+                            isDaCongVaoKho = true;
+                        } else targetMa = null;
+                    }
+                    if (!targetMa) {
+                        finalMaHang = "NEW-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+                        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, { method: 'POST', headers: h, body: JSON.stringify({ Ten_Nguyen_Lieu: ten, DVT: dvt, So_Luong: sl, Ma_Nguyen_Lieu: finalMaHang, Ngay_Gio: ngayGio }) });
+                    }
                 }
             }
 
-            // 2. Lưu vào Nhật Ký Nhập Hàng
+            // Ghi vào Nhật Ký Nhập Hàng
             const payloadNhap = {
-                Ngay_Gio: ngayGio, Ten_Hang: ten, Ma_Hang: ma, Nhom_Hang: nhom, DVT: dvt, 
-                So_Luong: sl, Don_Gia: dongia, Thanh_Tien: tien, Nha_Cung_Cap: ncc, Loai_Hang: loaiHang, Ghi_Chu: gc
+                Ngay_Gio: ngayGio, Ten_Hang: ten, Ma_Hang: finalMaHang, Nhom_Hang: nhom, DVT: dvt, 
+                So_Luong: sl, Don_Gia: dongia, Thanh_Tien: tien, Nha_Cung_Cap: ncc, Loai_Hang: loaiHang, Ghi_Chu: gc, Thanh_Toan: thanhToan
             };
-            await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_NhapHang`, { method: 'POST', headers: h, body: JSON.stringify(payloadNhap) });
 
-            Swal.fire({ icon: 'success', title: 'Đã nhập hàng & Cập nhật kho!', timer: 1500, showConfirmButton: false });
+            if (isEditingMode && idLog) {
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NHAP_HANG}?id=eq.${idLog}`, { method: 'PATCH', headers: h, body: JSON.stringify(payloadNhap) });
+            } else {
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NHAP_HANG}`, { method: 'POST', headers: h, body: JSON.stringify(payloadNhap) });
+            }
+
+            Swal.fire({ icon: 'success', title: 'Đã lưu sổ sách & kho!', timer: 1500, showConfirmButton: false });
             resetForm();
             loadData();
         } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
     // ==========================================
-    // THAO TÁC BẢNG: LỌC, SỬA, XÓA, XEM ẢNH
+    // THAO TÁC BẢNG: LỌC, SỬA, XÓA
     // ==========================================
     window.filterDisplayList = function() {
         const query = document.getElementById("searchFilter").value.toLowerCase().trim();
-        const monthVal = document.getElementById("monthFilter").value; // Format: YYYY-MM
+        const monthVal = document.getElementById("monthFilter").value; 
         
         let filteredData = masterData;
 
         // Lọc theo Tháng
         if (monthVal) {
             const [y, m] = monthVal.split('-');
-            const targetStr = `${m}/${y}`; // Ngay_Gio format: DD/MM/YYYY
+            const targetStr = `${m}/${y}`;
             const targetStr2 = `${y}-${m}`;
             
             filteredData = filteredData.filter(item => {
@@ -382,7 +451,6 @@
                 return item.Ngay_Gio.includes(targetStr) || item.Ngay_Gio.includes(targetStr2);
             });
             
-            // Tính tổng tiền tháng
             const tongTien = filteredData.reduce((acc, curr) => acc + (parseFloat(curr.Thanh_Tien) || 0), 0);
             document.getElementById('tongTienThang').innerText = tongTien.toLocaleString('vi-VN') + " đ";
         } else {
@@ -420,6 +488,10 @@
 
         for (let ncc in groups) {
             let rows = groups[ncc].map(item => {
+                let badgeThanhToan = item.Thanh_Toan === "Chưa thanh toán" 
+                    ? `<span class="badge-unpaid">NỢ</span>` 
+                    : `<span class="badge-paid">ĐÃ TRẢ</span>`;
+
                 return `
                 <tr>
                     <td data-label="Ngày Nhập"><small style="color:#7f8c8d;">${item.Ngay_Gio ? item.Ngay_Gio.split(' ')[0] : 'N/A'}</small></td>
@@ -430,7 +502,10 @@
                     <td data-label="Loại"><span style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:11px;">${item.Loai_Hang ? item.Loai_Hang.split('(')[0] : '-'}</span></td>
                     <td data-label="ĐVT/SL" style="text-align:center;"><b>${item.So_Luong}</b> ${item.DVT || ''}</td>
                     <td data-label="Đơn giá" style="text-align:right;">${(item.Don_Gia || 0).toLocaleString()}đ</td>
-                    <td data-label="Thành tiền" style="text-align:right;"><b style="color:#c0392b;">${(item.Thanh_Tien || 0).toLocaleString()}đ</b></td>
+                    <td data-label="Thành tiền" style="text-align:right;">
+                        <b style="color:#c0392b; display:block; margin-bottom: 2px;">${(item.Thanh_Tien || 0).toLocaleString()}đ</b>
+                        ${badgeThanhToan}
+                    </td>
                     <td data-label="Thao tác" style="text-align:center; min-width: 100px;">
                         <button onclick='editRecord(${JSON.stringify(item).replace(/'/g, "&#39;")})' class="btn-edit">SỬA</button>
                         <button onclick="deleteRecord(${item.id})" class="btn-del">XÓA</button>
@@ -438,7 +513,6 @@
                 </tr>`;
             }).join('');
 
-            // Mặc định mở tab đầu tiên hoặc khi đang search
             const showClass = (isSearching || Object.keys(groups).indexOf(ncc) === 0) ? 'show' : '';
 
             container.innerHTML += `
@@ -477,6 +551,7 @@
         document.getElementById('f-thanhtien').value = Number(item.Thanh_Tien || 0).toLocaleString('vi-VN');
         document.getElementById('f-ncc').value = item.Nha_Cung_Cap || "";
         document.getElementById('f-loaihang').value = item.Loai_Hang || "Khác";
+        document.getElementById('f-thanhtoan').value = item.Thanh_Toan || "Đã thanh toán";
         document.getElementById('f-ghichu').value = item.Ghi_Chu || "";
         
         const btn = document.getElementById('btn-save');
@@ -487,11 +562,19 @@
     }
 
     window.deleteRecord = async function(id) {
-        const r = await Swal.fire({ title: 'Xóa phiếu nhập?', text: 'Dữ liệu chỉ xóa trong lịch sử, không tự động trừ lại vào Kho.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA NGAY' });
+        const r = await Swal.fire({ title: 'Xóa phiếu nhập?', text: 'Dữ liệu sẽ bị xóa và số lượng kho sẽ được hoàn trả lại.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA NGAY' });
         if (r.isConfirmed) {
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-            await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_NhapHang?id=eq.${id}`, { method: 'DELETE', headers: h });
-            Swal.fire({ icon: 'success', title: 'Đã xóa!', timer: 1000, showConfirmButton: false });
+            
+            // Xử lý trừ kho trước khi xóa
+            const oldLog = masterData.find(x => String(x.id) === String(id));
+            if (oldLog) {
+                Swal.fire({ title: 'Đang hoàn trả kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                await revertInventory(oldLog);
+            }
+
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NHAP_HANG}?id=eq.${id}`, { method: 'DELETE', headers: h });
+            Swal.fire({ icon: 'success', title: 'Đã xóa & hoàn kho!', timer: 1500, showConfirmButton: false });
             loadData();
         }
     }
@@ -507,9 +590,10 @@
         document.getElementById('f-dongia').value = "0";
         document.getElementById('f-thanhtien').value = "0";
         document.getElementById('f-ncc').value = "";
+        document.getElementById('f-thanhtoan').value = "Đã thanh toán";
         document.getElementById('f-ghichu').value = "";
         const btn = document.getElementById('btn-save');
-        btn.innerHTML = "📥 XÁC NHẬN NHẬP HÀNG";
+        btn.innerHTML = "📥 XÁC NHẬN NHẬP";
         btn.style.background = "var(--accent)";
     }
 
