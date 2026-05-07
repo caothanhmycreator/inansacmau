@@ -68,6 +68,7 @@
         
         .search-area { width: 100%; flex-direction: column; align-items: stretch !important; }
         #searchFilter { max-width: 100% !important; }
+        #thanhToanFilter { max-width: 100% !important; width: 100% !important; }
 
         .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; box-sizing: border-box; }
         .table-modern thead { display: none; }
@@ -160,7 +161,7 @@
           <input type="text" id="f-ghichu" class="input-modern" placeholder="Lô hàng bị lỗi, nợ tiền,...">
         </div>
         <div class="input-group" style="align-items: flex-end;">
-          <button id="btn-save" class="btn-submit" onclick="submitImport()">📥 XÁC NHẬN NHẬP</button>
+          <button id="btn-save" class="btn-submit" onclick="submitImport()">📥 XÁC NHẬN NHẬP HÀNG</button>
         </div>
       </div>
     </div>
@@ -169,7 +170,12 @@
       <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
         <h3 style="margin:0;">📋 LỊCH SỬ TẤT CẢ LƯỢT NHẬP HÀNG</h3>
         <div class="search-area" style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; align-items: center;">
-          <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Tìm kiếm trực tiếp..." style="max-width: 350px; flex: 1;" onkeyup="filterDisplayList()">
+          <select id="thanhToanFilter" class="input-modern" style="width: 150px; cursor: pointer; color: #2c3e50; font-weight: bold;" onchange="filterDisplayList()">
+            <option value="">Tất cả TT</option>
+            <option value="Đã thanh toán">Đã trả</option>
+            <option value="Chưa thanh toán">Nợ</option>
+          </select>
+          <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Tìm kiếm trực tiếp..." style="max-width: 250px; flex: 1;" onkeyup="filterDisplayList()">
           <button onclick="loadData()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold; white-space: nowrap;">🔄 Tải lại bảng</button>
         </div>
       </div>
@@ -203,8 +209,9 @@
     
     let masterData = [];     
     let dsSanPham = [];      
+    let dsKhoVatTu = [];     
     let isEditingMode = false; 
-    let currentNccFilter = ""; // Biến lưu trạng thái của bộ lọc NCC
+    let currentNccFilter = ""; 
 
     document.addEventListener("DOMContentLoaded", () => {
       const now = new Date();
@@ -229,18 +236,31 @@
         document.getElementById('f-thanhtien').value = (sl * dongia).toLocaleString('vi-VN');
     }
 
-    // Hàm chuyển định dạng YYYY-MM-DD HH:mm:ss sang HH:mm DD/MM/YYYY
+    // HIỂN THỊ NGÀY THÁNG ĐÚNG CHUẨN VIỆT NAM (HH:mm DD/MM/YYYY)
     function formatToVietnameseTime(dateString) {
         if (!dateString) return 'N/A';
-        const parts = dateString.split(' ');
-        if (parts.length === 2 && parts[0].includes('-')) {
-            const dateParts = parts[0].split('-'); 
-            const timeParts = parts[1].split(':'); 
-            if (dateParts.length === 3 && timeParts.length >= 2) {
-                return `${timeParts[0]}:${timeParts[1]} ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+        try {
+            // Xử lý chuẩn ISO của Supabase
+            if (dateString.includes('T')) {
+                const d = new Date(dateString);
+                if (!isNaN(d.getTime())) {
+                    const pad = (n) => n.toString().padStart(2, '0');
+                    return `${pad(d.getHours())}:${pad(d.getMinutes())} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+                }
             }
+            // Xử lý chuẩn tự lưu cũ
+            const parts = dateString.split(' ');
+            if (parts.length >= 2 && parts[0].includes('-')) {
+                const dateParts = parts[0].split('-'); 
+                const timeParts = parts[1].split(':'); 
+                if (dateParts.length === 3 && timeParts.length >= 2) {
+                    return `${timeParts[0]}:${timeParts[1]} ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                }
+            }
+            return dateString; 
+        } catch(e) {
+            return dateString;
         }
-        return dateString; 
     }
 
     async function loadData() {
@@ -248,6 +268,9 @@
       try {
         const resSP = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*`, { headers: h });
         if(resSP.ok) dsSanPham = await resSP.json();
+
+        const resKho = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?select=*`, { headers: h });
+        if(resKho.ok) dsKhoVatTu = await resKho.json();
 
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NHAP_HANG}?select=*`, { headers: h });
         if (!res.ok) {
@@ -264,11 +287,9 @@
             return idB - idA; 
         });
         
-        // Cập nhật Datalist Form
         const nccSet = new Set(masterData.map(i => (i.Nha_Cung_Cap || "KHÁCH VÃNG LAI").trim()));
         document.getElementById('nccList').innerHTML = [...nccSet].map(ncc => `<option value="${ncc}">`).join('');
 
-        // Tự động tạo bộ nút bấm Lọc theo Nhà Cung Cấp
         renderNccButtons([...nccSet]);
 
         filterDisplayList(); 
@@ -278,14 +299,10 @@
       }
     }
 
-    // ==========================================
-    // RENDER NÚT LỌC ĐỘNG NHÀ CUNG CẤP
-    // ==========================================
     function renderNccButtons(nccList) {
         const container = document.getElementById('ncc-filter-container');
         let html = `<button class="ncc-btn ${currentNccFilter === '' ? 'active' : ''}" onclick="setNccFilter('')">Tất Cả</button>`;
         
-        // Sắp xếp tên NCC theo ABC để dễ nhìn
         nccList.sort().forEach(ncc => {
             if(ncc) {
                 html += `<button class="ncc-btn ${currentNccFilter === ncc ? 'active' : ''}" onclick="setNccFilter('${ncc.replace(/'/g, "\\'")}')">${ncc}</button>`;
@@ -296,14 +313,13 @@
 
     window.setNccFilter = function(ncc) {
         currentNccFilter = ncc;
-        // Cập nhật giao diện nút bấm active
         const nccSet = new Set(masterData.map(i => (i.Nha_Cung_Cap || "KHÁCH VÃNG LAI").trim()));
         renderNccButtons([...nccSet]);
         filterDisplayList();
     }
 
     // ==========================================
-    // AUTOCOMPLETE THÔNG MINH TỪ BẢNG GIÁ
+    // AUTOCOMPLETE THÔNG MINH TỪ KHO VẬT TƯ
     // ==========================================
     function handleSearch(val) {
         if(isEditingMode) return; 
@@ -311,9 +327,9 @@
         const box = document.getElementById('suggestions');
         const keyword = (val || "").toLowerCase().trim();
         
-        let filtered = dsSanPham;
+        let filtered = dsKhoVatTu;
         if (keyword) {
-            filtered = dsSanPham.filter(item => 
+            filtered = dsKhoVatTu.filter(item => 
                 (item.Ten_Hang && item.Ten_Hang.toLowerCase().includes(keyword)) || 
                 (item.Ma_QR && item.Ma_QR.toLowerCase().includes(keyword))
             );
@@ -344,12 +360,14 @@
                 imgTag = `<div style="width:45px; height:45px; background:#f0f0f0; border-radius:4px; margin-right:12px; display:flex; align-items:center; justify-content:center; font-size:12px; color:#aaa;">🖼️</div>`;
             }
 
+            let dvt = item.Quy_Cach || item.DVT || '';
+            
             return `
-            <div class="suggestion-item" onclick="selectItem('${item.Ma_QR || ''}', '${item.Ten_Hang.replace(/'/g, "\\'")}', '${item.Nhom_Hang || ''}', '${item.Don_Vi_Tinh || ''}', ${item.Gia_Von || 0})">
+            <div class="suggestion-item" onclick="selectItem('${item.Ma_QR || ''}', '${item.Ten_Hang.replace(/'/g, "\\'")}', '${item.Nhom_Hang || ''}', '${dvt}', 0)">
                 ${imgTag}
                 <div style="display:flex; flex-direction:column;">
                     <span><b style="color:#2c3e50;">${item.Ten_Hang}</b></span>
-                    <span style="color:#7f8c8d; font-size:11px;">Mã: ${item.Ma_QR || 'N/A'} | Nhóm: ${item.Nhom_Hang || '-'} | ĐVT: ${item.Don_Vi_Tinh || '-'}</span>
+                    <span style="color:#7f8c8d; font-size:11px;">Mã: ${item.Ma_QR || 'N/A'} | Nhóm: ${item.Nhom_Hang || '-'} | ĐVT: ${dvt || '-'}</span>
                 </div>
             </div>`
         }).join('');
@@ -369,7 +387,7 @@
     function closeSuggestions() { document.getElementById('suggestions').style.display = 'none'; }
 
     // ==========================================
-    // LOGIC HOÀN TRẢ KHO KHI SỬA / XÓA
+    // LOGIC HOÀN TRẢ KHO & XÓA NGUYÊN LIỆU KHI SỬA / XÓA
     // ==========================================
     async function revertInventory(logRecord) {
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
@@ -382,7 +400,12 @@
             maToRevert = spDB.Ghi_Chu; 
         }
 
-        if (loai.includes("Vật tư") || (maToRevert && maToRevert.startsWith("SMK-"))) {
+        if (loai.includes("Nguyên liệu") || (maToRevert && maToRevert.startsWith("NEW-"))) {
+            // Xóa dứt điểm nhật ký nhập bên Nhatky_nguyenlieu để đảm bảo luồng phân lập
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${maToRevert}&Ngay_Gio=eq.${encodeURIComponent(logRecord.Ngay_Gio)}`, { 
+                method: 'DELETE', headers: h 
+            });
+        } else if (loai.includes("Vật tư") || (maToRevert && maToRevert.startsWith("SMK-"))) {
             let res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${maToRevert}`, { headers: h });
             let data = await res.json();
             if (data && data.length > 0) {
@@ -391,20 +414,11 @@
                     method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi }) 
                 });
             }
-        } else if (loai.includes("Nguyên liệu") || (maToRevert && maToRevert.startsWith("NEW-"))) {
-            let res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${maToRevert}`, { headers: h });
-            let data = await res.json();
-            if (data && data.length > 0) {
-                let tonMoi = (parseFloat(data[0].So_Luong) || 0) - slToRevert;
-                await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${data[0].id || data[0].Id}`, { 
-                    method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi }) 
-                });
-            }
         }
     }
 
     // ==========================================
-    // LƯU DỮ LIỆU & PHÂN BỔ VÀO KHO
+    // LƯU DỮ LIỆU ĐỘC LẬP
     // ==========================================
     async function submitImport() {
         const idLog = document.getElementById('f-id').value;
@@ -437,36 +451,63 @@
             }
 
             let finalMaHang = ma;
-            let isDaCongVaoKho = false;
-
-            let spDB = dsSanPham.find(s => (ma && s.Ma_QR === ma) || s.Ten_Hang === ten);
-            let maKhoVatTu = spDB ? spDB.Ghi_Chu : null; 
-
+            let spDB = dsSanPham.find(s => s.Ten_Hang === ten || (ma && s.Ghi_Chu === ma));
+            
             if (spDB) {
                 await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${spDB.Id}`, { 
                     method: 'PATCH', headers: h, body: JSON.stringify({ Gia_Von: dongia }) 
                 });
             }
 
-            if (maKhoVatTu && maKhoVatTu.startsWith("SMK-")) {
-                let resKhoCheck = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${maKhoVatTu}`, { headers: h });
-                let khoData = await resKhoCheck.json();
-                if (khoData.length > 0) {
-                    let tonMoi = (parseFloat(khoData[0].So_Luong) || 0) + sl;
-                    await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${khoData[0].id || khoData[0].Id}`, { 
-                        method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi }) 
-                    });
-                    isDaCongVaoKho = true;
+            // --- PHÂN LUỒNG ĐỘC LẬP TẠI ĐÂY ---
+            if (loaiHang.includes("Nguyên liệu")) {
+                if (!finalMaHang || !finalMaHang.startsWith("NEW-")) {
+                    finalMaHang = "NEW-" + Math.random().toString(36).substr(2, 6).toUpperCase();
                 }
-            }
+                let payloadNL = { 
+                    Ma_Nguyen_Lieu: finalMaHang,
+                    Ten_Nguyen_Lieu: ten,
+                    Ten_Hang: ten,
+                    DVT: dvt, 
+                    So_Luong: sl, 
+                    Ghi_Chu: "Nhập hàng mới",
+                    Ngay_Gio: ngayGio,
+                    Ma_Don: "CHỜ KIỂM",
+                    Khach_Hang: "Hệ thống"
+                };
+                let postRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, { method: 'POST', headers: h, body: JSON.stringify(payloadNL) });
+                if(!postRes.ok) {
+                    let errInfo = await postRes.json();
+                    throw new Error("Lỗi ghi bảng Nguyên Liệu: " + (errInfo.message || JSON.stringify(errInfo)));
+                }
+            } else {
+                let isDaCongVaoKho = false;
+                let maKhoVatTu = null;
+                if (finalMaHang && finalMaHang.startsWith("SMK-")) {
+                    maKhoVatTu = finalMaHang;
+                } else if (spDB && spDB.Ghi_Chu && spDB.Ghi_Chu.startsWith("SMK-")) {
+                    maKhoVatTu = spDB.Ghi_Chu;
+                    finalMaHang = maKhoVatTu; 
+                }
 
-            if (!isDaCongVaoKho) {
-                if (loaiHang.includes("Vật tư")) {
+                if (maKhoVatTu) {
+                    let resKhoCheck = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${maKhoVatTu}`, { headers: h });
+                    let khoData = await resKhoCheck.json();
+                    if (khoData && khoData.length > 0) {
+                        let tonMoi = (parseFloat(khoData[0].So_Luong) || 0) + sl;
+                        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${khoData[0].id || khoData[0].Id}`, { 
+                            method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi }) 
+                        });
+                        isDaCongVaoKho = true;
+                    }
+                }
+
+                if (!isDaCongVaoKho && loaiHang.includes("Vật tư")) {
                     let targetMa = (finalMaHang && finalMaHang.startsWith("SMK-")) ? finalMaHang : null;
                     if (targetMa) {
                         let r = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${targetMa}`, { headers: h });
                         let d = await r.json();
-                        if (d.length > 0) {
+                        if (d && d.length > 0) {
                             await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${d[0].id || d[0].Id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: (parseFloat(d[0].So_Luong)||0) + sl }) });
                             isDaCongVaoKho = true;
                         } else targetMa = null;
@@ -474,21 +515,6 @@
                     if (!targetMa) {
                         finalMaHang = "SMK-" + Math.random().toString(36).substr(2, 6).toUpperCase();
                         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu`, { method: 'POST', headers: h, body: JSON.stringify({ Nhom_Hang: nhom, Ten_Hang: ten, Ma_QR: finalMaHang, Quy_Cach: dvt, So_Luong: sl, Ngay_Nhap: ngayGio }) });
-                    }
-                } 
-                else if (loaiHang.includes("Nguyên liệu")) {
-                    let targetMa = (finalMaHang && finalMaHang.startsWith("NEW-")) ? finalMaHang : null;
-                    if (targetMa) {
-                        let r = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${targetMa}`, { headers: h });
-                        let d = await r.json();
-                        if (d.length > 0) {
-                            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${d[0].id || d[0].Id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: (parseFloat(d[0].So_Luong)||0) + sl }) });
-                            isDaCongVaoKho = true;
-                        } else targetMa = null;
-                    }
-                    if (!targetMa) {
-                        finalMaHang = "NEW-" + Math.random().toString(36).substr(2, 6).toUpperCase();
-                        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, { method: 'POST', headers: h, body: JSON.stringify({ Ten_Nguyen_Lieu: ten, DVT: dvt, So_Luong: sl, Ma_Nguyen_Lieu: finalMaHang, Ngay_Gio: ngayGio }) });
                     }
                 }
             }
@@ -525,10 +551,10 @@
     window.filterDisplayList = function() {
         const query = document.getElementById("searchFilter").value.toLowerCase().trim();
         const monthVal = document.getElementById("monthFilter").value; 
+        const thanhToanVal = document.getElementById("thanhToanFilter").value; 
         
         let filteredData = masterData;
 
-        // Lọc theo Tháng
         if (monthVal) {
             const [y, m] = monthVal.split('-');
             const targetStr1 = `${m}/${y}`; 
@@ -541,12 +567,14 @@
             });
         }
 
-        // Lọc theo Nút chức năng NCC
         if (currentNccFilter !== "") {
             filteredData = filteredData.filter(item => (item.Nha_Cung_Cap || "KHÁCH VÃNG LAI").trim() === currentNccFilter);
         }
 
-        // Lọc theo Text Search
+        if (thanhToanVal !== "") {
+            filteredData = filteredData.filter(item => (item.Thanh_Toan || "Đã thanh toán") === thanhToanVal);
+        }
+
         if (query) {
             filteredData = filteredData.filter(item => {
                 const ten = (item.Ten_Hang || "").toLowerCase();
@@ -556,20 +584,18 @@
             });
         }
         
-        // Tính tổng tiền dựa trên kết quả đã lọc cuối cùng
         const tongTien = filteredData.reduce((acc, curr) => acc + (parseFloat(curr.Thanh_Tien) || 0), 0);
         document.getElementById('tongTienThang').innerText = tongTien.toLocaleString('vi-VN') + " đ";
 
         renderTable(filteredData);
     }
 
-    // HÀM RENDER RA TOÀN BỘ BẢNG TRỰC TIẾP KHÔNG CẦN GROUP
     function renderTable(data) {
         const container = document.getElementById('data-container');
         container.innerHTML = "";
         
         if(data.length === 0) { 
-            container.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#888;">Không có dữ liệu trong khoảng thời gian / bộ lọc này.</td></tr>'; 
+            container.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#888;">Không có dữ liệu phù hợp.</td></tr>'; 
             return; 
         }
 
@@ -579,7 +605,6 @@
                 : `<span class="badge-paid">ĐÃ TRẢ</span>`;
             
             let displayDate = formatToVietnameseTime(item.Ngay_Gio);
-
             let safeItemData = encodeURIComponent(JSON.stringify(item));
 
             return `
@@ -631,7 +656,7 @@
     }
 
     window.deleteRecord = async function(id) {
-        const r = await Swal.fire({ title: 'Xóa phiếu nhập?', text: 'Dữ liệu sẽ bị xóa và số lượng kho sẽ được hoàn trả lại.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA NGAY' });
+        const r = await Swal.fire({ title: 'Xóa phiếu nhập?', text: 'Dữ liệu sẽ bị xóa và sổ kho/nhật ký cũng sẽ được hoàn trả.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA NGAY' });
         if (r.isConfirmed) {
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
             
