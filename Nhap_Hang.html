@@ -35,6 +35,7 @@
 
     .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
 
+    /* Bảng dữ liệu chuẩn */
     .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
     .table-modern th { background: #f1f5f9; color: #64748b; font-size: 12px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; }
     .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
@@ -48,6 +49,12 @@
     /* Badge Trạng thái Thanh Toán */
     .badge-paid { background: #dcfce7; color: #166534; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #bbf7d0; display: inline-block; margin-top: 3px;}
     .badge-unpaid { background: #fee2e2; color: #b91c1c; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #fecaca; display: inline-block; margin-top: 3px;}
+
+    /* CSS Nút lọc NCC */
+    .ncc-filter-container { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+    .ncc-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; border: 1px solid #cbd5e1; background: white; color: #475569; transition: 0.2s; }
+    .ncc-btn:hover { background: #f1f5f9; }
+    .ncc-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
@@ -84,8 +91,12 @@
 
     <div class="summary-box">
       <div>
-        <h3>TỔNG TIỀN ĐANG HIỂN THỊ</h3>
+        <h3>TỔNG TIỀN NHẬP HÀNG</h3>
         <div class="amount" id="tongTienThang">0 đ</div>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="month" id="monthFilter" class="input-modern" style="color: #333;" onchange="filterDisplayList()">
+        <button onclick="viewAllMonths()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap;">XEM TẤT CẢ</button>
       </div>
     </div>
 
@@ -95,7 +106,8 @@
           <label>Tên Sản Phẩm / Vật Tư *</label>
           <input type="text" id="f-ten" class="input-modern" placeholder="Gõ để tìm gợi ý hoặc nhập tên mới..." autocomplete="off" oninput="handleSearch(this.value)" onfocus="handleSearch(this.value)" onblur="setTimeout(()=>closeSuggestions(), 200)">
           <div id="suggestions" class="suggestions-box"></div>
-          <input type="hidden" id="f-id"> </div>
+          <input type="hidden" id="f-id"> 
+        </div>
         <div class="input-group">
           <label>Mã Hàng (Mã QR/SKU)</label>
           <input type="text" id="f-ma" class="input-modern" placeholder="Hệ thống tự tạo nếu trống">
@@ -154,18 +166,21 @@
     </div>
 
     <div class="inventory-card">
-      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
         <h3 style="margin:0;">📋 LỊCH SỬ TẤT CẢ LƯỢT NHẬP HÀNG</h3>
         <div class="search-area" style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; align-items: center;">
           <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Tìm kiếm trực tiếp..." style="max-width: 350px; flex: 1;" onkeyup="filterDisplayList()">
           <button onclick="loadData()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold; white-space: nowrap;">🔄 Tải lại bảng</button>
         </div>
       </div>
+      
+      <div id="ncc-filter-container" class="ncc-filter-container"></div>
+
       <div style="overflow-x: auto;">
         <table class="table-modern">
             <thead>
                 <tr>
-                    <th style="width:120px;">Ngày Nhập</th>
+                    <th style="width:140px;">Ngày Nhập</th>
                     <th>Tên Sản Phẩm</th>
                     <th>Nhà Cung Cấp</th>
                     <th style="width:120px;">Loại Hàng</th>
@@ -189,8 +204,12 @@
     let masterData = [];     
     let dsSanPham = [];      
     let isEditingMode = false; 
+    let currentNccFilter = ""; // Biến lưu trạng thái của bộ lọc NCC
 
     document.addEventListener("DOMContentLoaded", () => {
+      const now = new Date();
+      document.getElementById('monthFilter').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      
       setTimeout(loadData, 500);
       
       document.addEventListener('click', function(e) {
@@ -210,13 +229,26 @@
         document.getElementById('f-thanhtien').value = (sl * dongia).toLocaleString('vi-VN');
     }
 
+    // Hàm chuyển định dạng YYYY-MM-DD HH:mm:ss sang HH:mm DD/MM/YYYY
+    function formatToVietnameseTime(dateString) {
+        if (!dateString) return 'N/A';
+        const parts = dateString.split(' ');
+        if (parts.length === 2 && parts[0].includes('-')) {
+            const dateParts = parts[0].split('-'); 
+            const timeParts = parts[1].split(':'); 
+            if (dateParts.length === 3 && timeParts.length >= 2) {
+                return `${timeParts[0]}:${timeParts[1]} ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+            }
+        }
+        return dateString; 
+    }
+
     async function loadData() {
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
       try {
         const resSP = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*`, { headers: h });
         if(resSP.ok) dsSanPham = await resSP.json();
 
-        // Rút toàn bộ bảng NhatKy_NhapHang
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NHAP_HANG}?select=*`, { headers: h });
         if (!res.ok) {
             const errInfo = await res.json();
@@ -226,21 +258,48 @@
         const resData = await res.json();
         masterData = Array.isArray(resData) ? resData : [];
         
-        // Tự động sắp xếp mới nhất lên đầu dựa vào ID
         masterData.sort((a, b) => {
             const idA = a.id || a.Id || 0;
             const idB = b.id || b.Id || 0;
-            return idB - idA; // Sắp xếp giảm dần
+            return idB - idA; 
         });
         
-        const nccSet = new Set(masterData.map(i => i.Nha_Cung_Cap).filter(n => n));
+        // Cập nhật Datalist Form
+        const nccSet = new Set(masterData.map(i => (i.Nha_Cung_Cap || "KHÁCH VÃNG LAI").trim()));
         document.getElementById('nccList').innerHTML = [...nccSet].map(ncc => `<option value="${ncc}">`).join('');
 
-        filterDisplayList(); // Gọi render luôn
+        // Tự động tạo bộ nút bấm Lọc theo Nhà Cung Cấp
+        renderNccButtons([...nccSet]);
+
+        filterDisplayList(); 
       } catch (e) { 
           console.error("Lỗi tải dữ liệu:", e); 
           document.getElementById('data-container').innerHTML = `<tr><td colspan="8" style="text-align:center; color:#e74c3c; font-weight:bold;">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
       }
+    }
+
+    // ==========================================
+    // RENDER NÚT LỌC ĐỘNG NHÀ CUNG CẤP
+    // ==========================================
+    function renderNccButtons(nccList) {
+        const container = document.getElementById('ncc-filter-container');
+        let html = `<button class="ncc-btn ${currentNccFilter === '' ? 'active' : ''}" onclick="setNccFilter('')">Tất Cả</button>`;
+        
+        // Sắp xếp tên NCC theo ABC để dễ nhìn
+        nccList.sort().forEach(ncc => {
+            if(ncc) {
+                html += `<button class="ncc-btn ${currentNccFilter === ncc ? 'active' : ''}" onclick="setNccFilter('${ncc.replace(/'/g, "\\'")}')">${ncc}</button>`;
+            }
+        });
+        container.innerHTML = html;
+    }
+
+    window.setNccFilter = function(ncc) {
+        currentNccFilter = ncc;
+        // Cập nhật giao diện nút bấm active
+        const nccSet = new Set(masterData.map(i => (i.Nha_Cung_Cap || "KHÁCH VÃNG LAI").trim()));
+        renderNccButtons([...nccSet]);
+        filterDisplayList();
     }
 
     // ==========================================
@@ -368,7 +427,6 @@
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
         
         try {
-            // Định dạng ISO 8601 YYYY-MM-DD an toàn cho Database
             const d = new Date();
             const pad = (n) => n.toString().padStart(2, '0');
             const ngayGio = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
@@ -383,6 +441,12 @@
 
             let spDB = dsSanPham.find(s => (ma && s.Ma_QR === ma) || s.Ten_Hang === ten);
             let maKhoVatTu = spDB ? spDB.Ghi_Chu : null; 
+
+            if (spDB) {
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${spDB.Id}`, { 
+                    method: 'PATCH', headers: h, body: JSON.stringify({ Gia_Von: dongia }) 
+                });
+            }
 
             if (maKhoVatTu && maKhoVatTu.startsWith("SMK-")) {
                 let resKhoCheck = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${maKhoVatTu}`, { headers: h });
@@ -453,12 +517,36 @@
     // ==========================================
     // THAO TÁC BẢNG: LỌC TRỰC TIẾP, SỬA, XÓA
     // ==========================================
+    window.viewAllMonths = function() {
+        document.getElementById('monthFilter').value = "";
+        filterDisplayList();
+    }
+
     window.filterDisplayList = function() {
         const query = document.getElementById("searchFilter").value.toLowerCase().trim();
+        const monthVal = document.getElementById("monthFilter").value; 
         
         let filteredData = masterData;
 
-        // Chỉ tìm kiếm văn bản đơn giản
+        // Lọc theo Tháng
+        if (monthVal) {
+            const [y, m] = monthVal.split('-');
+            const targetStr1 = `${m}/${y}`; 
+            const targetStr2 = `${y}-${m}`; 
+            const targetStr3 = `${parseInt(m)}/${y}`; 
+            
+            filteredData = filteredData.filter(item => {
+                if (!item.Ngay_Gio) return false;
+                return item.Ngay_Gio.includes(targetStr1) || item.Ngay_Gio.includes(targetStr2) || item.Ngay_Gio.includes(targetStr3);
+            });
+        }
+
+        // Lọc theo Nút chức năng NCC
+        if (currentNccFilter !== "") {
+            filteredData = filteredData.filter(item => (item.Nha_Cung_Cap || "KHÁCH VÃNG LAI").trim() === currentNccFilter);
+        }
+
+        // Lọc theo Text Search
         if (query) {
             filteredData = filteredData.filter(item => {
                 const ten = (item.Ten_Hang || "").toLowerCase();
@@ -468,6 +556,7 @@
             });
         }
         
+        // Tính tổng tiền dựa trên kết quả đã lọc cuối cùng
         const tongTien = filteredData.reduce((acc, curr) => acc + (parseFloat(curr.Thanh_Tien) || 0), 0);
         document.getElementById('tongTienThang').innerText = tongTien.toLocaleString('vi-VN') + " đ";
 
@@ -489,15 +578,13 @@
                 ? `<span class="badge-unpaid">NỢ</span>` 
                 : `<span class="badge-paid">ĐÃ TRẢ</span>`;
             
-            // Giữ nguyên hiển thị thô từ CSDL để không bị lỗi date
-            let displayDate = item.Ngay_Gio || 'N/A';
+            let displayDate = formatToVietnameseTime(item.Ngay_Gio);
 
-            // Mã hóa an toàn dữ liệu để truyền qua thẻ nút SỬA
             let safeItemData = encodeURIComponent(JSON.stringify(item));
 
             return `
             <tr>
-                <td data-label="Ngày Nhập"><small style="color:#7f8c8d;">${displayDate}</small></td>
+                <td data-label="Ngày Nhập"><small style="color:#7f8c8d; font-weight:bold;">${displayDate}</small></td>
                 <td data-label="Mã & Tên">
                     <b style="color:#2c3e50;">${item.Ten_Hang}</b><br>
                     <small style="color:var(--accent); font-weight:bold;">${item.Ma_Hang || ''} | ${item.Nhom_Hang || ''}</small>
