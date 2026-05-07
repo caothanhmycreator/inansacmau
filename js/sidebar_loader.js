@@ -91,6 +91,7 @@
                             <a href="Thu_Chi.html" id="Thu_Chi" class="nav-link">💵 Két & Chi</a>
                             <a href="BC_Thu_Chi.html" id="Bao_Cao_Thu_Chi" class="nav-link">📊 Báo cáo thu chi</a>
                             <a href="Cong_No.html" id="Cong_No" class="nav-link">💸 Công nợ</a>
+                            <a href="Nhap_Hang.html" id="Nhap_Hang" target="_parent" class="nav-link">📥 Nhập Hàng</a>
                         </div>
                     </div>
 
