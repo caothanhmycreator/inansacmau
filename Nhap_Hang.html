@@ -23,9 +23,9 @@
     .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; width: 100%; box-sizing: border-box; }
     .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(41, 128, 185, 0.1); }
 
-    /* Gợi ý (Suggestions) */
+    /* Gợi ý (Suggestions) Tương tự Tạo Đơn */
     .suggestions-box { position: absolute; top: calc(100% + 2px); left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; z-index: 1000; max-height: 250px; overflow-y: auto; box-shadow: 0 10px 20px rgba(0,0,0,0.15); display: none; }
-    .suggestion-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f1f1f1; font-size: 13px; display: flex; flex-direction: column; }
+    .suggestion-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f1f1f1; font-size: 13px; display: flex; align-items: center; }
     .suggestion-item:hover { background: #f8fafc; color: var(--accent); border-left: 3px solid var(--accent); }
 
     .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -73,7 +73,7 @@
     <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div>
         <h2 style="margin:0; color: var(--accent);">🚛 QUẢN LÝ NHẬP HÀNG & NCC</h2>
-        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Nhập vật tư, hàng hóa và quản lý đối tác cung cấp</p>
+        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Thiết lập giá vốn và phân loại hàng theo nhà cung cấp</p>
       </div>
     </div>
 
@@ -81,12 +81,13 @@
       <div class="form-grid">
         <div class="input-group" style="grid-column: span 2;">
           <label>Tên Sản Phẩm (Gõ để tìm gợi ý hoặc nhập mới) *</label>
-          <input type="text" id="f-ten" class="input-modern" placeholder="VD: Giấy, mực, phôi thiệp,..." oninput="handleSearch(this.value)" autocomplete="off">
+          <input type="text" id="f-ten" class="input-modern" placeholder="VD: Bạt Hiflex 3zem2..." autocomplete="off" oninput="handleSearch(this.value)" onfocus="handleSearch(this.value)" onblur="setTimeout(()=>closeSuggestions(), 200)">
           <div id="suggestions" class="suggestions-box"></div>
+          <input type="hidden" id="f-id">
         </div>
         <div class="input-group">
           <label>Mã Hàng (Nếu có)</label>
-          <input type="text" id="f-ma" class="input-modern" placeholder="Mã SMP-xxx. Tìm trong bảng giá.">
+          <input type="text" id="f-ma" class="input-modern" placeholder="Mã SKU/QR...">
         </div>
         <div class="input-group">
           <label>Đơn Vị Tính</label>
@@ -95,20 +96,24 @@
         
         <div class="input-group">
           <label>Số Lượng *</label>
-          <input type="number" id="f-sl" class="input-modern" value="1" min="1">
+          <input type="number" id="f-sl" class="input-modern" value="1" min="1" oninput="updateThanhTien()">
+        </div>
+        <div class="input-group">
+          <label>Đơn Giá (VNĐ)</label>
+          <input type="text" id="f-dongia" class="input-modern" value="0" oninput="formatCurrency(this); updateThanhTien()">
         </div>
         <div class="input-group">
           <label>Thành Tiền (VNĐ) *</label>
-          <input type="text" id="f-thanhtien" class="input-modern" value="0" oninput="formatCurrency(this)">
+          <input type="text" id="f-thanhtien" class="input-modern" value="0" readonly style="background:#fff3cd; color:#d35400; font-weight: bold;">
         </div>
-        <div class="input-group" style="grid-column: span 2;">
+        <div class="input-group">
           <label>Nhà Cung Cấp</label>
           <input type="text" id="f-ncc" class="input-modern" placeholder="Tên xưởng/Đại lý...">
         </div>
 
         <div class="input-group" style="grid-column: span 3;">
           <label>Ghi Chú Nhập Hàng</label>
-          <input type="text" id="f-ghichu" class="input-modern" placeholder="">
+          <input type="text" id="f-ghichu" class="input-modern" placeholder="Ví dụ: Lô hàng bị móp góc, nợ tiền...">
         </div>
         <div class="input-group" style="justify-content: flex-end;">
           <button class="btn-submit" onclick="submitImport()">🚀 LƯU NHẬP HÀNG</button>
@@ -135,20 +140,20 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(loadData, 600);
-      
-      // Tắt gợi ý khi click ra ngoài
-      document.addEventListener('click', function(e) {
-        if (e.target.id !== 'f-ten') {
-            document.getElementById('suggestions').style.display = 'none';
-        }
-      });
     });
 
     function formatCurrency(input) {
       let v = input.value.replace(/\D/g, "");
       input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
+    
     function parseNum(s) { return Number(s.toString().replace(/\./g, "")) || 0; }
+    
+    function updateThanhTien() {
+        const sl = parseFloat(document.getElementById('f-sl').value) || 0;
+        const dongia = parseNum(document.getElementById('f-dongia').value);
+        document.getElementById('f-thanhtien').value = (sl * dongia).toLocaleString('vi-VN');
+    }
 
     async function loadData() {
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
@@ -159,52 +164,78 @@
       } catch (e) { console.error(e); }
     }
 
-    // XỬ LÝ GỢI Ý (AUTOCOMPLETE THÔNG MINH - KHÔNG KHÓA)
+    // XỬ LÝ GỢI Ý ĐÚNG LOGIC CỦA TAO_DON
     function handleSearch(val) {
         const box = document.getElementById('suggestions');
-        if (!val || val.trim().length < 1) { 
-            box.style.display = 'none'; 
-            return; 
-        }
+        const keyword = (val || "").toLowerCase().trim();
         
-        const query = val.toLowerCase().trim();
-        const filtered = masterData.filter(item => 
-            (item.Ten_Hang && item.Ten_Hang.toLowerCase().includes(query)) || 
-            (item.Ma_QR && item.Ma_QR.toLowerCase().includes(query))
-        ).slice(0, 15);
+        let filtered = masterData;
+        if (keyword) {
+            filtered = masterData.filter(item => 
+                (item.Ten_Hang && item.Ten_Hang.toLowerCase().includes(keyword)) || 
+                (item.Ma_QR && item.Ma_QR.toLowerCase().includes(keyword))
+            );
+        }
+        filtered = filtered.slice(0, 50);
 
-        if (filtered.length === 0) { 
+        if (filtered.length === 0 || !keyword) { 
             box.style.display = 'none'; 
             return; 
         }
 
         box.innerHTML = filtered.map(item => {
-            // Lấy ảnh thumbnail nếu có
-            let thumb = `<div style="width:35px; height:35px; background:#eee; border-radius:4px; display:inline-block; margin-right:10px;"></div>`;
-            if (item.Hinh_Anh && item.Hinh_Anh.includes('drive.google.com')) {
-                const fileId = item.Hinh_Anh.match(/[-\w]{25,}/);
-                if(fileId) thumb = `<img src="https://drive.google.com/thumbnail?id=${fileId[0]}&sz=w100" style="width:35px; height:35px; object-fit:cover; border-radius:4px; margin-right:10px; border:1px solid #ddd;">`;
+            let imgTag = '';
+            let rawImg = item.Hinh_Anh;
+            let hasImg = rawImg && String(rawImg).trim() !== "" && String(rawImg) !== "null" && String(rawImg) !== "undefined";
+            
+            if (hasImg) {
+                let finalImgUrl = rawImg;
+                let fullImgUrl = rawImg;
+                
+                let fileId = "";
+                if (rawImg.includes("drive.google.com")) {
+                    let matchD = rawImg.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                    let matchId = rawImg.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                    fileId = (matchD && matchD[1]) || (matchId && matchId[1]);
+                }
+
+                if (fileId) {
+                    finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+                    fullImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+                }
+
+                imgTag = `<img src="${finalImgUrl}" onclick="event.stopPropagation(); showFullImage('${fullImgUrl}', '${item.Ten_Hang.replace(/'/g, "\\'")}')" style="width:45px; height:45px; object-fit:cover; border-radius:4px; margin-right:12px; flex-shrink:0; border: 1px solid #eee; cursor: zoom-in;">`;
+            } else {
+                imgTag = `<div style="width:45px; height:45px; background:#f0f0f0; border-radius:4px; margin-right:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:#aaa; border: 1px solid #eee;">🖼️</div>`;
             }
 
             return `
-            <div class="suggestion-item" onclick="selectItem('${item.Ma_QR || ''}', '${item.Ten_Hang.replace(/'/g, "\\'")}', '${item.Don_Vi_Tinh || ''}', '${item.Nha_Cung_Cap || ''}')">
-                <div style="display:flex; align-items:center;">
-                    ${thumb}
-                    <div style="display:flex; flex-direction:column;">
-                        <span><b style="color:#2c3e50;">${item.Ten_Hang}</b></span>
-                        <span style="color:#7f8c8d; font-size:11px;">Mã: ${item.Ma_QR || 'N/A'} | ĐVT: ${item.Don_Vi_Tinh || '-'} | NCC: ${item.Nha_Cung_Cap || 'Chưa có'}</span>
-                    </div>
+            <div class="suggestion-item" onclick="selectItem('${item.Ma_QR || ''}', '${item.Ten_Hang.replace(/'/g, "\\'")}', '${item.Don_Vi_Tinh || ''}', '${item.Nha_Cung_Cap || ''}', ${item.Gia_Von || 0}, ${item.Id || ''})">
+                ${imgTag}
+                <div style="display:flex; flex-direction:column;">
+                    <span><b style="color:#2c3e50;">${item.Ten_Hang}</b></span>
+                    <span style="color:#7f8c8d; font-size:11px;">Mã: ${item.Ma_QR || 'N/A'} | ĐVT: ${item.Don_Vi_Tinh || '-'} | Vốn: ${(item.Gia_Von || 0).toLocaleString()}đ | NCC: ${item.Nha_Cung_Cap || 'Chưa có'}</span>
                 </div>
             </div>
         `}).join('');
         box.style.display = 'block';
     }
 
-    function selectItem(ma, ten, dvt, ncc) {
+    function selectItem(ma, ten, dvt, ncc, giavon, id) {
+        document.getElementById('f-id').value = id;
         document.getElementById('f-ma').value = ma;
         document.getElementById('f-ten').value = ten;
         document.getElementById('f-dvt').value = dvt;
         document.getElementById('f-ncc').value = ncc;
+        
+        // Tự động điền giá vốn vào ô Đơn giá
+        document.getElementById('f-dongia').value = Number(giavon).toLocaleString('vi-VN');
+        updateThanhTien(); // Cập nhật lại thành tiền ngay lập tức
+        
+        document.getElementById('suggestions').style.display = 'none';
+    }
+
+    function closeSuggestions() {
         document.getElementById('suggestions').style.display = 'none';
     }
 
@@ -214,9 +245,12 @@
         const ten = document.getElementById('f-ten').value.trim();
         const dvt = document.getElementById('f-dvt').value.trim();
         const sl = parseFloat(document.getElementById('f-sl').value) || 0;
+        const dongia = parseNum(document.getElementById('f-dongia').value);
         const tien = parseNum(document.getElementById('f-thanhtien').value);
         const ncc = document.getElementById('f-ncc').value.trim() || "CHƯA XÁC ĐỊNH";
         const gc = document.getElementById('f-ghichu').value.trim();
+        
+        // Lấy thời gian thực
         const ngayGio = window.formatDateTimeVN();
 
         if (!ten) return Swal.fire('Lỗi', 'Vui lòng nhập Tên hàng hóa!', 'warning');
@@ -226,25 +260,27 @@
         try {
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
-            // 1. Lưu vào sổ NhatKy_NhapHang
+            // 1. Lưu vào sổ NhatKy_NhapHang (Đã có thêm Đơn_Giá và Ngay_Gio tự động)
             const payloadNhap = {
                 Ngay_Gio: ngayGio,
                 Ma_Hang: ma,
                 Ten_Hang: ten,
                 Don_Vi_Tinh: dvt,
                 So_Luong: sl,
+                Don_Gia: dongia, // Ghi đè vào cột Don_Gia (Sếp nhớ tạo cột này trên Database nhé)
                 Thanh_Tien: tien,
                 Nha_Cung_Cap: ncc,
                 Ghi_Chu: gc
             };
+            
             await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_NhapHang`, {
                 method: 'POST', headers: h, body: JSON.stringify(payloadNhap)
             });
 
-            // 2. Cập nhật Nhà Cung Cấp bên Bảng Giá để phân Group đúng (nếu có mã hàng)
+            // 2. Cập nhật Nhà Cung Cấp và Giá Vốn bên Bảng Giá để phân Group đúng
             if (ma) {
                 await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Ma_QR=eq.${ma}`, {
-                    method: 'PATCH', headers: h, body: JSON.stringify({ Nha_Cung_Cap: ncc })
+                    method: 'PATCH', headers: h, body: JSON.stringify({ Nha_Cung_Cap: ncc, Gia_Von: dongia })
                 });
             }
 
@@ -255,11 +291,12 @@
             document.getElementById('f-ten').value = "";
             document.getElementById('f-dvt').value = "";
             document.getElementById('f-sl').value = "1";
+            document.getElementById('f-dongia').value = "0";
             document.getElementById('f-thanhtien').value = "0";
             document.getElementById('f-ncc').value = "";
             document.getElementById('f-ghichu').value = "";
             
-            loadData(); // Tải lại bảng để update group NCC
+            loadData(); // Tải lại bảng ngay lập tức để update group NCC
         } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
@@ -315,7 +352,7 @@
                         <small style="color:var(--accent); font-weight:bold;">Mã: ${item.Ma_QR || 'N/A'}</small>
                     </td>
                     <td data-label="ĐVT">${item.Don_Vi_Tinh || '-'}</td>
-                    <td data-label="Giá Vốn">
+                    <td data-label="Giá Vốn Mẫu">
                         <b style="color:#c0392b;">${(item.Gia_Von || 0).toLocaleString()} đ</b>
                     </td>
                     <td data-label="Thao tác" style="text-align:center;">
@@ -352,7 +389,7 @@
     window.quickSelect = function(id) {
         const item = masterData.find(i => String(i.Id) === String(id));
         if(item) {
-            selectItem(item.Ma_QR || '', item.Ten_Hang || '', item.Don_Vi_Tinh || '', item.Nha_Cung_Cap || '');
+            selectItem(item.Ma_QR || '', item.Ten_Hang || '', item.Don_Vi_Tinh || '', item.Nha_Cung_Cap || '', item.Gia_Von || 0, item.Id || '');
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
