@@ -8,6 +8,7 @@ window.APP_MODULES = [
   { id: "Tao_Don",              label: "Tạo đơn hàng",       icon: "🧾", file: "Tao_Don.html",      group: "Kinh doanh" },
   { id: "Sua_Phieu_Dat_Hang",   label: "Sửa phiếu đặt hàng",     icon: "📋", file: "Sua_Don.html",      group: "Kinh doanh" },
   { id: "Bang_Gia_San_Pham",    label: "Bảng giá sản phẩm",      icon: "🏷️", file: "Bang_Gia.html",     group: "Kinh doanh" },
+  { id: "Gia_Von",    label: "Giá Vốn",      icon: "🏷️", file: "Gia_Von.html",     group: "Kinh doanh" },
   { id: "Cong_No",              label: "Công nợ khách hàng",     icon: "💸", file: "Cong_No.html",      group: "Kinh doanh" },
 
   // --- NHÓM THIẾT KẾ & SẢN XUẤT ---
