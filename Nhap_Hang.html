@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nhập Hàng & Nhà Cung Cấp - Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+  <script src="js/sidebar_loader.js"></script> 
+  <style>
+    :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; --accent: #2980b9; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
+
+    /* Form Card Nhập nhanh */
+    .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+    .input-group { display: flex; flex-direction: column; position: relative; }
+    .input-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
+    .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; }
+    .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(41, 128, 185, 0.1); }
+
+    /* Gợi ý (Suggestions) */
+    .suggestions-box { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 0 0 8px 8px; z-index: 1000; max-height: 200px; overflow-y: auto; box-shadow: 0 10px 20px rgba(0,0,0,0.1); display: none; }
+    .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f1f1f1; font-size: 13px; }
+    .suggestion-item:hover { background: #f8fafc; color: var(--accent); }
+
+    .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    
+    /* Group theo Nhà cung cấp */
+    .group-header { background: #f0f7ff; padding: 15px 20px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px; transition: 0.2s; border-left: 5px solid var(--accent); align-items: center; }
+    .group-header:hover { background: #e2f0ff; color: var(--accent); }
+    .group-content { display: none; margin-top: 5px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; padding: 5px; }
+    .group-content.show { display: block; }
+
+    .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+    .table-modern th { background: #f1f5f9; color: #64748b; font-size: 12px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; }
+    .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    
+    .price-badge { background: #f1f5f9; color: #475569; padding: 5px 10px; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 13px; }
+    .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; cursor: zoom-in; }
+
+    .btn-submit { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; width: 100%; margin-top: 10px; }
+    .btn-submit:hover { background: #1f618d; transform: translateY(-2px); }
+
+    .edit-input { padding: 6px; border: 1px solid #ddd; border-radius: 4px; width: 100px; text-align: right; font-weight: bold; }
+
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: var(--accent); color: white; padding: 8px 12px; border: none; border-radius: 4px; }
+        .form-grid { grid-template-columns: 1fr; }
+        .table-modern thead { display: none; }
+        .table-modern tr { display: block; margin-bottom: 10px; border: 1px solid #eee; border-radius: 8px; padding: 10px; }
+        .table-modern td { display: flex; justify-content: space-between; padding: 8px 0; border: none; }
+        .table-modern td:before { content: attr(data-label); font-weight: bold; color: #64748b; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-content">
+    <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div>
+        <h2 style="margin:0; color: var(--accent);">🚛 QUẢN LÝ NHẬP HÀNG & NCC</h2>
+        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Thiết lập giá vốn và phân loại hàng theo nhà cung cấp</p>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="input-group">
+          <label>Mã / Tên Sản Phẩm (Gợi ý)</label>
+          <input type="text" id="f-keyword" class="input-modern" placeholder="Tra cứu từ bảng giá..." oninput="handleSearch(this.value)">
+          <div id="suggestions" class="suggestions-box"></div>
+          <input type="hidden" id="f-id">
+        </div>
+        <div class="input-group">
+          <label>Nhà Cung Cấp</label>
+          <input type="text" id="f-ncc" class="input-modern" placeholder="Tên xưởng/Đơn vị cung cấp...">
+        </div>
+        <div class="input-group">
+          <label>Giá Vốn Nhập (VNĐ)</label>
+          <input type="text" id="f-giavon" class="input-modern" value="0" oninput="formatCurrency(this)">
+        </div>
+        <div class="input-group" style="justify-content: flex-end;">
+          <button class="btn-submit" onclick="submitUpdate()">🚀 CẬP NHẬT THÔNG TIN</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="inventory-card">
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin:0;">📦 DANH MỤC HÀNG THEO NHÀ CUNG CẤP</h3>
+        <button onclick="loadData()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">🔄 Tải lại</button>
+      </div>
+      <div id="data-container">
+        <p style="text-align:center; padding:20px; color:#888;">🔍 Đang nạp dữ liệu...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let masterData = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(loadData, 600);
+    });
+
+    function formatCurrency(input) {
+      let v = input.value.replace(/\D/g, "");
+      input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+    function parseNum(s) { return Number(s.toString().replace(/\./g, "")) || 0; }
+
+    async function loadData() {
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*&order=Nha_Cung_Cap.asc`, { headers: h });
+        masterData = await res.json();
+        renderTable(masterData);
+      } catch (e) { console.error(e); }
+    }
+
+    // XỬ LÝ GỢI Ý (AUTOCOMPLETE)
+    function handleSearch(val) {
+        const box = document.getElementById('suggestions');
+        if (!val || val.length < 1) { box.style.display = 'none'; return; }
+        
+        const filtered = masterData.filter(item => 
+            (item.Ten_Hang && item.Ten_Hang.toLowerCase().includes(val.toLowerCase())) || 
+            (item.Ma_QR && item.Ma_QR.toLowerCase().includes(val.toLowerCase()))
+        ).slice(0, 10);
+
+        if (filtered.length === 0) { box.style.display = 'none'; return; }
+
+        box.innerHTML = filtered.map(item => `
+            <div class="suggestion-item" onclick="selectItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                <b>${item.Ma_QR}</b> - ${item.Ten_Hang} 
+                <br><small style="color:gray;">NCC hiện tại: ${item.Nha_Cung_Cap || 'Chưa có'}</small>
+            </div>
+        `).join('');
+        box.style.display = 'block';
+    }
+
+    function selectItem(item) {
+        document.getElementById('f-id').value = item.Id;
+        document.getElementById('f-keyword').value = `${item.Ma_QR} - ${item.Ten_Hang}`;
+        document.getElementById('f-ncc').value = item.Nha_Cung_Cap || "";
+        document.getElementById('f-giavon').value = (item.Gia_Von || 0).toLocaleString('vi-VN');
+        document.getElementById('suggestions').style.display = 'none';
+    }
+
+    async function submitUpdate() {
+        const id = document.getElementById('f-id').value;
+        const ncc = document.getElementById('f-ncc').value.trim();
+        const giavon = parseNum(document.getElementById('f-giavon').value);
+
+        if (!id) return Swal.fire('Lỗi', 'Vui lòng chọn sản phẩm từ danh sách gợi ý!', 'warning');
+
+        Swal.fire({ title: 'Đang lưu...', didOpen: () => Swal.showLoading() });
+        try {
+            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${id}`, {
+                method: 'PATCH', headers: h,
+                body: JSON.stringify({ Nha_Cung_Cap: ncc, Gia_Von: giavon })
+            });
+            Swal.fire({ icon: 'success', title: 'Đã cập nhật nguồn hàng!', timer: 1500, showConfirmButton: false });
+            
+            // Reset form
+            document.getElementById('f-id').value = "";
+            document.getElementById('f-keyword').value = "";
+            document.getElementById('f-ncc').value = "";
+            document.getElementById('f-giavon').value = "0";
+            
+            loadData();
+        } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
+    }
+
+    function renderTable(data) {
+        const container = document.getElementById('data-container');
+        container.innerHTML = "";
+        
+        const groups = {};
+        data.forEach(item => {
+            let ncc = (item.Nha_Cung_Cap || "CHƯA CÓ NHÀ CUNG CẤP").toUpperCase();
+            if (!groups[ncc]) groups[ncc] = [];
+            groups[ncc].push(item);
+        });
+
+        for (let ncc in groups) {
+            let rows = groups[ncc].map(item => {
+                let img = item.Hinh_Anh ? item.Hinh_Anh.replace('/view', '') : '';
+                if (img.includes('drive.google.com')) {
+                    const fileId = img.match(/[-\w]{25,}/);
+                    img = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+                }
+                
+                return `
+                <tr>
+                    <td data-label="Ảnh" style="text-align:center;">
+                        ${img ? `<img src="${img}" class="img-preview" onclick="showFullImage('${img}', '${item.Ten_Hang}')">` : '---'}
+                    </td>
+                    <td data-label="Sản phẩm">
+                        <b style="color:#2c3e50;">${item.Ten_Hang}</b><br>
+                        <small style="color:var(--accent); font-weight:bold;">Mã: ${item.Ma_QR}</small>
+                    </td>
+                    <td data-label="ĐVT">${item.Don_Vi_Tinh || '-'}</td>
+                    <td data-label="Giá Nhập">
+                        <b style="color:#c0392b;">${(item.Gia_Von || 0).toLocaleString()}đ</b>
+                    </td>
+                    <td data-label="Thao tác" style="text-align:center;">
+                        <button onclick="quickSelect(${item.Id})" style="background:none; border:1px solid #ddd; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:11px;">✍️ SỬA</button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            container.innerHTML += `
+                <div class="group-header" onclick="this.nextElementSibling.classList.toggle('show')">
+                    <span>🏠 NCC: ${ncc} <small style="color:#666; font-weight:normal;">(${groups[ncc].length} món)</small></span>
+                    <span>▼</span>
+                </div>
+                <div class="group-content">
+                    <table class="table-modern">
+                        <thead>
+                            <tr>
+                                <th style="width:70px; text-align:center;">Ảnh</th>
+                                <th>Sản phẩm</th>
+                                <th style="width:80px;">ĐVT</th>
+                                <th style="width:120px;">Giá Vốn</th>
+                                <th style="width:100px; text-align:center;">Sửa</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>`;
+        }
+    }
+
+    window.quickSelect = function(id) {
+        const item = masterData.find(i => i.Id === id);
+        if(item) selectItem(item);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.showFullImage = function(url, title) {
+        Swal.fire({ title: title, imageUrl: url, imageWidth: 500, showConfirmButton: false });
+    }
+  </script>
+</body>
+</html>
