@@ -17,16 +17,16 @@
 
     /* Form Card Nhập nhanh */
     .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+    .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
     .input-group { display: flex; flex-direction: column; position: relative; }
     .input-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
-    .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; }
+    .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; width: 100%; box-sizing: border-box; }
     .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(41, 128, 185, 0.1); }
 
     /* Gợi ý (Suggestions) */
-    .suggestions-box { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 0 0 8px 8px; z-index: 1000; max-height: 200px; overflow-y: auto; box-shadow: 0 10px 20px rgba(0,0,0,0.1); display: none; }
-    .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f1f1f1; font-size: 13px; }
-    .suggestion-item:hover { background: #f8fafc; color: var(--accent); }
+    .suggestions-box { position: absolute; top: calc(100% + 2px); left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; z-index: 1000; max-height: 250px; overflow-y: auto; box-shadow: 0 10px 20px rgba(0,0,0,0.15); display: none; }
+    .suggestion-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f1f1f1; font-size: 13px; display: flex; flex-direction: column; }
+    .suggestion-item:hover { background: #f8fafc; color: var(--accent); border-left: 3px solid var(--accent); }
 
     .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     
@@ -43,22 +43,28 @@
     .price-badge { background: #f1f5f9; color: #475569; padding: 5px 10px; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 13px; }
     .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; cursor: zoom-in; }
 
-    .btn-submit { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; width: 100%; margin-top: 10px; }
-    .btn-submit:hover { background: #1f618d; transform: translateY(-2px); }
-
-    .edit-input { padding: 6px; border: 1px solid #ddd; border-radius: 4px; width: 100px; text-align: right; font-weight: bold; }
+    .btn-submit { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; height: 100%; width: 100%; box-sizing: border-box; font-size: 15px; }
+    .btn-submit:hover { background: #1f618d; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(41, 128, 185, 0.2); }
 
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
         .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
         body.sidebar-open #sidebar-frame { left: 0; }
         .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: var(--accent); color: white; padding: 8px 12px; border: none; border-radius: 4px; }
-        .form-grid { grid-template-columns: 1fr; }
+        
+        .form-grid { grid-template-columns: 1fr !important; }
+        .input-group { grid-column: span 1 !important; }
+        
+        .header-top { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+        .search-area { width: 100%; flex-direction: column; align-items: stretch !important; }
+        #searchFilter { max-width: 100% !important; }
+
         .table-modern thead { display: none; }
         .table-modern tr { display: block; margin-bottom: 10px; border: 1px solid #eee; border-radius: 8px; padding: 10px; }
-        .table-modern td { display: flex; justify-content: space-between; padding: 8px 0; border: none; }
-        .table-modern td:before { content: attr(data-label); font-weight: bold; color: #64748b; }
+        .table-modern td { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border: none; }
+        .table-modern td:before { content: attr(data-label); font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; }
     }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
@@ -67,36 +73,56 @@
     <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div>
         <h2 style="margin:0; color: var(--accent);">🚛 QUẢN LÝ NHẬP HÀNG & NCC</h2>
-        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Thiết lập giá vốn và phân loại hàng theo nhà cung cấp</p>
+        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Nhập vật tư, hàng hóa và quản lý đối tác cung cấp</p>
       </div>
     </div>
 
     <div class="form-card">
       <div class="form-grid">
-        <div class="input-group">
-          <label>Mã / Tên Sản Phẩm (Gợi ý)</label>
-          <input type="text" id="f-keyword" class="input-modern" placeholder="Tra cứu từ bảng giá..." oninput="handleSearch(this.value)">
+        <div class="input-group" style="grid-column: span 2;">
+          <label>Tên Sản Phẩm (Gõ để tìm gợi ý hoặc nhập mới) *</label>
+          <input type="text" id="f-ten" class="input-modern" placeholder="VD: Giấy, mực, phôi thiệp,..." oninput="handleSearch(this.value)" autocomplete="off">
           <div id="suggestions" class="suggestions-box"></div>
-          <input type="hidden" id="f-id">
         </div>
         <div class="input-group">
+          <label>Mã Hàng (Nếu có)</label>
+          <input type="text" id="f-ma" class="input-modern" placeholder="Mã SMP-xxx. Tìm trong bảng giá.">
+        </div>
+        <div class="input-group">
+          <label>Đơn Vị Tính</label>
+          <input type="text" id="f-dvt" class="input-modern" placeholder="Cuộn, m2, cái...">
+        </div>
+        
+        <div class="input-group">
+          <label>Số Lượng *</label>
+          <input type="number" id="f-sl" class="input-modern" value="1" min="1">
+        </div>
+        <div class="input-group">
+          <label>Thành Tiền (VNĐ) *</label>
+          <input type="text" id="f-thanhtien" class="input-modern" value="0" oninput="formatCurrency(this)">
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
           <label>Nhà Cung Cấp</label>
-          <input type="text" id="f-ncc" class="input-modern" placeholder="Tên xưởng/Đơn vị cung cấp...">
+          <input type="text" id="f-ncc" class="input-modern" placeholder="Tên xưởng/Đại lý...">
         </div>
-        <div class="input-group">
-          <label>Giá Vốn Nhập (VNĐ)</label>
-          <input type="text" id="f-giavon" class="input-modern" value="0" oninput="formatCurrency(this)">
+
+        <div class="input-group" style="grid-column: span 3;">
+          <label>Ghi Chú Nhập Hàng</label>
+          <input type="text" id="f-ghichu" class="input-modern" placeholder="">
         </div>
         <div class="input-group" style="justify-content: flex-end;">
-          <button class="btn-submit" onclick="submitUpdate()">🚀 CẬP NHẬT THÔNG TIN</button>
+          <button class="btn-submit" onclick="submitImport()">🚀 LƯU NHẬP HÀNG</button>
         </div>
       </div>
     </div>
 
     <div class="inventory-card">
-      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
         <h3 style="margin:0;">📦 DANH MỤC HÀNG THEO NHÀ CUNG CẤP</h3>
-        <button onclick="loadData()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">🔄 Tải lại</button>
+        <div class="search-area" style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; align-items: center;">
+          <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Lọc tên hàng, mã, nhà cung cấp..." style="max-width: 350px; flex: 1;" onkeyup="filterDisplayList()">
+          <button onclick="loadData()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold; white-space: nowrap;">🔄 Tải lại</button>
+        </div>
       </div>
       <div id="data-container">
         <p style="text-align:center; padding:20px; color:#888;">🔍 Đang nạp dữ liệu...</p>
@@ -109,6 +135,13 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(loadData, 600);
+      
+      // Tắt gợi ý khi click ra ngoài
+      document.addEventListener('click', function(e) {
+        if (e.target.id !== 'f-ten') {
+            document.getElementById('suggestions').style.display = 'none';
+        }
+      });
     });
 
     function formatCurrency(input) {
@@ -126,65 +159,132 @@
       } catch (e) { console.error(e); }
     }
 
-    // XỬ LÝ GỢI Ý (AUTOCOMPLETE)
+    // XỬ LÝ GỢI Ý (AUTOCOMPLETE THÔNG MINH - KHÔNG KHÓA)
     function handleSearch(val) {
         const box = document.getElementById('suggestions');
-        if (!val || val.length < 1) { box.style.display = 'none'; return; }
+        if (!val || val.trim().length < 1) { 
+            box.style.display = 'none'; 
+            return; 
+        }
         
+        const query = val.toLowerCase().trim();
         const filtered = masterData.filter(item => 
-            (item.Ten_Hang && item.Ten_Hang.toLowerCase().includes(val.toLowerCase())) || 
-            (item.Ma_QR && item.Ma_QR.toLowerCase().includes(val.toLowerCase()))
-        ).slice(0, 10);
+            (item.Ten_Hang && item.Ten_Hang.toLowerCase().includes(query)) || 
+            (item.Ma_QR && item.Ma_QR.toLowerCase().includes(query))
+        ).slice(0, 15);
 
-        if (filtered.length === 0) { box.style.display = 'none'; return; }
+        if (filtered.length === 0) { 
+            box.style.display = 'none'; 
+            return; 
+        }
 
-        box.innerHTML = filtered.map(item => `
-            <div class="suggestion-item" onclick="selectItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
-                <b>${item.Ma_QR}</b> - ${item.Ten_Hang} 
-                <br><small style="color:gray;">NCC hiện tại: ${item.Nha_Cung_Cap || 'Chưa có'}</small>
+        box.innerHTML = filtered.map(item => {
+            // Lấy ảnh thumbnail nếu có
+            let thumb = `<div style="width:35px; height:35px; background:#eee; border-radius:4px; display:inline-block; margin-right:10px;"></div>`;
+            if (item.Hinh_Anh && item.Hinh_Anh.includes('drive.google.com')) {
+                const fileId = item.Hinh_Anh.match(/[-\w]{25,}/);
+                if(fileId) thumb = `<img src="https://drive.google.com/thumbnail?id=${fileId[0]}&sz=w100" style="width:35px; height:35px; object-fit:cover; border-radius:4px; margin-right:10px; border:1px solid #ddd;">`;
+            }
+
+            return `
+            <div class="suggestion-item" onclick="selectItem('${item.Ma_QR || ''}', '${item.Ten_Hang.replace(/'/g, "\\'")}', '${item.Don_Vi_Tinh || ''}', '${item.Nha_Cung_Cap || ''}')">
+                <div style="display:flex; align-items:center;">
+                    ${thumb}
+                    <div style="display:flex; flex-direction:column;">
+                        <span><b style="color:#2c3e50;">${item.Ten_Hang}</b></span>
+                        <span style="color:#7f8c8d; font-size:11px;">Mã: ${item.Ma_QR || 'N/A'} | ĐVT: ${item.Don_Vi_Tinh || '-'} | NCC: ${item.Nha_Cung_Cap || 'Chưa có'}</span>
+                    </div>
+                </div>
             </div>
-        `).join('');
+        `}).join('');
         box.style.display = 'block';
     }
 
-    function selectItem(item) {
-        document.getElementById('f-id').value = item.Id;
-        document.getElementById('f-keyword').value = `${item.Ma_QR} - ${item.Ten_Hang}`;
-        document.getElementById('f-ncc').value = item.Nha_Cung_Cap || "";
-        document.getElementById('f-giavon').value = (item.Gia_Von || 0).toLocaleString('vi-VN');
+    function selectItem(ma, ten, dvt, ncc) {
+        document.getElementById('f-ma').value = ma;
+        document.getElementById('f-ten').value = ten;
+        document.getElementById('f-dvt').value = dvt;
+        document.getElementById('f-ncc').value = ncc;
         document.getElementById('suggestions').style.display = 'none';
     }
 
-    async function submitUpdate() {
-        const id = document.getElementById('f-id').value;
-        const ncc = document.getElementById('f-ncc').value.trim();
-        const giavon = parseNum(document.getElementById('f-giavon').value);
+    // GHI NHẬN LOG NHẬP HÀNG & CẬP NHẬT NHÀ CUNG CẤP
+    async function submitImport() {
+        const ma = document.getElementById('f-ma').value.trim();
+        const ten = document.getElementById('f-ten').value.trim();
+        const dvt = document.getElementById('f-dvt').value.trim();
+        const sl = parseFloat(document.getElementById('f-sl').value) || 0;
+        const tien = parseNum(document.getElementById('f-thanhtien').value);
+        const ncc = document.getElementById('f-ncc').value.trim() || "CHƯA XÁC ĐỊNH";
+        const gc = document.getElementById('f-ghichu').value.trim();
+        const ngayGio = window.formatDateTimeVN();
 
-        if (!id) return Swal.fire('Lỗi', 'Vui lòng chọn sản phẩm từ danh sách gợi ý!', 'warning');
+        if (!ten) return Swal.fire('Lỗi', 'Vui lòng nhập Tên hàng hóa!', 'warning');
+        if (sl <= 0) return Swal.fire('Lỗi', 'Số lượng phải lớn hơn 0!', 'warning');
 
-        Swal.fire({ title: 'Đang lưu...', didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'Đang lưu vào sổ sách...', didOpen: () => Swal.showLoading() });
         try {
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
-            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${id}`, {
-                method: 'PATCH', headers: h,
-                body: JSON.stringify({ Nha_Cung_Cap: ncc, Gia_Von: giavon })
+
+            // 1. Lưu vào sổ NhatKy_NhapHang
+            const payloadNhap = {
+                Ngay_Gio: ngayGio,
+                Ma_Hang: ma,
+                Ten_Hang: ten,
+                Don_Vi_Tinh: dvt,
+                So_Luong: sl,
+                Thanh_Tien: tien,
+                Nha_Cung_Cap: ncc,
+                Ghi_Chu: gc
+            };
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_NhapHang`, {
+                method: 'POST', headers: h, body: JSON.stringify(payloadNhap)
             });
-            Swal.fire({ icon: 'success', title: 'Đã cập nhật nguồn hàng!', timer: 1500, showConfirmButton: false });
+
+            // 2. Cập nhật Nhà Cung Cấp bên Bảng Giá để phân Group đúng (nếu có mã hàng)
+            if (ma) {
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Ma_QR=eq.${ma}`, {
+                    method: 'PATCH', headers: h, body: JSON.stringify({ Nha_Cung_Cap: ncc })
+                });
+            }
+
+            Swal.fire({ icon: 'success', title: 'Đã nhập hàng thành công!', timer: 1500, showConfirmButton: false });
             
             // Reset form
-            document.getElementById('f-id').value = "";
-            document.getElementById('f-keyword').value = "";
+            document.getElementById('f-ma').value = "";
+            document.getElementById('f-ten').value = "";
+            document.getElementById('f-dvt').value = "";
+            document.getElementById('f-sl').value = "1";
+            document.getElementById('f-thanhtien').value = "0";
             document.getElementById('f-ncc').value = "";
-            document.getElementById('f-giavon').value = "0";
+            document.getElementById('f-ghichu').value = "";
             
-            loadData();
+            loadData(); // Tải lại bảng để update group NCC
         } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
 
-    function renderTable(data) {
+    // TÍNH NĂNG TÌM KIẾM BẢNG BÊN DƯỚI
+    window.filterDisplayList = function() {
+        const query = document.getElementById("searchFilter").value.toLowerCase().trim();
+        const filteredData = masterData.filter(item => {
+            const ten = (item.Ten_Hang || "").toLowerCase();
+            const ma = (item.Ma_QR || "").toLowerCase();
+            const ncc = (item.Nha_Cung_Cap || "").toLowerCase();
+            return ten.includes(query) || ma.includes(query) || ncc.includes(query);
+        });
+        renderTable(filteredData, query.length > 0);
+    }
+
+    // HIỂN THỊ DANH SÁCH NCC TỪ BẢNG GIÁ
+    function renderTable(data, isSearching = false) {
         const container = document.getElementById('data-container');
         container.innerHTML = "";
         
+        if(data.length === 0) { 
+            container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Không tìm thấy dữ liệu phù hợp.</p>'; 
+            return; 
+        }
+
         const groups = {};
         data.forEach(item => {
             let ncc = (item.Nha_Cung_Cap || "CHƯA CÓ NHÀ CUNG CẤP").toUpperCase();
@@ -195,44 +295,51 @@
         for (let ncc in groups) {
             let rows = groups[ncc].map(item => {
                 let img = item.Hinh_Anh ? item.Hinh_Anh.replace('/view', '') : '';
+                let thumbDisplay = '<span style="color:#ccc">N/A</span>';
                 if (img.includes('drive.google.com')) {
                     const fileId = img.match(/[-\w]{25,}/);
-                    img = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+                    if(fileId) {
+                        const finalThumb = `https://drive.google.com/thumbnail?id=${fileId[0]}&sz=w200`;
+                        const largeImg = `https://drive.google.com/thumbnail?id=${fileId[0]}&sz=w500`;
+                        thumbDisplay = `<img src="${finalThumb}" class="img-preview" onclick="showFullImage('${largeImg}', '${item.Ten_Hang.replace(/'/g, "\\'")}')">`;
+                    }
+                } else if (img) {
+                    thumbDisplay = `<img src="${img}" class="img-preview" onclick="showFullImage('${img}', '${item.Ten_Hang.replace(/'/g, "\\'")}')">`;
                 }
                 
                 return `
                 <tr>
-                    <td data-label="Ảnh" style="text-align:center;">
-                        ${img ? `<img src="${img}" class="img-preview" onclick="showFullImage('${img}', '${item.Ten_Hang}')">` : '---'}
-                    </td>
+                    <td data-label="Ảnh" style="text-align:center;">${thumbDisplay}</td>
                     <td data-label="Sản phẩm">
                         <b style="color:#2c3e50;">${item.Ten_Hang}</b><br>
-                        <small style="color:var(--accent); font-weight:bold;">Mã: ${item.Ma_QR}</small>
+                        <small style="color:var(--accent); font-weight:bold;">Mã: ${item.Ma_QR || 'N/A'}</small>
                     </td>
                     <td data-label="ĐVT">${item.Don_Vi_Tinh || '-'}</td>
-                    <td data-label="Giá Nhập">
-                        <b style="color:#c0392b;">${(item.Gia_Von || 0).toLocaleString()}đ</b>
+                    <td data-label="Giá Vốn">
+                        <b style="color:#c0392b;">${(item.Gia_Von || 0).toLocaleString()} đ</b>
                     </td>
                     <td data-label="Thao tác" style="text-align:center;">
-                        <button onclick="quickSelect(${item.Id})" style="background:none; border:1px solid #ddd; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:11px;">✍️ SỬA</button>
+                        <button onclick="quickSelect('${item.Id}')" style="background:none; border:1px solid #ddd; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:11px; font-weight:bold; color:#2c3e50;">✍️ CHỌN NHẬP</button>
                     </td>
                 </tr>`;
             }).join('');
+
+            const showClass = isSearching ? 'show' : '';
 
             container.innerHTML += `
                 <div class="group-header" onclick="this.nextElementSibling.classList.toggle('show')">
                     <span>🏠 NCC: ${ncc} <small style="color:#666; font-weight:normal;">(${groups[ncc].length} món)</small></span>
                     <span>▼</span>
                 </div>
-                <div class="group-content">
+                <div class="group-content ${showClass}">
                     <table class="table-modern">
                         <thead>
                             <tr>
                                 <th style="width:70px; text-align:center;">Ảnh</th>
                                 <th>Sản phẩm</th>
                                 <th style="width:80px;">ĐVT</th>
-                                <th style="width:120px;">Giá Vốn</th>
-                                <th style="width:100px; text-align:center;">Sửa</th>
+                                <th style="width:120px;">Giá Vốn Mẫu</th>
+                                <th style="width:100px; text-align:center;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>${rows}</tbody>
@@ -241,12 +348,16 @@
         }
     }
 
+    // Tính năng cuộn lên và điền nhanh
     window.quickSelect = function(id) {
-        const item = masterData.find(i => i.Id === id);
-        if(item) selectItem(item);
+        const item = masterData.find(i => String(i.Id) === String(id));
+        if(item) {
+            selectItem(item.Ma_QR || '', item.Ten_Hang || '', item.Don_Vi_Tinh || '', item.Nha_Cung_Cap || '');
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // Tính năng xem ảnh lớn mượn từ Giá Vốn
     window.showFullImage = function(url, title) {
         Swal.fire({ title: title, imageUrl: url, imageWidth: 500, showConfirmButton: false });
     }
