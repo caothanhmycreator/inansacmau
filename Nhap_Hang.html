@@ -34,25 +34,20 @@
     .suggestion-item:hover { background: #f8fafc; color: var(--accent); border-left: 3px solid var(--accent); }
 
     .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    
-    /* Group Accordion */
-    .group-header { background: #f0f7ff; padding: 15px 20px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px; transition: 0.2s; border-left: 5px solid var(--accent); align-items: center; }
-    .group-header:hover { background: #e2f0ff; color: var(--accent); }
-    .group-content { display: none; margin-top: 5px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; padding: 5px; }
-    .group-content.show { display: block; }
 
     .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
     .table-modern th { background: #f1f5f9; color: #64748b; font-size: 12px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; }
     .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .table-modern tr:hover { background: #f8fafc; }
     
     .btn-submit { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; height: 100%; width: 100%; box-sizing: border-box; font-size: 14px; }
     .btn-submit:hover { background: #1f618d; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(41, 128, 185, 0.2); }
-    .btn-edit { background: #f39c12; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; margin-right: 5px; }
-    .btn-del { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+    .btn-edit { background: none; color: #2980b9; border: none; cursor: pointer; font-weight: bold; padding: 5px; font-size: 13px; }
+    .btn-del { background: none; color: #e74c3c; border: none; cursor: pointer; font-weight: bold; padding: 5px; font-size: 13px; }
 
     /* Badge Trạng thái Thanh Toán */
-    .badge-paid { background: #dcfce7; color: #166534; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #bbf7d0; }
-    .badge-unpaid { background: #fee2e2; color: #b91c1c; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #fecaca; }
+    .badge-paid { background: #dcfce7; color: #166534; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #bbf7d0; display: inline-block; margin-top: 3px;}
+    .badge-unpaid { background: #fee2e2; color: #b91c1c; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #fecaca; display: inline-block; margin-top: 3px;}
 
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
@@ -67,10 +62,12 @@
         .search-area { width: 100%; flex-direction: column; align-items: stretch !important; }
         #searchFilter { max-width: 100% !important; }
 
+        .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; box-sizing: border-box; }
         .table-modern thead { display: none; }
-        .table-modern tr { display: block; margin-bottom: 10px; border: 1px solid #eee; border-radius: 8px; padding: 10px; }
-        .table-modern td { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border: none; }
-        .table-modern td:before { content: attr(data-label); font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; }
+        
+        .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .table-modern td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: space-between; }
+        .table-modern td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
     }
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
@@ -87,11 +84,8 @@
 
     <div class="summary-box">
       <div>
-        <h3>TỔNG TIỀN NHẬP HÀNG TRONG THÁNG</h3>
+        <h3>TỔNG TIỀN ĐANG HIỂN THỊ</h3>
         <div class="amount" id="tongTienThang">0 đ</div>
-      </div>
-      <div>
-        <input type="month" id="monthFilter" class="input-modern" style="color: #333;" onchange="filterDisplayList()">
       </div>
     </div>
 
@@ -161,30 +155,42 @@
 
     <div class="inventory-card">
       <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-        <h3 style="margin:0;">📋 LỊCH SỬ NHẬP HÀNG THEO ĐỐI TÁC</h3>
+        <h3 style="margin:0;">📋 LỊCH SỬ TẤT CẢ LƯỢT NHẬP HÀNG</h3>
         <div class="search-area" style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; align-items: center;">
-          <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Lọc tên hàng, mã, nhà cung cấp..." style="max-width: 350px; flex: 1;" onkeyup="filterDisplayList()">
+          <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Tìm kiếm trực tiếp..." style="max-width: 350px; flex: 1;" onkeyup="filterDisplayList()">
           <button onclick="loadData()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold; white-space: nowrap;">🔄 Tải lại bảng</button>
         </div>
       </div>
-      <div id="data-container">
-        <p style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu...</p>
+      <div style="overflow-x: auto;">
+        <table class="table-modern">
+            <thead>
+                <tr>
+                    <th style="width:120px;">Ngày Nhập</th>
+                    <th>Tên Sản Phẩm</th>
+                    <th>Nhà Cung Cấp</th>
+                    <th style="width:120px;">Loại Hàng</th>
+                    <th style="width:80px; text-align:center;">SL/ĐVT</th>
+                    <th style="width:100px; text-align:right;">Đơn Giá</th>
+                    <th style="width:120px; text-align:right;">Thành Tiền</th>
+                    <th style="width:100px; text-align:center;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="data-container">
+                <tr><td colspan="8" style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu toàn bảng...</td></tr>
+            </tbody>
+        </table>
       </div>
     </div>
   </div>
 
   <script>
-    // Đã đổi lại tên bảng cho chuẩn xác theo CSDL của sếp
     const TABLE_NHAP_HANG = "NhatKy_NhapHang";
     
-    let masterData = [];     // Lưu NhatKy_NhapHang
-    let dsSanPham = [];      // Lưu Bang_Gia_San_Pham
-    let isEditingMode = false; // Trạng thái sửa log
+    let masterData = [];     
+    let dsSanPham = [];      
+    let isEditingMode = false; 
 
     document.addEventListener("DOMContentLoaded", () => {
-      const now = new Date();
-      document.getElementById('monthFilter').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      
       setTimeout(loadData, 500);
       
       document.addEventListener('click', function(e) {
@@ -207,23 +213,34 @@
     async function loadData() {
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
       try {
-        // Tải dữ liệu Bảng Giá
         const resSP = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*`, { headers: h });
-        dsSanPham = await resSP.json();
+        if(resSP.ok) dsSanPham = await resSP.json();
 
-        // Tải dữ liệu Nhật Ký Nhập Hàng
-        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NHAP_HANG}?select=*&order=id.desc`, { headers: h });
+        // Rút toàn bộ bảng NhatKy_NhapHang
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NHAP_HANG}?select=*`, { headers: h });
+        if (!res.ok) {
+            const errInfo = await res.json();
+            throw new Error(errInfo.message || "Tên bảng không tồn tại");
+        }
+        
         const resData = await res.json();
+        masterData = Array.isArray(resData) ? resData : [];
         
-        if(resData.error) throw new Error(resData.error.message);
-        masterData = resData;
+        // Tự động sắp xếp mới nhất lên đầu dựa vào ID
+        masterData.sort((a, b) => {
+            const idA = a.id || a.Id || 0;
+            const idB = b.id || b.Id || 0;
+            return idB - idA; // Sắp xếp giảm dần
+        });
         
-        // Tự động trích xuất các Nhà Cung Cấp đưa vào Datalist
         const nccSet = new Set(masterData.map(i => i.Nha_Cung_Cap).filter(n => n));
         document.getElementById('nccList').innerHTML = [...nccSet].map(ncc => `<option value="${ncc}">`).join('');
 
-        filterDisplayList(); // Chạy bộ lọc tháng và render luôn
-      } catch (e) { console.error("Lỗi tải dữ liệu:", e); }
+        filterDisplayList(); // Gọi render luôn
+      } catch (e) { 
+          console.error("Lỗi tải dữ liệu:", e); 
+          document.getElementById('data-container').innerHTML = `<tr><td colspan="8" style="text-align:center; color:#e74c3c; font-weight:bold;">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
+      }
     }
 
     // ==========================================
@@ -301,7 +318,6 @@
         let loai = logRecord.Loai_Hang || "";
         let slToRevert = parseFloat(logRecord.So_Luong) || 0;
 
-        // Nếu mã lưu trong sổ là SMP-xxx, truy ngược ra mã SMK-xxx gốc từ Bảng Giá
         let spDB = dsSanPham.find(s => s.Ma_QR === maToRevert || s.Ten_Hang === logRecord.Ten_Hang);
         if (spDB && spDB.Ghi_Chu && spDB.Ghi_Chu.startsWith("SMK-")) {
             maToRevert = spDB.Ghi_Chu; 
@@ -312,7 +328,7 @@
             let data = await res.json();
             if (data && data.length > 0) {
                 let tonMoi = (parseFloat(data[0].So_Luong) || 0) - slToRevert;
-                await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${data[0].id}`, { 
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${data[0].id || data[0].Id}`, { 
                     method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi }) 
                 });
             }
@@ -321,7 +337,7 @@
             let data = await res.json();
             if (data && data.length > 0) {
                 let tonMoi = (parseFloat(data[0].So_Luong) || 0) - slToRevert;
-                await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${data[0].id}`, { 
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${data[0].id || data[0].Id}`, { 
                     method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi }) 
                 });
             }
@@ -352,18 +368,19 @@
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
         
         try {
-            const ngayGio = window.formatDateTimeVN();
+            // Định dạng ISO 8601 YYYY-MM-DD an toàn cho Database
+            const d = new Date();
+            const pad = (n) => n.toString().padStart(2, '0');
+            const ngayGio = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
             
-            // Nếu là Sửa -> Hoàn trả lại tồn kho cũ trước khi tính toán mới
             if (isEditingMode && idLog) {
-                const oldLog = masterData.find(x => String(x.id) === String(idLog));
+                const oldLog = masterData.find(x => String(x.id || x.Id) === String(idLog));
                 if (oldLog) await revertInventory(oldLog);
             }
 
             let finalMaHang = ma;
             let isDaCongVaoKho = false;
 
-            // Kịch bản A: Liên kết kho từ Bảng Giá
             let spDB = dsSanPham.find(s => (ma && s.Ma_QR === ma) || s.Ten_Hang === ten);
             let maKhoVatTu = spDB ? spDB.Ghi_Chu : null; 
 
@@ -372,14 +389,13 @@
                 let khoData = await resKhoCheck.json();
                 if (khoData.length > 0) {
                     let tonMoi = (parseFloat(khoData[0].So_Luong) || 0) + sl;
-                    await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${khoData[0].id}`, { 
+                    await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${khoData[0].id || khoData[0].Id}`, { 
                         method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonMoi }) 
                     });
                     isDaCongVaoKho = true;
                 }
             }
 
-            // Kịch bản B: Tự động tạo kho hoặc dồn kho nếu mã đã được tạo tự động trước đó
             if (!isDaCongVaoKho) {
                 if (loaiHang.includes("Vật tư")) {
                     let targetMa = (finalMaHang && finalMaHang.startsWith("SMK-")) ? finalMaHang : null;
@@ -387,7 +403,7 @@
                         let r = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${targetMa}`, { headers: h });
                         let d = await r.json();
                         if (d.length > 0) {
-                            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${d[0].id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: (parseFloat(d[0].So_Luong)||0) + sl }) });
+                            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${d[0].id || d[0].Id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: (parseFloat(d[0].So_Luong)||0) + sl }) });
                             isDaCongVaoKho = true;
                         } else targetMa = null;
                     }
@@ -402,7 +418,7 @@
                         let r = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${targetMa}`, { headers: h });
                         let d = await r.json();
                         if (d.length > 0) {
-                            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${d[0].id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: (parseFloat(d[0].So_Luong)||0) + sl }) });
+                            await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${d[0].id || d[0].Id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: (parseFloat(d[0].So_Luong)||0) + sl }) });
                             isDaCongVaoKho = true;
                         } else targetMa = null;
                     }
@@ -413,11 +429,14 @@
                 }
             }
 
-            // Ghi vào Nhật Ký Nhập Hàng
-            const payloadNhap = {
-                Ngay_Gio: ngayGio, Ten_Hang: ten, Ma_Hang: finalMaHang, Nhom_Hang: nhom, DVT: dvt, 
+            let payloadNhap = {
+                Ten_Hang: ten, Ma_Hang: finalMaHang, Nhom_Hang: nhom, DVT: dvt, 
                 So_Luong: sl, Don_Gia: dongia, Thanh_Tien: tien, Nha_Cung_Cap: ncc, Loai_Hang: loaiHang, Ghi_Chu: gc, Thanh_Toan: thanhToan
             };
+
+            if (!isEditingMode) {
+                payloadNhap.Ngay_Gio = ngayGio;
+            }
 
             if (isEditingMode && idLog) {
                 await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NHAP_HANG}?id=eq.${idLog}`, { method: 'PATCH', headers: h, body: JSON.stringify(payloadNhap) });
@@ -432,32 +451,14 @@
     }
 
     // ==========================================
-    // THAO TÁC BẢNG: LỌC, SỬA, XÓA
+    // THAO TÁC BẢNG: LỌC TRỰC TIẾP, SỬA, XÓA
     // ==========================================
     window.filterDisplayList = function() {
         const query = document.getElementById("searchFilter").value.toLowerCase().trim();
-        const monthVal = document.getElementById("monthFilter").value; 
         
         let filteredData = masterData;
 
-        // Lọc theo Tháng
-        if (monthVal) {
-            const [y, m] = monthVal.split('-');
-            const targetStr = `${m}/${y}`;
-            const targetStr2 = `${y}-${m}`;
-            
-            filteredData = filteredData.filter(item => {
-                if (!item.Ngay_Gio) return false;
-                return item.Ngay_Gio.includes(targetStr) || item.Ngay_Gio.includes(targetStr2);
-            });
-            
-            const tongTien = filteredData.reduce((acc, curr) => acc + (parseFloat(curr.Thanh_Tien) || 0), 0);
-            document.getElementById('tongTienThang').innerText = tongTien.toLocaleString('vi-VN') + " đ";
-        } else {
-            document.getElementById('tongTienThang').innerText = "0 đ";
-        }
-
-        // Lọc theo Text
+        // Chỉ tìm kiếm văn bản đơn giản
         if (query) {
             filteredData = filteredData.filter(item => {
                 const ten = (item.Ten_Hang || "").toLowerCase();
@@ -467,81 +468,62 @@
             });
         }
         
-        renderTable(filteredData, query.length > 0);
+        const tongTien = filteredData.reduce((acc, curr) => acc + (parseFloat(curr.Thanh_Tien) || 0), 0);
+        document.getElementById('tongTienThang').innerText = tongTien.toLocaleString('vi-VN') + " đ";
+
+        renderTable(filteredData);
     }
 
-    function renderTable(data, isSearching = false) {
+    // HÀM RENDER RA TOÀN BỘ BẢNG TRỰC TIẾP KHÔNG CẦN GROUP
+    function renderTable(data) {
         const container = document.getElementById('data-container');
         container.innerHTML = "";
         
         if(data.length === 0) { 
-            container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Không có dữ liệu trong khoảng thời gian / bộ lọc này.</p>'; 
+            container.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#888;">Không có dữ liệu trong khoảng thời gian / bộ lọc này.</td></tr>'; 
             return; 
         }
 
-        const groups = {};
-        data.forEach(item => {
-            let ncc = (item.Nha_Cung_Cap || "KHÁCH VÃNG LAI").toUpperCase();
-            if (!groups[ncc]) groups[ncc] = [];
-            groups[ncc].push(item);
-        });
+        const rows = data.map(item => {
+            let badgeThanhToan = item.Thanh_Toan === "Chưa thanh toán" 
+                ? `<span class="badge-unpaid">NỢ</span>` 
+                : `<span class="badge-paid">ĐÃ TRẢ</span>`;
+            
+            // Giữ nguyên hiển thị thô từ CSDL để không bị lỗi date
+            let displayDate = item.Ngay_Gio || 'N/A';
 
-        for (let ncc in groups) {
-            let rows = groups[ncc].map(item => {
-                let badgeThanhToan = item.Thanh_Toan === "Chưa thanh toán" 
-                    ? `<span class="badge-unpaid">NỢ</span>` 
-                    : `<span class="badge-paid">ĐÃ TRẢ</span>`;
+            // Mã hóa an toàn dữ liệu để truyền qua thẻ nút SỬA
+            let safeItemData = encodeURIComponent(JSON.stringify(item));
 
-                return `
-                <tr>
-                    <td data-label="Ngày Nhập"><small style="color:#7f8c8d;">${item.Ngay_Gio ? item.Ngay_Gio.split(' ')[0] : 'N/A'}</small></td>
-                    <td data-label="Mã & Tên">
-                        <b style="color:#2c3e50;">${item.Ten_Hang}</b><br>
-                        <small style="color:var(--accent); font-weight:bold;">${item.Ma_Hang || ''} | ${item.Nhom_Hang || ''}</small>
-                    </td>
-                    <td data-label="Loại"><span style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:11px;">${item.Loai_Hang ? item.Loai_Hang.split('(')[0] : '-'}</span></td>
-                    <td data-label="ĐVT/SL" style="text-align:center;"><b>${item.So_Luong}</b> ${item.DVT || ''}</td>
-                    <td data-label="Đơn giá" style="text-align:right;">${(item.Don_Gia || 0).toLocaleString()}đ</td>
-                    <td data-label="Thành tiền" style="text-align:right;">
-                        <b style="color:#c0392b; display:block; margin-bottom: 2px;">${(item.Thanh_Tien || 0).toLocaleString()}đ</b>
-                        ${badgeThanhToan}
-                    </td>
-                    <td data-label="Thao tác" style="text-align:center; min-width: 100px;">
-                        <button onclick='editRecord(${JSON.stringify(item).replace(/'/g, "&#39;")})' class="btn-edit">SỬA</button>
-                        <button onclick="deleteRecord(${item.id})" class="btn-del">XÓA</button>
-                    </td>
-                </tr>`;
-            }).join('');
+            return `
+            <tr>
+                <td data-label="Ngày Nhập"><small style="color:#7f8c8d;">${displayDate}</small></td>
+                <td data-label="Mã & Tên">
+                    <b style="color:#2c3e50;">${item.Ten_Hang}</b><br>
+                    <small style="color:var(--accent); font-weight:bold;">${item.Ma_Hang || ''} | ${item.Nhom_Hang || ''}</small>
+                </td>
+                <td data-label="Nhà Cung Cấp"><b>${item.Nha_Cung_Cap || 'KHÁCH VÃNG LAI'}</b></td>
+                <td data-label="Loại"><span style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:11px;">${item.Loai_Hang ? item.Loai_Hang.split('(')[0] : '-'}</span></td>
+                <td data-label="ĐVT/SL" style="text-align:center;"><b>${item.So_Luong}</b> ${item.DVT || ''}</td>
+                <td data-label="Đơn giá" style="text-align:right;">${(item.Don_Gia || 0).toLocaleString()}đ</td>
+                <td data-label="Thành tiền" style="text-align:right;">
+                    <b style="color:#c0392b; display:block; margin-bottom: 2px;">${(item.Thanh_Tien || 0).toLocaleString()}đ</b>
+                    ${badgeThanhToan}
+                </td>
+                <td data-label="Thao tác" style="text-align:center; min-width: 100px;">
+                    <button onclick="editRecord('${safeItemData}')" class="btn-edit">SỬA</button> |
+                    <button onclick="deleteRecord(${item.id || item.Id})" class="btn-del">XÓA</button>
+                </td>
+            </tr>`;
+        }).join('');
 
-            const showClass = (isSearching || Object.keys(groups).indexOf(ncc) === 0) ? 'show' : '';
-
-            container.innerHTML += `
-                <div class="group-header" onclick="this.nextElementSibling.classList.toggle('show')">
-                    <span>🏢 NCC: ${ncc} <small style="color:#666; font-weight:normal;">(${groups[ncc].length} lượt nhập)</small></span>
-                    <span>▼</span>
-                </div>
-                <div class="group-content ${showClass}">
-                    <table class="table-modern">
-                        <thead>
-                            <tr>
-                                <th style="width:100px;">Ngày Nhập</th>
-                                <th>Tên Sản Phẩm</th>
-                                <th style="width:120px;">Loại Hàng</th>
-                                <th style="width:80px; text-align:center;">SL/ĐVT</th>
-                                <th style="width:100px; text-align:right;">Đơn Giá</th>
-                                <th style="width:120px; text-align:right;">Thành Tiền</th>
-                                <th style="width:120px; text-align:center;">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>`;
-        }
+        container.innerHTML = rows;
     }
 
-    window.editRecord = function(item) {
+    window.editRecord = function(encodedItem) {
+        const item = JSON.parse(decodeURIComponent(encodedItem));
         isEditingMode = true;
-        document.getElementById('f-id').value = item.id;
+        document.getElementById('f-id').value = item.id || item.Id || "";
         document.getElementById('f-ma').value = item.Ma_Hang || "";
         document.getElementById('f-ten').value = item.Ten_Hang || "";
         document.getElementById('f-nhom').value = item.Nhom_Hang || "";
@@ -566,8 +548,7 @@
         if (r.isConfirmed) {
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
             
-            // Xử lý trừ kho trước khi xóa
-            const oldLog = masterData.find(x => String(x.id) === String(id));
+            const oldLog = masterData.find(x => String(x.id || x.Id) === String(id));
             if (oldLog) {
                 Swal.fire({ title: 'Đang hoàn trả kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 await revertInventory(oldLog);
@@ -593,7 +574,7 @@
         document.getElementById('f-thanhtoan').value = "Đã thanh toán";
         document.getElementById('f-ghichu').value = "";
         const btn = document.getElementById('btn-save');
-        btn.innerHTML = "📥 XÁC NHẬN NHẬP";
+        btn.innerHTML = "📥 XÁC NHẬN NHẬP HÀNG";
         btn.style.background = "var(--accent)";
     }
 
