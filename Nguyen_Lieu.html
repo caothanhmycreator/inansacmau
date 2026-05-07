@@ -86,7 +86,7 @@
 
     <div class="inventory-card">
       <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Tìm theo Tên, Mã NL, ĐVT..." onkeyup="filterTable()">
+        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Tìm theo Nhóm, Tên, Mã NL, ĐVT..." onkeyup="filterTable()">
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button onclick="viewHistory('[XUẤT HỦY]')" style="background:#f39c12; border:none; color:white; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 13px;">🗑️ Lịch sử Hủy</button>
             <button onclick="viewHistory('[ĐÃ SỬ DỤNG]')" style="background:#3498db; border:none; color:white; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size: 13px;">⚙️ Lịch sử Dùng</button>
@@ -98,16 +98,17 @@
         <table>
           <thead>
             <tr>
-              <th style="width: 15%;">Mã NL</th>
-              <th style="width: 25%;">Tên Nguyên Liệu</th>
+              <th style="width: 12%;">Mã NL</th>
+              <th style="width: 13%;">Nhóm Hàng</th>
+              <th style="width: 20%;">Tên Nguyên Liệu</th>
               <th style="width: 10%;">ĐVT</th>
-              <th style="width: 15%; text-align: center;">Tồn Kho</th>
+              <th style="width: 10%; text-align: center;">Tồn Kho</th>
               <th style="width: 15%;">Ghi Chú</th>
               <th style="width: 20%; text-align: center;">Thao tác</th>
             </tr>
           </thead>
           <tbody id="material-body">
-            <tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu nguyên liệu...</td></tr>
+            <tr><td colspan="7" style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu nguyên liệu...</td></tr>
           </tbody>
         </table>
       </div>
@@ -145,7 +146,7 @@
       tbody.innerHTML = "";
 
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">Chưa có dữ liệu nguyên liệu gốc.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#888;">Chưa có dữ liệu nguyên liệu gốc.</td></tr>';
         return;
       }
 
@@ -153,6 +154,7 @@
         return `
           <tr>
             <td data-label="Mã NL"><b>${item.Ma_Nguyen_Lieu || '-'}</b></td>
+            <td data-label="Nhóm Hàng"><span class="badge" style="background:#e2e8f0; color:#475569;">${item.Nhom_Hang || '-'}</span></td>
             <td data-label="Tên NL"><b style="color: #2D5A27;">${item.Ten_Nguyen_Lieu || '-'}</b></td>
             <td data-label="ĐVT"><span class="badge">${item.DVT || '-'}</span></td>
             <td data-label="Tồn Kho" style="text-align: center; color: #d35400; font-weight: bold; font-size: 16px;">${item.So_Luong != null ? Number(item.So_Luong).toLocaleString() : '0'}</td>
@@ -175,7 +177,8 @@
         const ma = (item.Ma_Nguyen_Lieu || "").toLowerCase();
         const ten = (item.Ten_Nguyen_Lieu || "").toLowerCase();
         const dvt = (item.DVT || "").toLowerCase();
-        return ma.includes(query) || ten.includes(query) || dvt.includes(query);
+        const nhom = (item.Nhom_Hang || "").toLowerCase();
+        return ma.includes(query) || ten.includes(query) || dvt.includes(query) || nhom.includes(query);
       });
       renderTable(filtered);
     }
@@ -188,7 +191,8 @@
             const ma = (item.Ma_Nguyen_Lieu || "").toLowerCase();
             const ten = (item.Ten_Nguyen_Lieu || "").toLowerCase();
             const dvt = (item.DVT || "").toLowerCase();
-            return ma.includes(query) || ten.includes(query) || dvt.includes(query);
+            const nhom = (item.Nhom_Hang || "").toLowerCase();
+            return ma.includes(query) || ten.includes(query) || dvt.includes(query) || nhom.includes(query);
           });
       }
       
@@ -202,6 +206,10 @@
             <div style="grid-column: span 2;">
                 <label><b>Tên Nguyên Liệu *:</b></label>
                 <input id="e-ten" class="swal2-input" value="${item.Ten_Nguyen_Lieu || ''}" style="width:100%; margin-top: 5px;">
+            </div>
+            <div style="grid-column: span 2;">
+                <label><b>Nhóm Hàng:</b></label>
+                <input id="e-nhom" class="swal2-input" value="${item.Nhom_Hang || ''}" placeholder="Vd: Giấy, Mực, Bạt..." style="width:100%; margin-top: 5px;">
             </div>
             <div>
                 <label><b>Đơn Vị Tính (ĐVT):</b></label>
@@ -222,6 +230,7 @@
           if (!ten) { Swal.showValidationMessage('Vui lòng nhập tên nguyên liệu!'); return false; }
           return {
             Ten_Nguyen_Lieu: ten,
+            Nhom_Hang: document.getElementById('e-nhom').value.trim(),
             DVT: document.getElementById('e-dvt').value.trim(),
             So_Luong: Number(document.getElementById('e-sl').value) || 0
           }
@@ -261,6 +270,10 @@
             <div style="grid-column: span 2;">
                 <label><b>Tên Nguyên Liệu *:</b></label>
                 <input id="a-ten" class="swal2-input" placeholder="Vd: Mực in, Bạt, Giấy..." style="width:100%; margin-top: 5px;">
+            </div>
+            <div style="grid-column: span 2;">
+                <label><b>Nhóm Hàng:</b></label>
+                <input id="a-nhom" class="swal2-input" placeholder="Vd: Giấy, Mực, Màng..." style="width:100%; margin-top: 5px;">
             </div>
             <div>
                 <label><b>Đơn Vị Tính (ĐVT):</b></label>
@@ -306,6 +319,7 @@
             Khach_Hang: "Hệ thống",    
             Ten_Hang: "Tồn kho gốc",   
             Ma_Nguyen_Lieu: maMoi,
+            Nhom_Hang: document.getElementById('a-nhom').value.trim(),
             Ten_Nguyen_Lieu: ten,
             DVT: document.getElementById('a-dvt').value.trim(),
             So_Luong: Number(document.getElementById('a-sl').value) || 0,
@@ -346,7 +360,8 @@
             const ma = (item.Ma_Nguyen_Lieu || "").toLowerCase();
             const ten = (item.Ten_Nguyen_Lieu || "").toLowerCase();
             const dvt = (item.DVT || "").toLowerCase();
-            return ma.includes(query) || ten.includes(query) || dvt.includes(query);
+            const nhom = (item.Nhom_Hang || "").toLowerCase();
+            return ma.includes(query) || ten.includes(query) || dvt.includes(query) || nhom.includes(query);
           });
       }
       
@@ -402,6 +417,7 @@
             Khach_Hang: "Hệ thống",    
             Ten_Hang: "Xuất hủy nguyên liệu",   
             Ma_Nguyen_Lieu: maHuyMoi,
+            Nhom_Hang: item.Nhom_Hang,
             Ten_Nguyen_Lieu: item.Ten_Nguyen_Lieu,
             DVT: item.DVT,
             So_Luong: Number(slHuy),
@@ -603,7 +619,7 @@
 
                 Swal.fire({icon: 'success', title: 'Đã sửa lịch sử & Cập nhật kho!', timer: 1500, showConfirmButton: false}).then(() => {
                     viewHistory(window.currentHistoryType); 
-                    loadMaterials(); // Cập nhật bảng ngoài
+                    loadMaterials(); 
                 });
             } catch (e) {
                 Swal.fire('Lỗi', e.message, 'error');
