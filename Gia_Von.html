@@ -38,7 +38,8 @@
     .input-modern { padding: 8px 10px; border: 2px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 14px; font-weight: bold; color: var(--accent); transition: 0.3s; width: 120px; text-align: right; }
     .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.1); }
 
-    .img-preview { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
+    .img-preview { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; transition: 0.2s; }
+    .img-preview:hover { transform: scale(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     
     .btn-save { background: var(--accent); color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: 0.3s; box-shadow: 0 2px 0 #922b21; }
     .btn-save:hover { background: #a93226; transform: translateY(1px); box-shadow: 0 1px 0 #922b21; }
@@ -127,6 +128,19 @@
       } catch (e) { console.error(e); }
     }
 
+    // TÍNH NĂNG MỚI: Popup xem ảnh lớn
+    window.showImagePopup = function(imgUrl, title) {
+        Swal.fire({
+            title: title || 'Hình ảnh sản phẩm',
+            imageUrl: imgUrl,
+            imageWidth: 500, // Đặt chiều rộng ảnh là 500px theo yêu cầu
+            imageAlt: 'Sản phẩm',
+            showConfirmButton: true,
+            confirmButtonText: 'Đóng',
+            confirmButtonColor: '#34495e'
+        });
+    }
+
     window.renderGiaVonTable = function(data, isSearching = false) {
         const container = document.getElementById('price-list-container');
         container.innerHTML = "";
@@ -149,9 +163,12 @@
             if (item.Hinh_Anh && item.Hinh_Anh.includes('/d/')) {
                 const fileId = item.Hinh_Anh.split('/d/')[1]?.split('/')[0];
                 const finalThumb = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
-                thumbDisplay = `<img src="${finalThumb}" class="img-preview">`;
+                const largeImg = `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`; // Lấy ảnh lớn 500px
+                // Đã chèn hàm showImagePopup vào event onclick
+                thumbDisplay = `<img src="${finalThumb}" class="img-preview" onclick="showImagePopup('${largeImg}', '${item.Ten_Hang.replace(/'/g, "\\'")}')" title="Click để xem lớn">`;
             } else if (item.Hinh_Anh) {
-                thumbDisplay = `<img src="${item.Hinh_Anh}" class="img-preview">`;
+                // Đã chèn hàm showImagePopup vào event onclick
+                thumbDisplay = `<img src="${item.Hinh_Anh}" class="img-preview" onclick="showImagePopup('${item.Hinh_Anh}', '${item.Ten_Hang.replace(/'/g, "\\'")}')" title="Click để xem lớn">`;
             }
 
             return `
