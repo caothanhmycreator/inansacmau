@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Giá Vốn - Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+  <script src="js/sidebar_loader.js"></script> 
+  <style>
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC
+       ======================================================== */
+    :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; --accent: #c0392b; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
+
+    .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--accent); }
+    
+    /* Thiết kế phần Nhóm (Group) */
+    .group-header { background: #f8fafc; padding: 15px 20px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px; transition: 0.2s; border-left: 5px solid var(--accent); align-items: center; }
+    .group-header:hover { background: #fdf2f2; color: var(--accent); }
+    .group-content { display: none; margin-top: 5px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; padding: 5px; }
+    .group-content.show { display: block; }
+
+    /* Bảng dữ liệu */
+    .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+    .table-modern th { background: #f1f5f9; color: #64748b; font-size: 12px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; }
+    .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .table-modern tr { transition: 0.2s; }
+    .table-modern tr:hover { background: #f8fafc; }
+    
+    .price-badge-le { background: #e0f2fe; color: #0369a1; padding: 5px 10px; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 13px; border: 1px solid #bae6fd; }
+
+    .input-modern { padding: 8px 10px; border: 2px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 14px; font-weight: bold; color: var(--accent); transition: 0.3s; width: 120px; text-align: right; }
+    .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.1); }
+
+    .img-preview { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
+    
+    .btn-save { background: var(--accent); color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: 0.3s; box-shadow: 0 2px 0 #922b21; }
+    .btn-save:hover { background: #a93226; transform: translateY(1px); box-shadow: 0 1px 0 #922b21; }
+
+    .swal2-container { z-index: 20000 !important; }
+
+    /* ========================================================
+       2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       ======================================================== */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        
+        .mobile-nav-btn {
+            display: block; position: fixed; top: 10px; left: 10px; 
+            z-index: 1000; background: var(--accent); color: white; 
+            padding: 8px 12px; border: none; border-radius: 4px;
+        }
+
+        .header-top { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+        .header-top input { width: 100%; box-sizing: border-box; }
+
+        /* Biến bảng thành Card để tra cứu giá dễ dàng */
+        .group-content { overflow-x: hidden; padding: 10px 0; border: none; }
+        .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; }
+        .table-modern thead { display: none; }
+        
+        .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .table-modern td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: flex-start; text-align: left; }
+        
+        /* Nhãn hiển thị cột */
+        .table-modern td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
+        
+        .input-modern { width: 100%; box-sizing: border-box; text-align: left; }
+        .btn-save { width: 100%; padding: 12px; font-size: 14px; margin-top: 5px; }
+    }
+
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+  </style>
+</head>
+<body>
+
+  <div class="main-content">
+    <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div>
+        <h2 style="margin:0; color: var(--accent);">💰 QUẢN LÝ GIÁ VỐN SẢN PHẨM</h2>
+        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Cập nhật giá gốc trực tiếp để tự động tính lợi nhuận</p>
+      </div>
+    </div>
+
+    <div class="inventory-card">
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="margin:0;">📊 CHI TIẾT DANH MỤC</h3>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end;">
+          <input type="text" id="searchPrice" class="input-modern" placeholder="🔍 Tìm tên sản phẩm, nhóm..." style="max-width: 350px; flex: 1; text-align: left; font-weight: normal; color: #333;" onkeyup="filterPriceList()">
+          <button onclick="loadGiaVonList()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">🔄 Tải lại dữ liệu</button>
+        </div>
+      </div>
+      <div id="price-list-container">
+        <p style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let priceListData = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(loadGiaVonList, 600);
+    });
+
+    function formatCurrency(input) {
+      let v = input.value.replace(/\D/g, "");
+      input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+    
+    function parseNum(s) { return Number(s.toString().replace(/\./g, "")) || 0; }
+
+    async function loadGiaVonList() {
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=Id,Ma_QR,Nhom_Hang,Ten_Hang,Don_Vi_Tinh,Gia_Ban,Gia_Von,Hinh_Anh&order=Nhom_Hang.asc`, { headers: h });
+        priceListData = await res.json();
+        renderGiaVonTable(priceListData);
+      } catch (e) { console.error(e); }
+    }
+
+    window.renderGiaVonTable = function(data, isSearching = false) {
+        const container = document.getElementById('price-list-container');
+        container.innerHTML = "";
+        
+        if(data.length === 0) { 
+            container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Không tìm thấy sản phẩm nào.</p>'; 
+            return; 
+        }
+
+        const groups = {};
+        data.forEach(item => {
+          let nhom = item.Nhom_Hang || "Chưa phân loại";
+          if (!groups[nhom]) groups[nhom] = [];
+          groups[nhom].push(item);
+        });
+
+        for (let nhom in groups) {
+          let rows = groups[nhom].map(item => {
+            let thumbDisplay = '<span style="color:#ccc">N/A</span>';
+            if (item.Hinh_Anh && item.Hinh_Anh.includes('/d/')) {
+                const fileId = item.Hinh_Anh.split('/d/')[1]?.split('/')[0];
+                const finalThumb = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+                thumbDisplay = `<img src="${finalThumb}" class="img-preview">`;
+            } else if (item.Hinh_Anh) {
+                thumbDisplay = `<img src="${item.Hinh_Anh}" class="img-preview">`;
+            }
+
+            return `
+            <tr>
+              <td data-label="Ảnh" style="text-align:center;">${thumbDisplay}</td>
+              <td data-label="Tên hàng">
+                <b style="font-size:14px; color:#2c3e50;">${item.Ten_Hang}</b><br>
+                <small style="color:#7f8c8d">Mã: ${item.Ma_QR || 'N/A'}</small>
+              </td>
+              <td data-label="ĐVT"><span style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:12px;">${item.Don_Vi_Tinh || '-'}</span></td>
+              <td data-label="Giá Lẻ Bán Ra"><span class="price-badge-le">${(item.Gia_Ban || 0).toLocaleString()}</span></td>
+              <td data-label="Giá Vốn Mới">
+                <input type="text" id="gv-${item.Id}" class="input-modern" value="${(item.Gia_Von || 0).toLocaleString('vi-VN')}" oninput="formatCurrency(this)">
+              </td>
+              <td data-label="Thao tác" style="text-align: center;">
+                <button onclick="saveGiaVon(${item.Id})" class="btn-save" id="btn-save-${item.Id}">💾 LƯU GIÁ VỐN</button>
+              </td>
+            </tr>`}).join('');
+
+          const showClass = isSearching ? 'show' : '';
+
+          container.innerHTML += `
+            <div class="group-header" onclick="this.nextElementSibling.classList.toggle('show')">
+              <span>📁 Nhóm: ${nhom.toUpperCase()} <span style="color:#64748b; font-size:13px;">(${groups[nhom].length} sản phẩm)</span></span>
+              <span>▼</span>
+            </div>
+            <div class="group-content ${showClass}">
+              <table class="table-modern">
+                <thead><tr>
+                    <th style="width:70px; text-align:center;">Ảnh</th>
+                    <th>Tên Sản Phẩm</th>
+                    <th style="width:80px;">ĐVT</th>
+                    <th style="width:120px;">Giá Bán Ra</th>
+                    <th style="width:150px;">Nhập Giá Vốn</th>
+                    <th style="width:120px; text-align:center;">Thao tác</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>`;
+        }
+    };
+
+    window.filterPriceList = function() {
+        const query = document.getElementById("searchPrice").value.toLowerCase().trim();
+        const filteredData = priceListData.filter(item => {
+            const ten = (item.Ten_Hang || "").toLowerCase();
+            const ma = (item.Ma_QR || "").toLowerCase();
+            const nhom = (item.Nhom_Hang || "").toLowerCase();
+            return ten.includes(query) || ma.includes(query) || nhom.includes(query);
+        });
+        
+        renderGiaVonTable(filteredData, query.length > 0);
+    };
+
+    window.saveGiaVon = async function(id) {
+        const inputEl = document.getElementById(`gv-${id}`);
+        const btnEl = document.getElementById(`btn-save-${id}`);
+        const newGiaVon = parseNum(inputEl.value);
+
+        btnEl.innerText = "⏳ Đang lưu...";
+        btnEl.disabled = true;
+        btnEl.style.background = "#95a5a6";
+
+        try {
+            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${id}`, { 
+                method: 'PATCH', 
+                headers: h, 
+                body: JSON.stringify({ Gia_Von: newGiaVon }) 
+            });
+
+            if (!res.ok) throw new Error("Không thể cập nhật cơ sở dữ liệu!");
+
+            // Update mảng dữ liệu gốc để khi tìm kiếm không bị mất dữ liệu vừa sửa
+            const itemIndex = priceListData.findIndex(item => item.Id === id);
+            if (itemIndex > -1) priceListData[itemIndex].Gia_Von = newGiaVon;
+
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã lưu giá vốn!', showConfirmButton: false, timer: 1500 });
+            
+            btnEl.innerText = "✔ Đã Lưu";
+            btnEl.style.background = "#27ae60";
+            setTimeout(() => {
+                btnEl.innerText = "💾 LƯU GIÁ VỐN";
+                btnEl.disabled = false;
+                btnEl.style.background = "var(--accent)";
+            }, 2000);
+
+        } catch (error) {
+            Swal.fire('Lỗi', error.message, 'error');
+            btnEl.innerText = "❌ Lỗi";
+            btnEl.style.background = "#e74c3c";
+            btnEl.disabled = false;
+        }
+    }
+  </script>
+</body>
+</html>
