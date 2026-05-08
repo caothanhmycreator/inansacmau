@@ -15,10 +15,12 @@
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
     .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
 
+    /* Box Thống kê tiền nhập hàng */
     .summary-box { background: linear-gradient(135deg, #2D5A27 0%, #1e3d1a 100%); color: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .summary-box h3 { margin: 0; font-size: 14px; opacity: 0.9; text-transform: uppercase; }
     .summary-box .amount { font-size: 24px; font-weight: bold; margin-top: 5px; color: #f1c40f; }
     
+    /* Form Card Nhập hàng */
     .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
     .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
     .input-group { display: flex; flex-direction: column; position: relative; }
@@ -26,34 +28,59 @@
     .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; width: 100%; box-sizing: border-box; }
     .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(41, 128, 185, 0.1); }
 
-    .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px;}
+    /* Gợi ý (Suggestions) */
+    .suggestions-box { position: absolute; top: calc(100% + 2px); left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; z-index: 1000; max-height: 250px; overflow-y: auto; box-shadow: 0 10px 20px rgba(0,0,0,0.15); display: none; }
+    .suggestion-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f1f1f1; font-size: 13px; display: flex; align-items: center; }
+    .suggestion-item:hover { background: #f8fafc; color: var(--accent); border-left: 3px solid var(--accent); }
 
+    /* Panel Thông tin Realtime */
+    .info-panel { grid-column: span 4; display: none; background: #e0f2fe; padding: 15px; border-radius: 8px; border: 1px dashed #0284c7; font-size: 13px; line-height: 1.6; }
+    .info-panel b { color: #0369a1; font-size: 14px;}
+
+    .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+
+    /* Bảng dữ liệu chuẩn */
     .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
     .table-modern th { background: #f1f5f9; color: #64748b; font-size: 12px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; }
     .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     .table-modern tr:hover { background: #f8fafc; }
     
     .btn-submit { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; height: 100%; width: 100%; box-sizing: border-box; font-size: 14px; }
-    .btn-submit:hover { background: #1f618d; transform: translateY(-2px); }
-    .btn-add { background: var(--orange); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; height: 100%; width: 100%; box-sizing: border-box; font-size: 13px; }
-    .btn-add:hover { background: #d35400; }
-    .btn-action { background: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: 0.2s;}
-    .btn-action:hover { background: #2c3e50; }
+    .btn-submit:hover { background: #1f618d; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(41, 128, 185, 0.2); }
+    .btn-edit { background: none; color: #2980b9; border: none; cursor: pointer; font-weight: bold; padding: 5px; font-size: 13px; }
     .btn-del { background: none; color: #e74c3c; border: none; cursor: pointer; font-weight: bold; padding: 5px; font-size: 13px; }
 
-    .cart-section { border: 2px dashed #bdc3c7; border-radius: 10px; padding: 15px; background: #fafafa; margin-top: 15px; }
+    /* Badge Trạng thái Thanh Toán */
+    .badge-paid { background: #dcfce7; color: #166534; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #bbf7d0; display: inline-block; margin-top: 3px;}
+    .badge-unpaid { background: #fee2e2; color: #b91c1c; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #fecaca; display: inline-block; margin-top: 3px;}
+
+    /* CSS Nút lọc NCC */
+    .ncc-filter-container { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+    .ncc-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; border: 1px solid #cbd5e1; background: white; color: #475569; transition: 0.2s; }
+    .ncc-btn:hover { background: #f1f5f9; }
+    .ncc-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
         .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: var(--accent); color: white; padding: 8px 12px; border: none; border-radius: 4px; }
+        
         .form-grid { grid-template-columns: 1fr !important; }
-        .input-group { grid-column: span 1 !important; }
+        .input-group, .info-panel { grid-column: span 1 !important; }
+        .summary-box { flex-direction: column; align-items: flex-start; gap: 10px; }
+        
+        .search-area { width: 100%; flex-direction: column; align-items: stretch !important; }
+        #searchFilter, #thanhToanFilter, #loaiHangFilter { max-width: 100% !important; width: 100% !important; }
+
         .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; box-sizing: border-box; }
         .table-modern thead { display: none; }
-        .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; }
+        
+        .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .table-modern td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: space-between; }
         .table-modern td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
     }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
@@ -62,7 +89,6 @@
     <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
       <div>
         <h2 style="margin:0; color: var(--primary);">📋 TẠO VÀ QUẢN LÝ BÁO GIÁ</h2>
-       
       </div>
     </div>
 
@@ -435,7 +461,7 @@
 
 
     // ====================================================================
-    // HỆ THỐNG XUẤT FILE PDF VÀ WORD (BẰNG TABLE ĐỂ WORD KHÔNG VỠ KHUNG)
+    // HỆ THỐNG XUẤT FILE PDF 
     // ====================================================================
 
     function buildTemplate() {
@@ -550,12 +576,12 @@
             </style>
         `;
 
-        // GIAO DIỆN HEADER 3 CƠ SỞ (Đã dùng thẻ Table để MS Word hiểu được)
+        // GIAO DIỆN HEADER 3 CƠ SỞ 
         const headSacMau = `
             <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 2px solid #2c3e50; padding-bottom: 15px;">
                 <tr>
-                    <td width="150" valign="middle">
-                        <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" width="120">
+                    <td width="75" valign="middle">
+                        <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" width="60">
                     </td>
                     <td valign="middle" style="line-height: 1.6;">
                         <span style="font-size: 18px; font-weight: bold; color: #c0392b;">HỘ KINH DOANH SẮC MÀU</span><br>
@@ -617,7 +643,6 @@
         printWindow.document.write(htmlContent.replace('</body>', '<script>setTimeout(() => { window.print(); }, 500);<\/script></body>'));
         printWindow.document.close();
     }
-
   </script>
 </body>
 </html>
