@@ -122,7 +122,7 @@
                                 <a href="Admin_Quan_Ly_Nhan_Su.html" id="Admin_Quan_Ly_Nhan_Su" class="nav-link">⚙️ Quản lý nhân sự</a>
                             </div>
                         </div>
-                </div>
+              
                 <div class="group">
     <div class="group-title" onclick="this.parentElement.classList.toggle('active')">📄 VĂN BẢN <span>▼</span></div>
     <div class="group-items">
@@ -133,6 +133,7 @@
         <a href="Hoa_Don.html" id="Hoa_Don_Dien_Tu" class="nav-link">🧾 Hóa đơn điện tử</a>
     </div>
 </div>
+  </div>
 
                 <div class="sm-logout-box">
                     <button onclick="logoutAction()" style="width:100%; padding:8px; background:#c0392b; color:white; border:none; cursor:pointer; border-radius:4px; font-weight:bold;">🚪 Đăng xuất</button>

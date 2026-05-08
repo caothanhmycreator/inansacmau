@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Báo Giá - Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+  <script src="js/sidebar_loader.js"></script> 
+  <style>
+    :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; --accent: #2980b9; --orange: #e67e22; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
+
+    .summary-box { background: linear-gradient(135deg, #2D5A27 0%, #1e3d1a 100%); color: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .summary-box h3 { margin: 0; font-size: 14px; opacity: 0.9; text-transform: uppercase; }
+    .summary-box .amount { font-size: 24px; font-weight: bold; margin-top: 5px; color: #f1c40f; }
+    
+    .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
+    .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+    .input-group { display: flex; flex-direction: column; position: relative; }
+    .input-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
+    .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; width: 100%; box-sizing: border-box; }
+    .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(41, 128, 185, 0.1); }
+
+    .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px;}
+
+    .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+    .table-modern th { background: #f1f5f9; color: #64748b; font-size: 12px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; }
+    .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .table-modern tr:hover { background: #f8fafc; }
+    
+    .btn-submit { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; height: 100%; width: 100%; box-sizing: border-box; font-size: 14px; }
+    .btn-submit:hover { background: #1f618d; transform: translateY(-2px); }
+    .btn-add { background: var(--orange); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; height: 100%; width: 100%; box-sizing: border-box; font-size: 13px; }
+    .btn-add:hover { background: #d35400; }
+    .btn-action { background: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: 0.2s;}
+    .btn-action:hover { background: #2c3e50; }
+    .btn-del { background: none; color: #e74c3c; border: none; cursor: pointer; font-weight: bold; padding: 5px; font-size: 13px; }
+
+    .cart-section { border: 2px dashed #bdc3c7; border-radius: 10px; padding: 15px; background: #fafafa; margin-top: 15px; }
+
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
+        .form-grid { grid-template-columns: 1fr !important; }
+        .input-group { grid-column: span 1 !important; }
+        .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; box-sizing: border-box; }
+        .table-modern thead { display: none; }
+        .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; }
+        .table-modern td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: space-between; }
+        .table-modern td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-content">
+    <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <div>
+        <h2 style="margin:0; color: var(--primary);">📋 TẠO VÀ QUẢN LÝ BÁO GIÁ</h2>
+        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Lập báo giá nhanh 3 cơ sở: Sắc Màu, Tứ Hỷ, Ngân Đạt</p>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #2c3e50;">1. THÔNG TIN KHÁCH HÀNG</h3>
+      <div class="form-grid">
+        <div class="input-group" style="grid-column: span 2;">
+          <label>Tên Khách Hàng / Cơ Quan *</label>
+          <input type="text" id="f-khachhang" class="input-modern" placeholder="VD: VP HĐND VÀ UBND XÃ TÂN NHUẬN ĐÔNG">
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
+          <label>Địa Chỉ / Ghi chú Khách Hàng</label>
+          <input type="text" id="f-diachi" class="input-modern" placeholder="Nhập địa chỉ hoặc số điện thoại...">
+        </div>
+      </div>
+
+      <h3 style="margin-top:20px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #2c3e50;">2. THÊM HÀNG HÓA / DỊCH VỤ VÀO BÁO GIÁ</h3>
+      <div class="form-grid">
+        <div class="input-group" style="grid-column: span 2;">
+          <label>Tên Hàng Hóa *</label>
+          <input type="text" id="f-tenhang" class="input-modern" placeholder="Túi vải, Bìa Foder...">
+        </div>
+        <div class="input-group">
+          <label>Đơn Vị Tính</label>
+          <input type="text" id="f-dvt" class="input-modern" value="Cái">
+        </div>
+        <div class="input-group">
+          <label>Số Lượng *</label>
+          <input type="number" id="f-sl" class="input-modern" value="1" min="1" step="any" oninput="updateThanhTienTemp()">
+        </div>
+        <div class="input-group">
+          <label>Đơn Giá (Giá Sắc Màu) *</label>
+          <input type="text" id="f-dongia" class="input-modern" value="0" oninput="formatCurrency(this); updateThanhTienTemp()">
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
+          <label>Ghi Chú SP (Tùy chọn)</label>
+          <input type="text" id="f-ghichu" class="input-modern" placeholder="...">
+        </div>
+        <div class="input-group" style="align-items: flex-end;">
+          <button class="btn-add" onclick="addItemToQuote()">+ THÊM VÀO BÁO GIÁ</button>
+        </div>
+      </div>
+
+      <div class="cart-section" id="cart-section" style="display: none;">
+        <h4 style="margin-top:0; color:#d35400;">DANH SÁCH MẶT HÀNG TRONG BÁO GIÁ:</h4>
+        <div style="overflow-x: auto;">
+          <table class="table-modern" style="background: white;">
+            <thead>
+              <tr>
+                <th style="width: 50px;">STT</th>
+                <th>Tên Hàng Hóa</th>
+                <th style="width: 80px;">ĐVT</th>
+                <th style="width: 80px; text-align:center;">SL</th>
+                <th style="width: 120px; text-align:right;">Đơn Giá Gốc</th>
+                <th style="width: 150px; text-align:right;">Thành Tiền Gốc</th>
+                <th style="width: 60px; text-align:center;">Xóa</th>
+              </tr>
+            </thead>
+            <tbody id="quote-items-body"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="5" style="text-align: right; font-weight: bold; font-size: 16px;">TỔNG CỘNG:</td>
+                <td style="text-align: right; font-weight: bold; font-size: 16px; color: #c0392b;" id="quote-total">0 đ</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn-action" style="background:#e74c3c;" onclick="clearQuote()">LÀM LẠI</button>
+            <button class="btn-action" style="background:#27ae60;" onclick="exportPDF()">🖨️ XUẤT PDF / IN 3 CƠ SỞ</button>
+            <button class="btn-action" style="background:#2980b9;" onclick="exportWord()">📄 TẢI FILE WORD 3 CƠ SỞ</button>
+            <button class="btn-submit" style="width: 200px;" onclick="saveQuoteToDB()">💾 LƯU VÀO DATABASE</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="inventory-card">
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="margin:0;">📋 LỊCH SỬ BÁO GIÁ ĐÃ LƯU</h3>
+        <div class="search-area" style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; align-items: center;">
+          <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Tìm khách hàng, tên hàng..." style="max-width: 300px; flex: 1;" onkeyup="filterDisplayList()">
+          <button onclick="loadData()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold; white-space: nowrap;">🔄 Tải lại</button>
+        </div>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="table-modern">
+            <thead>
+                <tr>
+                    <th style="width:140px;">Ngày Báo Giá</th>
+                    <th>Khách Hàng</th>
+                    <th>Hàng Hóa / Dịch Vụ</th>
+                    <th style="width:60px; text-align:center;">SL</th>
+                    <th style="width:120px; text-align:right;">Thành Tiền (Gốc)</th>
+                    <th style="width:80px; text-align:center;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="data-container">
+                <tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu...</td></tr>
+            </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TABLE_BAO_GIA = "Bao_Gia";
+    let masterData = [];     
+    let currentQuoteItems = []; // Lưu giỏ hàng tạm thời
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadData();
+    });
+
+    // --- CÁC HÀM TIỆN ÍCH ---
+    function formatCurrency(input) {
+      let v = input.value.replace(/\D/g, "");
+      input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+    function parseNum(s) { return Number(s.toString().replace(/\./g, "")) || 0; }
+    
+    function getCleanVNTime() {
+      const d = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    function formatDisplayTime(dateString) {
+        if (!dateString) return 'N/A';
+        const parts = dateString.split(' ');
+        if (parts.length === 2 && parts[0].includes('-')) {
+            const dateParts = parts[0].split('-'); 
+            const timeParts = parts[1].split(':'); 
+            if (dateParts.length === 3 && timeParts.length >= 2) {
+                return `${timeParts[0]}:${timeParts[1]} ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+            }
+        }
+        return dateString; 
+    }
+
+    // ĐỌC SỐ THÀNH CHỮ VIỆT NAM
+    const chuSo = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+    const tien = ["", " nghìn", " triệu", " tỷ", " nghìn tỷ", " triệu tỷ"];
+    function docSo(so) {
+        if (so == 0) return chuSo[0];
+        let chuoi = "", hauto = "";
+        do {
+            let ty = so % 1000000000;
+            so = Math.floor(so / 1000000000);
+            if (so > 0) chuoi = docTrien(ty, true) + hauto + chuoi;
+            else chuoi = docTrien(ty, false) + hauto + chuoi;
+            hauto = " tỷ";
+        } while (so > 0);
+        let res = chuoi.trim() + " đồng";
+        return res.charAt(0).toUpperCase() + res.slice(1);
+    }
+    function docTrien(so, daydu) {
+        let chuoi = "";
+        let tram = Math.floor(so / 1000000);
+        so = so % 1000000;
+        if (tram > 0 || daydu) { chuoi += docHang(tram, daydu) + " triệu"; daydu = true; }
+        let nghin = Math.floor(so / 1000);
+        so = so % 1000;
+        if (nghin > 0 || daydu) { chuoi += docHang(nghin, daydu) + " nghìn"; daydu = true; }
+        if (so > 0 || daydu) chuoi += docHang(so, daydu);
+        return chuoi;
+    }
+    function docHang(so, daydu) {
+        let chuoi = "";
+        let tram = Math.floor(so / 100);
+        so = so % 100;
+        if (tram > 0 || daydu) { chuoi += " " + chuSo[tram] + " trăm"; chuoi += (so == 0 && daydu) ? "" : ""; }
+        let chuc = Math.floor(so / 10);
+        let donvi = so % 10;
+        if (chuc > 1) { chuoi += " " + chuSo[chuc] + " mươi"; if (donvi == 1) chuoi += " mốt"; }
+        else if (chuc == 1) { chuoi += " mười"; if (donvi == 1) chuoi += " một"; }
+        else if (daydu && donvi > 0) chuoi += " lẻ";
+        if (donvi == 5 && chuc > 0) chuoi += " lăm";
+        else if (donvi > 0 && (chuc != 1 || donvi != 1) && (chuc != 0 || donvi != 5)) chuoi += " " + chuSo[donvi];
+        return chuoi;
+    }
+
+    // --- QUẢN LÝ GIỎ BÁO GIÁ TẠM THỜI ---
+    function updateThanhTienTemp() {
+        // Chỉ dùng để ngắm, không bắt buộc
+    }
+
+    function addItemToQuote() {
+        const tenhang = document.getElementById('f-tenhang').value.trim();
+        const dvt = document.getElementById('f-dvt').value.trim() || 'Cái';
+        const sl = parseFloat(document.getElementById('f-sl').value) || 0;
+        const dongia = parseNum(document.getElementById('f-dongia').value);
+        const ghichu = document.getElementById('f-ghichu').value.trim();
+
+        if(!tenhang || sl <= 0 || dongia <= 0) {
+            return Swal.fire('Lỗi', 'Vui lòng nhập Tên hàng, Số lượng và Đơn giá hợp lệ!', 'warning');
+        }
+
+        currentQuoteItems.push({
+            Ten_Hang: tenhang,
+            DVT: dvt,
+            So_Luong: sl,
+            Don_Gia: dongia,
+            Thanh_Tien: sl * dongia,
+            Ghi_Chu: ghichu
+        });
+
+        document.getElementById('f-tenhang').value = "";
+        document.getElementById('f-dongia').value = "0";
+        document.getElementById('f-ghichu').value = "";
+        document.getElementById('f-tenhang').focus();
+        
+        renderQuoteCart();
+    }
+
+    function removeQuoteItem(index) {
+        currentQuoteItems.splice(index, 1);
+        renderQuoteCart();
+    }
+
+    function clearQuote() {
+        currentQuoteItems = [];
+        renderQuoteCart();
+    }
+
+    function renderQuoteCart() {
+        const cartDiv = document.getElementById('cart-section');
+        const tbody = document.getElementById('quote-items-body');
+        const tTotal = document.getElementById('quote-total');
+
+        if(currentQuoteItems.length === 0) {
+            cartDiv.style.display = 'none';
+            return;
+        }
+
+        cartDiv.style.display = 'block';
+        let total = 0;
+        tbody.innerHTML = currentQuoteItems.map((item, idx) => {
+            total += item.Thanh_Tien;
+            return `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td><b>${item.Ten_Hang}</b><br><small style="color:#7f8c8d">${item.Ghi_Chu}</small></td>
+                    <td>${item.DVT}</td>
+                    <td style="text-align:center;">${item.So_Luong}</td>
+                    <td style="text-align:right;">${item.Don_Gia.toLocaleString('vi-VN')} đ</td>
+                    <td style="text-align:right; font-weight:bold; color:#c0392b;">${item.Thanh_Tien.toLocaleString('vi-VN')} đ</td>
+                    <td style="text-align:center;"><button onclick="removeQuoteItem(${idx})" class="btn-del">✖</button></td>
+                </tr>
+            `;
+        }).join('');
+        tTotal.innerHTML = total.toLocaleString('vi-VN') + " đ";
+    }
+
+    // --- LƯU VÀO DATABASE SUPABASE ---
+    async function saveQuoteToDB() {
+        const tenKh = document.getElementById('f-khachhang').value.trim();
+        const diachi = document.getElementById('f-diachi').value.trim();
+
+        if(!tenKh) return Swal.fire('Lỗi', 'Vui lòng nhập Tên Khách Hàng!', 'warning');
+        if(currentQuoteItems.length === 0) return Swal.fire('Lỗi', 'Chưa có mặt hàng nào trong báo giá!', 'warning');
+
+        Swal.fire({ title: 'Đang lưu báo giá...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+        
+        try {
+            const ngayGio = getCleanVNTime();
+            // Lưu từng dòng vào DB (hoặc lưu dạng mảng nếu DB của sếp hỗ trợ JSON, ở đây thiết kế từng dòng theo cấu trúc DB)
+            const payloads = currentQuoteItems.map(item => ({
+                Ngay_Gio: ngayGio,
+                Ten_Khach_Hang: tenKh,
+                Dia_Chi: diachi,
+                Ten_Hang: item.Ten_Hang,
+                DVT: item.DVT,
+                So_Luong: item.So_Luong,
+                Don_Gia: item.Don_Gia,
+                Thanh_Tien: item.Thanh_Tien,
+                Ghi_Chu: item.Ghi_Chu
+            }));
+
+            // POST song song các dòng
+            await Promise.all(payloads.map(payload => 
+                fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}`, { method: 'POST', headers: h, body: JSON.stringify(payload) })
+            ));
+
+            Swal.fire({ icon: 'success', title: 'Lưu thành công!', timer: 1500, showConfirmButton: false });
+            clearQuote();
+            document.getElementById('f-khachhang').value = "";
+            document.getElementById('f-diachi').value = "";
+            loadData();
+        } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
+    }
+
+    // --- LOAD DỮ LIỆU TỪ DB ---
+    async function loadData() {
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}?select=*&order=id.desc`, { headers: h });
+        if (!res.ok) throw new Error("Không thể kết nối bảng Bao_Gia");
+        
+        masterData = await res.json();
+        filterDisplayList(); 
+      } catch (e) { 
+          document.getElementById('data-container').innerHTML = `<tr><td colspan="6" style="text-align:center; color:#e74c3c;">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
+      }
+    }
+
+    window.filterDisplayList = function() {
+        const query = document.getElementById("searchFilter").value.toLowerCase().trim();
+        let filteredData = masterData;
+
+        if (query) {
+            filteredData = filteredData.filter(item => {
+                const kh = (item.Ten_Khach_Hang || "").toLowerCase();
+                const ten = (item.Ten_Hang || "").toLowerCase();
+                return kh.includes(query) || ten.includes(query);
+            });
+        }
+        
+        const container = document.getElementById('data-container');
+        if(filteredData.length === 0) { 
+            container.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">Không tìm thấy dữ liệu.</td></tr>'; 
+            return; 
+        }
+
+        container.innerHTML = filteredData.map(item => `
+            <tr>
+                <td data-label="Ngày">${formatDisplayTime(item.Ngay_Gio)}</td>
+                <td data-label="Khách hàng"><b>${item.Ten_Khach_Hang}</b><br><small>${item.Dia_Chi || ''}</small></td>
+                <td data-label="Hàng hóa"><b style="color:#2c3e50;">${item.Ten_Hang}</b><br><small style="color:#7f8c8d;">${item.Ghi_Chu || ''}</small></td>
+                <td data-label="SL" style="text-align:center;">${item.So_Luong} ${item.DVT}</td>
+                <td data-label="Thành tiền" style="text-align:right;"><b style="color:#c0392b;">${(item.Thanh_Tien || 0).toLocaleString('vi-VN')} đ</b></td>
+                <td data-label="Thao tác" style="text-align:center;">
+                    <button onclick="deleteRecord(${item.id})" class="btn-del">XÓA</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    window.deleteRecord = async function(id) {
+        const r = await Swal.fire({ title: 'Xóa dòng báo giá này?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA' });
+        if (r.isConfirmed) {
+            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}?id=eq.${id}`, { method: 'DELETE', headers: h });
+            loadData();
+        }
+    }
+
+
+    // ====================================================================
+    // HỆ THỐNG XUẤT FILE PDF VÀ WORD (HTML TEMPLATE GEN)
+    // ====================================================================
+
+    // Xây dựng chuỗi HTML cốt lõi cho 3 báo giá
+    function buildTemplate() {
+        const tenKh = document.getElementById('f-khachhang').value.trim() || ".......................................................";
+        const d = new Date();
+        const strDate = `Ngày ${d.getDate().toString().padStart(2,'0')} tháng ${d.getMonth()+1} năm ${d.getFullYear()}`;
+
+        // Hàm tạo 1 trang A4 báo giá
+        const buildPage = (coSoName, headerHtml, donGiaMultiplier, stampImg) => {
+            let rowsHtml = "";
+            let tongTien = 0;
+
+            currentQuoteItems.forEach((item, index) => {
+                let giaBan = Math.round(item.Don_Gia * donGiaMultiplier);
+                let thanhTien = giaBan * item.So_Luong;
+                tongTien += thanhTien;
+                rowsHtml += `
+                    <tr>
+                        <td style="text-align:center;">${index + 1}</td>
+                        <td>${item.Ten_Hang} ${item.Ghi_Chu ? `(${item.Ghi_Chu})` : ''}</td>
+                        <td style="text-align:center;">${item.DVT}</td>
+                        <td style="text-align:center;">${item.So_Luong}</td>
+                        <td style="text-align:right;">${giaBan.toLocaleString('vi-VN')}</td>
+                        <td style="text-align:right;">${thanhTien.toLocaleString('vi-VN')}</td>
+                    </tr>
+                `;
+            });
+
+            return `
+                <div class="page-a4">
+                    <div class="header">
+                        ${headerHtml}
+                    </div>
+                    <div class="title">BẢNG BÁO GIÁ</div>
+                    <div class="subtitle">
+                        Kính gửi: ${tenKh}<br>
+                        Cơ sở chúng tôi xin báo giá như sau:
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:40px;">STT</th>
+                                <th>Tên hàng hóa, dịch vụ</th>
+                                <th style="width:60px;">ĐVT</th>
+                                <th style="width:60px;">Số lượng</th>
+                                <th style="width:100px;">Đơn giá (đồng)</th>
+                                <th style="width:120px;">Thành Tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                            <tr>
+                                <td colspan="5" style="text-align:center; font-weight:bold; font-size: 16px;">TỔNG CỘNG</td>
+                                <td style="text-align:right; font-weight:bold; font-size: 16px; color:red;">${tongTien.toLocaleString('vi-VN')} đ</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="words"><b>Bằng chữ:</b> ${docSo(tongTien)}./.</div>
+                    
+                    <div class="footer">
+                        <div class="footer-left">
+                            <b>Ghi chú:</b><br>
+                            - Giá trên đã gồm thuế VAT.<br>
+                            - Miễn phí vận chuyển, giao hàng tận nơi.<br>
+                            - Hỗ trợ thiết kế hoàn chỉnh.<br>
+                            - Sau khi thống nhất thiết kế, quý khách vui lòng thanh toán 50% số tiền.
+                        </div>
+                        <div class="footer-right">
+                            <span class="date">${strDate}</span><br>
+                            <b>Đại diện cơ sở</b><br>
+                            <img src="${stampImg}" alt="Mộc và Chữ Ký">
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        // STYLE dùng chung cho cả PDF và Word
+        const cssStyle = `
+            <style>
+                body { font-family: 'Times New Roman', Times, serif; font-size: 14px; margin: 0; padding: 0; background: #ccc; }
+                .page-a4 { background: white; width: 210mm; min-height: 297mm; margin: 20px auto; padding: 20mm; box-sizing: border-box; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; page-break-after: always;}
+                .header { display: flex; align-items: center; justify-content: flex-start; margin-bottom: 20px; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;}
+                .header img.logo { height: 80px; margin-right: 20px; }
+                .header .h-text { line-height: 1.5; font-size: 13px; }
+                .header .h-name { font-size: 18px; font-weight: bold; color: #c0392b; text-transform: uppercase;}
+                
+                .title { text-align: center; font-size: 22px; font-weight: bold; margin: 20px 0 10px 0; }
+                .subtitle { margin-bottom: 15px; font-size: 15px; line-height: 1.5; font-weight: bold;}
+                
+                table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 14px;}
+                table, th, td { border: 1px solid black; }
+                th { background: #f2f2f2; padding: 8px; text-align: center; }
+                td { padding: 8px; vertical-align: middle; }
+                
+                .words { font-size: 15px; font-style: italic; margin-bottom: 40px; }
+                
+                .footer { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 30px; page-break-inside: avoid;}
+                .footer-left { width: 60%; font-size: 13px; line-height: 1.6; }
+                .footer-right { width: 35%; text-align: center; }
+                .footer-right .date { font-style: italic; margin-bottom: 5px; display: block; }
+                .footer-right img { width: 200px; margin-top: 10px; }
+
+                @media print {
+                    body { background: white; margin: 0; padding: 0; }
+                    .page-a4 { margin: 0; padding: 15mm; box-shadow: none; min-height: auto; width: 100%; }
+                }
+            </style>
+        `;
+
+        // Dữ liệu Header 3 cơ sở
+        const headSacMau = `
+            <img class="logo" src="SACMAU.png" alt="Logo Sắc Màu" onerror="this.style.display='none'">
+            <div class="h-text">
+                <span class="h-name">HỘ KINH DOANH SẮC MÀU</span><br>
+                Địa chỉ: 27 Nguyễn Văn Cừ, Phường Cao Lãnh, Đồng Tháp<br>
+                Số điện thoại: 0337.663.113<br>
+                Website: inansacmaudongthap.com
+            </div>
+        `;
+        const headTuHy = `
+            <div class="h-text">
+                <span class="h-name">HỘ KINH DOANH TỨ HỶ</span><br>
+                Địa chỉ: 234, đường Lê Lợi, phường Cao Lãnh, tỉnh Đồng Tháp
+            </div>
+        `;
+        const headNganDat = `
+            <div class="h-text">
+                <span class="h-name">CƠ SỞ IN NGÂN ĐẠT</span><br>
+                Đc: 369, Khóm Tân Đông, thị trấn Thanh Bình, huyện Thanh Bình, Đồng Tháp
+            </div>
+        `;
+
+        // Ghép 3 trang
+        const htmlDoc = `
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Báo Giá - In Sắc Màu</title>
+                ${cssStyle}
+            </head>
+            <body>
+                ${buildPage("Sắc Màu", headSacMau, 1.00, "SACMAU.png")}
+                ${buildPage("Tứ Hỷ", headTuHy, 1.03, "TUHY.png")}
+                ${buildPage("Ngân Đạt", headNganDat, 1.05, "NGANDAT.png")}
+                <script>
+                    // Tự động kích hoạt In khi load xong cho màn hình PDF
+                    window.onload = function() {
+                        if(window.location.search.includes('print=true')) {
+                            setTimeout(() => { window.print(); }, 500);
+                        }
+                    };
+                <\/script>
+            </body>
+            </html>
+        `;
+        return htmlDoc;
+    }
+
+    function exportPDF() {
+        if(currentQuoteItems.length === 0) return Swal.fire('Thông báo', 'Giỏ báo giá đang trống!', 'warning');
+        
+        const htmlContent = buildTemplate();
+        // Mở cửa sổ mới và nhét HTML vào để in
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(htmlContent.replace('</body>', '<script>setTimeout(() => { window.print(); }, 500);<\/script></body>'));
+        printWindow.document.close();
+    }
+
+    function exportWord() {
+        if(currentQuoteItems.length === 0) return Swal.fire('Thông báo', 'Giỏ báo giá đang trống!', 'warning');
+        
+        const htmlContent = buildTemplate();
+        
+        // Bọc HTML trong thẻ chuẩn của MS Word để giữ định dạng bảng
+        const wordWrap = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head><meta charset='utf-8'><title>Export HTML To Doc</title></head>
+            <body>${htmlContent}</body>
+            </html>
+        `;
+
+        const blob = new Blob(['\ufeff', wordWrap], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `BaoGia_${document.getElementById('f-khachhang').value || 'KhachHang'}.doc`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
