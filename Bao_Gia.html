@@ -142,7 +142,6 @@
         <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
             <button class="btn-action" style="background:#e74c3c;" onclick="clearQuote()">LÀM LẠI</button>
             <button class="btn-action" style="background:#27ae60;" onclick="exportPDF()">🖨️ XUẤT PDF / IN 3 CƠ SỞ</button>
-            <button class="btn-action" style="background:#2980b9;" onclick="exportWord()">📄 TẢI FILE WORD 3 CƠ SỞ</button>
             <button class="btn-submit" style="width: 200px;" onclick="saveQuoteToDB()">💾 LƯU VÀO DATABASE</button>
         </div>
       </div>
@@ -619,21 +618,6 @@
         printWindow.document.close();
     }
 
-    function exportWord() {
-        if(currentQuoteItems.length === 0) return Swal.fire('Thông báo', 'Giỏ báo giá đang trống!', 'warning');
-        
-        const htmlContent = buildTemplate();
-        
-        // Thêm BOM utf-8 cho Word hiểu tiếng việt
-        const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `BaoGia_${document.getElementById('f-khachhang').value || 'KhachHang'}.doc`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
   </script>
 </body>
 </html>
