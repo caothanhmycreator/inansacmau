@@ -123,6 +123,16 @@
                             </div>
                         </div>
                 </div>
+                <div class="group">
+    <div class="group-title" onclick="this.parentElement.classList.toggle('active')">📄 VĂN BẢN <span>▼</span></div>
+    <div class="group-items">
+        <a href="Bao_Gia.html" id="Bao_Gia" class="nav-link">📋 Báo Giá</a>
+        <a href="Hop_Dong.html" id="Hop_Dong" class="nav-link">🤝 Hợp đồng</a>
+        <a href="Nghiem_Thu.html" id="Nghiem_Thu" class="nav-link">✍️ Nghiệm thu</a>
+        <a href="Thanh_Ly.html" id="Thanh_Ly" class="nav-link">📜 Thanh lý</a>
+        <a href="Hoa_Don.html" id="Hoa_Don_Dien_Tu" class="nav-link">🧾 Hóa đơn điện tử</a>
+    </div>
+</div>
 
                 <div class="sm-logout-box">
                     <button onclick="logoutAction()" style="width:100%; padding:8px; background:#c0392b; color:white; border:none; cursor:pointer; border-radius:4px; font-weight:bold;">🚪 Đăng xuất</button>

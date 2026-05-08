@@ -37,6 +37,13 @@ window.APP_MODULES = [
   { id: "Quan_Ly_Luong",        label: "Bảng tính lương",        icon: "💵", file: "Quan_Ly_Luong.html", group: "Quản trị" },
   { id: "Khach_Hang",           label: "Khách hàng",             icon: "👥", file: "Khach_Hang.html",    group: "Quản trị" },
   { id: "Admin_Quan_Ly_Nhan_Su",label: "Quản trị nhân sự",       icon: "🛠️", file: "Admin_Quan_Ly_Nhan_Su.html", group: "Quản trị" },
+
+  // --- NHÓM VĂN BẢN ---
+  { id: "Bao_Gia",          label: "Báo Giá",             icon: "📋", file: "Bao_Gia.html",      group: "Văn bản" },
+  { id: "Hop_Dong",         label: "Hợp đồng",            icon: "🤝", file: "Hop_Dong.html",     group: "Văn bản" },
+  { id: "Nghiem_Thu",       label: "Nghiệm thu",          icon: "✍️", file: "Nghiem_Thu.html",   group: "Văn bản" },
+  { id: "Thanh_Ly",         label: "Thanh lý",            icon: "📜", file: "Thanh_Ly.html",     group: "Văn bản" },
+  { id: "Hoa_Don_Dien_Tu",  label: "Hóa đơn điện tử",     icon: "🧾", file: "Hoa_Don.html",      group: "Văn bản" },
 ];
 
 window.formatDateTimeVN = function() {
