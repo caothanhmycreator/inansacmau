@@ -20,47 +20,41 @@
     .summary-box .amount { font-size: 24px; font-weight: bold; margin-top: 5px; color: #f1c40f; }
     
     .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
-    .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+    .form-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 15px; }
     .input-group { display: flex; flex-direction: column; position: relative; }
-    .input-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
+    .input-group label { font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
     .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; width: 100%; box-sizing: border-box; }
     .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(41, 128, 185, 0.1); }
 
     .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px;}
-
     .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
     .table-modern th { background: #f1f5f9; color: #64748b; font-size: 12px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; }
     .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-    .table-modern tr:hover { background: #f8fafc; }
     
-    /* CSS Nút nhấn được thiết kế lại đẹp và bo tròn */
     .btn-submit { background: var(--accent); color: white; border: none; padding: 12px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(41, 128, 185, 0.3); font-size: 14px; }
-    .btn-submit:hover { background: #1f618d; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(41, 128, 185, 0.4); }
+    .btn-submit:hover { background: #1f618d; transform: translateY(-2px); }
     
-    .btn-add { background: var(--orange); color: white; border: none; padding: 12px 20px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3); height: 100%; width: 100%; box-sizing: border-box; font-size: 13px; }
-    .btn-add:hover { background: #d35400; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(230, 126, 34, 0.4); }
+    .btn-add { background: var(--orange); color: white; border: none; padding: 12px 20px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.3s; width: 100%; font-size: 13px; }
+    .btn-add:hover { background: #d35400; transform: translateY(-2px); }
     
-    .btn-action { background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; box-shadow: 0 4px 10px rgba(52, 73, 94, 0.3);}
-    .btn-action:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(52, 73, 94, 0.4); }
+    .btn-action { background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s;}
+    .btn-action:hover { transform: translateY(-2px); }
     
-    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 12px; border-radius: 15px; transition: 0.2s; }
-    .btn-del:hover { background: #fecaca; transform: scale(1.05); }
-
-    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 12px; border-radius: 15px; transition: 0.2s; margin-right: 5px; }
-    .btn-pdf:hover { background: #bae6fd; transform: scale(1.05); }
+    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 6px 12px; border-radius: 15px; }
+    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 6px 12px; border-radius: 15px; margin-right: 5px; }
 
     .cart-section { border: 2px dashed #bdc3c7; border-radius: 10px; padding: 15px; background: #fafafa; margin-top: 15px; }
+    
+    .payment-summary { display: flex; justify-content: flex-end; gap: 20px; margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; }
+    .payment-summary div { text-align: right; }
+    .payment-summary label { font-size: 12px; color: #64748b; font-weight: bold; display: block; }
+    .payment-summary span { font-size: 16px; font-weight: bold; color: #2c3e50; }
+    .payment-summary span.final { color: #c0392b; font-size: 20px; }
 
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
         .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
-        .form-grid { grid-template-columns: 1fr !important; }
-        .input-group { grid-column: span 1 !important; }
-        .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; box-sizing: border-box; }
-        .table-modern thead { display: none; }
-        .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; }
-        .table-modern td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: space-between; }
-        .table-modern td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
+        .form-grid { display: flex; flex-direction: column; }
     }
   </style>
 </head>
@@ -68,53 +62,67 @@
 
   <div class="main-content">
     <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-      <div>
-        <h2 style="margin:0; color: var(--primary);">📋 TẠO VÀ QUẢN LÝ BÁO GIÁ</h2>
-      </div>
+      <h2 style="margin:0; color: var(--primary);">📋 TẠO VÀ QUẢN LÝ BÁO GIÁ</h2>
     </div>
 
     <div class="form-card">
       <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #2c3e50;">1. THÔNG TIN KHÁCH HÀNG & CHỨNG TỪ</h3>
       <div class="form-grid">
-        <div class="input-group" style="grid-column: span 2;">
-          <label>Mức tỷ lệ % Thuế VAT</label>
-          <input type="number" id="f-giamthue" class="input-modern" value="0" min="0" placeholder="Nhập phần trăm, vd: 8 hoặc 10">
-        </div>
-        <div class="input-group" style="grid-column: span 2;">
+        <div class="input-group" style="grid-column: span 6;">
           <label>Tên Khách Hàng / Cơ Quan *</label>
           <input type="text" id="f-khachhang" class="input-modern" placeholder="VD: VP HĐND VÀ UBND XÃ TÂN NHUẬN ĐÔNG">
         </div>
-        <div class="input-group" style="grid-column: span 4;">
-          <label>Địa Chỉ / Ghi chú Khách Hàng</label>
-          <input type="text" id="f-diachi" class="input-modern" placeholder="Nhập địa chỉ hoặc thông bổ sung...">
+        <div class="input-group" style="grid-column: span 6;">
+          <label>Địa Chỉ Khách Hàng</label>
+          <input type="text" id="f-diachi" class="input-modern" placeholder="Nhập địa chỉ giao hàng...">
         </div>
       </div>
 
       <h3 style="margin-top:20px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #2c3e50;">2. THÊM HÀNG HÓA / DỊCH VỤ VÀO BÁO GIÁ</h3>
       <div class="form-grid">
-        <div class="input-group" style="grid-column: span 2;">
-          <label>Tên Hàng Hóa *</label>
-          <input type="text" id="f-tenhang" class="input-modern" placeholder="Túi vải, Bìa Foder...">
+        <div class="input-group" style="grid-column: span 12;">
+          <label>Tên Hàng Hóa / Dịch Vụ *</label>
+          <input type="text" id="f-tenhang" class="input-modern" placeholder="Túi vải, Bìa Foder, Thiết kế banner...">
         </div>
-        <div class="input-group">
+        <div class="input-group" style="grid-column: span 2;">
+          <label>Mức thuế %</label>
+          <input type="number" id="f-giamthue" class="input-modern" value="0" min="0" oninput="calculateLiveTotals()">
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
           <label>Đơn Vị Tính</label>
-          <input type="text" id="f-dvt" class="input-modern" placeholder="cái, tờ, bộ...">
-        </div>
-        <div class="input-group">
-          <label>Số Lượng *</label>
-          <input type="number" id="f-sl" class="input-modern" value="1" min="1" step="any" oninput="updateThanhTienTemp()">
-        </div>
-        <div class="input-group">
-          <label>Đơn Giá (Giá Sắc Màu) *</label>
-          <input type="text" id="f-dongia" class="input-modern" value="0" oninput="formatCurrency(this); updateThanhTienTemp()">
+          <input type="text" id="f-dvt" class="input-modern" placeholder="cái, bộ...">
         </div>
         <div class="input-group" style="grid-column: span 2;">
-          <label>Ghi Chú SP (Tùy chọn)</label>
+          <label>Số Lượng</label>
+          <input type="number" id="f-sl" class="input-modern" value="1" min="1" step="any" oninput="calculateLiveTotals()">
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
+          <label>Đơn Giá (Sắc Màu)</label>
+          <input type="text" id="f-dongia" class="input-modern" value="0" style="background: #fff9db;" oninput="formatCurrency(this); calculateLiveTotals()">
+        </div>
+        <div class="input-group" style="grid-column: span 4;">
+          <label>Ghi Chú SP</label>
           <input type="text" id="f-ghichu" class="input-modern" placeholder="...">
         </div>
-        <div class="input-group" style="align-items: flex-end;">
-          <button class="btn-add" onclick="addItemToQuote()">+ THÊM VÀO BÁO GIÁ</button>
+        
+        <div class="input-group" style="grid-column: span 12; align-items: flex-end;">
+          <button class="btn-add" style="max-width: 250px;" onclick="addItemToQuote()">+ THÊM VÀO BÁO GIÁ</button>
         </div>
+      </div>
+
+      <div class="payment-summary" id="live-payment-panel" style="display:none;">
+          <div>
+              <label>Tổng trước thuế</label>
+              <span id="live-subtotal">0 đ</span>
+          </div>
+          <div>
+              <label>Tiền trừ thuế (20%)</label>
+              <span id="live-tax-discount">0 đ</span>
+          </div>
+          <div>
+              <label>Tổng sau thuế</label>
+              <span id="live-total" class="final">0 đ</span>
+          </div>
       </div>
 
       <div class="cart-section" id="cart-section" style="display: none;">
@@ -133,16 +141,12 @@
               </tr>
             </thead>
             <tbody id="quote-items-body"></tbody>
-            <tfoot>
-              <tr>
-                <td colspan="5" style="text-align: right; font-weight: bold; font-size: 16px;">TỔNG CỘNG:</td>
-                <td style="text-align: right; font-weight: bold; font-size: 16px; color: #c0392b;" id="quote-total">0 đ</td>
-                <td></td>
-              </tr>
-            </tfoot>
           </table>
         </div>
-        <div style="margin-top: 15px; display: flex; gap: 15px; justify-content: flex-end;">
+        <div style="margin-top: 15px; display: flex; gap: 15px; justify-content: flex-end; align-items: center;">
+            <label style="font-size: 13px; font-weight: bold; cursor: pointer; color: #2D5A27;">
+                <input type="checkbox" id="check-stamp" checked style="transform: scale(1.2); margin-right: 5px;"> Có con dấu chữ ký
+            </label>
             <button class="btn-action" style="background:#e74c3c;" onclick="clearQuote()">LÀM LẠI</button>
             <button class="btn-action" style="background:#27ae60;" onclick="exportPDF()">🖨️ XUẤT PDF / IN 3 CƠ SỞ</button>
             <button class="btn-submit" onclick="saveQuoteToDB()">💾 LƯU VÀO DATABASE</button>
@@ -154,8 +158,8 @@
       <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
         <h3 style="margin:0;">📋 LỊCH SỬ BÁO GIÁ ĐÃ LƯU</h3>
         <div class="search-area" style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; align-items: center;">
-          <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Tìm khách hàng, tên hàng, mã..." style="max-width: 300px; flex: 1;" onkeyup="filterDisplayList()">
-          <button onclick="loadData()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold; white-space: nowrap;">🔄 Tải lại</button>
+          <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Tìm khách hàng, mã..." style="max-width: 250px;" onkeyup="filterDisplayList()">
+          <button onclick="loadData()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold;">🔄 Tải lại</button>
         </div>
       </div>
       <div style="overflow-x: auto;">
@@ -166,14 +170,12 @@
                     <th>Khách Hàng</th>
                     <th>Hàng Hóa / Dịch Vụ</th>
                     <th style="width:60px; text-align:center;">SL</th>
-                    <th style="width:120px; text-align:right;">Thành Tiền (Gốc)</th>
-                    <th style="width:120px; text-align:right;">Tổng Cộng (Sau thuế)</th>
+                    <th style="width:120px; text-align:right;">Thành Tiền</th>
+                    <th style="width:120px; text-align:right;">Tổng (Sau thuế)</th>
                     <th style="width:140px; text-align:center;">Thao tác</th>
                 </tr>
             </thead>
-            <tbody id="data-container">
-                <tr><td colspan="7" style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu...</td></tr>
-            </tbody>
+            <tbody id="data-container"></tbody>
         </table>
       </div>
     </div>
@@ -184,39 +186,146 @@
     let masterData = [];     
     let currentQuoteItems = []; 
 
-    document.addEventListener("DOMContentLoaded", () => {
-      loadData();
-    });
+    document.addEventListener("DOMContentLoaded", () => loadData());
 
     function formatCurrency(input) {
       let v = input.value.replace(/\D/g, "");
       input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
     function parseNum(s) { return Number(s.toString().replace(/\./g, "")) || 0; }
-    
     function getCleanVNTime() {
       const d = new Date();
       const pad = (n) => n.toString().padStart(2, '0');
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     }
-
     function formatDisplayTime(dateString) {
         if (!dateString) return 'N/A';
         const parts = dateString.split(' ');
         if (parts.length === 2 && parts[0].includes('-')) {
             const dateParts = parts[0].split('-'); 
-            const timeParts = parts[1].split(':'); 
-            if (dateParts.length === 3 && timeParts.length >= 2) {
-                return `${timeParts[0]}:${timeParts[1]} ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-            }
+            return `${parts[1].substring(0,5)} ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
         }
         return dateString; 
     }
 
-    // ĐỌC SỐ THÀNH CHỮ VIỆT NAM
-    const chuSo = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+    // Hiển thị tính toán trực tiếp trên form
+    function calculateLiveTotals() {
+        const sl = parseFloat(document.getElementById('f-sl').value) || 0;
+        const dongia = parseNum(document.getElementById('f-dongia').value);
+        const subtotal = sl * dongia;
+        const taxRate = parseFloat(document.getElementById('f-giamthue').value) || 0;
+        
+        if (subtotal > 0) {
+            document.getElementById('live-payment-panel').style.display = 'flex';
+            let disc = subtotal * 0.2 * (taxRate / 100);
+            document.getElementById('live-subtotal').innerText = subtotal.toLocaleString('vi-VN') + " đ";
+            document.getElementById('live-tax-discount').innerText = Math.round(disc).toLocaleString('vi-VN') + " đ";
+            document.getElementById('live-total').innerText = Math.round(subtotal - disc).toLocaleString('vi-VN') + " đ";
+        } else {
+            document.getElementById('live-payment-panel').style.display = 'none';
+        }
+    }
+
+    function addItemToQuote() {
+        const tenhang = document.getElementById('f-tenhang').value.trim();
+        const sl = parseFloat(document.getElementById('f-sl').value) || 0;
+        const dongia = parseNum(document.getElementById('f-dongia').value);
+        if(!tenhang || sl <= 0 || dongia <= 0) return Swal.fire('Lỗi', 'Nhập đầy đủ Tên, SL, Giá!', 'warning');
+
+        currentQuoteItems.push({
+            Ten_Hang: tenhang,
+            DVT: document.getElementById('f-dvt').value.trim() || 'Cái',
+            So_Luong: sl,
+            Don_Gia: dongia,
+            Thanh_Tien: sl * dongia,
+            Ghi_Chu: document.getElementById('f-ghichu').value.trim()
+        });
+
+        document.getElementById('f-tenhang').value = "";
+        document.getElementById('f-ghichu').value = "";
+        document.getElementById('f-tenhang').focus();
+        renderQuoteCart();
+    }
+
+    function removeQuoteItem(index) { currentQuoteItems.splice(index, 1); renderQuoteCart(); }
+    function clearQuote() { currentQuoteItems = []; renderQuoteCart(); }
+
+    function renderQuoteCart() {
+        const cartDiv = document.getElementById('cart-section');
+        const tbody = document.getElementById('quote-items-body');
+        const tTotal = document.getElementById('quote-total');
+        if(currentQuoteItems.length === 0) { cartDiv.style.display = 'none'; return; }
+        cartDiv.style.display = 'block';
+        let total = 0;
+        tbody.innerHTML = currentQuoteItems.map((item, idx) => {
+            total += item.Thanh_Tien;
+            return `<tr><td>${idx+1}</td><td><b>${item.Ten_Hang}</b></td><td>${item.DVT}</td><td align="center">${item.So_Luong}</td><td align="right">${item.Don_Gia.toLocaleString('vi-VN')} đ</td><td align="right"><b>${item.Thanh_Tien.toLocaleString('vi-VN')} đ</b></td><td align="center"><button onclick="removeQuoteItem(${idx})" class="btn-del">✖</button></td></tr>`;
+        }).join('');
+        tTotal.innerHTML = total.toLocaleString('vi-VN') + " đ";
+    }
+
+    async function saveQuoteToDB() {
+        const tenKh = document.getElementById('f-khachhang').value.trim();
+        const taxRate = parseFloat(document.getElementById('f-giamthue').value) || 0;
+        if(!tenKh || currentQuoteItems.length === 0) return Swal.fire('Lỗi', 'Nhập Tên KH và Hàng hóa!', 'warning');
+
+        Swal.fire({ title: 'Đang lưu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+        try {
+            const d = new Date();
+            const dateStr = `${d.getDate().toString().padStart(2,'0')}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getFullYear()}`;
+            const prefix = `BG-${dateStr}-`;
+            let maxSeq = 0;
+            masterData.forEach(item => {
+                if (item.Ma_Bao_Gia && item.Ma_Bao_Gia.startsWith(prefix)) {
+                    let seq = parseInt(item.Ma_Bao_Gia.split('-')[2]);
+                    if (seq > maxSeq) maxSeq = seq;
+                }
+            });
+            const maBaoGia = `${prefix}${(maxSeq + 1).toString().padStart(3, '0')}`;
+            const ngayGio = getCleanVNTime();
+
+            const payloads = currentQuoteItems.map(item => ({
+                Ngay_Gio: ngayGio, Ma_Bao_Gia: maBaoGia, Ten_Khach_Hang: tenKh, Dia_Chi: document.getElementById('f-diachi').value.trim(),
+                Ten_Hang: item.Ten_Hang, DVT: item.DVT, So_Luong: item.So_Luong, Don_Gia: item.Don_Gia,
+                Thanh_Tien: item.Thanh_Tien, Ghi_Chu: item.Ghi_Chu, Giam_Thue: taxRate,
+                Tong_Cong: item.Thanh_Tien - (item.Thanh_Tien * 0.2 * (taxRate / 100))
+            }));
+
+            await Promise.all(payloads.map(p => fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}`, { method: 'POST', headers: h, body: JSON.stringify(p) })));
+            Swal.fire({ icon: 'success', title: 'Lưu thành công!', text: 'Mã: '+maBaoGia, timer: 1500, showConfirmButton: false });
+            clearQuote(); loadData();
+        } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
+    }
+
+    async function loadData() {
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      try {
+        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}?select=*&order=id.desc`, { headers: h });
+        masterData = await res.json();
+        filterDisplayList(); 
+      } catch (e) { console.error(e); }
+    }
+
+    window.filterDisplayList = function() {
+        const query = document.getElementById("searchFilter").value.toLowerCase().trim();
+        let filteredData = query ? masterData.filter(i => (i.Ten_Khach_Hang||"").toLowerCase().includes(query) || (i.Ma_Bao_Gia||"").toLowerCase().includes(query)) : masterData;
+        const container = document.getElementById('data-container');
+        if(filteredData.length === 0) { container.innerHTML = '<tr><td colspan="7" align="center">Trống.</td></tr>'; return; }
+        container.innerHTML = filteredData.map(item => `<tr><td>${formatDisplayTime(item.Ngay_Gio)}<br><b>${item.Ma_Bao_Gia||''}</b></td><td><b>${item.Ten_Khach_Hang}</b></td><td>${item.Ten_Hang}</td><td align="center">${item.So_Luong}</td><td align="right">${(item.Thanh_Tien||0).toLocaleString()}</td><td align="right"><b>${(item.Tong_Cong||0).toLocaleString()}</b></td><td align="center"><button onclick="exportPDFHistory('${item.Ma_Bao_Gia}')" class="btn-pdf">🖨️ PDF</button><button onclick="deleteRecord(${item.id})" class="btn-del">✖</button></td></tr>`).join('');
+    }
+
+    window.deleteRecord = async function(id) {
+        if((await Swal.fire({ title: 'Xóa dòng này?', icon: 'warning', showCancelButton: true })).isConfirmed) {
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` } });
+            loadData();
+        }
+    }
+
+    // --- PDF GENERATOR ---
+    const chuSoArr = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
     function docSo(so) {
-        if (so == 0) return chuSo[0] + " đồng";
+        if (so == 0) return chuSoArr[0] + " đồng";
         let chuoi = "", hauto = "";
         do {
             let ty = so % 1000000000;
@@ -225,436 +334,90 @@
             else chuoi = docTrien(ty, false) + hauto + chuoi;
             hauto = " tỷ";
         } while (so > 0);
-        let res = chuoi.trim() + " đồng";
-        return res.charAt(0).toUpperCase() + res.slice(1);
+        return chuoi.trim().charAt(0).toUpperCase() + chuoi.trim().slice(1) + " đồng";
     }
     function docTrien(so, daydu) {
         let chuoi = "";
-        let tram = Math.floor(so / 1000000);
-        so = so % 1000000;
+        let tram = Math.floor(so / 1000000); so %= 1000000;
         if (tram > 0 || daydu) { chuoi += docHang(tram, daydu) + " triệu"; daydu = true; }
-        let nghin = Math.floor(so / 1000);
-        so = so % 1000;
+        let nghin = Math.floor(so / 1000); so %= 1000;
         if (nghin > 0 || daydu) { chuoi += docHang(nghin, daydu) + " nghìn"; daydu = true; }
         if (so > 0 || daydu) chuoi += docHang(so, daydu);
         return chuoi;
     }
     function docHang(so, daydu) {
         let chuoi = "";
-        let tram = Math.floor(so / 100);
-        so = so % 100;
-        if (tram > 0 || daydu) { chuoi += " " + chuSo[tram] + " trăm"; chuoi += (so == 0 && daydu) ? "" : ""; }
-        let chuc = Math.floor(so / 10);
-        let donvi = so % 10;
-        if (chuc > 1) { chuoi += " " + chuSo[chuc] + " mươi"; if (donvi == 1) chuoi += " mốt"; }
+        let tram = Math.floor(so / 100); so %= 100;
+        if (tram > 0 || daydu) { chuoi += " " + chuSoArr[tram] + " trăm"; }
+        let chuc = Math.floor(so / 10); let donvi = so % 10;
+        if (chuc > 1) { chuoi += " " + chuSoArr[chuc] + " mươi"; if (donvi == 1) chuoi += " mốt"; }
         else if (chuc == 1) { chuoi += " mười"; if (donvi == 1) chuoi += " một"; }
         else if (daydu && donvi > 0) chuoi += " lẻ";
         if (donvi == 5 && chuc > 0) chuoi += " lăm";
-        else if (donvi > 0 && (chuc != 1 || donvi != 1) && (chuc != 0 || donvi != 5)) chuoi += " " + chuSo[donvi];
+        else if (donvi > 0 && (chuc != 1 || donvi != 1) && (chuc != 0 || donvi != 5)) chuoi += " " + chuSoArr[donvi];
         return chuoi;
     }
 
-    function updateThanhTienTemp() {}
-
-    function addItemToQuote() {
-        const tenhang = document.getElementById('f-tenhang').value.trim();
-        const dvt = document.getElementById('f-dvt').value.trim() || 'Cái';
-        const sl = parseFloat(document.getElementById('f-sl').value) || 0;
-        const dongia = parseNum(document.getElementById('f-dongia').value);
-        const ghichu = document.getElementById('f-ghichu').value.trim();
-
-        if(!tenhang || sl <= 0 || dongia <= 0) {
-            return Swal.fire('Lỗi', 'Vui lòng nhập Tên hàng, Số lượng và Đơn giá hợp lệ!', 'warning');
-        }
-
-        currentQuoteItems.push({
-            Ten_Hang: tenhang,
-            DVT: dvt,
-            So_Luong: sl,
-            Don_Gia: dongia,
-            Thanh_Tien: sl * dongia,
-            Ghi_Chu: ghichu
-        });
-
-        document.getElementById('f-tenhang').value = "";
-        document.getElementById('f-dongia').value = "0";
-        document.getElementById('f-ghichu').value = "";
-        document.getElementById('f-tenhang').focus();
-        
-        renderQuoteCart();
-    }
-
-    function removeQuoteItem(index) {
-        currentQuoteItems.splice(index, 1);
-        renderQuoteCart();
-    }
-
-    function clearQuote() {
-        currentQuoteItems = [];
-        renderQuoteCart();
-    }
-
-    function renderQuoteCart() {
-        const cartDiv = document.getElementById('cart-section');
-        const tbody = document.getElementById('quote-items-body');
-        const tTotal = document.getElementById('quote-total');
-
-        if(currentQuoteItems.length === 0) {
-            cartDiv.style.display = 'none';
-            return;
-        }
-
-        cartDiv.style.display = 'block';
-        let total = 0;
-        tbody.innerHTML = currentQuoteItems.map((item, idx) => {
-            total += item.Thanh_Tien;
-            return `
-                <tr>
-                    <td>${idx + 1}</td>
-                    <td><b>${item.Ten_Hang}</b><br><small style="color:#7f8c8d">${item.Ghi_Chu}</small></td>
-                    <td>${item.DVT}</td>
-                    <td style="text-align:center;">${item.So_Luong}</td>
-                    <td style="text-align:right;">${item.Don_Gia.toLocaleString('vi-VN')} đ</td>
-                    <td style="text-align:right; font-weight:bold; color:#c0392b;">${item.Thanh_Tien.toLocaleString('vi-VN')} đ</td>
-                    <td style="text-align:center;"><button onclick="removeQuoteItem(${idx})" class="btn-del">✖</button></td>
-                </tr>
-            `;
-        }).join('');
-        tTotal.innerHTML = total.toLocaleString('vi-VN') + " đ";
-    }
-
-    // --- LƯU VÀO DATABASE SUPABASE VỚI MÃ TỰ ĐỘNG ---
-    async function saveQuoteToDB() {
-        const tenKh = document.getElementById('f-khachhang').value.trim();
-        const diachi = document.getElementById('f-diachi').value.trim();
-        const giamThueRate = parseFloat(document.getElementById('f-giamthue').value) || 0;
-
-        if(!tenKh) return Swal.fire('Lỗi', 'Vui lòng nhập Tên Khách Hàng!', 'warning');
-        if(currentQuoteItems.length === 0) return Swal.fire('Lỗi', 'Chưa có mặt hàng nào trong báo giá!', 'warning');
-
-        Swal.fire({ title: 'Đang lưu báo giá...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
-        
-        try {
-            const d = new Date();
-            const pad = (n) => n.toString().padStart(2, '0');
-            const dateStr = `${pad(d.getDate())}${pad(d.getMonth() + 1)}${d.getFullYear()}`;
-            const prefix = `BG-${dateStr}-`;
-            
-            // Tìm số thứ tự lớn nhất trong ngày để tạo mã báo giá (Tránh trùng lặp)
-            let maxSeq = 0;
-            masterData.forEach(item => {
-                if (item.Ma_Bao_Gia && item.Ma_Bao_Gia.startsWith(prefix)) {
-                    let parts = item.Ma_Bao_Gia.split('-');
-                    if(parts.length === 3) {
-                        let seq = parseInt(parts[2], 10);
-                        if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
-                    }
-                }
-            });
-            const maBaoGia = `${prefix}${(maxSeq + 1).toString().padStart(3, '0')}`;
-            const ngayGio = getCleanVNTime();
-            
-            const payloads = currentQuoteItems.map(item => {
-                let giamThueAmount = item.Thanh_Tien * 0.2 * (giamThueRate / 100);
-                let tongCong = item.Thanh_Tien - giamThueAmount;
-
-                return {
-                    Ngay_Gio: ngayGio,
-                    Ma_Bao_Gia: maBaoGia,
-                    Ten_Khach_Hang: tenKh,
-                    Dia_Chi: diachi,
-                    Ten_Hang: item.Ten_Hang,
-                    DVT: item.DVT,
-                    So_Luong: item.So_Luong,
-                    Don_Gia: item.Don_Gia,
-                    Thanh_Tien: item.Thanh_Tien,
-                    Ghi_Chu: item.Ghi_Chu,
-                    Giam_Thue: giamThueRate,
-                    Tong_Cong: tongCong
-                };
-            });
-
-            await Promise.all(payloads.map(payload => 
-                fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}`, { method: 'POST', headers: h, body: JSON.stringify(payload) })
-            ));
-
-            Swal.fire({ icon: 'success', title: 'Lưu thành công!', text: `Mã báo giá: ${maBaoGia}`, timer: 2000, showConfirmButton: false });
-            clearQuote();
-            document.getElementById('f-khachhang').value = "";
-            document.getElementById('f-diachi').value = "";
-            document.getElementById('f-giamthue').value = "0";
-            loadData();
-        } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
-    }
-
-    async function loadData() {
-      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-      try {
-        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}?select=*&order=id.desc`, { headers: h });
-        if (!res.ok) throw new Error("Không thể kết nối bảng Bao_Gia");
-        
-        masterData = await res.json();
-        filterDisplayList(); 
-      } catch (e) { 
-          document.getElementById('data-container').innerHTML = `<tr><td colspan="7" style="text-align:center; color:#e74c3c;">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
-      }
-    }
-
-    window.filterDisplayList = function() {
-        const query = document.getElementById("searchFilter").value.toLowerCase().trim();
-        let filteredData = masterData;
-
-        if (query) {
-            filteredData = filteredData.filter(item => {
-                const kh = (item.Ten_Khach_Hang || "").toLowerCase();
-                const ten = (item.Ten_Hang || "").toLowerCase();
-                const ma = (item.Ma_Bao_Gia || "").toLowerCase();
-                return kh.includes(query) || ten.includes(query) || ma.includes(query);
-            });
-        }
-        
-        const container = document.getElementById('data-container');
-        if(filteredData.length === 0) { 
-            container.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#888;">Không tìm thấy dữ liệu.</td></tr>'; 
-            return; 
-        }
-
-        container.innerHTML = filteredData.map(item => `
-            <tr>
-                <td data-label="Ngày/Mã">${formatDisplayTime(item.Ngay_Gio)}<br><small style="color:var(--accent); font-weight:bold;">${item.Ma_Bao_Gia || ''}</small></td>
-                <td data-label="Khách hàng"><b>${item.Ten_Khach_Hang}</b><br><small>${item.Dia_Chi || ''}</small></td>
-                <td data-label="Hàng hóa"><b style="color:#2c3e50;">${item.Ten_Hang}</b><br><small style="color:#7f8c8d;">${item.Ghi_Chu || ''}</small></td>
-                <td data-label="SL" style="text-align:center;">${item.So_Luong} ${item.DVT}</td>
-                <td data-label="Thành tiền" style="text-align:right;"><b style="color:#7f8c8d;">${(item.Thanh_Tien || 0).toLocaleString('vi-VN')} đ</b></td>
-                <td data-label="Tổng cộng" style="text-align:right;"><b style="color:#c0392b;">${(item.Tong_Cong || item.Thanh_Tien || 0).toLocaleString('vi-VN')} đ</b></td>
-                <td data-label="Thao tác" style="text-align:center;">
-                    <button onclick="exportPDFHistory('${item.Ma_Bao_Gia}')" class="btn-pdf" title="Xuất PDF">🖨️ PDF</button>
-                    <button onclick="deleteRecord(${item.id})" class="btn-del" title="Xóa">✖ XÓA</button>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    window.deleteRecord = async function(id) {
-        const r = await Swal.fire({ title: 'Xóa dòng báo giá này?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA' });
-        if (r.isConfirmed) {
-            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-            await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}?id=eq.${id}`, { method: 'DELETE', headers: h });
-            loadData();
-        }
-    }
-
-
-    // ====================================================================
-    // HỆ THỐNG XUẤT FILE PDF 
-    // ====================================================================
-
-    function buildTemplate(itemsToPrint, tenKh, diaChiKh, giamThueRate) {
-        // Lấy ngày gốc từ item đầu tiên nếu có
+    function buildTemplate(items, tenKh, diaChiKh, taxRate, showStamp) {
         let originalDate = new Date();
-        if(itemsToPrint && itemsToPrint[0] && itemsToPrint[0].Ngay_Gio) {
-            let parts = itemsToPrint[0].Ngay_Gio.split(' ')[0].split('-');
-            if(parts.length === 3) {
-                originalDate = new Date(parts[0], parts[1]-1, parts[2]);
-            }
+        if(items[0]?.Ngay_Gio) {
+            let p = items[0].Ngay_Gio.split(' ')[0].split('-');
+            if(p.length === 3) originalDate = new Date(p[0], p[1]-1, p[2]);
         }
         const strDate = `Ngày ${originalDate.getDate().toString().padStart(2,'0')} tháng ${originalDate.getMonth()+1} năm ${originalDate.getFullYear()}`;
 
-        const buildPage = (coSoName, headerHtml, donGiaMultiplier, stampImg, repName, fontStyle) => {
-            let rowsHtml = "";
-            let tongTien = 0;
-
-            itemsToPrint.forEach((item, index) => {
-                let giaBan = Math.round(item.Don_Gia * donGiaMultiplier);
-                let thanhTien = giaBan * item.So_Luong;
-                tongTien += thanhTien;
-                rowsHtml += `
-                    <tr>
-                        <td align="center">${index + 1}</td>
-                        <td>${item.Ten_Hang} ${item.Ghi_Chu ? `(${item.Ghi_Chu})` : ''}</td>
-                        <td align="center">${item.DVT}</td>
-                        <td align="center">${item.So_Luong}</td>
-                        <td align="right">${giaBan.toLocaleString('vi-VN')}</td>
-                        <td align="right">${thanhTien.toLocaleString('vi-VN')}</td>
-                    </tr>
-                `;
+        const buildPage = (headerHtml, multiplier, stampImg, repName, fontStyle) => {
+            let rows = ""; let tong = 0;
+            items.forEach((item, idx) => {
+                let gia = Math.round(item.Don_Gia * multiplier);
+                let tt = gia * item.So_Luong; tong += tt;
+                rows += `<tr><td align="center">${idx+1}</td><td>${item.Ten_Hang} ${item.Ghi_Chu?`(${item.Ghi_Chu})`:''}</td><td align="center">${item.DVT}</td><td align="center">${item.So_Luong}</td><td align="right">${gia.toLocaleString('vi-VN')}</td><td align="right">${tt.toLocaleString('vi-VN')}</td></tr>`;
             });
+            let disc = tong * 0.2 * (taxRate / 100);
+            let final = tong - disc;
+            let discRow = taxRate > 0 ? `<tr><td colspan="6" style="font-style:italic;">Đã giảm ${Math.round(disc).toLocaleString('vi-VN')} đồng tương ứng 20% mức tỷ lệ ${taxRate}% để tính Thuế GTGT theo Nghị quyết số 204/2025/QH15</td></tr>` : "";
 
-            // Tính giảm thuế
-            let discountAmount = tongTien * 0.2 * (giamThueRate / 100);
-            let finalTotal = tongTien - discountAmount;
-
-            let discountRow = "";
-            if(giamThueRate > 0) {
-                discountRow = `
-                <tr>
-                    <td colspan="6" style="text-align:left; font-style:italic;">
-                        Đã giảm ${Math.round(discountAmount).toLocaleString('vi-VN')} đồng tương ứng 20% mức tỷ lệ ${giamThueRate}% để tính Thuế GTGT theo Nghị quyết số 204/2025/QH15
-                    </td>
-                </tr>`;
-            }
-
-            return `
-                <div style="page-break-after: always; ${fontStyle} background: white; margin: 0 auto; padding: 30px; box-sizing: border-box; max-width: 800px;">
-                    ${headerHtml}
-                    
-                    <div style="text-align: center; font-size: 22px; font-weight: bold; margin: 30px 0 20px 0;">BẢNG BÁO GIÁ</div>
-                    
-                    <div style="margin-bottom: 15px; font-size: 15px; line-height: 1.6;">
-                        <b>Kính gửi:</b> ${tenKh}<br>
-                        <b>Địa chỉ:</b> ${diaChiKh}<br>
-                        Cơ sở chúng tôi xin báo giá như sau:
-                    </div>
-                    
-                    <table width="100%" border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; margin-bottom: 15px; font-size: 14px; border-color: black;">
-                        <thead>
-                            <tr style="background-color: #f2f2f2;">
-                                <th width="40">STT</th>
-                                <th>Tên hàng hóa, dịch vụ</th>
-                                <th width="60">ĐVT</th>
-                                <th width="60">Số lượng</th>
-                                <th width="100">Đơn giá (đồng)</th>
-                                <th width="120">Thành Tiền</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rowsHtml}
-                            <tr>
-                                <td colspan="5" align="right"><b>Cộng tiền hàng:</b></td>
-                                <td align="right"><b>${tongTien.toLocaleString('vi-VN')}</b></td>
-                            </tr>
-                            ${discountRow}
-                            <tr>
-                                <td colspan="5" align="right"><b>Tổng cộng thanh toán:</b></td>
-                                <td align="right"><b style="color:red; font-size:16px;">${Math.round(finalTotal).toLocaleString('vi-VN')} đ</b></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div style="font-size: 15px; font-style: italic; margin-bottom: 40px;">
-                        <b>Bằng chữ:</b> ${docSo(Math.round(finalTotal))}./.
-                    </div>
-                    
-                    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="page-break-inside: avoid; margin-top: 30px; font-size:14px;">
-                        <tr>
-                            <td width="60%" valign="top" style="line-height: 1.6;">
-                                <b>Ghi chú:</b><br>
-                                - Giá trên đã gồm thuế VAT.<br>
-                                - Miễn phí vận chuyển, giao hàng tận nơi.<br>
-                                - Hỗ trợ thiết kế hoàn chỉnh.<br>
-                                - Sau khi thống nhất thiết kế, quý khách vui lòng thanh toán 50% số tiền.
-                            </td>
-                            <td width="40%" valign="top" align="center">
-                                <div style="font-style: italic; margin-bottom: 5px;">${strDate}</div>
-                                <b>Đại diện cơ sở</b><br>
-                                <img src="${stampImg}" width="300" style="margin-top: 10px; display:block;"><br>
-                                <b>${repName}</b>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            `;
+            return `<div style="page-break-after:always; ${fontStyle} background:white; padding:30px; max-width:800px; margin:0 auto;">
+                ${headerHtml}
+                <div style="text-align:center; font-size:22px; font-weight:bold; margin:30px 0 20px;">BẢNG BÁO GIÁ</div>
+                <div style="margin-bottom:15px; font-size:15px; line-height:1.6;"><b>Kính gửi:</b> ${tenKh}<br><b>Địa chỉ:</b> ${diaChiKh}<br>Cơ sở chúng tôi xin báo giá như sau:</div>
+                <table width="100%" border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse; font-size:14px;">
+                    <thead><tr style="background:#f2f2f2;"><th>STT</th><th>Tên hàng hóa, dịch vụ</th><th>ĐVT</th><th>Số lượng</th><th>Đơn giá</th><th>Thành Tiền</th></tr></thead>
+                    <tbody>${rows}<tr><td colspan="5" align="right"><b>Cộng tiền hàng:</b></td><td align="right"><b>${tong.toLocaleString('vi-VN')}</b></td></tr>${discRow}<tr><td colspan="5" align="right"><b>Tổng cộng thanh toán:</b></td><td align="right"><b style="color:red; font-size:16px;">${Math.round(final).toLocaleString('vi-VN')} đ</b></td></tr></tbody>
+                </table>
+                <div style="font-size:15px; font-style:italic; margin-top:10px; margin-bottom:30px;"><b>Bằng chữ:</b> ${docSo(Math.round(final))}./.</div>
+                <table width="100%" border="0"><tr><td width="60%" valign="top" style="font-size:13px; line-height:1.6;"><b>Ghi chú:</b><br>- Giá trên đã gồm thuế VAT.<br>- Miễn phí vận chuyển tận nơi.<br>- Sau khi thống nhất thiết kế, vui lòng tạm ứng 50%.</td>
+                <td width="40%" align="center" valign="top"><div style="font-style:italic;">${strDate}</div><b>Đại diện cơ sở</b><br>
+                ${showStamp ? `<img src="${stampImg}" width="280" style="margin-top:10px;">` : `<div style="height:120px;"></div>`}
+                <br><b>${repName}</b></td></tr></table></div>`;
         };
 
-        // STYLE
-        const cssStyle = `
-            <style>
-                body { background: #ccc; margin:0; padding:20px; }
-                @media print { body { background: white; margin: 0; padding: 0; } }
-            </style>
-        `;
+        const headSM = `<table width="100%" border="0" style="border-bottom:2px solid #2c3e50; padding-bottom:10px;"><tr><td width="70"><img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" width="60"></td><td><span style="font-size:18px; font-weight:bold; color:#c0392b;">HỘ KINH DOANH SẮC MÀU</span><br><small>Địa chỉ: 27 Nguyễn Văn Cừ, P. Cao Lãnh, Đồng Tháp. ĐT: 0337.663.113</small></td></tr></table>`;
+        const headTH = `<table width="100%" border="0" style="border-bottom:2px solid #2c3e50; padding-bottom:10px; text-align:center;"><tr><td><span style="font-size:18px; font-weight:bold; color:#0284c7;">HỘ KINH DOANH TỨ HỶ</span><br><small>Địa chỉ: 234, đường Lê Lợi, phường Cao Lãnh, tỉnh Đồng Tháp</small></td></tr></table>`;
+        const headND = `<table width="100%" border="0" style="border-bottom:2px solid #2c3e50; padding-bottom:10px;"><tr><td><span style="font-size:18px; font-weight:bold; color:#15803d;">CƠ SỞ IN NGÂN ĐẠT</span><br><small>Đc: 369, Khóm Tân Đông, TT. Thanh Bình, huyện Thanh Bình, Đồng Tháp</small></td></tr></table>`;
 
-        // GIAO DIỆN HEADER 3 CƠ SỞ 
-        const headSacMau = `
-            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 2px solid #2c3e50; padding-bottom: 15px;">
-                <tr>
-                    <td width="75" valign="middle">
-                        <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" width="60">
-                    </td>
-                    <td valign="middle" style="line-height: 1.6;">
-                        <span style="font-size: 18px; font-weight: bold; color: #c0392b;">HỘ KINH DOANH SẮC MÀU</span><br>
-                        Địa chỉ: 27 Nguyễn Văn Cừ, Phường Cao Lãnh, Đồng Tháp<br>
-                        Số điện thoại: 0337.663.113<br>
-                        Website: inansacmaudongthap.com
-                    </td>
-                </tr>
-            </table>
-        `;
-        const headTuHy = `
-            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 2px solid #2c3e50; padding-bottom: 15px; text-align:center;">
-                <tr>
-                    <td valign="middle" style="line-height: 1.6;">
-                        <span style="font-size: 18px; font-weight: bold; color: #c0392b;">HỘ KINH DOANH TỨ HỶ</span><br>
-                        Địa chỉ: 234, đường Lê Lợi, phường Cao Lãnh, tỉnh Đồng Tháp
-                    </td>
-                </tr>
-            </table>
-        `;
-        const headNganDat = `
-            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 2px solid #2c3e50; padding-bottom: 15px;">
-                <tr>
-                    <td valign="middle" style="line-height: 1.6;">
-                        <span style="font-size: 18px; font-weight: bold; color: #c0392b;">CƠ SỞ IN NGÂN ĐẠT</span><br>
-                        Đc: 369, Khóm Tân Đông, thị trấn Thanh Bình, huyện Thanh Bình, Đồng Tháp
-                    </td>
-                </tr>
-            </table>
-        `;
-
-        // Các thông số font và đại diện
-        const fontSM = "font-family: 'Times New Roman', Times, serif;";
-        const fontTH = "font-family: Tahoma, sans-serif;";
-        const fontND = "font-family: Arial, sans-serif;";
-
-        const htmlDoc = `
-            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-            <head>
-                <meta charset="utf-8">
-                <title>Báo Giá - In Sắc Màu</title>
-                ${cssStyle}
-            </head>
-            <body>
-                ${buildPage("Sắc Màu", headSacMau, 1.00, "SACMAU.png", "Nguyễn Thị Trúc Ly", fontSM)}
-                ${buildPage("Tứ Hỷ", headTuHy, 1.03, "TUHY.png", "Đỗ Thị Ngọc Duyên", fontTH)}
-                ${buildPage("Ngân Đạt", headNganDat, 1.05, "NGANDAT.png", "Nguyễn Thị Diệu Hiền", fontND)}
-            </body>
-            </html>
-        `;
-        return htmlDoc;
+        return `<html><head><meta charset="utf-8"></head><body style="background:#ccc; margin:0; padding:20px;">
+            ${buildPage(headSM, 1.00, "SACMAU.png", "Nguyễn Thị Trúc Ly", "font-family:'Times New Roman', serif;")}
+            ${buildPage(headTH, 1.03, "TUHY.png", "Đỗ Thị Ngọc Duyên", "font-family:Tahoma, sans-serif;")}
+            ${buildPage(headND, 1.05, "NGANDAT.png", "Nguyễn Thị Diệu Hiền", "font-family:Arial, sans-serif;")}
+            </body></html>`;
     }
 
     function exportPDF() {
-        if(currentQuoteItems.length === 0) return Swal.fire('Thông báo', 'Giỏ báo giá đang trống!', 'warning');
-        
-        const tenKh = document.getElementById('f-khachhang').value.trim() || ".......................................................";
-        const diaChiKh = document.getElementById('f-diachi').value.trim() || ".......................................................";
-        const giamThueRate = parseFloat(document.getElementById('f-giamthue').value) || 0;
-
-        const htmlContent = buildTemplate(currentQuoteItems, tenKh, diaChiKh, giamThueRate);
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(htmlContent.replace('</body>', '<script>setTimeout(() => { window.print(); }, 500);<\/script></body>'));
-        printWindow.document.close();
+        if(currentQuoteItems.length === 0) return Swal.fire('Trống', 'Chưa có hàng!', 'warning');
+        const showStamp = document.getElementById('check-stamp').checked;
+        const html = buildTemplate(currentQuoteItems, document.getElementById('f-khachhang').value, document.getElementById('f-diachi').value, parseFloat(document.getElementById('f-giamthue').value), showStamp);
+        const w = window.open('', '_blank'); w.document.write(html); 
+        w.document.write('<script>setTimeout(()=>window.print(),500)<\/script>'); w.document.close();
     }
 
-    // --- HÀM XUẤT PDF TỪ LỊCH SỬ DỰA TRÊN MÃ BÁO GIÁ ---
-    window.exportPDFHistory = function(maBaoGia) {
-        if(!maBaoGia) return Swal.fire('Lỗi', 'Dòng dữ liệu này không có Mã Báo Giá để nhóm lại!', 'error');
-
-        const itemsToPrint = masterData.filter(x => x.Ma_Bao_Gia === maBaoGia);
-        if(itemsToPrint.length === 0) return;
-        
-        // Sắp xếp lại theo ID để in đúng thứ tự ban đầu
-        itemsToPrint.sort((a, b) => (a.id || a.Id || 0) - (b.id || b.Id || 0));
-
-        const tenKh = itemsToPrint[0].Ten_Khach_Hang || ".......................................................";
-        const diaChiKh = itemsToPrint[0].Dia_Chi || ".......................................................";
-        const giamThueRate = itemsToPrint[0].Giam_Thue || 0;
-
-        const htmlContent = buildTemplate(itemsToPrint, tenKh, diaChiKh, giamThueRate);
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(htmlContent.replace('</body>', '<script>setTimeout(() => { window.print(); }, 500);<\/script></body>'));
-        printWindow.document.close();
+    window.exportPDFHistory = function(ma) {
+        const items = masterData.filter(x => x.Ma_Bao_Gia === ma).sort((a,b)=>a.id-b.id);
+        if(items.length === 0) return;
+        const showStamp = document.getElementById('check-stamp').checked;
+        const html = buildTemplate(items, items[0].Ten_Khach_Hang, items[0].Dia_Chi, items[0].Giam_Thue, showStamp);
+        const w = window.open('', '_blank'); w.document.write(html);
+        w.document.write('<script>setTimeout(()=>window.print(),500)<\/script>'); w.document.close();
     }
   </script>
 </body>
