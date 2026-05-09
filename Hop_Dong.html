@@ -33,6 +33,7 @@
     .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     .table-modern tr:hover { background: #f8fafc; }
     
+    /* CSS Nút nhấn được thiết kế lại đẹp và bo tròn */
     .btn-submit { background: var(--accent); color: white; border: none; padding: 12px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(41, 128, 185, 0.3); font-size: 14px; }
     .btn-submit:hover { background: #1f618d; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(41, 128, 185, 0.4); }
     
@@ -42,10 +43,10 @@
     .btn-action { background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; box-shadow: 0 4px 10px rgba(52, 73, 94, 0.3);}
     .btn-action:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(52, 73, 94, 0.4); }
     
-    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; }
+    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 8px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; }
     .btn-del:hover { background: #fecaca; transform: scale(1.05); }
 
-    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; margin-right: 5px; }
+    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 8px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; margin-right: 5px; }
     .btn-pdf:hover { background: #bae6fd; transform: scale(1.05); }
 
     .cart-section { border: 2px dashed #bdc3c7; border-radius: 10px; padding: 15px; background: #fafafa; margin-top: 15px; }
@@ -78,35 +79,29 @@
           <label>Tên Cơ Quan / Đơn Vị (Bên B) *</label>
           <input type="text" id="f-tendonvi" class="input-modern" placeholder="VD: PHÒNG VĂN HÓA - XÃ HỘI PHƯỜNG MỸ NGÃI">
         </div>
-        <div class="input-group" style="grid-column: span 3;">
-          <label>Người Đại Diện *</label>
-          <input type="text" id="f-daidien" class="input-modern" placeholder="VD: Ông Trương Thanh Phong">
-        </div>
-        <div class="input-group" style="grid-column: span 3;">
-          <label>Chức Vụ</label>
-          <input type="text" id="f-chucvu" class="input-modern" placeholder="VD: Trưởng phòng">
-        </div>
-
-        <div class="input-group" style="grid-column: span 3;">
-          <label>Mã Số Thuế</label>
-          <input type="text" id="f-mst" class="input-modern" placeholder="...">
-        </div>
-        <div class="input-group" style="grid-column: span 9;">
+        <div class="input-group" style="grid-column: span 6;">
           <label>Địa Chỉ Khách Hàng</label>
           <input type="text" id="f-diachi" class="input-modern" placeholder="Nhập địa chỉ...">
         </div>
-
         <div class="input-group" style="grid-column: span 4;">
+          <label>Người Đại Diện *</label>
+          <input type="text" id="f-daidien" class="input-modern" placeholder="VD: Ông Trương Thanh Phong">
+        </div>
+        <div class="input-group" style="grid-column: span 4;">
+          <label>Chức Vụ</label>
+          <input type="text" id="f-chucvu" class="input-modern" placeholder="VD: Trưởng phòng">
+        </div>
+        <div class="input-group" style="grid-column: span 4;">
+          <label>Mã Số Thuế</label>
+          <input type="text" id="f-mst" class="input-modern" placeholder="...">
+        </div>
+        <div class="input-group" style="grid-column: span 6;">
           <label>Số Tài Khoản</label>
           <input type="text" id="f-stk" class="input-modern" placeholder="...">
         </div>
-        <div class="input-group" style="grid-column: span 4;">
+        <div class="input-group" style="grid-column: span 6;">
           <label>Ngân Hàng</label>
           <input type="text" id="f-nganhang" class="input-modern" placeholder="...">
-        </div>
-        <div class="input-group" style="grid-column: span 4;">
-          <label>Mức Tỷ Lệ Thuế % (Giảm trừ)</label>
-          <input type="number" id="f-giamthue" class="input-modern" value="0" min="0" placeholder="VD: 8 hoặc 10" oninput="renderCart()">
         </div>
       </div>
 
@@ -117,25 +112,28 @@
           <input type="text" id="f-tenhang" class="input-modern" placeholder="VD: Thiệp chúc xuân cho gia đình chính sách...">
         </div>
         
-        <div class="input-group" style="grid-column: span 3;">
+        <div class="input-group" style="grid-column: span 2;">
+          <label>Mức Tỷ Lệ Thuế %</label>
+          <input type="number" id="f-giamthue" class="input-modern" value="0" min="0" placeholder="VD: 8" oninput="renderCart()">
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
           <label>Đơn Vị Tính</label>
           <input type="text" id="f-dvt" class="input-modern" placeholder="Bộ, Cái, Tờ...">
         </div>
-        <div class="input-group" style="grid-column: span 3;">
+        <div class="input-group" style="grid-column: span 2;">
           <label>Số Lượng *</label>
           <input type="number" id="f-sl" class="input-modern" value="1" min="1" step="any" oninput="updateThanhTienTemp()">
         </div>
-        <div class="input-group" style="grid-column: span 3;">
+        <div class="input-group" style="grid-column: span 2;">
           <label>Đơn Giá *</label>
           <input type="text" id="f-dongia" class="input-modern" value="0" style="background: #fff9db;" oninput="formatCurrency(this); updateThanhTienTemp()">
         </div>
-        <div class="input-group" style="grid-column: span 3;">
+        <div class="input-group" style="grid-column: span 2;">
           <label>Thành Tiền</label>
           <input type="text" id="f-thanhtien" class="input-modern" value="0 đ" readonly style="background: #eef2f3; color: #c0392b; font-weight: bold;">
         </div>
-        
-        <div class="input-group" style="grid-column: span 12; align-items: flex-end;">
-          <button class="btn-add" style="width: 250px;" onclick="addItem()">+ THÊM VÀO HỢP ĐỒNG</button>
+        <div class="input-group" style="grid-column: span 2;">
+          <button class="btn-add" onclick="addItem()" style="margin-top: 22px;">+ THÊM</button>
         </div>
       </div>
 
@@ -194,7 +192,7 @@
         <h3 style="margin:0;">📋 LỊCH SỬ HỢP ĐỒNG ĐÃ LƯU</h3>
         <div class="search-area" style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; align-items: center;">
           <label style="font-size: 13px; font-weight: bold; cursor: pointer; color: #d35400; display: flex; align-items: center; white-space: nowrap;">
-            <input type="checkbox" id="check-nghiemthu-history" checked style="width: 16px; height: 16px; margin-right: 5px;"> KÈM BB NGHIỆM THU
+            <input type="checkbox" id="check-nghiemthu-history" checked style="width: 16px; height: 16px; margin-right: 5px;"> KÈM NGHIỆM THU
           </label>
           <label style="font-size: 13px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center; white-space: nowrap;">
             <input type="checkbox" id="check-stamp-history" checked style="width: 16px; height: 16px; margin-right: 5px;"> CÓ CON DẤU
@@ -371,14 +369,38 @@
         document.getElementById('cart-total').innerText = Math.round(finalTotal).toLocaleString('vi-VN') + " đ";
     }
 
+    // Hàm tạo mã HĐ mới nhất dựa trên dữ liệu hiện tại
+    function generateNewMaHD() {
+        const d = new Date();
+        const pad = (n) => n.toString().padStart(2, '0');
+        const dateStr = `${pad(d.getDate())}${pad(d.getMonth() + 1)}${d.getFullYear()}`;
+        const prefix = `HD-${dateStr}-`;
+        
+        let maxSeq = 0;
+        masterData.forEach(item => {
+            if (item.Ma_HD && item.Ma_HD.startsWith(prefix)) {
+                let parts = item.Ma_HD.split('-');
+                if(parts.length === 3) {
+                    let seq = parseInt(parts[2], 10);
+                    if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+                }
+            }
+        });
+        return `${prefix}${(maxSeq + 1).toString().padStart(3, '0')}`;
+    }
+
     // --- LƯU VÀO DATABASE ---
     async function saveToDB() {
         const tenDonVi = document.getElementById('f-tendonvi').value.trim();
         const daiDien = document.getElementById('f-daidien').value.trim();
         const chucVu = document.getElementById('f-chucvu').value.trim();
-        const mst = document.getElementById('f-mst').value.trim();
+        // Ép kiểu số nguyên cho MST và STK tránh lỗi DB
+        const mstVal = document.getElementById('f-mst').value.replace(/\D/g, '');
+        const stkVal = document.getElementById('f-stk').value.replace(/\D/g, '');
+        const mst = mstVal ? parseInt(mstVal, 10) : null;
+        const stk = stkVal ? parseInt(stkVal, 10) : null;
+        
         const diaChi = document.getElementById('f-diachi').value.trim();
-        const stk = document.getElementById('f-stk').value.trim();
         const nganHang = document.getElementById('f-nganhang').value.trim();
         const giamThueRate = parseFloat(document.getElementById('f-giamthue').value) || 0;
 
@@ -389,22 +411,7 @@
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
         
         try {
-            const d = new Date();
-            const pad = (n) => n.toString().padStart(2, '0');
-            const dateStr = `${pad(d.getDate())}${pad(d.getMonth() + 1)}${d.getFullYear()}`;
-            const prefix = `HD-${dateStr}-`;
-            
-            let maxSeq = 0;
-            masterData.forEach(item => {
-                if (item.Ma_HD && item.Ma_HD.startsWith(prefix)) {
-                    let parts = item.Ma_HD.split('-');
-                    if(parts.length === 3) {
-                        let seq = parseInt(parts[2], 10);
-                        if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
-                    }
-                }
-            });
-            const maHD = `${prefix}${(maxSeq + 1).toString().padStart(3, '0')}`;
+            const maHD = generateNewMaHD();
             const ngayGio = getCleanVNTime();
             
             const payloads = currentItems.map(item => {
@@ -437,6 +444,7 @@
 
             Swal.fire({ icon: 'success', title: 'Lưu thành công!', text: `Mã HĐ: ${maHD}`, timer: 2000, showConfirmButton: false });
             clearCart();
+            // Reset form
             document.querySelectorAll('.form-card input').forEach(input => {
                 if(input.id !== 'f-giamthue' && input.id !== 'f-sl' && input.id !== 'f-dongia' && input.id !== 'f-thanhtien') input.value = '';
             });
@@ -527,7 +535,7 @@
     // HỆ THỐNG XUẤT FILE PDF / WORD HỢP ĐỒNG & NGHIỆM THU
     // ====================================================================
 
-    function buildTemplate(itemsToPrint, infoB, showStamp, showNghiemThu) {
+    function buildTemplate(itemsToPrint, infoB, showStamp, showNghiemThu, isWordExport = false) {
         // Trích xuất mã số dạng XXX/YYYY/HĐDV từ Ma_HD
         let soHD = "........";
         let year = new Date().getFullYear();
@@ -538,6 +546,7 @@
                 year = parts[1].substring(4,8) || year;
             }
         }
+        const contractRef = `${soHD}/${year}/HĐDV`;
 
         // Tạo bảng hàng hóa (HTML cơ bản cho WORD & PDF)
         let rowsHtml = "";
@@ -576,22 +585,25 @@
         let rawDaiDien = infoB.Ten_Dai_Dien || '.......................................';
         let cleanDaiDien = rawDaiDien.replace(/^(Ông|Bà)\s+/i, '').trim();
 
-        // Chữ ký Sắc Màu
-        const stampHtml = showStamp ? `<img src="SACMAU.png" width="250" style="margin-top: 10px; display:block;">` : `<div style="height:120px;"></div>`;
+        // Chữ ký Sắc Màu (Dùng khoảng trắng dòng bằng thẻ <br> để Word hiểu)
+        const stampHtml = (showStamp && !isWordExport) 
+            ? `<img src="SACMAU.png" width="250" style="margin-top: 10px; display:block;"><br>` 
+            : `<br><br><br><br><br><br>`;
 
         // CSS Bọc
         const cssStyle = `
             <style>
                 body { background: #ccc; margin:0; padding:20px; font-family: 'Times New Roman', Times, serif; font-size: 15px; line-height: 1.5; }
+                /* Lề chuẩn hành chính: Top 2.5cm, Left 3cm, Right 2cm, Bottom 2cm */
+                @page { size: A4; margin: 2.5cm 2cm 2cm 3cm; }
                 .page { background: white; margin: 0 auto; padding: 2.5cm 2cm 2cm 3cm; box-sizing: border-box; max-width: 21cm; }
                 .text-center { text-align: center; }
                 .font-bold { font-weight: bold; }
                 .title { font-size: 20px; margin-top: 20px; }
                 p { margin: 5px 0; }
                 @media print { 
-                    @page { size: A4; margin: 0; }
                     body { background: white; margin: 0; padding: 0; } 
-                    .page { margin: 0; padding: 2.5cm 2cm 2cm 3cm; box-shadow: none; width: 21cm; min-height: 29.7cm; page-break-after: always;} 
+                    .page { margin: 0; padding: 0; border: none; box-shadow: none; width: auto; min-height: auto; page-break-after: always;} 
                 }
             </style>
         `;
@@ -605,7 +617,7 @@
                     ----------------
                 </div>
                 <div class="text-center font-bold title">HỢP ĐỒNG DỊCH VỤ</div>
-                <div class="text-center">Số: ${soHD}/${year}/HĐDV</div>
+                <div class="text-center">Số: ${contractRef}</div>
                 
                 <p style="margin-top: 15px;"><i>Căn cứ Luật Thương mại số 36/2005/QH11 do Quốc hội nước Cộng hòa xã hội chủ nghĩa Việt Nam được thông qua ngày 14 tháng 6 năm 2005;</i></p>
                 <p><i>Căn cứ khả năng cung cấp và nhu cầu thỏa thuận của hai bên;</i></p>
@@ -678,11 +690,12 @@
                     <tr>
                         <td align="center" style="border:none; width:50%; vertical-align: top;">
                             <b>ĐẠI DIỆN BÊN A</b><br>
-                            ${stampHtml}<br>
+                            ${stampHtml}
                             <b>Nguyễn Thị Trúc Ly</b>
                         </td>
                         <td align="center" style="border:none; width:50%; vertical-align: top;">
-                            <b>ĐẠI DIỆN BÊN B</b><br><br><br><br><br><br>
+                            <b>ĐẠI DIỆN BÊN B</b><br>
+                            <br><br><br><br><br><br><br>
                             <b>${cleanDaiDien}</b>
                         </td>
                     </tr>
@@ -700,7 +713,7 @@
                 </div>
                 <div class="text-center font-bold title">BIÊN BẢN NGHIỆM THU VÀ THANH LÝ HỢP ĐỒNG</div>
                 
-                <p style="margin-top: 15px;"><i>Căn cứ Hợp đồng số ${soHD}/${year}/HĐDV giữa Hộ Kinh doanh Sắc Màu và ${infoB.Ten_Don_Vi}</i></p>
+                <p style="margin-top: 15px;"><i>Căn cứ Hợp đồng số ${contractRef} giữa Hộ Kinh doanh Sắc Màu và ${infoB.Ten_Don_Vi}</i></p>
                 <p>Hôm nay, vào lúc ..... giờ ..... phút, ngày ....... tháng ....... năm ........ tại ${infoB.Ten_Don_Vi}, chúng tôi gồm:</p>
                 
                 <p><b>Bên A: HỘ KINH DOANH SẮC MÀU</b></p>
@@ -720,7 +733,7 @@
                 <p>- Địa chỉ: ${infoB.Dia_Chi || '....................................................................................'}</p>
                 <p>- Số tài khoản: ${infoB.So_Tai_Khoan || '...........................'} Tại: ${infoB.Ngan_Hang || '....................................'}</p>
 
-                <p style="margin-top: 20px;">Sau khi kết thúc công việc giữa hai bên thỏa thuận, hai bên thống nhất thanh lý hợp đồng số ${soHD}/${year}/HĐDV ngày ....... tháng ....... năm ........ như sau:</p>
+                <p style="margin-top: 20px;">Sau khi kết thúc công việc giữa hai bên thỏa thuận, hai bên thống nhất thanh lý hợp đồng số ${contractRef} ngày ....... tháng ....... năm ........ như sau:</p>
                 <p>Tổng số giá trị hợp đồng là <b>${Math.round(finalTotal).toLocaleString('vi-VN')} đồng.</b></p>
                 <p><b>Số tiền bằng chữ:</b> ${docSo(Math.round(finalTotal))}</p>
 
@@ -731,11 +744,12 @@
                     <tr>
                         <td align="center" style="border:none; width:50%; vertical-align: top;">
                             <b>ĐẠI DIỆN BÊN A</b><br>
-                            ${stampHtml}<br>
+                            ${stampHtml}
                             <b>Nguyễn Thị Trúc Ly</b>
                         </td>
                         <td align="center" style="border:none; width:50%; vertical-align: top;">
-                            <b>ĐẠI DIỆN BÊN B</b><br><br><br><br><br><br>
+                            <b>ĐẠI DIỆN BÊN B</b><br>
+                            <br><br><br><br><br><br><br>
                             <b>${cleanDaiDien}</b>
                         </td>
                     </tr>
@@ -761,6 +775,8 @@
     function exportPDF() {
         if(currentItems.length === 0) return Swal.fire('Thông báo', 'Hợp đồng chưa có sản phẩm!', 'warning');
         
+        let maHDTemp = generateNewMaHD();
+
         const infoB = {
             Ten_Don_Vi: document.getElementById('f-tendonvi').value.trim() || '...........................................',
             Ten_Dai_Dien: document.getElementById('f-daidien').value.trim(),
@@ -770,13 +786,13 @@
             So_Tai_Khoan: document.getElementById('f-stk').value.trim(),
             Ngan_Hang: document.getElementById('f-nganhang').value.trim(),
             Giam_Thue: parseFloat(document.getElementById('f-giamthue').value) || 0,
-            Ma_HD: null 
+            Ma_HD: maHDTemp 
         };
 
         const showStamp = document.getElementById('check-stamp').checked;
         const showNghiemThu = document.getElementById('check-nghiemthu').checked;
 
-        const htmlContent = buildTemplate(currentItems, infoB, showStamp, showNghiemThu);
+        const htmlContent = buildTemplate(currentItems, infoB, showStamp, showNghiemThu, false);
         const printWindow = window.open('', '_blank');
         printWindow.document.write(htmlContent.replace('</body>', '<script>setTimeout(() => { window.print(); }, 500);<\/script></body>'));
         printWindow.document.close();
@@ -785,6 +801,8 @@
     function exportWord() {
         if(currentItems.length === 0) return Swal.fire('Thông báo', 'Hợp đồng chưa có sản phẩm!', 'warning');
         
+        let maHDTemp = generateNewMaHD();
+
         const infoB = {
             Ten_Don_Vi: document.getElementById('f-tendonvi').value.trim() || '...........................................',
             Ten_Dai_Dien: document.getElementById('f-daidien').value.trim(),
@@ -794,13 +812,13 @@
             So_Tai_Khoan: document.getElementById('f-stk').value.trim(),
             Ngan_Hang: document.getElementById('f-nganhang').value.trim(),
             Giam_Thue: parseFloat(document.getElementById('f-giamthue').value) || 0,
-            Ma_HD: null 
+            Ma_HD: maHDTemp
         };
 
         const showStamp = document.getElementById('check-stamp').checked;
         const showNghiemThu = document.getElementById('check-nghiemthu').checked;
 
-        const htmlContent = buildTemplate(currentItems, infoB, showStamp, showNghiemThu);
+        const htmlContent = buildTemplate(currentItems, infoB, showStamp, showNghiemThu, true); // true = isWordExport
         const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -834,7 +852,7 @@
         const showStamp = document.getElementById('check-stamp-history') ? document.getElementById('check-stamp-history').checked : true;
         const showNghiemThu = document.getElementById('check-nghiemthu-history') ? document.getElementById('check-nghiemthu-history').checked : true;
 
-        const htmlContent = buildTemplate(itemsToPrint, infoB, showStamp, showNghiemThu);
+        const htmlContent = buildTemplate(itemsToPrint, infoB, showStamp, showNghiemThu, false);
         const printWindow = window.open('', '_blank');
         printWindow.document.write(htmlContent.replace('</body>', '<script>setTimeout(() => { window.print(); }, 500);<\/script></body>'));
         printWindow.document.close();
