@@ -20,7 +20,6 @@
     .summary-box .amount { font-size: 24px; font-weight: bold; margin-top: 5px; color: #f1c40f; }
     
     .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
-    /* Sử dụng grid 12 cột để linh hoạt kích thước */
     .form-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 15px; }
     .input-group { display: flex; flex-direction: column; position: relative; }
     .input-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
@@ -34,7 +33,6 @@
     .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     .table-modern tr:hover { background: #f8fafc; }
     
-    /* CSS Nút nhấn được thiết kế lại đẹp và bo tròn */
     .btn-submit { background: var(--accent); color: white; border: none; padding: 12px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(41, 128, 185, 0.3); font-size: 14px; }
     .btn-submit:hover { background: #1f618d; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(41, 128, 185, 0.4); }
     
@@ -44,10 +42,10 @@
     .btn-action { background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; box-shadow: 0 4px 10px rgba(52, 73, 94, 0.3);}
     .btn-action:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(52, 73, 94, 0.4); }
     
-    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 8px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; }
+    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 12px; border-radius: 15px; transition: 0.2s; }
     .btn-del:hover { background: #fecaca; transform: scale(1.05); }
 
-    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 8px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; margin-right: 5px; }
+    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 12px; border-radius: 15px; transition: 0.2s; margin-right: 5px; }
     .btn-pdf:hover { background: #bae6fd; transform: scale(1.05); }
 
     .cart-section { border: 2px dashed #bdc3c7; border-radius: 10px; padding: 15px; background: #fafafa; margin-top: 15px; }
@@ -103,14 +101,18 @@
         </div>
         <div class="input-group" style="grid-column: span 2;">
           <label>Số Lượng *</label>
-          <input type="number" id="f-sl" class="input-modern" value="1" min="1" step="any">
+          <input type="number" id="f-sl" class="input-modern" value="1" min="1" step="any" oninput="updateThanhTienTemp()">
         </div>
         <div class="input-group" style="grid-column: span 2;">
           <label>Đơn Giá *</label>
-          <input type="text" id="f-dongia" class="input-modern" value="0" style="background: #fff9db;" oninput="formatCurrency(this)">
+          <input type="text" id="f-dongia" class="input-modern" value="0" style="background: #fff9db;" oninput="formatCurrency(this); updateThanhTienTemp()">
         </div>
-        <div class="input-group" style="grid-column: span 4;">
-          <label>Ghi Chú SP (Tùy chọn)</label>
+        <div class="input-group" style="grid-column: span 2;">
+          <label>Thành Tiền</label>
+          <input type="text" id="f-thanhtien" class="input-modern" value="0 đ" readonly style="background: #eef2f3; color: #c0392b; font-weight: bold;">
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
+          <label>Ghi Chú SP</label>
           <input type="text" id="f-ghichu" class="input-modern" placeholder="...">
         </div>
         
@@ -180,7 +182,7 @@
                     <th style="width:140px;">Ngày / Mã BG</th>
                     <th>Khách Hàng</th>
                     <th>Hàng Hóa / Dịch Vụ</th>
-                    <th style="width:60px; text-align:center;">SL</th>
+                    <th style="width:60px; text-align:center;">SL Tổng</th>
                     <th style="width:120px; text-align:right;">Thành Tiền (Gốc)</th>
                     <th style="width:120px; text-align:right;">Tổng Cộng (Sau thuế)</th>
                     <th style="width:100px; text-align:center;">Thao tác</th>
@@ -269,6 +271,13 @@
         return chuoi;
     }
 
+    // Tự động tính toán hiển thị trực tiếp ở ô Thành Tiền
+    function updateThanhTienTemp() {
+        const sl = parseFloat(document.getElementById('f-sl').value) || 0;
+        const dongia = parseNum(document.getElementById('f-dongia').value);
+        document.getElementById('f-thanhtien').value = (sl * dongia).toLocaleString('vi-VN') + " đ";
+    }
+
     function addItemToQuote() {
         const tenhang = document.getElementById('f-tenhang').value.trim();
         const dvt = document.getElementById('f-dvt').value.trim() || 'Cái';
@@ -292,6 +301,7 @@
         document.getElementById('f-tenhang').value = "";
         document.getElementById('f-dongia').value = "0";
         document.getElementById('f-ghichu').value = "";
+        document.getElementById('f-thanhtien').value = "0 đ";
         document.getElementById('f-tenhang').focus();
         
         renderQuoteCart();
@@ -419,6 +429,7 @@
       }
     }
 
+    // Gom nhóm Lịch sử Báo Giá theo Ma_Bao_Gia
     window.filterDisplayList = function() {
         const query = document.getElementById("searchFilter").value.toLowerCase().trim();
         let filteredData = masterData;
@@ -431,34 +442,67 @@
                 return kh.includes(query) || ten.includes(query) || ma.includes(query);
             });
         }
+
+        // Bắt đầu gom nhóm
+        const grouped = {};
+        filteredData.forEach(item => {
+            const ma = item.Ma_Bao_Gia || item.id; // Lấy mã nhóm (nếu báo giá cũ không có mã thì gán theo id)
+            if(!grouped[ma]) {
+                grouped[ma] = {
+                    ...item,
+                    items: [],
+                    tongThanhTien: 0,
+                    tongSauThue: 0
+                };
+            }
+            grouped[ma].items.push(item);
+            grouped[ma].tongThanhTien += (parseFloat(item.Thanh_Tien) || 0);
+            grouped[ma].tongSauThue += (parseFloat(item.Tong_Cong) || parseFloat(item.Thanh_Tien) || 0);
+        });
+
+        // Sắp xếp nhóm mới lên đầu
+        const groupedArray = Object.values(grouped).sort((a, b) => b.id - a.id);
         
         const container = document.getElementById('data-container');
-        if(filteredData.length === 0) { 
+        if(groupedArray.length === 0) { 
             container.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#888;">Không tìm thấy dữ liệu.</td></tr>'; 
             return; 
         }
 
-        container.innerHTML = filteredData.map(item => `
+        container.innerHTML = groupedArray.map(group => {
+            let displayDate = formatDisplayTime(group.Ngay_Gio);
+            
+            // Xây dựng danh sách tên hàng hóa trong group
+            let combinedNames = group.items.map(i => `• ${i.Ten_Hang} (x${i.So_Luong})`).join('<br>');
+            let combinedSL = group.items.reduce((sum, i) => sum + (parseFloat(i.So_Luong) || 0), 0);
+
+            return `
             <tr>
-                <td data-label="Ngày/Mã">${formatDisplayTime(item.Ngay_Gio)}<br><small style="color:var(--accent); font-weight:bold;">${item.Ma_Bao_Gia || ''}</small></td>
-                <td data-label="Khách hàng"><b>${item.Ten_Khach_Hang}</b><br><small>${item.Dia_Chi || ''}</small></td>
-                <td data-label="Hàng hóa"><b style="color:#2c3e50;">${item.Ten_Hang}</b><br><small style="color:#7f8c8d;">${item.Ghi_Chu || ''}</small></td>
-                <td data-label="SL" style="text-align:center;">${item.So_Luong} ${item.DVT}</td>
-                <td data-label="Thành tiền" style="text-align:right;"><b style="color:#7f8c8d;">${(item.Thanh_Tien || 0).toLocaleString('vi-VN')} đ</b></td>
-                <td data-label="Tổng cộng" style="text-align:right;"><b style="color:#c0392b;">${(item.Tong_Cong || item.Thanh_Tien || 0).toLocaleString('vi-VN')} đ</b></td>
+                <td data-label="Ngày/Mã">${displayDate}<br><small style="color:var(--accent); font-weight:bold;">${group.Ma_Bao_Gia || ''}</small></td>
+                <td data-label="Khách hàng"><b>${group.Ten_Khach_Hang}</b><br><small>${group.Dia_Chi || ''}</small></td>
+                <td data-label="Hàng hóa"><span style="color:#2c3e50; line-height: 1.5;">${combinedNames}</span></td>
+                <td data-label="SL Tổng" style="text-align:center;">${combinedSL}</td>
+                <td data-label="Thành tiền" style="text-align:right;"><b style="color:#7f8c8d;">${group.tongThanhTien.toLocaleString('vi-VN')} đ</b></td>
+                <td data-label="Tổng cộng" style="text-align:right;"><b style="color:#c0392b;">${group.tongSauThue.toLocaleString('vi-VN')} đ</b></td>
                 <td data-label="Thao tác" style="text-align:center;">
-                    <button onclick="exportPDFHistory('${item.Ma_Bao_Gia}')" class="btn-pdf" title="Xuất PDF">🖨️</button>
-                    <button onclick="deleteRecord(${item.id})" class="btn-del" title="Xóa">🗑️</button>
+                    <button onclick="exportPDFHistory('${group.Ma_Bao_Gia}')" class="btn-pdf" title="Xuất PDF">🖨️</button>
+                    <button onclick="deleteGroupRecord('${group.Ma_Bao_Gia}', ${group.id})" class="btn-del" title="Xóa">🗑️</button>
                 </td>
-            </tr>
-        `).join('');
+            </tr>`;
+        }).join('');
     }
 
-    window.deleteRecord = async function(id) {
-        const r = await Swal.fire({ title: 'Xóa dòng báo giá này?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA' });
+    // Xóa theo nhóm
+    window.deleteGroupRecord = async function(maBaoGia, fallbackId) {
+        const r = await Swal.fire({ title: 'Xóa báo giá này?', text: 'Toàn bộ các mặt hàng trong báo giá này sẽ bị xóa.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA' });
         if (r.isConfirmed) {
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-            await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}?id=eq.${id}`, { method: 'DELETE', headers: h });
+            if (maBaoGia && maBaoGia !== 'undefined') {
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}?Ma_Bao_Gia=eq.${maBaoGia}`, { method: 'DELETE', headers: h });
+            } else {
+                // Hỗ trợ xóa các dòng cũ chưa có mã nhóm
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}?id=eq.${fallbackId}`, { method: 'DELETE', headers: h });
+            }
             loadData();
         }
     }
@@ -660,6 +704,7 @@
         const itemsToPrint = masterData.filter(x => x.Ma_Bao_Gia === maBaoGia);
         if(itemsToPrint.length === 0) return;
         
+        // Sắp xếp lại theo ID để in đúng thứ tự ban đầu
         itemsToPrint.sort((a, b) => (a.id || a.Id || 0) - (b.id || b.Id || 0));
 
         const tenKh = itemsToPrint[0].Ten_Khach_Hang || ".......................................................";
