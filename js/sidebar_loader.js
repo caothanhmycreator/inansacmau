@@ -127,9 +127,7 @@
     <div class="group-title" onclick="this.parentElement.classList.toggle('active')">📄 VĂN BẢN <span>▼</span></div>
     <div class="group-items">
         <a href="Bao_Gia.html" id="Bao_Gia" class="nav-link">📋 Báo Giá</a>
-        <a href="Hop_Dong.html" id="Hop_Dong" class="nav-link">🤝 Hợp đồng</a>
-        <a href="Nghiem_Thu.html" id="Nghiem_Thu" class="nav-link">✍️ Nghiệm thu</a>
-        <a href="Thanh_Ly.html" id="Thanh_Ly" class="nav-link">📜 Thanh lý</a>
+        <a href="Hop_Dong.html" id="Hop_Dong" class="nav-link">✍️ Hợp đồng - Nghiệm thu - Thanh lý</a>
         <a href="Hoa_Don.html" id="Hoa_Don_Dien_Tu" class="nav-link">🧾 Hóa đơn điện tử</a>
     </div>
 </div>

@@ -40,10 +40,8 @@ window.APP_MODULES = [
 
   // --- NHÓM VĂN BẢN ---
   { id: "Bao_Gia",          label: "Báo Giá",             icon: "📋", file: "Bao_Gia.html",      group: "Văn bản" },
-  { id: "Hop_Dong",         label: "Hợp đồng",            icon: "🤝", file: "Hop_Dong.html",     group: "Văn bản" },
-  { id: "Nghiem_Thu",       label: "Nghiệm thu",          icon: "✍️", file: "Nghiem_Thu.html",   group: "Văn bản" },
-  { id: "Thanh_Ly",         label: "Thanh lý",            icon: "📜", file: "Thanh_Ly.html",     group: "Văn bản" },
-  { id: "Hoa_Don_Dien_Tu",  label: "Hóa đơn điện tử",     icon: "🧾", file: "Hoa_Don.html",      group: "Văn bản" },
+  { id: "Hop_Dong",         label: "✍️ Hợp đồng - Nghiệm thu - Thanh lý",            icon: "🤝", file: "Hop_Dong.html",     group: "Văn bản" },
+   { id: "Hoa_Don_Dien_Tu",  label: "Hóa đơn điện tử",     icon: "🧾", file: "Hoa_Don.html",      group: "Văn bản" },
 ];
 
 window.formatDateTimeVN = function() {
