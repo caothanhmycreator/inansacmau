@@ -20,6 +20,7 @@
     .summary-box .amount { font-size: 24px; font-weight: bold; margin-top: 5px; color: #f1c40f; }
     
     .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
+    /* Sử dụng grid 12 cột để linh hoạt kích thước */
     .form-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 15px; }
     .input-group { display: flex; flex-direction: column; position: relative; }
     .input-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
@@ -33,6 +34,7 @@
     .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     .table-modern tr:hover { background: #f8fafc; }
     
+    /* CSS Nút nhấn được thiết kế lại đẹp và bo tròn */
     .btn-submit { background: var(--accent); color: white; border: none; padding: 12px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(41, 128, 185, 0.3); font-size: 14px; }
     .btn-submit:hover { background: #1f618d; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(41, 128, 185, 0.4); }
     
@@ -42,10 +44,10 @@
     .btn-action { background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; box-shadow: 0 4px 10px rgba(52, 73, 94, 0.3);}
     .btn-action:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(52, 73, 94, 0.4); }
     
-    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 12px; border-radius: 15px; transition: 0.2s; }
+    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 8px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; }
     .btn-del:hover { background: #fecaca; transform: scale(1.05); }
 
-    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 12px; border-radius: 15px; transition: 0.2s; margin-right: 5px; }
+    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 8px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; margin-right: 5px; }
     .btn-pdf:hover { background: #bae6fd; transform: scale(1.05); }
 
     .cart-section { border: 2px dashed #bdc3c7; border-radius: 10px; padding: 15px; background: #fafafa; margin-top: 15px; }
@@ -112,7 +114,7 @@
           <input type="text" id="f-thanhtien" class="input-modern" value="0 đ" readonly style="background: #eef2f3; color: #c0392b; font-weight: bold;">
         </div>
         <div class="input-group" style="grid-column: span 2;">
-          <label>Ghi Chú SP</label>
+          <label>Ghi Chú SP (Tùy chọn)</label>
           <input type="text" id="f-ghichu" class="input-modern" placeholder="...">
         </div>
         
@@ -171,6 +173,9 @@
       <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
         <h3 style="margin:0;">📋 LỊCH SỬ BÁO GIÁ ĐÃ LƯU</h3>
         <div class="search-area" style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; align-items: center;">
+          <label style="font-size: 13px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center; white-space: nowrap;">
+            <input type="checkbox" id="check-stamp-history" checked style="width: 16px; height: 16px; margin-right: 5px;"> CÓ CON DẤU CHỮ KÝ
+          </label>
           <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Tìm khách hàng, mã báo giá..." style="max-width: 300px; flex: 1;" onkeyup="filterDisplayList()">
           <button onclick="loadData()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold; white-space: nowrap;">🔄 Tải lại</button>
         </div>
@@ -182,14 +187,13 @@
                     <th style="width:140px;">Ngày / Mã BG</th>
                     <th>Khách Hàng</th>
                     <th>Hàng Hóa / Dịch Vụ</th>
-                    <th style="width:60px; text-align:center;">SL Tổng</th>
                     <th style="width:120px; text-align:right;">Thành Tiền (Gốc)</th>
                     <th style="width:120px; text-align:right;">Tổng Cộng (Sau thuế)</th>
                     <th style="width:100px; text-align:center;">Thao tác</th>
                 </tr>
             </thead>
             <tbody id="data-container">
-                <tr><td colspan="7" style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu...</td></tr>
+                <tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu...</td></tr>
             </tbody>
         </table>
       </div>
@@ -425,7 +429,7 @@
         masterData = await res.json();
         filterDisplayList(); 
       } catch (e) { 
-          document.getElementById('data-container').innerHTML = `<tr><td colspan="7" style="text-align:center; color:#e74c3c;">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
+          document.getElementById('data-container').innerHTML = `<tr><td colspan="6" style="text-align:center; color:#e74c3c;">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
       }
     }
 
@@ -465,7 +469,7 @@
         
         const container = document.getElementById('data-container');
         if(groupedArray.length === 0) { 
-            container.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#888;">Không tìm thấy dữ liệu.</td></tr>'; 
+            container.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">Không tìm thấy dữ liệu.</td></tr>'; 
             return; 
         }
 
@@ -474,14 +478,12 @@
             
             // Xây dựng danh sách tên hàng hóa trong group
             let combinedNames = group.items.map(i => `• ${i.Ten_Hang} (x${i.So_Luong})`).join('<br>');
-            let combinedSL = group.items.reduce((sum, i) => sum + (parseFloat(i.So_Luong) || 0), 0);
 
             return `
             <tr>
                 <td data-label="Ngày/Mã">${displayDate}<br><small style="color:var(--accent); font-weight:bold;">${group.Ma_Bao_Gia || ''}</small></td>
                 <td data-label="Khách hàng"><b>${group.Ten_Khach_Hang}</b><br><small>${group.Dia_Chi || ''}</small></td>
                 <td data-label="Hàng hóa"><span style="color:#2c3e50; line-height: 1.5;">${combinedNames}</span></td>
-                <td data-label="SL Tổng" style="text-align:center;">${combinedSL}</td>
                 <td data-label="Thành tiền" style="text-align:right;"><b style="color:#7f8c8d;">${group.tongThanhTien.toLocaleString('vi-VN')} đ</b></td>
                 <td data-label="Tổng cộng" style="text-align:right;"><b style="color:#c0392b;">${group.tongSauThue.toLocaleString('vi-VN')} đ</b></td>
                 <td data-label="Thao tác" style="text-align:center;">
@@ -710,7 +712,7 @@
         const tenKh = itemsToPrint[0].Ten_Khach_Hang || ".......................................................";
         const diaChiKh = itemsToPrint[0].Dia_Chi || ".......................................................";
         const giamThueRate = itemsToPrint[0].Giam_Thue || 0;
-        const showStamp = document.getElementById('check-stamp') ? document.getElementById('check-stamp').checked : true;
+        const showStamp = document.getElementById('check-stamp-history') ? document.getElementById('check-stamp-history').checked : true;
 
         const htmlContent = buildTemplate(itemsToPrint, tenKh, diaChiKh, giamThueRate, showStamp);
         const printWindow = window.open('', '_blank');
