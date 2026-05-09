@@ -40,7 +40,7 @@ window.APP_MODULES = [
 
   // --- NHÓM VĂN BẢN ---
   { id: "Bao_Gia",          label: "Báo Giá",             icon: "📋", file: "Bao_Gia.html",      group: "Văn bản" },
-  { id: "Hop_Dong",         label: "✍️ Hợp đồng - Nghiệm thu - Thanh lý",            icon: "🤝", file: "Hop_Dong.html",     group: "Văn bản" },
+  { id: "Hop_Dong",         label: "✍️ Hợp đồng - Nghiệm thu",            icon: "🤝", file: "Hop_Dong.html",     group: "Văn bản" },
    { id: "Hoa_Don_Dien_Tu",  label: "Hóa đơn điện tử",     icon: "🧾", file: "Hoa_Don.html",      group: "Văn bản" },
 ];
 

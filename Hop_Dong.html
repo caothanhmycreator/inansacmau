@@ -42,10 +42,10 @@
     .btn-action { background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; box-shadow: 0 4px 10px rgba(52, 73, 94, 0.3);}
     .btn-action:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(52, 73, 94, 0.4); }
     
-    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 8px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; }
+    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; }
     .btn-del:hover { background: #fecaca; transform: scale(1.05); }
 
-    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 8px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; margin-right: 5px; }
+    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; margin-right: 5px; }
     .btn-pdf:hover { background: #bae6fd; transform: scale(1.05); }
 
     .cart-section { border: 2px dashed #bdc3c7; border-radius: 10px; padding: 15px; background: #fafafa; margin-top: 15px; }
@@ -174,12 +174,16 @@
             </tfoot>
           </table>
         </div>
-        <div style="margin-top: 15px; display: flex; gap: 15px; justify-content: flex-end; align-items: center;">
-            <label style="font-size: 14px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center;">
+        <div style="margin-top: 15px; display: flex; gap: 15px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+            <label style="font-size: 14px; font-weight: bold; cursor: pointer; color: #d35400; display: flex; align-items: center;">
+                <input type="checkbox" id="check-nghiemthu" checked style="width: 18px; height: 18px; margin-right: 8px;"> KÈM BB NGHIỆM THU
+            </label>
+            <label style="font-size: 14px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center; margin-right: 10px;">
                 <input type="checkbox" id="check-stamp" checked style="width: 18px; height: 18px; margin-right: 8px;"> CÓ CON DẤU CHỮ KÝ
             </label>
             <button class="btn-action" style="background:#e74c3c;" onclick="clearCart()">LÀM LẠI</button>
-            <button class="btn-action" style="background:#27ae60;" onclick="exportPDF()">🖨️ XUẤT PDF HỢP ĐỒNG</button>
+            <button class="btn-action" style="background:#2980b9;" onclick="exportWord()">📄 TẢI FILE WORD</button>
+            <button class="btn-action" style="background:#27ae60;" onclick="exportPDF()">🖨️ XUẤT PDF</button>
             <button class="btn-submit" onclick="saveToDB()">💾 LƯU VÀO DATABASE</button>
         </div>
       </div>
@@ -189,10 +193,13 @@
       <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
         <h3 style="margin:0;">📋 LỊCH SỬ HỢP ĐỒNG ĐÃ LƯU</h3>
         <div class="search-area" style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; align-items: center;">
-          <label style="font-size: 13px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center; white-space: nowrap;">
-            <input type="checkbox" id="check-stamp-history" checked style="width: 16px; height: 16px; margin-right: 5px;"> CÓ CON DẤU CHỮ KÝ
+          <label style="font-size: 13px; font-weight: bold; cursor: pointer; color: #d35400; display: flex; align-items: center; white-space: nowrap;">
+            <input type="checkbox" id="check-nghiemthu-history" checked style="width: 16px; height: 16px; margin-right: 5px;"> KÈM BB NGHIỆM THU
           </label>
-          <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Tìm đơn vị, mã HĐ..." style="max-width: 300px; flex: 1;" onkeyup="filterDisplayList()">
+          <label style="font-size: 13px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center; white-space: nowrap;">
+            <input type="checkbox" id="check-stamp-history" checked style="width: 16px; height: 16px; margin-right: 5px;"> CÓ CON DẤU
+          </label>
+          <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Tìm đơn vị, mã HĐ..." style="max-width: 200px; flex: 1;" onkeyup="filterDisplayList()">
           <button onclick="loadData()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold; white-space: nowrap;">🔄 Tải lại</button>
         </div>
       </div>
@@ -267,22 +274,18 @@
     }
     function docTrien(so, daydu) {
         let chuoi = "";
-        let tram = Math.floor(so / 1000000);
-        so = so % 1000000;
+        let tram = Math.floor(so / 1000000); so = so % 1000000;
         if (tram > 0 || daydu) { chuoi += docHang(tram, daydu) + " triệu"; daydu = true; }
-        let nghin = Math.floor(so / 1000);
-        so = so % 1000;
+        let nghin = Math.floor(so / 1000); so = so % 1000;
         if (nghin > 0 || daydu) { chuoi += docHang(nghin, daydu) + " nghìn"; daydu = true; }
         if (so > 0 || daydu) chuoi += docHang(so, daydu);
         return chuoi;
     }
     function docHang(so, daydu) {
         let chuoi = "";
-        let tram = Math.floor(so / 100);
-        so = so % 100;
+        let tram = Math.floor(so / 100); so = so % 100;
         if (tram > 0 || daydu) { chuoi += " " + chuSo[tram] + " trăm"; chuoi += (so == 0 && daydu) ? "" : ""; }
-        let chuc = Math.floor(so / 10);
-        let donvi = so % 10;
+        let chuc = Math.floor(so / 10); let donvi = so % 10;
         if (chuc > 1) { chuoi += " " + chuSo[chuc] + " mươi"; if (donvi == 1) chuoi += " mốt"; }
         else if (chuc == 1) { chuoi += " mười"; if (donvi == 1) chuoi += " một"; }
         else if (daydu && donvi > 0) chuoi += " lẻ";
@@ -391,7 +394,6 @@
             const dateStr = `${pad(d.getDate())}${pad(d.getMonth() + 1)}${d.getFullYear()}`;
             const prefix = `HD-${dateStr}-`;
             
-            // Tìm số thứ tự lớn nhất
             let maxSeq = 0;
             masterData.forEach(item => {
                 if (item.Ma_HD && item.Ma_HD.startsWith(prefix)) {
@@ -435,7 +437,6 @@
 
             Swal.fire({ icon: 'success', title: 'Lưu thành công!', text: `Mã HĐ: ${maHD}`, timer: 2000, showConfirmButton: false });
             clearCart();
-            // Reset form
             document.querySelectorAll('.form-card input').forEach(input => {
                 if(input.id !== 'f-giamthue' && input.id !== 'f-sl' && input.id !== 'f-dongia' && input.id !== 'f-thanhtien') input.value = '';
             });
@@ -452,7 +453,7 @@
         masterData = await res.json();
         filterDisplayList(); 
       } catch (e) { 
-          document.getElementById('data-container').innerHTML = `<tr><td colspan="6" style="text-align:center; color:#e74c3c;">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
+         document.getElementById('data-container').innerHTML = `<tr><td colspan="6" style="text-align:center; color:#e74c3c;">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
       }
     }
 
@@ -523,11 +524,11 @@
 
 
     // ====================================================================
-    // HỆ THỐNG XUẤT FILE PDF HỢP ĐỒNG & NGHIỆM THU
+    // HỆ THỐNG XUẤT FILE PDF / WORD HỢP ĐỒNG & NGHIỆM THU
     // ====================================================================
 
-    function buildTemplate(itemsToPrint, infoB, showStamp) {
-        // Trích xuất mã số dạng XXX/2026/HĐDV từ Ma_HD
+    function buildTemplate(itemsToPrint, infoB, showStamp, showNghiemThu) {
+        // Trích xuất mã số dạng XXX/YYYY/HĐDV từ Ma_HD
         let soHD = "........";
         let year = new Date().getFullYear();
         if (infoB.Ma_HD) {
@@ -538,15 +539,7 @@
             }
         }
 
-        // Ngày tháng in
-        let originalDate = new Date();
-        if(itemsToPrint && itemsToPrint[0] && itemsToPrint[0].Ngay_Gio) {
-            let p = itemsToPrint[0].Ngay_Gio.split(' ')[0].split('-');
-            if(p.length === 3) originalDate = new Date(p[0], p[1]-1, p[2]);
-        }
-        const strDateHead = `Ngày ${originalDate.getDate().toString().padStart(2,'0')} tháng ${originalDate.getMonth()+1} năm ${originalDate.getFullYear()}`;
-        
-        // Tạo bảng hàng hóa
+        // Tạo bảng hàng hóa (HTML cơ bản cho WORD & PDF)
         let rowsHtml = "";
         let tongTien = 0;
 
@@ -579,34 +572,33 @@
             </tr>`;
         }
 
-        // Logic ngày thực hiện (mặc định lấy 10 ngày từ ngày lập)
-        let endDate = new Date(originalDate);
-        endDate.setDate(endDate.getDate() + 10);
-        const strDateEnd = `${endDate.getDate().toString().padStart(2,'0')}/${(endDate.getMonth()+1).toString().padStart(2,'0')}/${endDate.getFullYear()}`;
-        const strDateStart = `${originalDate.getDate().toString().padStart(2,'0')}/${(originalDate.getMonth()+1).toString().padStart(2,'0')}/${originalDate.getFullYear()}`;
+        // Tên Khách hàng Lọc Chữ Ông/Bà 
+        let rawDaiDien = infoB.Ten_Dai_Dien || '.......................................';
+        let cleanDaiDien = rawDaiDien.replace(/^(Ông|Bà)\s+/i, '').trim();
 
         // Chữ ký Sắc Màu
         const stampHtml = showStamp ? `<img src="SACMAU.png" width="250" style="margin-top: 10px; display:block;">` : `<div style="height:120px;"></div>`;
 
-        // CSS
+        // CSS Bọc
         const cssStyle = `
             <style>
                 body { background: #ccc; margin:0; padding:20px; font-family: 'Times New Roman', Times, serif; font-size: 15px; line-height: 1.5; }
-                .page { background: white; margin: 0 auto 20px auto; padding: 40px; box-sizing: border-box; max-width: 800px; page-break-after: always; }
+                .page { background: white; margin: 0 auto; padding: 2.5cm 2cm 2cm 3cm; box-sizing: border-box; max-width: 21cm; }
                 .text-center { text-align: center; }
                 .font-bold { font-weight: bold; }
                 .title { font-size: 20px; margin-top: 20px; }
                 p { margin: 5px 0; }
-                table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 15px 0;}
-                table, th, td { border: 1px solid black; }
-                th, td { padding: 6px; }
-                @media print { body { background: white; margin: 0; padding: 0; } .page { margin: 0; padding: 20px; box-shadow: none; } }
+                @media print { 
+                    @page { size: A4; margin: 0; }
+                    body { background: white; margin: 0; padding: 0; } 
+                    .page { margin: 0; padding: 2.5cm 2cm 2cm 3cm; box-shadow: none; width: 21cm; min-height: 29.7cm; page-break-after: always;} 
+                }
             </style>
         `;
 
         // --- TRANG 1: HỢP ĐỒNG ---
         const pageHopDong = `
-            <div class="page">
+            <div class="page" style="page-break-after: always;">
                 <div class="text-center font-bold">
                     CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
                     Độc lập – Tự do – Hạnh phúc<br>
@@ -617,17 +609,21 @@
                 
                 <p style="margin-top: 15px;"><i>Căn cứ Luật Thương mại số 36/2005/QH11 do Quốc hội nước Cộng hòa xã hội chủ nghĩa Việt Nam được thông qua ngày 14 tháng 6 năm 2005;</i></p>
                 <p><i>Căn cứ khả năng cung cấp và nhu cầu thỏa thuận của hai bên;</i></p>
-                <p>Hôm nay, ${strDateHead.toLowerCase()}, chúng tôi gồm:</p>
+                <p>Hôm nay, ngày ....... tháng ....... năm ........, chúng tôi gồm:</p>
                 
                 <p><b>Bên A: HỘ KINH DOANH SẮC MÀU</b></p>
-                <p>- Đại diện: Nguyễn Thị Trúc Ly &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Chức vụ: Chủ hộ kinh doanh</p>
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr><td width="50%" style="border:none; padding: 2px;">- Đại diện: Nguyễn Thị Trúc Ly</td><td width="50%" style="border:none; padding: 2px;">Chức vụ: Chủ hộ kinh doanh</td></tr>
+                </table>
                 <p>- MST: 087191000525</p>
                 <p>- Số điện thoại: 0337.663.113</p>
                 <p>- Địa chỉ: Số 27, đường Nguyễn Văn Cừ, phường Cao Lãnh, Đồng Tháp.</p>
                 <p>- Số tài khoản: 0000866233 Tại: Ngân hàng TMCP Kiên Long - CN Đồng Tháp.</p>
 
                 <p style="margin-top: 10px;"><b>Bên B: ${infoB.Ten_Don_Vi.toUpperCase()}</b></p>
-                <p>- Đại diện: ${infoB.Ten_Dai_Dien || '.......................................'} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Chức vụ: ${infoB.Chuc_Vu || '...................'}</p>
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr><td width="50%" style="border:none; padding: 2px;">- Đại diện: ${rawDaiDien}</td><td width="50%" style="border:none; padding: 2px;">Chức vụ: ${infoB.Chuc_Vu || '...................'}</td></tr>
+                </table>
                 <p>- MST: ${infoB.MST || '......................................................'}</p>
                 <p>- Địa chỉ: ${infoB.Dia_Chi || '....................................................................................'}</p>
                 <p>- Số tài khoản: ${infoB.So_Tai_Khoan || '...........................'} Tại: ${infoB.Ngan_Hang || '....................................'}</p>
@@ -635,7 +631,7 @@
                 <p>Sau khi xem xét bàn bạc, hai bên cùng thống nhất ký hợp đồng nguyên tắc này với các điều khoản sau:</p>
                 
                 <p class="font-bold">Điều 1. Qui cách – Số lượng sản phẩm – giá trị hợp đồng</p>
-                <table>
+                <table width="100%" border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; border-color: black; margin-top:5px; margin-bottom:10px;">
                     <thead>
                         <tr style="background:#f2f2f2; text-align:center;">
                             <th width="40">STT</th>
@@ -670,7 +666,7 @@
                 <p>- Bên B đặt hàng bên A bằng phương thức bán hàng qua điện thoại/zalo.</p>
 
                 <p class="font-bold" style="margin-top: 15px;">Điều 5. Địa điểm thời gian nhận hàng</p>
-                <p>- Thời gian thực hiện hợp đồng: từ ngày ${strDateStart} – ${strDateEnd}.</p>
+                <p>- Thời gian thực hiện hợp đồng: ..........................................................................................</p>
                 <p>- Địa điểm: tại ${infoB.Ten_Don_Vi}</p>
 
                 <p class="font-bold" style="margin-top: 15px;">Điều 6. Điều khoản chung</p>
@@ -678,7 +674,7 @@
                 <p>- Hai bên cam kết thi hành nghiêm chỉnh hợp đồng này, nếu gặp khó khăn trở ngại, hai bên cùng bàn bạc giải quyết.</p>
                 <p>- Hợp đồng được thành lập 02 bản, mỗi bên giữ 01 bản có giá trị như nhau.</p>
 
-                <table border="0" style="border:none; margin-top: 30px;">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top: 30px;">
                     <tr>
                         <td align="center" style="border:none; width:50%; vertical-align: top;">
                             <b>ĐẠI DIỆN BÊN A</b><br>
@@ -687,7 +683,7 @@
                         </td>
                         <td align="center" style="border:none; width:50%; vertical-align: top;">
                             <b>ĐẠI DIỆN BÊN B</b><br><br><br><br><br><br>
-                            <b>${infoB.Ten_Dai_Dien || ''}</b>
+                            <b>${cleanDaiDien}</b>
                         </td>
                     </tr>
                 </table>
@@ -696,7 +692,7 @@
 
         // --- TRANG 2: NGHIỆM THU ---
         const pageNghiemThu = `
-            <div class="page">
+            <div class="page" style="page-break-after: always;">
                 <div class="text-center font-bold">
                     CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
                     Độc lập - Tự do - Hạnh phúc<br>
@@ -705,28 +701,33 @@
                 <div class="text-center font-bold title">BIÊN BẢN NGHIỆM THU VÀ THANH LÝ HỢP ĐỒNG</div>
                 
                 <p style="margin-top: 15px;"><i>Căn cứ Hợp đồng số ${soHD}/${year}/HĐDV giữa Hộ Kinh doanh Sắc Màu và ${infoB.Ten_Don_Vi}</i></p>
-                <p>Hôm nay, vào lúc ..... giờ ..... phút, ${strDateHead.toLowerCase()} tại ${infoB.Ten_Don_Vi}, chúng tôi gồm:</p>
+                <p>Hôm nay, vào lúc ..... giờ ..... phút, ngày ....... tháng ....... năm ........ tại ${infoB.Ten_Don_Vi}, chúng tôi gồm:</p>
                 
                 <p><b>Bên A: HỘ KINH DOANH SẮC MÀU</b></p>
-                <p>- Đại diện: Nguyễn Thị Trúc Ly &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Chức vụ: Chủ hộ kinh doanh</p>
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr><td width="50%" style="border:none; padding: 2px;">- Đại diện: Nguyễn Thị Trúc Ly</td><td width="50%" style="border:none; padding: 2px;">Chức vụ: Chủ hộ kinh doanh</td></tr>
+                </table>
                 <p>- MST: 087191000525</p>
+                <p>- Số điện thoại: 0337.663.113</p>
                 <p>- Địa chỉ: Số 27, đường Nguyễn Văn Cừ, phường Cao Lãnh, Đồng Tháp.</p>
                 <p>- Số tài khoản: 0000866233 Tại: Ngân hàng TMCP Kiên Long - CN Đồng Tháp.</p>
 
                 <p style="margin-top: 10px;"><b>Bên B: ${infoB.Ten_Don_Vi.toUpperCase()}</b></p>
-                <p>- Đại diện: ${infoB.Ten_Dai_Dien || '.......................................'} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Chức vụ: ${infoB.Chuc_Vu || '...................'}</p>
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr><td width="50%" style="border:none; padding: 2px;">- Đại diện: ${rawDaiDien}</td><td width="50%" style="border:none; padding: 2px;">Chức vụ: ${infoB.Chuc_Vu || '...................'}</td></tr>
+                </table>
                 <p>- MST: ${infoB.MST || '......................................................'}</p>
                 <p>- Địa chỉ: ${infoB.Dia_Chi || '....................................................................................'}</p>
                 <p>- Số tài khoản: ${infoB.So_Tai_Khoan || '...........................'} Tại: ${infoB.Ngan_Hang || '....................................'}</p>
 
-                <p style="margin-top: 20px;">Sau khi kết thúc công việc giữa hai bên thỏa thuận, hai bên thống nhất thanh lý hợp đồng số ${soHD}/${year}/HĐDV ngày ${originalDate.getDate().toString().padStart(2,'0')} tháng ${(originalDate.getMonth()+1).toString().padStart(2,'0')} năm ${originalDate.getFullYear()} như sau:</p>
+                <p style="margin-top: 20px;">Sau khi kết thúc công việc giữa hai bên thỏa thuận, hai bên thống nhất thanh lý hợp đồng số ${soHD}/${year}/HĐDV ngày ....... tháng ....... năm ........ như sau:</p>
                 <p>Tổng số giá trị hợp đồng là <b>${Math.round(finalTotal).toLocaleString('vi-VN')} đồng.</b></p>
                 <p><b>Số tiền bằng chữ:</b> ${docSo(Math.round(finalTotal))}</p>
 
                 <p style="margin-top: 20px;">Hợp đồng này hết hiệu lực khi bên B thanh toán đủ số tiền ghi trong hợp đồng cho bên A.</p>
                 <p>Biên bản này được lập thành 02 bản có giá trị như nhau, mỗi bên giữ 01 bản.</p>
 
-                <table border="0" style="border:none; margin-top: 50px;">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top: 50px;">
                     <tr>
                         <td align="center" style="border:none; width:50%; vertical-align: top;">
                             <b>ĐẠI DIỆN BÊN A</b><br>
@@ -735,7 +736,7 @@
                         </td>
                         <td align="center" style="border:none; width:50%; vertical-align: top;">
                             <b>ĐẠI DIỆN BÊN B</b><br><br><br><br><br><br>
-                            <b>${infoB.Ten_Dai_Dien || ''}</b>
+                            <b>${cleanDaiDien}</b>
                         </td>
                     </tr>
                 </table>
@@ -751,7 +752,7 @@
             </head>
             <body>
                 ${pageHopDong}
-                ${pageNghiemThu}
+                ${showNghiemThu ? pageNghiemThu : ''}
             </body>
             </html>
         `;
@@ -773,11 +774,41 @@
         };
 
         const showStamp = document.getElementById('check-stamp').checked;
+        const showNghiemThu = document.getElementById('check-nghiemthu').checked;
 
-        const htmlContent = buildTemplate(currentItems, infoB, showStamp);
+        const htmlContent = buildTemplate(currentItems, infoB, showStamp, showNghiemThu);
         const printWindow = window.open('', '_blank');
         printWindow.document.write(htmlContent.replace('</body>', '<script>setTimeout(() => { window.print(); }, 500);<\/script></body>'));
         printWindow.document.close();
+    }
+
+    function exportWord() {
+        if(currentItems.length === 0) return Swal.fire('Thông báo', 'Hợp đồng chưa có sản phẩm!', 'warning');
+        
+        const infoB = {
+            Ten_Don_Vi: document.getElementById('f-tendonvi').value.trim() || '...........................................',
+            Ten_Dai_Dien: document.getElementById('f-daidien').value.trim(),
+            Chuc_Vu: document.getElementById('f-chucvu').value.trim(),
+            MST: document.getElementById('f-mst').value.trim(),
+            Dia_Chi: document.getElementById('f-diachi').value.trim(),
+            So_Tai_Khoan: document.getElementById('f-stk').value.trim(),
+            Ngan_Hang: document.getElementById('f-nganhang').value.trim(),
+            Giam_Thue: parseFloat(document.getElementById('f-giamthue').value) || 0,
+            Ma_HD: null 
+        };
+
+        const showStamp = document.getElementById('check-stamp').checked;
+        const showNghiemThu = document.getElementById('check-nghiemthu').checked;
+
+        const htmlContent = buildTemplate(currentItems, infoB, showStamp, showNghiemThu);
+        const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `HopDong_${infoB.Ten_Don_Vi}.doc`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     // --- XUẤT PDF TỪ LỊCH SỬ ---
@@ -801,8 +832,9 @@
         };
 
         const showStamp = document.getElementById('check-stamp-history') ? document.getElementById('check-stamp-history').checked : true;
+        const showNghiemThu = document.getElementById('check-nghiemthu-history') ? document.getElementById('check-nghiemthu-history').checked : true;
 
-        const htmlContent = buildTemplate(itemsToPrint, infoB, showStamp);
+        const htmlContent = buildTemplate(itemsToPrint, infoB, showStamp, showNghiemThu);
         const printWindow = window.open('', '_blank');
         printWindow.document.write(htmlContent.replace('</body>', '<script>setTimeout(() => { window.print(); }, 500);<\/script></body>'));
         printWindow.document.close();
