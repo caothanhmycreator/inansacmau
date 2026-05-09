@@ -15,12 +15,10 @@
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
     .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
 
-    /* Box Thống kê tiền nhập hàng */
     .summary-box { background: linear-gradient(135deg, #2D5A27 0%, #1e3d1a 100%); color: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .summary-box h3 { margin: 0; font-size: 14px; opacity: 0.9; text-transform: uppercase; }
     .summary-box .amount { font-size: 24px; font-weight: bold; margin-top: 5px; color: #f1c40f; }
     
-    /* Form Card Nhập hàng */
     .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
     .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
     .input-group { display: flex; flex-direction: column; position: relative; }
@@ -28,59 +26,42 @@
     .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; width: 100%; box-sizing: border-box; }
     .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(41, 128, 185, 0.1); }
 
-    /* Gợi ý (Suggestions) */
-    .suggestions-box { position: absolute; top: calc(100% + 2px); left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; z-index: 1000; max-height: 250px; overflow-y: auto; box-shadow: 0 10px 20px rgba(0,0,0,0.15); display: none; }
-    .suggestion-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f1f1f1; font-size: 13px; display: flex; align-items: center; }
-    .suggestion-item:hover { background: #f8fafc; color: var(--accent); border-left: 3px solid var(--accent); }
+    .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px;}
 
-    /* Panel Thông tin Realtime */
-    .info-panel { grid-column: span 4; display: none; background: #e0f2fe; padding: 15px; border-radius: 8px; border: 1px dashed #0284c7; font-size: 13px; line-height: 1.6; }
-    .info-panel b { color: #0369a1; font-size: 14px;}
-
-    .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-
-    /* Bảng dữ liệu chuẩn */
     .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
     .table-modern th { background: #f1f5f9; color: #64748b; font-size: 12px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; }
     .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     .table-modern tr:hover { background: #f8fafc; }
     
-    .btn-submit { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; height: 100%; width: 100%; box-sizing: border-box; font-size: 14px; }
-    .btn-submit:hover { background: #1f618d; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(41, 128, 185, 0.2); }
-    .btn-edit { background: none; color: #2980b9; border: none; cursor: pointer; font-weight: bold; padding: 5px; font-size: 13px; }
-    .btn-del { background: none; color: #e74c3c; border: none; cursor: pointer; font-weight: bold; padding: 5px; font-size: 13px; }
+    /* CSS Nút nhấn được thiết kế lại đẹp và bo tròn */
+    .btn-submit { background: var(--accent); color: white; border: none; padding: 12px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(41, 128, 185, 0.3); font-size: 14px; }
+    .btn-submit:hover { background: #1f618d; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(41, 128, 185, 0.4); }
+    
+    .btn-add { background: var(--orange); color: white; border: none; padding: 12px 20px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3); height: 100%; width: 100%; box-sizing: border-box; font-size: 13px; }
+    .btn-add:hover { background: #d35400; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(230, 126, 34, 0.4); }
+    
+    .btn-action { background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; box-shadow: 0 4px 10px rgba(52, 73, 94, 0.3);}
+    .btn-action:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(52, 73, 94, 0.4); }
+    
+    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 12px; border-radius: 15px; transition: 0.2s; }
+    .btn-del:hover { background: #fecaca; transform: scale(1.05); }
 
-    /* Badge Trạng thái Thanh Toán */
-    .badge-paid { background: #dcfce7; color: #166534; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #bbf7d0; display: inline-block; margin-top: 3px;}
-    .badge-unpaid { background: #fee2e2; color: #b91c1c; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #fecaca; display: inline-block; margin-top: 3px;}
+    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 12px; border-radius: 15px; transition: 0.2s; margin-right: 5px; }
+    .btn-pdf:hover { background: #bae6fd; transform: scale(1.05); }
 
-    /* CSS Nút lọc NCC */
-    .ncc-filter-container { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
-    .ncc-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; border: 1px solid #cbd5e1; background: white; color: #475569; transition: 0.2s; }
-    .ncc-btn:hover { background: #f1f5f9; }
-    .ncc-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .cart-section { border: 2px dashed #bdc3c7; border-radius: 10px; padding: 15px; background: #fafafa; margin-top: 15px; }
 
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
         .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
-        body.sidebar-open #sidebar-frame { left: 0; }
-        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: var(--accent); color: white; padding: 8px 12px; border: none; border-radius: 4px; }
-        
         .form-grid { grid-template-columns: 1fr !important; }
-        .input-group, .info-panel { grid-column: span 1 !important; }
-        .summary-box { flex-direction: column; align-items: flex-start; gap: 10px; }
-        
-        .search-area { width: 100%; flex-direction: column; align-items: stretch !important; }
-        #searchFilter, #thanhToanFilter, #loaiHangFilter { max-width: 100% !important; width: 100% !important; }
-
+        .input-group { grid-column: span 1 !important; }
         .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; box-sizing: border-box; }
         .table-modern thead { display: none; }
-        
-        .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; }
         .table-modern td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: space-between; }
         .table-modern td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
     }
-    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
@@ -96,20 +77,16 @@
       <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #2c3e50;">1. THÔNG TIN KHÁCH HÀNG & CHỨNG TỪ</h3>
       <div class="form-grid">
         <div class="input-group" style="grid-column: span 2;">
-          <label>Mã Báo Giá (Để trống tự tạo)</label>
-          <input type="text" id="f-mabaogia" class="input-modern" placeholder="VD: BG-20251204-001">
-        </div>
-        <div class="input-group" style="grid-column: span 2;">
-          <label>Mức tỷ lệ % Thuế VAT (Cột Giam_Thue)</label>
+          <label>Mức tỷ lệ % Thuế VAT</label>
           <input type="number" id="f-giamthue" class="input-modern" value="0" min="0" placeholder="Nhập phần trăm, vd: 8 hoặc 10">
         </div>
         <div class="input-group" style="grid-column: span 2;">
           <label>Tên Khách Hàng / Cơ Quan *</label>
           <input type="text" id="f-khachhang" class="input-modern" placeholder="VD: VP HĐND VÀ UBND XÃ TÂN NHUẬN ĐÔNG">
         </div>
-        <div class="input-group" style="grid-column: span 2;">
+        <div class="input-group" style="grid-column: span 4;">
           <label>Địa Chỉ / Ghi chú Khách Hàng</label>
-          <input type="text" id="f-diachi" class="input-modern" placeholder="Nhập địa chỉ hoặc thông tin bổ sung...">
+          <input type="text" id="f-diachi" class="input-modern" placeholder="Nhập địa chỉ hoặc thông bổ sung...">
         </div>
       </div>
 
@@ -165,10 +142,10 @@
             </tfoot>
           </table>
         </div>
-        <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+        <div style="margin-top: 15px; display: flex; gap: 15px; justify-content: flex-end;">
             <button class="btn-action" style="background:#e74c3c;" onclick="clearQuote()">LÀM LẠI</button>
             <button class="btn-action" style="background:#27ae60;" onclick="exportPDF()">🖨️ XUẤT PDF / IN 3 CƠ SỞ</button>
-            <button class="btn-submit" style="width: 200px;" onclick="saveQuoteToDB()">💾 LƯU VÀO DATABASE</button>
+            <button class="btn-submit" onclick="saveQuoteToDB()">💾 LƯU VÀO DATABASE</button>
         </div>
       </div>
     </div>
@@ -191,7 +168,7 @@
                     <th style="width:60px; text-align:center;">SL</th>
                     <th style="width:120px; text-align:right;">Thành Tiền (Gốc)</th>
                     <th style="width:120px; text-align:right;">Tổng Cộng (Sau thuế)</th>
-                    <th style="width:80px; text-align:center;">Thao tác</th>
+                    <th style="width:140px; text-align:center;">Thao tác</th>
                 </tr>
             </thead>
             <tbody id="data-container">
@@ -346,27 +323,36 @@
         tTotal.innerHTML = total.toLocaleString('vi-VN') + " đ";
     }
 
-    // --- LƯU VÀO DATABASE SUPABASE ---
+    // --- LƯU VÀO DATABASE SUPABASE VỚI MÃ TỰ ĐỘNG ---
     async function saveQuoteToDB() {
         const tenKh = document.getElementById('f-khachhang').value.trim();
         const diachi = document.getElementById('f-diachi').value.trim();
-        let maBaoGia = document.getElementById('f-mabaogia').value.trim();
         const giamThueRate = parseFloat(document.getElementById('f-giamthue').value) || 0;
 
         if(!tenKh) return Swal.fire('Lỗi', 'Vui lòng nhập Tên Khách Hàng!', 'warning');
         if(currentQuoteItems.length === 0) return Swal.fire('Lỗi', 'Chưa có mặt hàng nào trong báo giá!', 'warning');
 
-        // Tự động tạo mã nếu trống
-        if(!maBaoGia) {
-            const d = new Date();
-            const pad = (n) => n.toString().padStart(2, '0');
-            maBaoGia = `BG-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${Math.floor(Math.random()*10000)}`;
-        }
-
         Swal.fire({ title: 'Đang lưu báo giá...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
         
         try {
+            const d = new Date();
+            const pad = (n) => n.toString().padStart(2, '0');
+            const dateStr = `${pad(d.getDate())}${pad(d.getMonth() + 1)}${d.getFullYear()}`;
+            const prefix = `BG-${dateStr}-`;
+            
+            // Tìm số thứ tự lớn nhất trong ngày để tạo mã báo giá (Tránh trùng lặp)
+            let maxSeq = 0;
+            masterData.forEach(item => {
+                if (item.Ma_Bao_Gia && item.Ma_Bao_Gia.startsWith(prefix)) {
+                    let parts = item.Ma_Bao_Gia.split('-');
+                    if(parts.length === 3) {
+                        let seq = parseInt(parts[2], 10);
+                        if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+                    }
+                }
+            });
+            const maBaoGia = `${prefix}${(maxSeq + 1).toString().padStart(3, '0')}`;
             const ngayGio = getCleanVNTime();
             
             const payloads = currentQuoteItems.map(item => {
@@ -393,11 +379,10 @@
                 fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}`, { method: 'POST', headers: h, body: JSON.stringify(payload) })
             ));
 
-            Swal.fire({ icon: 'success', title: 'Lưu thành công!', timer: 1500, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Lưu thành công!', text: `Mã báo giá: ${maBaoGia}`, timer: 2000, showConfirmButton: false });
             clearQuote();
             document.getElementById('f-khachhang').value = "";
             document.getElementById('f-diachi').value = "";
-            document.getElementById('f-mabaogia').value = "";
             document.getElementById('f-giamthue').value = "0";
             loadData();
         } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
@@ -444,7 +429,8 @@
                 <td data-label="Thành tiền" style="text-align:right;"><b style="color:#7f8c8d;">${(item.Thanh_Tien || 0).toLocaleString('vi-VN')} đ</b></td>
                 <td data-label="Tổng cộng" style="text-align:right;"><b style="color:#c0392b;">${(item.Tong_Cong || item.Thanh_Tien || 0).toLocaleString('vi-VN')} đ</b></td>
                 <td data-label="Thao tác" style="text-align:center;">
-                    <button onclick="deleteRecord(${item.id})" class="btn-del">XÓA</button>
+                    <button onclick="exportPDFHistory('${item.Ma_Bao_Gia}')" class="btn-pdf" title="Xuất PDF">🖨️ PDF</button>
+                    <button onclick="deleteRecord(${item.id})" class="btn-del" title="Xóa">✖ XÓA</button>
                 </td>
             </tr>
         `).join('');
@@ -464,19 +450,22 @@
     // HỆ THỐNG XUẤT FILE PDF 
     // ====================================================================
 
-    function buildTemplate() {
-        const tenKh = document.getElementById('f-khachhang').value.trim() || ".......................................................";
-        const diaChiKh = document.getElementById('f-diachi').value.trim() || ".......................................................";
-        const giamThueRate = parseFloat(document.getElementById('f-giamthue').value) || 0;
-
-        const d = new Date();
-        const strDate = `Ngày ${d.getDate().toString().padStart(2,'0')} tháng ${d.getMonth()+1} năm ${d.getFullYear()}`;
+    function buildTemplate(itemsToPrint, tenKh, diaChiKh, giamThueRate) {
+        // Lấy ngày gốc từ item đầu tiên nếu có
+        let originalDate = new Date();
+        if(itemsToPrint && itemsToPrint[0] && itemsToPrint[0].Ngay_Gio) {
+            let parts = itemsToPrint[0].Ngay_Gio.split(' ')[0].split('-');
+            if(parts.length === 3) {
+                originalDate = new Date(parts[0], parts[1]-1, parts[2]);
+            }
+        }
+        const strDate = `Ngày ${originalDate.getDate().toString().padStart(2,'0')} tháng ${originalDate.getMonth()+1} năm ${originalDate.getFullYear()}`;
 
         const buildPage = (coSoName, headerHtml, donGiaMultiplier, stampImg, repName, fontStyle) => {
             let rowsHtml = "";
             let tongTien = 0;
 
-            currentQuoteItems.forEach((item, index) => {
+            itemsToPrint.forEach((item, index) => {
                 let giaBan = Math.round(item.Don_Gia * donGiaMultiplier);
                 let thanhTien = giaBan * item.So_Luong;
                 tongTien += thanhTien;
@@ -638,7 +627,31 @@
     function exportPDF() {
         if(currentQuoteItems.length === 0) return Swal.fire('Thông báo', 'Giỏ báo giá đang trống!', 'warning');
         
-        const htmlContent = buildTemplate();
+        const tenKh = document.getElementById('f-khachhang').value.trim() || ".......................................................";
+        const diaChiKh = document.getElementById('f-diachi').value.trim() || ".......................................................";
+        const giamThueRate = parseFloat(document.getElementById('f-giamthue').value) || 0;
+
+        const htmlContent = buildTemplate(currentQuoteItems, tenKh, diaChiKh, giamThueRate);
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(htmlContent.replace('</body>', '<script>setTimeout(() => { window.print(); }, 500);<\/script></body>'));
+        printWindow.document.close();
+    }
+
+    // --- HÀM XUẤT PDF TỪ LỊCH SỬ DỰA TRÊN MÃ BÁO GIÁ ---
+    window.exportPDFHistory = function(maBaoGia) {
+        if(!maBaoGia) return Swal.fire('Lỗi', 'Dòng dữ liệu này không có Mã Báo Giá để nhóm lại!', 'error');
+
+        const itemsToPrint = masterData.filter(x => x.Ma_Bao_Gia === maBaoGia);
+        if(itemsToPrint.length === 0) return;
+        
+        // Sắp xếp lại theo ID để in đúng thứ tự ban đầu
+        itemsToPrint.sort((a, b) => (a.id || a.Id || 0) - (b.id || b.Id || 0));
+
+        const tenKh = itemsToPrint[0].Ten_Khach_Hang || ".......................................................";
+        const diaChiKh = itemsToPrint[0].Dia_Chi || ".......................................................";
+        const giamThueRate = itemsToPrint[0].Giam_Thue || 0;
+
+        const htmlContent = buildTemplate(itemsToPrint, tenKh, diaChiKh, giamThueRate);
         const printWindow = window.open('', '_blank');
         printWindow.document.write(htmlContent.replace('</body>', '<script>setTimeout(() => { window.print(); }, 500);<\/script></body>'));
         printWindow.document.close();
