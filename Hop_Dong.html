@@ -45,13 +45,26 @@
     .btn-action { background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; box-shadow: 0 4px 10px rgba(52, 73, 94, 0.3);}
     .btn-action:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(52, 73, 94, 0.4); }
     
-    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 8px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; }
+    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
     .btn-del:hover { background: #fecaca; transform: scale(1.05); }
 
-    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 8px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; margin-right: 5px; }
+    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
     .btn-pdf:hover { background: #bae6fd; transform: scale(1.05); }
 
+    .action-group { display: flex; gap: 5px; justify-content: center; align-items: center; }
+
     .cart-section { border: 2px dashed #bdc3c7; border-radius: 10px; padding: 15px; background: #fafafa; margin-top: 15px; }
+
+    /* CSS cho Editor Layout Bên Phải */
+    .editor-layout { display: flex; gap: 20px; text-align: left; }
+    #print-editor { flex: 1; border: 1px solid #aaa; padding: 15px; background: #ccc; min-height: 500px; max-height: 65vh; overflow-y: auto; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); cursor: text; outline: none; }
+    #print-editor .page { margin: 0 auto 20px auto; background: white; padding: 2.5cm 2cm 2cm 3cm; box-sizing: border-box; width: 21cm; min-height: 29.7cm; box-shadow: 0 0 10px rgba(0,0,0,0.3); }
+    .right-toolbar { width: 220px; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; height: fit-content; flex-shrink: 0; position: sticky; top: 10px;}
+    .toolbar-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+    .toolbar-group-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; }
+    .toolbar-btn { background: #fff; border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; text-align: center; }
+    .toolbar-btn:hover { background: #eef2f3; border-color: var(--accent); }
+    .tool-label { font-size: 11px; color: #64748b; font-weight: bold; margin-bottom: 2px; text-transform: uppercase; margin-top: 5px; border-bottom: 1px solid #eee; padding-bottom: 3px; }
 
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
@@ -62,27 +75,17 @@
         .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; }
         .table-modern td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: space-between; }
         .table-modern td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
+        .editor-layout { flex-direction: column; }
+        .right-toolbar { width: 100%; position: static; }
+        #print-editor .page { width: 100%; padding: 15px; min-height: auto; }
     }
-
-    /* Bổ sung CSS cho Editor Layout Bên Phải */
-    .editor-layout { display: flex; gap: 20px; text-align: left; }
-    #print-editor { flex: 1; border: 1px solid #aaa; padding: 15px; background: #fff; min-height: 65vh; max-height: 65vh; overflow-y: auto; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); cursor: text; outline: none; }
-    #print-editor .page { margin: 0 auto 20px auto !important; box-shadow: 0 0 10px rgba(0,0,0,0.3) !important; }
-    .right-toolbar { width: 220px; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; height: fit-content; flex-shrink: 0; }
-    .toolbar-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
-    .toolbar-group-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; }
-    .toolbar-btn { background: #fff; border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; text-align: center; }
-    .toolbar-btn:hover { background: #eef2f3; border-color: var(--accent); }
-    .tool-label { font-size: 11px; color: #64748b; font-weight: bold; margin-bottom: 2px; text-transform: uppercase; margin-top: 5px; border-bottom: 1px solid #eee; padding-bottom: 3px; }
   </style>
 </head>
 <body>
 
   <div class="main-content">
     <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-      <div>
-        <h2 style="margin:0; color: var(--primary);">🤝 TẠO VÀ QUẢN LÝ HỢP ĐỒNG</h2>
-      </div>
+      <div><h2 style="margin:0; color: var(--primary);">🤝 TẠO VÀ QUẢN LÝ HỢP ĐỒNG</h2></div>
       <button onclick="getToken()" style="background:#4285F4; color:white; border:none; padding:10px 20px; border-radius:20px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🔐 KẾT NỐI DRIVE</button>
     </div>
 
@@ -224,7 +227,7 @@
                     <th>Chi Tiết Hàng Hóa</th>
                     <th style="width:120px; text-align:right;">Thành Tiền</th>
                     <th style="width:120px; text-align:right;">Tổng Giá Trị</th>
-                    <th style="width:120px; text-align:center;">Thao tác</th>
+                    <th style="width:140px; text-align:center;">Thao tác</th>
                 </tr>
             </thead>
             <tbody id="data-container">
@@ -263,43 +266,28 @@
     let masterData = [];     
     let currentItems = []; 
 
-    document.addEventListener("DOMContentLoaded", () => {
-      loadData();
-    });
+    document.addEventListener("DOMContentLoaded", () => { loadData(); });
 
-    function formatCurrency(input) {
-      let v = input.value.replace(/\D/g, "");
-      input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    }
+    function formatCurrency(input) { let v = input.value.replace(/\D/g, ""); input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
     function parseNum(s) { return Number(s.toString().replace(/\./g, "")) || 0; }
-    
-    function getCleanVNTime() {
-      const d = new Date();
-      const pad = (n) => n.toString().padStart(2, '0');
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    }
-
+    function getCleanVNTime() { const d = new Date(); const pad = (n) => n.toString().padStart(2, '0'); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
     function formatDisplayTime(dateString) {
         if (!dateString) return 'N/A';
         const parts = dateString.split(' ');
         if (parts.length === 2 && parts[0].includes('-')) {
             const dateParts = parts[0].split('-'); 
             const timeParts = parts[1].split(':'); 
-            if (dateParts.length === 3 && timeParts.length >= 2) {
-                return `${timeParts[0]}:${timeParts[1]} ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-            }
+            if (dateParts.length === 3 && timeParts.length >= 2) return `${timeParts[0]}:${timeParts[1]} ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
         }
         return dateString; 
     }
 
-    // ĐỌC SỐ THÀNH CHỮ VIỆT NAM
     const chuSo = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
     function docSo(so) {
         if (so == 0) return chuSo[0] + " đồng";
         let chuoi = "", hauto = "";
         do {
-            let ty = so % 1000000000;
-            so = Math.floor(so / 1000000000);
+            let ty = so % 1000000000; so = Math.floor(so / 1000000000);
             if (so > 0) chuoi = docTrien(ty, true) + hauto + chuoi;
             else chuoi = docTrien(ty, false) + hauto + chuoi;
             hauto = " tỷ";
@@ -341,60 +329,26 @@
         const sl = parseFloat(document.getElementById('f-sl').value) || 0;
         const dongia = parseNum(document.getElementById('f-dongia').value);
 
-        if(!tenhang || sl <= 0 || dongia <= 0) {
-            return Swal.fire('Lỗi', 'Vui lòng nhập Tên hàng, Số lượng và Đơn giá hợp lệ!', 'warning');
-        }
+        if(!tenhang || sl <= 0 || dongia <= 0) return Swal.fire('Lỗi', 'Vui lòng nhập Tên hàng, Số lượng và Đơn giá hợp lệ!', 'warning');
 
-        currentItems.push({
-            Ten_Hang: tenhang,
-            DVT: dvt,
-            So_Luong: sl,
-            Don_Gia: dongia,
-            Thanh_Tien: sl * dongia
-        });
-
-        document.getElementById('f-tenhang').value = "";
-        document.getElementById('f-dongia').value = "0";
-        document.getElementById('f-thanhtien').value = "0 đ";
-        document.getElementById('f-tenhang').focus();
-        
+        currentItems.push({ Ten_Hang: tenhang, DVT: dvt, So_Luong: sl, Don_Gia: dongia, Thanh_Tien: sl * dongia });
+        document.getElementById('f-tenhang').value = ""; document.getElementById('f-dongia').value = "0"; document.getElementById('f-thanhtien').value = "0 đ"; document.getElementById('f-tenhang').focus();
         renderCart();
     }
 
-    function removeItem(index) {
-        currentItems.splice(index, 1);
-        renderCart();
-    }
-
-    function clearCart() {
-        currentItems = [];
-        renderCart();
-    }
+    function removeItem(index) { currentItems.splice(index, 1); renderCart(); }
+    function clearCart() { currentItems = []; renderCart(); }
 
     function renderCart() {
         const cartDiv = document.getElementById('cart-section');
         const tbody = document.getElementById('cart-items-body');
 
-        if(currentItems.length === 0) {
-            cartDiv.style.display = 'none';
-            return;
-        }
-
+        if(currentItems.length === 0) { cartDiv.style.display = 'none'; return; }
         cartDiv.style.display = 'block';
         let total = 0;
         tbody.innerHTML = currentItems.map((item, idx) => {
             total += item.Thanh_Tien;
-            return `
-                <tr>
-                    <td>${idx + 1}</td>
-                    <td><b>${item.Ten_Hang}</b></td>
-                    <td>${item.DVT}</td>
-                    <td style="text-align:center;">${item.So_Luong}</td>
-                    <td style="text-align:right;">${item.Don_Gia.toLocaleString('vi-VN')} đ</td>
-                    <td style="text-align:right; font-weight:bold; color:#2c3e50;">${item.Thanh_Tien.toLocaleString('vi-VN')} đ</td>
-                    <td style="text-align:center;"><button onclick="removeItem(${idx})" class="btn-del">✖</button></td>
-                </tr>
-            `;
+            return `<tr><td>${idx + 1}</td><td><b>${item.Ten_Hang}</b></td><td>${item.DVT}</td><td style="text-align:center;">${item.So_Luong}</td><td style="text-align:right;">${item.Don_Gia.toLocaleString('vi-VN')} đ</td><td style="text-align:right; font-weight:bold; color:#2c3e50;">${item.Thanh_Tien.toLocaleString('vi-VN')} đ</td><td style="text-align:center;"><button onclick="removeItem(${idx})" class="btn-del">✖</button></td></tr>`;
         }).join('');
 
         const giamThueRate = parseFloat(document.getElementById('f-giamthue').value) || 0;
@@ -425,12 +379,10 @@
         return `${prefix}${(maxSeq + 1).toString().padStart(3, '0')}`;
     }
 
-    // --- LƯU VÀO DATABASE ---
     async function saveToDB() {
         const tenDonVi = document.getElementById('f-tendonvi').value.trim();
         const daiDien = document.getElementById('f-daidien').value.trim();
         const chucVu = document.getElementById('f-chucvu').value.trim();
-        
         const mstVal = document.getElementById('f-mst').value.replace(/\D/g, '');
         const stkVal = document.getElementById('f-stk').value.replace(/\D/g, '');
         const mst = mstVal ? parseInt(mstVal, 10) : null;
@@ -455,28 +407,13 @@
                 let tongCong = item.Thanh_Tien - giamThueAmount;
 
                 return {
-                    Ngay_Gio: ngayGio,
-                    Ma_HD: maHD,
-                    Ten_Don_Vi: tenDonVi,
-                    Ten_Dai_Dien: daiDien,
-                    Chuc_Vu: chucVu,
-                    MST: mst,
-                    Dia_Chi: diaChi,
-                    So_Tai_Khoan: stk,
-                    Ngan_Hang: nganHang,
-                    Ten_Hang: item.Ten_Hang,
-                    DVT: item.DVT,
-                    So_Luong: item.So_Luong,
-                    Don_Gia: item.Don_Gia,
-                    Thanh_Tien: item.Thanh_Tien,
-                    Giam_Thue: giamThueRate,
-                    Tong_Cong: tongCong
+                    Ngay_Gio: ngayGio, Ma_HD: maHD, Ten_Don_Vi: tenDonVi, Ten_Dai_Dien: daiDien, Chuc_Vu: chucVu, MST: mst, Dia_Chi: diaChi, So_Tai_Khoan: stk,
+                    Ngan_Hang: nganHang, Ten_Hang: item.Ten_Hang, DVT: item.DVT, So_Luong: item.So_Luong, Don_Gia: item.Don_Gia, Thanh_Tien: item.Thanh_Tien,
+                    Giam_Thue: giamThueRate, Tong_Cong: tongCong
                 };
             });
 
-            await Promise.all(payloads.map(payload => 
-                fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}`, { method: 'POST', headers: h, body: JSON.stringify(payload) })
-            ));
+            await Promise.all(payloads.map(payload => fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}`, { method: 'POST', headers: h, body: JSON.stringify(payload) })));
 
             Swal.fire({ icon: 'success', title: 'Lưu thành công!', text: `Mã HĐ: ${maHD}`, timer: 2000, showConfirmButton: false });
             clearCart();
@@ -495,9 +432,7 @@
         if (!res.ok) throw new Error("Không thể kết nối bảng " + TABLE_NAME);
         masterData = await res.json();
         filterDisplayList(); 
-      } catch (e) { 
-         document.getElementById('data-container').innerHTML = `<tr><td colspan="6" style="text-align:center; color:#e74c3c;">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
-      }
+      } catch (e) { document.getElementById('data-container').innerHTML = `<tr><td colspan="6" style="text-align:center; color:#e74c3c;">Lỗi tải dữ liệu: ${e.message}</td></tr>`; }
     }
 
     window.filterDisplayList = function() {
@@ -516,9 +451,7 @@
         const grouped = {};
         filteredData.forEach(item => {
             const ma = item.Ma_HD || item.id; 
-            if(!grouped[ma]) {
-                grouped[ma] = { ...item, items: [], tongThanhTien: 0, tongSauThue: 0 };
-            }
+            if(!grouped[ma]) { grouped[ma] = { ...item, items: [], tongThanhTien: 0, tongSauThue: 0 }; }
             grouped[ma].items.push(item);
             grouped[ma].tongThanhTien += (parseFloat(item.Thanh_Tien) || 0);
             grouped[ma].tongSauThue += (parseFloat(item.Tong_Cong) || parseFloat(item.Thanh_Tien) || 0);
@@ -528,8 +461,7 @@
         const container = document.getElementById('data-container');
         
         if(groupedArray.length === 0) { 
-            container.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">Không tìm thấy dữ liệu.</td></tr>'; 
-            return; 
+            container.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">Không tìm thấy dữ liệu.</td></tr>'; return; 
         }
 
         container.innerHTML = groupedArray.map(group => {
@@ -543,10 +475,12 @@
                 <td data-label="Hàng hóa"><span style="color:#2c3e50; line-height: 1.5;">${combinedNames}</span></td>
                 <td data-label="Thành tiền" style="text-align:right;"><b style="color:#7f8c8d;">${group.tongThanhTien.toLocaleString('vi-VN')} đ</b></td>
                 <td data-label="Tổng giá trị" style="text-align:right;"><b style="color:#c0392b;">${group.tongSauThue.toLocaleString('vi-VN')} đ</b></td>
-                <td data-label="Thao tác" style="text-align:center;">
-                    <button onclick="viewGroupDetails('${group.Ma_HD}')" class="btn-pdf" title="Xem chi tiết">👁️</button>
-                    <button onclick="exportPDFHistory('${group.Ma_HD}')" class="btn-pdf" title="Xem & In PDF">🖨️</button>
-                    <button onclick="deleteGroupRecord('${group.Ma_HD}', ${group.id})" class="btn-del" title="Xóa">🗑️</button>
+                <td data-label="Thao tác">
+                    <div class="action-group">
+                        <button onclick="viewGroupDetails('${group.Ma_HD}')" class="btn-pdf" title="Xem chi tiết">👁️</button>
+                        <button onclick="exportPDFHistory('${group.Ma_HD}')" class="btn-pdf" title="Xem & In PDF">🖨️</button>
+                        <button onclick="deleteGroupRecord('${group.Ma_HD}', ${group.id})" class="btn-del" title="Xóa">🗑️</button>
+                    </div>
                 </td>
             </tr>`;
         }).join('');
@@ -556,11 +490,8 @@
         const r = await Swal.fire({ title: 'Xóa hợp đồng này?', text: 'Toàn bộ dữ liệu của HĐ sẽ bị xóa.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA' });
         if (r.isConfirmed) {
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-            if (maHD && maHD !== 'undefined') {
-                await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?Ma_HD=eq.${maHD}`, { method: 'DELETE', headers: h });
-            } else {
-                await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?id=eq.${fallbackId}`, { method: 'DELETE', headers: h });
-            }
+            if (maHD && maHD !== 'undefined') { await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?Ma_HD=eq.${maHD}`, { method: 'DELETE', headers: h }); } 
+            else { await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?id=eq.${fallbackId}`, { method: 'DELETE', headers: h }); }
             loadData();
         }
     }
@@ -569,7 +500,6 @@
         const items = masterData.filter(x => x.Ma_HD === maHD);
         if(items.length === 0) return;
         const info = items[0];
-        
         let itemRows = items.map((i, idx) => `<tr><td>${idx+1}</td><td>${i.Ten_Hang}</td><td>${i.DVT}</td><td align="center">${i.So_Luong}</td><td align="right">${(i.Don_Gia||0).toLocaleString()}</td><td align="right">${(i.Thanh_Tien||0).toLocaleString()}</td></tr>`).join('');
         
         let html = `
@@ -591,7 +521,7 @@
     }
 
     // ====================================================================
-    // HỆ THỐNG TRÌNH SOẠN THẢO VÀ XUẤT FILE PDF HỢP ĐỒNG & NGHIỆM THU
+    // HỆ THỐNG TRÌNH SOẠN THẢO VÀ XUẤT FILE PDF
     // ====================================================================
 
     window.insertTableHTML = function() {
@@ -603,20 +533,13 @@
             `,
             focusConfirm: false,
             preConfirm: () => {
-                return {
-                    r: document.getElementById('swal-rows').value,
-                    c: document.getElementById('swal-cols').value
-                }
+                return { r: document.getElementById('swal-rows').value, c: document.getElementById('swal-cols').value }
             }
         }).then((res) => {
             if(res.isConfirmed) {
                 let r = parseInt(res.value.r); let c = parseInt(res.value.c);
-                let html = '<table width="100%" border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse; border-color:black; font-family:\\\'Times New Roman\\\'; font-size:14pt; margin-top:10px; margin-bottom:10px;">';
-                for(let i=0; i<r; i++) {
-                    html += '<tr>';
-                    for(let j=0; j<c; j++) html += '<td>...</td>';
-                    html += '</tr>';
-                }
+                let html = '<table width="100%" border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse; border-color:black; font-family:\'Times New Roman\'; font-size:14pt; margin-top:10px; margin-bottom:10px;">';
+                for(let i=0; i<r; i++) { html += '<tr>'; for(let j=0; j<c; j++) html += '<td>...</td>'; html += '</tr>'; }
                 html += '</table><p><br></p>';
                 document.getElementById('print-editor').focus();
                 document.execCommand('insertHTML', false, html);
@@ -624,6 +547,7 @@
         });
     }
 
+    // NÂNG CẤP LƯU DRIVE HOÀN CHỈNH
     window.saveToDriveNow = async function() {
         if(!accessToken) return getToken();
         Swal.fire({ title: 'Đang tạo & Lưu PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -652,6 +576,7 @@
             form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
             form.append('file', new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], {type: 'application/pdf'}));
 
+            // POST trực tiếp vào Google Drive API
             const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${accessToken}` },
@@ -684,23 +609,16 @@
     };
 
     function buildTemplate(itemsToPrint, infoB, showStamp, showNghiemThu) {
-        let soHD = "........";
-        let year = new Date().getFullYear();
+        let soHD = "........"; let year = new Date().getFullYear();
         if (infoB.Ma_HD) {
             let parts = infoB.Ma_HD.split('-');
-            if(parts.length === 3) {
-                soHD = parts[2];
-                year = parts[1].substring(4,8) || year;
-            }
+            if(parts.length === 3) { soHD = parts[2]; year = parts[1].substring(4,8) || year; }
         }
         const contractRef = `${soHD}/${year}/HĐDV`;
 
-        let rowsHtml = "";
-        let tongTien = 0;
-
+        let rowsHtml = ""; let tongTien = 0;
         itemsToPrint.forEach((item, index) => {
-            let thanhTien = item.Don_Gia * item.So_Luong;
-            tongTien += thanhTien;
+            let thanhTien = item.Don_Gia * item.So_Luong; tongTien += thanhTien;
             rowsHtml += `
                 <tr>
                     <td align="center" style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">${index + 1}</td>
@@ -735,7 +653,7 @@
             ? `<img src="SACMAU.png" width="440" style="display:block; margin: 15px auto;">` 
             : `<div style="height:150px; margin: 15px 0;"></div>`;
 
-        // 4. Bảng ẩn giữ layout chữ ký bất tử, căn đều ngang
+        // Bảng ẩn giữ layout chữ ký bất tử
         const signatureTable = `
             <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top: 30px; border: none; width: 100%;">
                 <tr>
@@ -755,12 +673,11 @@
             </table>
         `;
 
-        // Ngắt trang PDF
-        const pageBreak = `<div style="page-break-before: always; clear: both; height: 0;"></div>`;
+        // Xử lý ngắt trang an toàn (tránh class page vì bị html2pdf hiểu lầm)
+        const pageBreakHtml = `<div class="html2pdf__page-break"></div>`;
 
-        // --- TRANG 1: HỢP ĐỒNG ---
         const pageHopDong = `
-            <div class="page">
+            <div style="padding: 2.5cm 2cm 2cm 3cm; box-sizing: border-box;">
                 <div style="text-align: center; font-weight: bold; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.2;">
                     CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
                     <span style="border-bottom: 1px solid black; padding-bottom: 2px; display: inline-block;">Độc lập - Tự do - Hạnh phúc</span>
@@ -848,7 +765,7 @@
         // --- TRANG 2: NGHIỆM THU ---
         const pageNghiemThu = `
             ${pageBreak}
-            <div class="page">
+            <div style="padding: 2.5cm 2cm 2cm 3cm; box-sizing: border-box;">
                 <div style="text-align: center; font-weight: bold; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.2;">
                     CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
                     <span style="border-bottom: 1px solid black; padding-bottom: 2px; display: inline-block;">Độc lập - Tự do - Hạnh phúc</span>
@@ -895,12 +812,10 @@
         const cssStyle = `
             <style>
                 body { background: #ccc; margin:0; padding:20px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5; color: black; }
-                .page { background: white; margin: 0 auto; padding: 2.5cm 2cm 2cm 3cm; box-sizing: border-box; width: 21cm; min-height: 29.7cm; box-shadow: 0 0 10px rgba(0,0,0,0.3); text-align: justify;}
                 p { margin: 3px 0; text-align: justify;}
                 @media print { 
                     @page { size: A4; margin: 0; }
                     body { background: white; margin: 0; padding: 0; } 
-                    .page { margin: 0; padding: 2.5cm 2cm 2cm 3cm; box-shadow: none; width: 21cm; min-height: 29.7cm; page-break-after: always; border: none;} 
                 }
             </style>
         `;
@@ -911,13 +826,13 @@
         };
     }
 
-    // --- HÀM MỞ EDITOR (XEM TRƯỚC, CHỈNH SỬA, IN VÀ LƯU DRIVE) ---
+    // --- HÀM XEM TRƯỚC VÀ CHỈNH SỬA TRƯỚC KHI IN PDF ---
     function previewAndPrint(htmlData) {
         Swal.fire({
             title: 'XEM TRƯỚC & CHỈNH SỬA VĂN BẢN',
             html: `
                 <div class="editor-layout">
-                    <div id="print-editor" contenteditable="true">
+                    <div id="print-editor" contenteditable="true" style="background: white;">
                         ${htmlData.styles}
                         ${htmlData.html}
                     </div>
