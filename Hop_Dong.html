@@ -7,7 +7,6 @@
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
   
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
@@ -51,24 +50,40 @@
     .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; margin-right: 2px;}
     .btn-pdf:hover { background: #bae6fd; transform: scale(1.05); }
 
-    /* Gom nhóm nút hành động trong lịch sử */
     .action-group { display: flex; gap: 5px; justify-content: center; align-items: center; white-space: nowrap; flex-wrap: nowrap; }
-
     .cart-section { border: 2px dashed #bdc3c7; border-radius: 10px; padding: 15px; background: #fafafa; margin-top: 15px; }
 
-    /* CSS cho Editor Layout Bên Phải */
-    .editor-layout { display: flex; gap: 20px; text-align: left; }
-    #print-editor { flex: 1; border: 1px solid #aaa; padding: 0; background: #e0e0e0; min-height: 75vh; max-height: 75vh; overflow-y: auto; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); cursor: text; outline: none; }
-    .right-toolbar { width: 230px; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; height: fit-content; flex-shrink: 0; position: sticky; top: 10px;}
+    /* Fix ẩn Swal header title để màn hình rộng hơn */
+    div:where(.swal2-container) h2:where(.swal2-title) { display: none !important; }
+    div:where(.swal2-container) div:where(.swal2-html-container) { margin: 10px 0 !important; }
+
+    /* CSS Editor mở rộng tối đa */
+    .swal-full-height { height: 98vh !important; display: flex; flex-direction: column; }
+    .swal-full-height .swal2-html-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 10px; }
+    
+    .editor-layout { display: flex; gap: 15px; text-align: left; height: 100%; }
+    
+    #print-editor { 
+        flex: 1; border: 1px solid #aaa; padding: 20px 30px; background: #fff; 
+        overflow-y: auto; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); 
+        cursor: text; outline: none; 
+        font-family: 'Times New Roman', Times, serif; font-size: 14pt; color: black;
+        /* Biến CSS quản lý giãn dòng và cách đoạn */
+        --editor-lh: 1.2;
+        --editor-ps: 6pt;
+    }
+    #print-editor p, #print-editor td, #print-editor span, #print-editor div { line-height: var(--editor-lh); }
+    #print-editor p { margin-top: var(--editor-ps); margin-bottom: var(--editor-ps); text-align: justify; }
+    #print-editor table { width: 100%; border-collapse: collapse; margin: var(--editor-ps) 0; }
+    #print-editor th, #print-editor td { border: 1px solid black; padding: 5px; }
+    #print-editor .no-border, #print-editor .no-border td { border: none !important; padding: 0 !important; }
+
+    .right-toolbar { width: 220px; display: flex; flex-direction: column; gap: 8px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; overflow-y: auto; }
     .toolbar-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
     .toolbar-group-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; }
     .toolbar-btn { background: #fff; border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; text-align: center; }
     .toolbar-btn:hover { background: #eef2f3; border-color: var(--accent); }
     .tool-label { font-size: 11px; color: #64748b; font-weight: bold; margin-bottom: 2px; text-transform: uppercase; margin-top: 5px; border-bottom: 1px solid #eee; padding-bottom: 3px; }
-
-    /* Fix ẩn Swal header title để màn hình rộng hơn */
-    div:where(.swal2-container) h2:where(.swal2-title) { display: none !important; }
-    div:where(.swal2-container) div:where(.swal2-html-container) { margin: 10px 0 !important; }
 
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
@@ -80,8 +95,7 @@
         .table-modern td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: space-between; }
         .table-modern td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
         .editor-layout { flex-direction: column; }
-        .right-toolbar { width: 100%; position: static; }
-        #print-editor .page { width: 100%; padding: 15px; min-height: auto; }
+        .right-toolbar { width: 100%; }
     }
   </style>
 </head>
@@ -90,7 +104,6 @@
   <div class="main-content">
     <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
       <div><h2 style="margin:0; color: var(--primary);">🤝 TẠO VÀ QUẢN LÝ HỢP ĐỒNG</h2></div>
-      <button type="button" onclick="getToken()" style="background:#4285F4; color:white; border:none; padding:10px 20px; border-radius:20px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🔐 KẾT NỐI DRIVE</button>
     </div>
 
     <div class="form-card">
@@ -238,35 +251,13 @@
   </div>
 
   <script>
-    // --- GOOGLE DRIVE AUTH CONFIG ---
-    const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
-    const FOLDER_DRIVE_ID = "1Cn8AyIJvMxkEC4-UQnBdZOS_vhvkrnF_"; // Thư mục HOP_DONG_SAC_MAU
-    let accessToken = localStorage.getItem('drive_token') || null;
-    let tokenClient;
-
-    function initTokenClient() {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive.file',
-            callback: (res) => { 
-                accessToken = res.access_token; 
-                localStorage.setItem('drive_token', accessToken); 
-                Swal.fire({ icon: 'success', title: 'Đã kết nối Google Drive!', timer: 1500, showConfirmButton: false });
-            }
-        });
-    }
-
-    function getToken() { 
-        if(!tokenClient) initTokenClient();
-        tokenClient.requestAccessToken(); 
-    }
-
     const TABLE_NAME = "Hop_Dong";
     let masterData = [];     
     let currentItems = []; 
 
     document.addEventListener("DOMContentLoaded", () => { loadData(); });
 
+    // Hỗ trợ định dạng số
     function formatCurrency(input) { let v = input.value.replace(/\D/g, ""); input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
     function parseNum(s) { return Number(s.toString().replace(/\./g, "")) || 0; }
     function getCleanVNTime() { const d = new Date(); const pad = (n) => n.toString().padStart(2, '0'); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
@@ -281,6 +272,7 @@
         return dateString; 
     }
 
+    // ĐỌC SỐ THÀNH CHỮ VIỆT NAM
     const chuSo = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
     function docSo(so) {
         if (isNaN(so) || so == 0) return chuSo[0] + " đồng";
@@ -361,7 +353,8 @@
 
     function generateNewMaHD() {
         const d = new Date();
-        const dateStr = `${d.getDate().toString().padStart(2,'0')}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getFullYear()}`;
+        const pad = (n) => n.toString().padStart(2, '0');
+        const dateStr = `${pad(d.getDate())}${pad(d.getMonth() + 1)}${d.getFullYear()}`;
         const prefix = `HD-${dateStr}-`;
         let maxSeq = 0;
         (masterData || []).forEach(item => {
@@ -468,7 +461,7 @@
                 <td data-label="Hàng hóa"><span style="color:#2c3e50; line-height: 1.5;">${combinedNames}</span></td>
                 <td data-label="Thành tiền" style="text-align:right;"><b style="color:#7f8c8d;">${group.tongThanhTien.toLocaleString('vi-VN')} đ</b></td>
                 <td data-label="Tổng giá trị" style="text-align:right;"><b style="color:#c0392b;">${group.tongSauThue.toLocaleString('vi-VN')} đ</b></td>
-                <td data-label="Thao tác">
+                <td data-label="Thao tác" style="text-align:center;">
                     <div class="action-group">
                         <button type="button" onclick="viewGroupDetails('${group.Ma_HD}')" class="btn-pdf" title="Xem chi tiết" style="padding: 6px; min-width: 35px;">👁️</button>
                         <button type="button" onclick="exportPDFHistory('${group.Ma_HD}', 'hopdong')" class="btn-pdf" title="In Hợp Đồng" style="padding: 6px; min-width: 35px; background: #27ae60; color: white; border-color: #27ae60;">🖨️ HĐ</button>
@@ -520,18 +513,17 @@
 
     window.changeLineHeight = function(val) {
         const editor = document.getElementById('print-editor');
-        if(editor) editor.style.lineHeight = val;
+        if(editor) editor.style.setProperty('--editor-lh', val);
+        window.currentLineHeight = val;
     };
 
     window.changeParagraphSpace = function(val) {
         const editor = document.getElementById('print-editor');
-        if(editor) {
-            const ps = editor.querySelectorAll('p');
-            ps.forEach(p => p.style.marginTop = val);
-        }
+        if(editor) editor.style.setProperty('--editor-ps', val);
+        window.currentParaSpace = val;
     };
 
-    // Hàm chuyển Base64 DataURI sang dạng Blob để upload multipart
+    // Hàm chuyển Base64 DataURI sang dạng Blob để upload lên Supabase
     function dataURItoBlob(dataURI) {
         var byteString = atob(dataURI.split(',')[1]);
         var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
@@ -543,80 +535,92 @@
         return new Blob([ab], {type: mimeString});
     }
 
-    window.saveToDriveNow = async function() {
-        if(!accessToken) return getToken();
-        Swal.fire({ title: 'Đang lưu PDF lên Drive...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    window.saveToSupabaseNow = async function() {
+        Swal.fire({ title: 'Đang lưu PDF lên Supabase...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         
+        // 1. Tạm ẩn con dấu trước khi tạo PDF
+        const stamps = document.querySelectorAll('.stamp-img-node');
+        stamps.forEach(el => el.style.display = 'none');
+
         const element = document.getElementById('print-editor');
         const clone = element.cloneNode(true);
-        // Reset padding để thư viện in mượt
-        clone.style.padding = '0';
+        clone.style.padding = '0'; // Xóa padding ảo để html2pdf dùng margin thật
+
+        // 2. Hiện lại con dấu trên màn hình Editor
+        stamps.forEach(el => el.style.display = 'block');
 
         const opt = {
-          margin:       [25, 20, 20, 30], // Top 25mm, Right 20mm, Bottom 20mm, Left 30mm
-          filename:     'HopDong_' + new Date().getTime() + '.pdf',
+          margin:       [25, 20, 20, 30], // Top 2.5cm, Right 2cm, Bottom 2cm, Left 3cm
+          filename:     window.currentPdfFilename || 'HopDong.pdf',
           image:        { type: 'jpeg', quality: 0.98 },
-          html2canvas:  { scale: 2 },
+          html2canvas:  { scale: 2, useCORS: true },
           jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
         try {
-            // Lấy chuỗi base64 của PDF từ html2pdf
             const pdfBase64 = await html2pdf().from(clone).set(opt).outputPdf('datauristring');
             const pdfBlob = dataURItoBlob(pdfBase64);
             
-            // Gọi API Google Drive lưu file giống Thiet_Ke.html (resumable/multipart)
-            const metadata = {
-                name: opt.filename,
-                parents: [FOLDER_DRIVE_ID]
+            // Tên bucket Supabase Storage là 'hop_dong'
+            const bucketName = "hop_dong";
+            const filePath = encodeURIComponent(opt.filename);
+
+            const h = { 
+                'apikey': window.SB_CONFIG.KEY, 
+                'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
+                'Content-Type': 'application/pdf' 
             };
 
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-            form.append('file', pdfBlob);
-
-            const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            const res = await fetch(`${window.SB_CONFIG.URL}/storage/v1/object/${bucketName}/${filePath}`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${accessToken}` },
-                body: form
+                headers: h,
+                body: pdfBlob
             });
 
             if(!res.ok) {
-                if(res.status === 401) { localStorage.removeItem('drive_token'); accessToken=null; getToken(); return; }
-                throw new Error("Lỗi tải lên Google Drive");
+                throw new Error("Mã lỗi: " + res.status);
             }
 
-            Swal.fire({ icon: 'success', title: 'Đã lưu PDF lên Google Drive!', timer: 2000, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Đã lưu PDF lên Supabase Storage!', text: opt.filename, timer: 2000, showConfirmButton: false });
         } catch(e) {
-            Swal.fire('Lỗi', 'Lưu Drive thất bại: ' + e.message, 'error');
+            Swal.fire('Lỗi', 'Lưu Supabase thất bại: ' + e.message, 'error');
         }
     }
 
     window.printPDFNow = () => {
         let editedContent = document.getElementById('print-editor').innerHTML;
-        // Tạo một iframe ẩn để in trực tiếp, không mở tab mới
-        let iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-        
-        let iframeDoc = iframe.contentWindow.document;
-        iframeDoc.write(`
+        let lh = window.currentLineHeight || '1.2';
+        let ps = window.currentParaSpace || '6pt';
+
+        const finalDoc = `
             <html>
             <head>
-                <title>In Văn Bản</title>
+                <title>${window.currentPdfFilename || 'In Hop Dong'}</title>
                 <style>
-                    @page { size: A4; margin: 0; }
+                    /* Lề chuẩn hành chính khi in */
+                    @page { size: A4; margin: 2.5cm 2cm 2cm 3cm; }
                     body { margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; font-size: 14pt; }
-                    .html2pdf__page-break { page-break-after: always; height: 0; clear: both; }
+                    p { text-align: justify; line-height: ${lh}; margin-top: ${ps}; margin-bottom: ${ps}; }
+                    table { width: 100%; border-collapse: collapse; margin: ${ps} 0; }
+                    th, td { border: 1px solid black; padding: 5px; line-height: ${lh}; }
+                    .no-border, .no-border td { border: none !important; padding: 0 !important; }
+                    
+                    /* Bắt buộc ngắt trang và chống cắt dòng */
+                    .html2pdf__page-break { page-break-before: always; height: 0; clear: both; }
+                    tr, td, th { page-break-inside: avoid; }
                 </style>
             </head>
             <body>
-                <div style="padding: 2.5cm 2cm 2cm 3cm; box-sizing: border-box; width: 21cm; min-height: 29.7cm;">
-                    ${editedContent}
-                </div>
+                ${editedContent}
             </body>
             </html>
-        `);
+        `;
+        
+        let iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        let iframeDoc = iframe.contentWindow.document;
+        iframeDoc.write(finalDoc);
         iframeDoc.close();
         
         setTimeout(() => {
@@ -631,29 +635,14 @@
         let year = new Date().getFullYear();
         if (infoB.Ma_HD) {
             let parts = infoB.Ma_HD.split('-');
-            if(parts.length === 3) {
-                soHD = parts[2];
-                year = parts[1].substring(4,8) || year;
-            }
+            if(parts.length === 3) { soHD = parts[2]; year = parts[1].substring(4,8) || year; }
         }
         const contractRef = `${soHD}/${year}/HĐDV`;
 
-        let rowsHtml = "";
-        let tongTien = 0;
-
+        let rowsHtml = ""; let tongTien = 0;
         itemsToPrint.forEach((item, index) => {
-            let thanhTien = item.Don_Gia * item.So_Luong;
-            tongTien += thanhTien;
-            rowsHtml += `
-                <tr>
-                    <td align="center" style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">${index + 1}</td>
-                    <td style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">${item.Ten_Hang}</td>
-                    <td align="center" style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">${item.DVT}</td>
-                    <td align="center" style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">${item.So_Luong}</td>
-                    <td align="right" style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">${item.Don_Gia.toLocaleString('vi-VN')}</td>
-                    <td align="right" style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">${thanhTien.toLocaleString('vi-VN')}</td>
-                </tr>
-            `;
+            let thanhTien = item.Don_Gia * item.So_Luong; tongTien += thanhTien;
+            rowsHtml += `<tr><td align="center">${index + 1}</td><td>${item.Ten_Hang}</td><td align="center">${item.DVT}</td><td align="center">${item.So_Luong}</td><td align="right">${item.Don_Gia.toLocaleString('vi-VN')}</td><td align="right">${thanhTien.toLocaleString('vi-VN')}</td></tr>`;
         });
 
         const giamThueRate = infoB.Giam_Thue || 0;
@@ -662,173 +651,138 @@
 
         let discountRow = "";
         if(giamThueRate > 0) {
-            discountRow = `
-            <tr>
-                <td colspan="6" style="text-align:left; font-style:italic; padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">
-                    Đã giảm ${Math.round(discountAmount).toLocaleString('vi-VN')} đồng tương ứng 20% mức tỷ lệ ${giamThueRate}% để tính Thuế GTGT theo Nghị quyết số 204/2025/QH15
-                </td>
-            </tr>`;
+            discountRow = `<tr><td colspan="6" style="text-align:left; font-style:italic;">Đã giảm ${Math.round(discountAmount).toLocaleString('vi-VN')} đồng tương ứng 20% mức tỷ lệ ${giamThueRate}% để tính Thuế GTGT theo Nghị quyết số 204/2025/QH15</td></tr>`;
         }
 
         let rawDaiDien = infoB.Ten_Dai_Dien || '.......................................';
         let cleanDaiDien = rawDaiDien.replace(/^(Ông|Bà)\s+/i, '').trim();
 
-        // Con dấu 400px (Giảm 10% từ 440px), margin trên dưới 15px
+        // 4. Con dấu 360px (giảm 10%), khoảng cách 15px
         const stampHtml = showStamp 
-            ? `<img src="SACMAU.png" width="400" style="display:block; margin: 15px auto;">` 
-            : `<div style="height:150px; margin: 15px 0;"></div>`;
+            ? `<img src="SACMAU.png" class="stamp-img-node" style="width: 360px; display:block; margin: 15px auto;">` 
+            : `<div class="stamp-img-node" style="height:150px; margin: 15px 0;"></div>`;
 
-        // Chữ ký Bên A chuyển sang trái 50px
+        // 4. Bảng ẩn giữ layout chữ ký, Đại diện bên A lệch trái 50px (dùng padding-left thay vì margin âm để an toàn cho PDF)
         const signatureTable = `
-            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top: 30px; border: none; width: 100%;">
+            <table class="no-border" style="margin-top: 30px;">
                 <tr>
-                    <td width="50%" align="center" valign="top" style="border: none; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">
-                        <div style="margin-left: -50px;"><b>ĐẠI DIỆN BÊN A</b></div>
+                    <td width="50%" align="center" valign="top">
+                        <div style="padding-left: 50px;"><b>ĐẠI DIỆN BÊN A</b></div>
                     </td>
-                    <td width="50%" align="center" valign="top" style="border: none; font-family: 'Times New Roman', Times, serif; font-size: 14pt;"><b>ĐẠI DIỆN BÊN B</b></td>
+                    <td width="50%" align="center" valign="top"><b>ĐẠI DIỆN BÊN B</b></td>
                 </tr>
                 <tr>
-                    <td align="center" valign="middle" style="border: none;">
-                        <div style="margin-left: -50px;">${stampHtml}</div>
+                    <td align="center" valign="middle">
+                        <div style="padding-left: 50px;">${stampHtml}</div>
                     </td>
-                    <td align="center" valign="middle" style="border: none;"></td>
+                    <td align="center" valign="middle"></td>
                 </tr>
                 <tr>
-                    <td align="center" valign="top" style="border: none; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">
-                        <div style="margin-left: -50px;"><b>Nguyễn Thị Trúc Ly</b></div>
+                    <td align="center" valign="top">
+                        <div style="padding-left: 50px;"><b>Nguyễn Thị Trúc Ly</b></div>
                     </td>
-                    <td align="center" valign="top" style="border: none; font-family: 'Times New Roman', Times, serif; font-size: 14pt;"><b>${cleanDaiDien}</b></td>
+                    <td align="center" valign="top"><b>${cleanDaiDien}</b></td>
                 </tr>
             </table>
         `;
 
-        // --- TRANG 1: HỢP ĐỒNG ---
+        // Ngắt trang chuẩn html2pdf
+        const pageBreak = `<div class="html2pdf__page-break"></div>`;
+
         const pageHopDong = `
-            <div style="text-align: center; font-weight: bold; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.2;">
-                CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
-                <span style="border-bottom: 1px solid black; padding-bottom: 2px; display: inline-block;">Độc lập - Tự do - Hạnh phúc</span>
+            <div>
+                <div style="text-align: center; font-weight: bold;">
+                    CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
+                    <span style="border-bottom: 1px solid black; padding-bottom: 2px; display: inline-block;">Độc lập - Tự do - Hạnh phúc</span>
+                </div>
+                <div style="text-align: center; font-weight: bold; font-size: 16pt; margin-top: 15px;">HỢP ĐỒNG DỊCH VỤ</div>
+                <div style="text-align: center;">Số: ${contractRef}</div>
+                
+                <p style="margin-top: 15px;"><i>Căn cứ Luật Thương mại số 36/2005/QH11 do Quốc hội nước Cộng hòa xã hội chủ nghĩa Việt Nam được thông qua ngày 14 tháng 6 năm 2005;</i></p>
+                <p><i>Căn cứ khả năng cung cấp và nhu cầu thỏa thuận của hai bên;</i></p>
+                <p>Hôm nay, ngày ....... tháng ....... năm ........, chúng tôi gồm:</p>
+                
+                <p style="margin-top: 10px;"><b>Bên A: HỘ KINH DOANH SẮC MÀU</b></p>
+                <table class="no-border"><tr><td width="50%">- Đại diện: Nguyễn Thị Trúc Ly</td><td width="50%">Chức vụ: Chủ hộ kinh doanh</td></tr></table>
+                <p>- MST: 087191000525</p>
+                <p>- Số điện thoại: 0337.663.113</p>
+                <p>- Địa chỉ: Số 27, đường Nguyễn Văn Cừ, phường Cao Lãnh, Đồng Tháp.</p>
+                <p>- Số tài khoản: 0000866233 Tại: Ngân hàng TMCP Kiên Long - CN Đồng Tháp.</p>
+
+                <p style="margin-top: 10px;"><b>Bên B: ${infoB.Ten_Don_Vi.toUpperCase()}</b></p>
+                <table class="no-border"><tr><td width="50%">- Đại diện: ${rawDaiDien}</td><td width="50%">Chức vụ: ${infoB.Chuc_Vu || '...................'}</td></tr></table>
+                <p>- MST: ${infoB.MST || '......................................................'}</p>
+                <p>- Địa chỉ: ${infoB.Dia_Chi || '....................................................................................'}</p>
+                <p>- Số tài khoản: ${infoB.So_Tai_Khoan || '...........................'} Tại: ${infoB.Ngan_Hang || '....................................'}</p>
+
+                <p style="margin-top: 10px;">Sau khi xem xét bàn bạc, hai bên cùng thống nhất ký hợp đồng nguyên tắc này với các điều khoản sau:</p>
+                
+                <p style="font-weight: bold;">Điều 1. Qui cách – Số lượng sản phẩm – giá trị hợp đồng</p>
+                <table>
+                    <thead><tr style="background:#f2f2f2; text-align:center;"><th width="40">STT</th><th>Tên hàng hóa, dịch vụ</th><th width="50">ĐVT</th><th width="60">Số lượng</th><th width="90">Đơn giá (đồng)</th><th width="100">Thành tiền</th></tr></thead>
+                    <tbody>${rowsHtml}${discountRow}<tr><td colspan="5" align="right" style="font-weight: bold;">Cộng tiền hàng hóa, dịch vụ</td><td align="right" style="font-weight: bold;">${Math.round(finalTotal).toLocaleString('vi-VN')}</td></tr></tbody>
+                </table>
+                <p><b>Bằng chữ:</b> <i>${docSo(Math.round(finalTotal))}</i></p>
+
+                <p style="margin-top: 10px; font-weight: bold;">Điều 2. Trách nhiệm bên B</p>
+                <p>- Thanh toán chi phí mà hai bên đã thống nhất.</p>
+                <p>- Tạo điều kiện cho bên A thực hiện hợp đồng.</p>
+
+                <p style="margin-top: 10px; font-weight: bold;">Điều 3. Trách nhiệm bên A</p>
+                <p>- Thực hiện đúng chất lượng sản phẩm như bên B đã yêu cầu.</p>
+                <p>- Giao hàng cho bên B đúng thời gian quy định.</p>
+
+                <p style="margin-top: 10px; font-weight: bold;">Điều 4. Phương thức thanh toán</p>
+                <p>- Bên B trả tiền mặt hoặc chuyển khoản cho bên A sau khi bên A giao đủ hàng cho bên B.</p>
+                <p>- Bên B đặt hàng bên A bằng phương thức bán hàng qua điện thoại/zalo.</p>
+
+                <p style="margin-top: 10px; font-weight: bold;">Điều 5. Địa điểm thời gian nhận hàng</p>
+                <p>- Thời gian thực hiện hợp đồng: Từ ngày ............................... đến ngày ................................</p>
+                <p>- Địa điểm: tại ${infoB.Ten_Don_Vi}</p>
+
+                <p style="margin-top: 10px; font-weight: bold;">Điều 6. Điều khoản chung</p>
+                <p>- Hợp đồng có hiệu lực kể từ ngày ký;</p>
+                <p>- Hai bên cam kết thi hành nghiêm chỉnh hợp đồng này, nếu gặp khó khăn trở ngại, hai bên cùng bàn bạc giải quyết.</p>
+                <p>- Hợp đồng được thành lập 02 bản, mỗi bên giữ 01 bản có giá trị như nhau.</p>
+
+                ${signatureTable}
             </div>
-            <div style="text-align: center; font-weight: bold; font-size: 16pt; margin-top: 15px; font-family: 'Times New Roman', Times, serif; line-height: 1.5;">HỢP ĐỒNG DỊCH VỤ</div>
-            <div style="text-align: center; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5;">Số: ${contractRef}</div>
-            
-            <p style="margin-top: 15px; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;"><i>Căn cứ Luật Thương mại số 36/2005/QH11 do Quốc hội nước Cộng hòa xã hội chủ nghĩa Việt Nam được thông qua ngày 14 tháng 6 năm 2005;</i></p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;"><i>Căn cứ khả năng cung cấp và nhu cầu thỏa thuận của hai bên;</i></p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Hôm nay, ngày ....... tháng ....... năm ........, chúng tôi gồm:</p>
-            
-            <p style="margin-top: 10px; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;"><b>Bên A: HỘ KINH DOANH SẮC MÀU</b></p>
-            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border: none;">
-                <tr>
-                    <td width="50%" style="border:none; padding: 0; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5;">- Đại diện: Nguyễn Thị Trúc Ly</td>
-                    <td width="50%" style="border:none; padding: 0; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5;">Chức vụ: Chủ hộ kinh doanh</td>
-                </tr>
-            </table>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- MST: 087191000525</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Số điện thoại: 0337.663.113</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Địa chỉ: Số 27, đường Nguyễn Văn Cừ, phường Cao Lãnh, Đồng Tháp.</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Số tài khoản: 0000866233 Tại: Ngân hàng TMCP Kiên Long - CN Đồng Tháp.</p>
-
-            <p style="margin-top: 10px; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;"><b>Bên B: ${infoB.Ten_Don_Vi.toUpperCase()}</b></p>
-            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border: none;">
-                <tr>
-                    <td width="50%" style="border:none; padding: 0; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5;">- Đại diện: ${rawDaiDien}</td>
-                    <td width="50%" style="border:none; padding: 0; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5;">Chức vụ: ${infoB.Chuc_Vu || '...................'}</td>
-                </tr>
-            </table>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- MST: ${infoB.MST || '......................................................'}</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Địa chỉ: ${infoB.Dia_Chi || '....................................................................................'}</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Số tài khoản: ${infoB.So_Tai_Khoan || '...........................'} Tại: ${infoB.Ngan_Hang || '....................................'}</p>
-
-            <p style="margin-top: 10px; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Sau khi xem xét bàn bạc, hai bên cùng thống nhất ký hợp đồng nguyên tắc này với các điều khoản sau:</p>
-            
-            <p style="font-weight: bold; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Điều 1. Qui cách – Số lượng sản phẩm – giá trị hợp đồng</p>
-            <table width="100%" border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; border-color: black; margin-top:5px; margin-bottom:10px;">
-                <thead>
-                    <tr style="background:#f2f2f2; text-align:center;">
-                        <th width="40" style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">STT</th>
-                        <th style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">Tên hàng hóa, dịch vụ</th>
-                        <th width="50" style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">ĐVT</th>
-                        <th width="60" style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">Số lượng</th>
-                        <th width="90" style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">Đơn giá (đồng)</th>
-                        <th width="100" style="padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">Thành tiền</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rowsHtml}
-                    ${discountRow}
-                    <tr>
-                        <td colspan="5" align="right" style="font-weight: bold; padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">Cộng tiền hàng hóa, dịch vụ</td>
-                        <td align="right" style="font-weight: bold; padding: 5px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; border: 1px solid black;">${Math.round(finalTotal).toLocaleString('vi-VN')}</td>
-                    </tr>
-                </tbody>
-            </table>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;"><b>Bằng chữ:</b> <i>${docSo(Math.round(finalTotal))}</i></p>
-
-            <p style="margin-top: 10px; font-weight: bold; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Điều 2. Trách nhiệm bên B</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Thanh toán chi phí mà hai bên đã thống nhất.</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Tạo điều kiện cho bên A thực hiện hợp đồng.</p>
-
-            <p style="margin-top: 10px; font-weight: bold; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Điều 3. Trách nhiệm bên A</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Thực hiện đúng chất lượng sản phẩm như bên B đã yêu cầu.</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Giao hàng cho bên B đúng thời gian quy định.</p>
-
-            <p style="margin-top: 10px; font-weight: bold; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Điều 4. Phương thức thanh toán</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Bên B trả tiền mặt hoặc chuyển khoản cho bên A sau khi bên A giao đủ hàng cho bên B.</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Bên B đặt hàng bên A bằng phương thức bán hàng qua điện thoại/zalo.</p>
-
-            <p style="margin-top: 10px; font-weight: bold; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Điều 5. Địa điểm thời gian nhận hàng</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Thời gian thực hiện hợp đồng: Từ ngày ............................... đến ngày ................................</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Địa điểm: tại ${infoB.Ten_Don_Vi}</p>
-
-            <p style="margin-top: 10px; font-weight: bold; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Điều 6. Điều khoản chung</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Hợp đồng có hiệu lực kể từ ngày ký;</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Hai bên cam kết thi hành nghiêm chỉnh hợp đồng này, nếu gặp khó khăn trở ngại, hai bên cùng bàn bạc giải quyết.</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Hợp đồng được thành lập 02 bản, mỗi bên giữ 01 bản có giá trị như nhau.</p>
-
-            ${signatureTable}
         `;
 
-        // --- TRANG 2: NGHIỆM THU ---
         const pageNghiemThu = `
-            <div style="text-align: center; font-weight: bold; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.2;">
-                CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
-                <span style="border-bottom: 1px solid black; padding-bottom: 2px; display: inline-block;">Độc lập - Tự do - Hạnh phúc</span>
+            ${pageBreak}
+            <div>
+                <div style="text-align: center; font-weight: bold;">
+                    CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
+                    <span style="border-bottom: 1px solid black; padding-bottom: 2px; display: inline-block;">Độc lập - Tự do - Hạnh phúc</span>
+                </div>
+                <div style="text-align: center; font-weight: bold; font-size: 16pt; margin-top: 15px;">BIÊN BẢN NGHIỆM THU VÀ THANH LÝ HỢP ĐỒNG</div>
+                
+                <p style="margin-top: 15px;"><i>Căn cứ Hợp đồng số ${contractRef} giữa Hộ Kinh doanh Sắc Màu và ${infoB.Ten_Don_Vi}</i></p>
+                <p>Hôm nay, vào lúc ..... giờ ..... phút, ngày ....... tháng ....... năm ........ tại ${infoB.Ten_Don_Vi}, chúng tôi gồm:</p>
+                
+                <p style="margin-top: 10px;"><b>Bên A: HỘ KINH DOANH SẮC MÀU</b></p>
+                <table class="no-border"><tr><td width="50%">- Đại diện: Nguyễn Thị Trúc Ly</td><td width="50%">Chức vụ: Chủ hộ kinh doanh</td></tr></table>
+                <p>- MST: 087191000525</p>
+                <p>- Số điện thoại: 0337.663.113</p>
+                <p>- Địa chỉ: Số 27, đường Nguyễn Văn Cừ, phường Cao Lãnh, Đồng Tháp.</p>
+                <p>- Số tài khoản: 0000866233 Tại: Ngân hàng TMCP Kiên Long - CN Đồng Tháp.</p>
+
+                <p style="margin-top: 10px;"><b>Bên B: ${infoB.Ten_Don_Vi.toUpperCase()}</b></p>
+                <table class="no-border"><tr><td width="50%">- Đại diện: ${rawDaiDien}</td><td width="50%">Chức vụ: ${infoB.Chuc_Vu || '...................'}</td></tr></table>
+                <p>- MST: ${infoB.MST || '......................................................'}</p>
+                <p>- Địa chỉ: ${infoB.Dia_Chi || '....................................................................................'}</p>
+                <p>- Số tài khoản: ${infoB.So_Tai_Khoan || '...........................'} Tại: ${infoB.Ngan_Hang || '....................................'}</p>
+
+                <p style="margin-top: 15px;">Sau khi kết thúc công việc giữa hai bên thỏa thuận, hai bên thống nhất thanh lý hợp đồng số ${contractRef} ngày ....... tháng ....... năm ........ như sau:</p>
+                <p>Tổng số giá trị hợp đồng là <b>${Math.round(finalTotal).toLocaleString('vi-VN')} đồng.</b></p>
+                <p><b>Bằng chữ:</b> <i>${docSo(Math.round(finalTotal))}</i></p>
+
+                <p style="margin-top: 15px;">Hợp đồng này hết hiệu lực khi bên B thanh toán đủ số tiền ghi trong hợp đồng cho bên A.</p>
+                <p>Biên bản này được lập thành 02 bản có giá trị như nhau, mỗi bên giữ 01 bản.</p>
+
+                ${signatureTable}
             </div>
-            <div style="text-align: center; font-weight: bold; font-size: 16pt; margin-top: 15px; font-family: 'Times New Roman', Times, serif; line-height: 1.5;">BIÊN BẢN NGHIỆM THU VÀ THANH LÝ HỢP ĐỒNG</div>
-            
-            <p style="margin-top: 15px; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;"><i>Căn cứ Hợp đồng số ${contractRef} giữa Hộ Kinh doanh Sắc Màu và ${infoB.Ten_Don_Vi}</i></p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Hôm nay, vào lúc ..... giờ ..... phút, ngày ....... tháng ....... năm ........ tại ${infoB.Ten_Don_Vi}, chúng tôi gồm:</p>
-            
-            <p style="margin-top: 10px; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;"><b>Bên A: HỘ KINH DOANH SẮC MÀU</b></p>
-            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border: none;">
-                <tr>
-                    <td width="50%" style="border:none; padding: 0; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5;">- Đại diện: Nguyễn Thị Trúc Ly</td>
-                    <td width="50%" style="border:none; padding: 0; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5;">Chức vụ: Chủ hộ kinh doanh</td>
-                </tr>
-            </table>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- MST: 087191000525</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Số điện thoại: 0337.663.113</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Địa chỉ: Số 27, đường Nguyễn Văn Cừ, phường Cao Lãnh, Đồng Tháp.</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Số tài khoản: 0000866233 Tại: Ngân hàng TMCP Kiên Long - CN Đồng Tháp.</p>
-
-            <p style="margin-top: 10px; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;"><b>Bên B: ${infoB.Ten_Don_Vi.toUpperCase()}</b></p>
-            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border: none;">
-                <tr>
-                    <td width="50%" style="border:none; padding: 0; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5;">- Đại diện: ${rawDaiDien}</td>
-                    <td width="50%" style="border:none; padding: 0; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5;">Chức vụ: ${infoB.Chuc_Vu || '...................'}</td>
-                </tr>
-            </table>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- MST: ${infoB.MST || '......................................................'}</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Địa chỉ: ${infoB.Dia_Chi || '....................................................................................'}</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">- Số tài khoản: ${infoB.So_Tai_Khoan || '...........................'} Tại: ${infoB.Ngan_Hang || '....................................'}</p>
-
-            <p style="margin-top: 15px; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Sau khi kết thúc công việc giữa hai bên thỏa thuận, hai bên thống nhất thanh lý hợp đồng số ${contractRef} ngày ....... tháng ....... năm ........ như sau:</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Tổng số giá trị hợp đồng là <b>${Math.round(finalTotal).toLocaleString('vi-VN')} đồng.</b></p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;"><b>Bằng chữ:</b> <i>${docSo(Math.round(finalTotal))}</i></p>
-
-            <p style="margin-top: 15px; line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Hợp đồng này hết hiệu lực khi bên B thanh toán đủ số tiền ghi trong hợp đồng cho bên A.</p>
-            <p style="line-height: 1.5; text-align: justify; font-family: 'Times New Roman', Times, serif; font-size: 14pt;">Biên bản này được lập thành 02 bản có giá trị như nhau, mỗi bên giữ 01 bản.</p>
-
-            ${signatureTable}
         `;
 
         if(docType === 'hopdong') return { html: pageHopDong };
@@ -837,10 +791,13 @@
     }
 
     function previewAndPrint(htmlData) {
+        window.currentLineHeight = '1.2';
+        window.currentParaSpace = '6pt';
+
         Swal.fire({
             html: `
                 <div class="editor-layout">
-                    <div id="print-editor" contenteditable="true" style="text-align:left; background: #fff; padding: 25mm 20mm 20mm 30mm; width: 21cm; min-height: 29.7cm; margin: 0 auto; box-sizing: border-box; box-shadow: 0 0 5px rgba(0,0,0,0.1); cursor: text; outline: none; border: 1px solid #aaa;">
+                    <div id="print-editor" contenteditable="true">
                         ${htmlData.html}
                     </div>
                     
@@ -860,23 +817,24 @@
                             <button type="button" class="toolbar-btn" onclick="document.execCommand('justifyFull',false,null)" title="Căn đều 2 bên">Đều</button>
                         </div>
                         <select class="toolbar-btn" onchange="changeLineHeight(this.value)" style="width:100%; margin-top:5px;">
-                            <option value="1.2">Giãn dòng 1.2</option>
-                            <option value="1.5" selected>Giãn dòng 1.5</option>
+                            <option value="1.2" selected>Giãn dòng 1.2</option>
+                            <option value="1.5">Giãn dòng 1.5</option>
                             <option value="2.0">Giãn dòng 2.0</option>
                         </select>
                         <select class="toolbar-btn" onchange="changeParagraphSpace(this.value)" style="width:100%; margin-top:5px;">
-                            <option value="5px">Cách đoạn 5px</option>
-                            <option value="10px">Cách đoạn 10px</option>
-                            <option value="15px">Cách đoạn 15px</option>
+                            <option value="4pt">Cách đoạn 4pt</option>
+                            <option value="6pt" selected>Cách đoạn 6pt</option>
+                            <option value="10pt">Cách đoạn 10pt</option>
                         </select>
                         
                         <div class="tool-label" style="margin-top:20px; border-color:var(--primary);">Hành động xuất file</div>
                         <button type="button" class="toolbar-btn" style="background:#27ae60; color:white; width:100%; font-size:14px; padding:12px;" onclick="window.printPDFNow()">🖨️ IN PDF NGAY</button>
-                        <button type="button" class="toolbar-btn" style="background:#f39c12; color:white; width:100%; font-size:14px; padding:12px; margin-top:5px;" onclick="window.saveToDriveNow()">💾 LƯU LÊN DRIVE</button>
+                        <button type="button" class="toolbar-btn" style="background:#f39c12; color:white; width:100%; font-size:14px; padding:12px; margin-top:5px;" onclick="window.saveToSupabaseNow()">💾 LƯU SUPABASE</button>
                     </div>
                 </div>
             `,
             width: '1200px',
+            customClass: { popup: 'swal-full-height' },
             showConfirmButton: false,
             showCloseButton: true,
             allowOutsideClick: false
@@ -902,6 +860,17 @@
             };
 
             const showStamp = document.getElementById('check-stamp').checked;
+            
+            // Xử lý File Name tự động: DD-MM-YYYY HD số xxx - Tên Cơ quan - số tiền
+            const dateObj = new Date();
+            const dd = dateObj.getDate().toString().padStart(2, '0');
+            const mm = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+            const yyyy = dateObj.getFullYear();
+            const hdSo = maHDTemp.split('-')[2];
+            let total = 0; currentItems.forEach(i => total += (i.Don_Gia * i.So_Luong));
+            const finTotal = Math.round(total - (total * 0.2 * (infoB.Giam_Thue / 100)));
+            window.currentPdfFilename = `${dd}-${mm}-${yyyy} HD so ${hdSo} - ${infoB.Ten_Don_Vi} - ${finTotal}.pdf`.replace(/[/\\?%*:|"<>]/g, '-');
+
             const templateData = buildTemplate(currentItems, infoB, showStamp, type);
             previewAndPrint(templateData);
         } catch (e) {
@@ -930,6 +899,14 @@
             };
 
             const showStamp = document.getElementById('check-stamp-history') ? document.getElementById('check-stamp-history').checked : true;
+
+            // Xử lý File Name tự động
+            let total = 0; itemsToPrint.forEach(i => total += (i.Don_Gia * i.So_Luong));
+            const finTotal = Math.round(total - (total * 0.2 * (infoB.Giam_Thue / 100)));
+            const dateParts = first.Ngay_Gio.split(' ')[0].split('-');
+            const hdDate = dateParts.length === 3 ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}` : "XX-XX-XXXX";
+            const hdSo = first.Ma_HD.split('-')[2];
+            window.currentPdfFilename = `${hdDate} HD so ${hdSo} - ${infoB.Ten_Don_Vi} - ${finTotal}.pdf`.replace(/[/\\?%*:|"<>]/g, '-');
 
             const templateData = buildTemplate(itemsToPrint, infoB, showStamp, type);
             previewAndPrint(templateData);
