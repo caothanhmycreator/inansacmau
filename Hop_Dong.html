@@ -7,7 +7,6 @@
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
   
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
@@ -51,7 +50,7 @@
     .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; margin-right: 2px;}
     .btn-pdf:hover { background: #bae6fd; transform: scale(1.05); }
 
-    .action-group { display: flex; gap: 5px; justify-content: center; align-items: center; white-space: nowrap; flex-wrap: nowrap; }
+    .action-group { display: flex; gap: 5px; justify-content: center; align-items: center; flex-wrap: wrap; }
     .cart-section { border: 2px dashed #bdc3c7; border-radius: 10px; padding: 15px; background: #fafafa; margin-top: 15px; }
 
     /* CSS Editor Layout Bên Phải */
@@ -104,7 +103,6 @@
   <div class="main-content">
     <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
       <div><h2 style="margin:0; color: var(--primary);">🤝 TẠO VÀ QUẢN LÝ HỢP ĐỒNG</h2></div>
-      <button type="button" onclick="getToken()" style="background:#4285F4; color:white; border:none; padding:10px 20px; border-radius:20px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🔐 KẾT NỐI DRIVE</button>
     </div>
 
     <div class="form-card">
@@ -209,9 +207,6 @@
           </table>
         </div>
         <div style="margin-top: 15px; display: flex; gap: 15px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
-            <label style="font-size: 14px; font-weight: bold; cursor: pointer; color: #d35400; display: flex; align-items: center;">
-                <input type="checkbox" id="check-nghiemthu" checked style="width: 18px; height: 18px; margin-right: 8px;"> KÈM BB NGHIỆM THU
-            </label>
             <label style="font-size: 14px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center; margin-right: 10px;">
                 <input type="checkbox" id="check-stamp" checked style="width: 18px; height: 18px; margin-right: 8px;"> CÓ CON DẤU CHỮ KÝ
             </label>
@@ -227,9 +222,6 @@
       <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
         <h3 style="margin:0;">📋 LỊCH SỬ HỢP ĐỒNG ĐÃ LƯU</h3>
         <div class="search-area" style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; align-items: center;">
-          <label style="font-size: 13px; font-weight: bold; cursor: pointer; color: #d35400; display: flex; align-items: center; white-space: nowrap;">
-            <input type="checkbox" id="check-nghiemthu-history" checked style="width: 16px; height: 16px; margin-right: 5px;"> KÈM NGHIỆM THU
-          </label>
           <label style="font-size: 13px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center; white-space: nowrap;">
             <input type="checkbox" id="check-stamp-history" checked style="width: 16px; height: 16px; margin-right: 5px;"> CÓ CON DẤU
           </label>
@@ -246,7 +238,7 @@
                     <th>Chi Tiết Hàng Hóa</th>
                     <th style="width:120px; text-align:right;">Thành Tiền</th>
                     <th style="width:120px; text-align:right;">Tổng Giá Trị</th>
-                    <th style="width:150px; text-align:center;">Thao tác</th>
+                    <th style="width:180px; text-align:center;">Thao tác</th>
                 </tr>
             </thead>
             <tbody id="data-container">
@@ -258,27 +250,6 @@
   </div>
 
   <script>
-    const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
-    let accessToken = localStorage.getItem('drive_token') || null;
-    let tokenClient;
-
-    function initTokenClient() {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive.file',
-            callback: (res) => { 
-                accessToken = res.access_token; 
-                localStorage.setItem('drive_token', accessToken); 
-                Swal.fire({ icon: 'success', title: 'Đã kết nối Google Drive!', timer: 1500, showConfirmButton: false });
-            }
-        });
-    }
-
-    function getToken() { 
-        if(!tokenClient) initTokenClient();
-        tokenClient.requestAccessToken(); 
-    }
-
     const TABLE_NAME = "Hop_Dong";
     let masterData = [];     
     let currentItems = []; 
@@ -500,6 +471,18 @@
         container.innerHTML = groupedArray.map(group => {
             let displayDate = formatDisplayTime(group.Ngay_Gio);
             let combinedNames = group.items.map(i => `• ${i.Ten_Hang} (x${i.So_Luong})`).join('<br>');
+            
+            // Xây dựng link Tải trực tiếp
+            const dateParts = group.items[0].Ngay_Gio.split(' ')[0].split('-');
+            const hdDate = dateParts.length === 3 ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}` : "XX-XX-XXXX";
+            const hdSo = group.Ma_HD.split('-')[2];
+            const finTotal = Math.round(group.tongSauThue);
+
+            const fileHD = normalizeFilename(`${hdDate} HD so ${hdSo} - ${group.Ten_Don_Vi} - ${finTotal}.pdf`);
+            const fileNT = normalizeFilename(`${hdDate} NT so ${hdSo} - ${group.Ten_Don_Vi} - ${finTotal}.pdf`);
+            
+            const urlHD = `${window.SB_CONFIG.URL}/storage/v1/object/public/hop_dong/${encodeURIComponent(fileHD)}`;
+            const urlNT = `${window.SB_CONFIG.URL}/storage/v1/object/public/hop_dong/${encodeURIComponent(fileNT)}`;
 
             return `
             <tr>
@@ -508,11 +491,13 @@
                 <td data-label="Hàng hóa"><span style="color:#2c3e50; line-height: 1.5;">${combinedNames}</span></td>
                 <td data-label="Thành tiền" style="text-align:right;"><b style="color:#7f8c8d;">${group.tongThanhTien.toLocaleString('vi-VN')} đ</b></td>
                 <td data-label="Tổng giá trị" style="text-align:right;"><b style="color:#c0392b;">${group.tongSauThue.toLocaleString('vi-VN')} đ</b></td>
-                <td data-label="Thao tác" style="text-align:center; white-space: nowrap;">
+                <td data-label="Thao tác" style="text-align:center;">
                     <div class="action-group">
                         <button type="button" onclick="viewGroupDetails('${group.Ma_HD}')" class="btn-pdf" title="Xem chi tiết" style="padding: 6px; min-width: 35px;">👁️</button>
                         <button type="button" onclick="exportPDFHistory('${group.Ma_HD}', 'hopdong')" class="btn-pdf" title="In Hợp Đồng" style="padding: 6px; min-width: 35px; background: #27ae60; color: white; border-color: #27ae60;">🖨️ HĐ</button>
                         <button type="button" onclick="exportPDFHistory('${group.Ma_HD}', 'nghiemthu')" class="btn-pdf" title="In Nghiệm Thu" style="padding: 6px; min-width: 35px; background: #8e44ad; color: white; border-color: #8e44ad;">🖨️ NT</button>
+                        <a href="${urlHD}" target="_blank" class="btn-pdf" title="Tải PDF HĐ" style="padding: 6px; min-width: 35px; background: #f39c12; color: white; border-color: #f39c12; text-decoration: none;">⬇️ HĐ</a>
+                        <a href="${urlNT}" target="_blank" class="btn-pdf" title="Tải PDF NT" style="padding: 6px; min-width: 35px; background: #d35400; color: white; border-color: #d35400; text-decoration: none;">⬇️ NT</a>
                         <button type="button" onclick="deleteGroupRecord('${group.Ma_HD}', ${group.id})" class="btn-del" title="Xóa" style="padding: 6px; min-width: 35px;">🗑️</button>
                     </div>
                 </td>
@@ -585,12 +570,13 @@
         const element = document.getElementById('print-editor');
         if (!element) return Swal.fire('Lỗi', 'Không tìm thấy nội dung văn bản!', 'error');
 
+        Swal.fire({ title: 'Đang lưu PDF lên Supabase...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
         const clone = element.cloneNode(true);
         const stamps = clone.querySelectorAll('.stamp-img-node');
         stamps.forEach(el => el.style.display = 'none');
         clone.style.padding = '0'; 
 
-        // Gọt sạch file name trước
         const cleanFileName = normalizeFilename(window.currentPdfFilename || 'HopDong.pdf');
 
         const opt = {
@@ -600,9 +586,6 @@
           html2canvas:  { scale: 2, useCORS: true },
           jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
-
-        // Bật Loading đè lên Editor
-        Swal.fire({ title: 'Đang lưu PDF lên Supabase...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
         try {
             const pdfBase64 = await html2pdf().from(clone).set(opt).outputPdf('datauristring');
@@ -615,7 +598,7 @@
                 'apikey': window.SB_CONFIG.KEY, 
                 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
                 'Content-Type': 'application/pdf',
-                'x-upsert': 'true' // Bắt buộc để được ghi đè file cũ
+                'x-upsert': 'true' 
             };
 
             const res = await fetch(`${window.SB_CONFIG.URL}/storage/v1/object/${bucketName}/${filePath}`, {
@@ -702,29 +685,27 @@
         let rawDaiDien = infoB.Ten_Dai_Dien || '.......................................';
         let cleanDaiDien = rawDaiDien.replace(/^(Ông|Bà)\s+/i, '').trim();
 
-        // Con dấu thu gọn 10% và khoảng cách 15px
         const stampHtml = showStamp 
             ? `<img src="SACMAU.png" class="stamp-img-node" style="width: 360px; display:block; margin: 15px auto;">` 
             : `<div class="stamp-img-node" style="height:150px; margin: 15px 0;"></div>`;
 
-        // Đẩy riêng cụm Bên A sang phải 50px so với mép trái
         const signatureTable = `
             <table class="no-border" style="margin-top: 30px;">
                 <tr>
                     <td width="50%" align="center" valign="top">
-                        <div style="position: relative; left: 50px;"><b>ĐẠI DIỆN BÊN A</b></div>
+                        <div style="position: relative; left: -50px;"><b>ĐẠI DIỆN BÊN A</b></div>
                     </td>
                     <td width="50%" align="center" valign="top"><b>ĐẠI DIỆN BÊN B</b></td>
                 </tr>
                 <tr>
                     <td align="center" valign="middle">
-                        <div style="position: relative; left: 50px;">${stampHtml}</div>
+                        <div style="position: relative; left: -50px;">${stampHtml}</div>
                     </td>
                     <td align="center" valign="middle"></td>
                 </tr>
                 <tr>
                     <td align="center" valign="top">
-                        <div style="position: relative; left: 50px;"><b>Nguyễn Thị Trúc Ly</b></div>
+                        <div style="position: relative; left: -50px;"><b>Nguyễn Thị Trúc Ly</b></div>
                     </td>
                     <td align="center" valign="top"><b>${cleanDaiDien}</b></td>
                 </tr>
@@ -794,7 +775,6 @@
         `;
 
         const pageNghiemThu = `
-            ${pageBreak}
             <div>
                 <div style="text-align: center; font-weight: bold;">
                     CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
@@ -905,7 +885,6 @@
 
             const showStamp = document.getElementById('check-stamp').checked;
             
-            // Xử lý File Name tự động
             const dateObj = new Date();
             const dd = dateObj.getDate().toString().padStart(2, '0');
             const mm = (dateObj.getMonth() + 1).toString().padStart(2, '0');
@@ -913,7 +892,8 @@
             const hdSo = maHDTemp.split('-')[2];
             let total = 0; currentItems.forEach(i => total += (i.Don_Gia * i.So_Luong));
             const finTotal = Math.round(total - (total * 0.2 * (infoB.Giam_Thue / 100)));
-            window.currentPdfFilename = `${dd}-${mm}-${yyyy} HD so ${hdSo} - ${infoB.Ten_Don_Vi} - ${finTotal}.pdf`;
+            const typeStr = type === 'hopdong' ? 'HD' : 'NT';
+            window.currentPdfFilename = normalizeFilename(`${dd}-${mm}-${yyyy} ${typeStr} so ${hdSo} - ${infoB.Ten_Don_Vi} - ${finTotal}.pdf`);
 
             const templateData = buildTemplate(currentItems, infoB, showStamp, type);
             previewAndPrint(templateData);
@@ -949,7 +929,8 @@
             const dateParts = first.Ngay_Gio.split(' ')[0].split('-');
             const hdDate = dateParts.length === 3 ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}` : "XX-XX-XXXX";
             const hdSo = first.Ma_HD.split('-')[2];
-            window.currentPdfFilename = `${hdDate} HD so ${hdSo} - ${infoB.Ten_Don_Vi} - ${finTotal}.pdf`;
+            const typeStr = type === 'hopdong' ? 'HD' : 'NT';
+            window.currentPdfFilename = normalizeFilename(`${hdDate} ${typeStr} so ${hdSo} - ${infoB.Ten_Don_Vi} - ${finTotal}.pdf`);
 
             const templateData = buildTemplate(itemsToPrint, infoB, showStamp, type);
             previewAndPrint(templateData);
