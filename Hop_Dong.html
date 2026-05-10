@@ -45,10 +45,10 @@
     .btn-action { background: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; box-shadow: 0 4px 10px rgba(52, 73, 94, 0.3);}
     .btn-action:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(52, 73, 94, 0.4); }
     
-    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 8px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-del { background: #fee2e2; color: #c0392b; border: 1px solid #fecaca; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
     .btn-del:hover { background: #fecaca; transform: scale(1.05); }
 
-    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 8px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; margin-right: 2px;}
+    .btn-pdf { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; font-weight: bold; padding: 6px 12px; font-size: 14px; border-radius: 15px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; margin-right: 2px;}
     .btn-pdf:hover { background: #bae6fd; transform: scale(1.05); }
 
     .action-group { display: flex; gap: 5px; justify-content: center; align-items: center; white-space: nowrap; flex-wrap: nowrap; }
@@ -104,7 +104,6 @@
   <div class="main-content">
     <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
       <div><h2 style="margin:0; color: var(--primary);">🤝 TẠO VÀ QUẢN LÝ HỢP ĐỒNG</h2></div>
-      <button type="button" onclick="getToken()" style="background:#4285F4; color:white; border:none; padding:10px 20px; border-radius:20px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🔐 KẾT NỐI DRIVE</button>
     </div>
 
     <div class="form-card">
@@ -313,6 +312,27 @@
         return chuoi;
     }
 
+    // Chuẩn hóa tên file sạch tiếng việt và dấu cách
+    function normalizeFilename(str) {
+        str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+        str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+        str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+        str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+        str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+        str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+        str = str.replace(/đ/g, "d");
+        str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+        str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+        str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+        str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+        str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+        str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+        str = str.replace(/Đ/g, "D");
+        str = str.replace(/[^a-zA-Z0-9.-]/g, "_"); // Biến mọi thứ không phải chữ/số thành gạch dưới
+        str = str.replace(/_+/g, "_"); // Xóa gạch dưới thừa
+        return str;
+    }
+
     function updateThanhTienTemp() {
         const sl = parseFloat(document.getElementById('f-sl').value) || 0;
         const dongia = parseNum(document.getElementById('f-dongia').value);
@@ -466,7 +486,7 @@
                 <td data-label="Hàng hóa"><span style="color:#2c3e50; line-height: 1.5;">${combinedNames}</span></td>
                 <td data-label="Thành tiền" style="text-align:right;"><b style="color:#7f8c8d;">${group.tongThanhTien.toLocaleString('vi-VN')} đ</b></td>
                 <td data-label="Tổng giá trị" style="text-align:right;"><b style="color:#c0392b;">${group.tongSauThue.toLocaleString('vi-VN')} đ</b></td>
-                <td data-label="Thao tác">
+                <td data-label="Thao tác" style="text-align:center; white-space: nowrap;">
                     <div class="action-group">
                         <button type="button" onclick="viewGroupDetails('${group.Ma_HD}')" class="btn-pdf" title="Xem chi tiết" style="padding: 6px; min-width: 35px;">👁️</button>
                         <button type="button" onclick="exportPDFHistory('${group.Ma_HD}', 'hopdong')" class="btn-pdf" title="In Hợp Đồng" style="padding: 6px; min-width: 35px; background: #27ae60; color: white; border-color: #27ae60;">🖨️ HĐ</button>
@@ -513,7 +533,7 @@
     }
 
     // ====================================================================
-    // HỆ THỐNG TRÌNH SOẠN THẢO VÀ XUẤT FILE PDF
+    // HỆ THỐNG TRÌNH SOẠN THẢO VÀ XUẤT FILE PDF LÊN SUPABASE
     // ====================================================================
 
     window.changeLineHeight = function(val) {
@@ -543,14 +563,19 @@
         const element = document.getElementById('print-editor');
         if (!element) return Swal.fire('Lỗi', 'Không tìm thấy nội dung văn bản!', 'error');
 
+        // Bắt đầu quá trình lưu -> Bật thông báo loading đè lên Swal Editor
         Swal.fire({ title: 'Đang lưu PDF lên Supabase...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
+        // Clone toàn bộ nội dung Editor
         const clone = element.cloneNode(true);
+        // Tạm ẩn các con dấu để lưu bản PDF trắng
         const stamps = clone.querySelectorAll('.stamp-img-node');
         stamps.forEach(el => el.style.display = 'none');
+        // Bỏ padding ảo để thư viện in PDF dùng margin thật
+        clone.style.padding = '0'; 
 
         const opt = {
-          margin:       [25, 20, 20, 30],
+          margin:       [25, 20, 20, 30], // Top 2.5cm, Right 2cm, Bottom 2cm, Left 3cm
           filename:     window.currentPdfFilename || 'HopDong.pdf',
           image:        { type: 'jpeg', quality: 0.98 },
           html2canvas:  { scale: 2, useCORS: true },
@@ -562,13 +587,14 @@
             const pdfBlob = dataURItoBlob(pdfBase64);
             
             const bucketName = "hop_dong";
-            const filePath = encodeURIComponent(opt.filename.replace(/[/\\?%*:|"<>]/g, '-'));
+            // Dùng encodeURIComponent chuẩn hóa URL path
+            const filePath = encodeURIComponent(opt.filename);
 
             const h = { 
                 'apikey': window.SB_CONFIG.KEY, 
                 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
                 'Content-Type': 'application/pdf',
-                'x-upsert': 'true' 
+                'x-upsert': 'true' // ĐÈ FILE NẾU TRÙNG TÊN ĐỂ TRÁNH LỖI 400
             };
 
             const res = await fetch(`${window.SB_CONFIG.URL}/storage/v1/object/${bucketName}/${filePath}`, {
@@ -578,11 +604,11 @@
             });
 
             if(!res.ok) {
-                const err = await res.text();
-                throw new Error("Mã lỗi: " + res.status + " - " + err);
+                const errText = await res.text();
+                throw new Error(res.status + " - " + errText);
             }
 
-            Swal.fire({ icon: 'success', title: 'Đã lưu PDF lên Supabase Storage!', text: opt.filename, timer: 2000, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Đã lưu PDF lên Supabase!', text: opt.filename, timer: 2000, showConfirmButton: false });
         } catch(e) {
             Swal.fire('Lỗi', 'Lưu Supabase thất bại: ' + e.message, 'error');
         }
@@ -598,6 +624,7 @@
             <head>
                 <title>${window.currentPdfFilename || 'In Hop Dong'}</title>
                 <style>
+                    /* Lề in chuẩn 2.5 x 3 x 2 x 2 */
                     @page { size: A4; margin: 2.5cm 2cm 2cm 3cm; }
                     body { margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; font-size: 14pt; }
                     p { text-align: justify; line-height: ${lh}; margin-top: ${ps}; margin-bottom: ${ps}; }
@@ -605,6 +632,7 @@
                     th, td { border: 1px solid black; padding: 5px; line-height: ${lh}; }
                     .no-border, .no-border td { border: none !important; padding: 0 !important; }
                     
+                    /* Ép ngắt trang sạch sẽ, chống đứt đôi dòng */
                     .html2pdf__page-break { page-break-before: always; height: 0; clear: both; }
                     tr, td, th { page-break-inside: avoid; }
                 </style>
@@ -656,10 +684,12 @@
         let rawDaiDien = infoB.Ten_Dai_Dien || '.......................................';
         let cleanDaiDien = rawDaiDien.replace(/^(Ông|Bà)\s+/i, '').trim();
 
+        // Con dấu 360px. Giảm 10% và khoảng cách margin chuẩn 15px
         const stampHtml = showStamp 
             ? `<img src="SACMAU.png" class="stamp-img-node" style="width: 360px; display:block; margin: 15px auto;">` 
             : `<div class="stamp-img-node" style="height:150px; margin: 15px 0;"></div>`;
 
+        // Chữ ký Bên A chuyển sang trái 50px tuyệt đối
         const signatureTable = `
             <table class="no-border" style="margin-top: 30px;">
                 <tr>
@@ -711,7 +741,7 @@
                 <p>- Địa chỉ: ${infoB.Dia_Chi || '....................................................................................'}</p>
                 <p>- Số tài khoản: ${infoB.So_Tai_Khoan || '...........................'} Tại: ${infoB.Ngan_Hang || '....................................'}</p>
 
-                <p style="margin-top: 10px;">Sau khi xem xét bàn bạc, hai bên cùng thống nhất ký hợp đồng nguyên tắc này với các điều khoản sau:</p>
+                <p>Sau khi xem xét bàn bạc, hai bên cùng thống nhất ký hợp đồng nguyên tắc này với các điều khoản sau:</p>
                 
                 <p style="font-weight: bold;">Điều 1. Qui cách – Số lượng sản phẩm – giá trị hợp đồng</p>
                 <table>
@@ -746,6 +776,7 @@
         `;
 
         const pageNghiemThu = `
+            ${pageBreak}
             <div>
                 <div style="text-align: center; font-weight: bold;">
                     CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
@@ -756,14 +787,14 @@
                 <p><i>Căn cứ Hợp đồng số ${contractRef} giữa Hộ Kinh doanh Sắc Màu và ${infoB.Ten_Don_Vi}</i></p>
                 <p>Hôm nay, vào lúc ..... giờ ..... phút, ngày ....... tháng ....... năm ........ tại ${infoB.Ten_Don_Vi}, chúng tôi gồm:</p>
                 
-                <p style="margin-top: 10px;"><b>Bên A: HỘ KINH DOANH SẮC MÀU</b></p>
+                <p><b>Bên A: HỘ KINH DOANH SẮC MÀU</b></p>
                 <table class="no-border"><tr><td width="50%">- Đại diện: Nguyễn Thị Trúc Ly</td><td width="50%">Chức vụ: Chủ hộ kinh doanh</td></tr></table>
                 <p>- MST: 087191000525</p>
                 <p>- Số điện thoại: 0337.663.113</p>
                 <p>- Địa chỉ: Số 27, đường Nguyễn Văn Cừ, phường Cao Lãnh, Đồng Tháp.</p>
                 <p>- Số tài khoản: 0000866233 Tại: Ngân hàng TMCP Kiên Long - CN Đồng Tháp.</p>
 
-                <p style="margin-top: 10px;"><b>Bên B: ${infoB.Ten_Don_Vi.toUpperCase()}</b></p>
+                <p><b>Bên B: ${infoB.Ten_Don_Vi.toUpperCase()}</b></p>
                 <table class="no-border"><tr><td width="50%">- Đại diện: ${rawDaiDien}</td><td width="50%">Chức vụ: ${infoB.Chuc_Vu || '...................'}</td></tr></table>
                 <p>- MST: ${infoB.MST || '......................................................'}</p>
                 <p>- Địa chỉ: ${infoB.Dia_Chi || '....................................................................................'}</p>
@@ -792,7 +823,7 @@
         Swal.fire({
             html: `
                 <div class="editor-layout">
-                    <div id="print-editor" contenteditable="true">
+                    <div id="print-editor" contenteditable="true" style="padding: 2.5cm 2cm 2cm 3cm;">
                         ${htmlData.html}
                     </div>
                     
@@ -856,7 +887,7 @@
 
             const showStamp = document.getElementById('check-stamp').checked;
             
-            // Xử lý File Name tự động: DD-MM-YYYY HD số xxx - Tên Cơ quan - số tiền
+            // Xử lý File Name tự động
             const dateObj = new Date();
             const dd = dateObj.getDate().toString().padStart(2, '0');
             const mm = (dateObj.getMonth() + 1).toString().padStart(2, '0');
@@ -864,7 +895,7 @@
             const hdSo = maHDTemp.split('-')[2];
             let total = 0; currentItems.forEach(i => total += (i.Don_Gia * i.So_Luong));
             const finTotal = Math.round(total - (total * 0.2 * (infoB.Giam_Thue / 100)));
-            window.currentPdfFilename = `${dd}-${mm}-${yyyy} HD so ${hdSo} - ${infoB.Ten_Don_Vi} - ${finTotal}.pdf`.replace(/[/\\?%*:|"<>]/g, '-');
+            window.currentPdfFilename = `${dd}-${mm}-${yyyy} HD so ${hdSo} - ${infoB.Ten_Don_Vi} - ${finTotal}.pdf`;
 
             const templateData = buildTemplate(currentItems, infoB, showStamp, type);
             previewAndPrint(templateData);
@@ -901,7 +932,7 @@
             const dateParts = first.Ngay_Gio.split(' ')[0].split('-');
             const hdDate = dateParts.length === 3 ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}` : "XX-XX-XXXX";
             const hdSo = first.Ma_HD.split('-')[2];
-            window.currentPdfFilename = `${hdDate} HD so ${hdSo} - ${infoB.Ten_Don_Vi} - ${finTotal}.pdf`.replace(/[/\\?%*:|"<>]/g, '-');
+            window.currentPdfFilename = `${hdDate} HD so ${hdSo} - ${infoB.Ten_Don_Vi} - ${finTotal}.pdf`;
 
             const templateData = buildTemplate(itemsToPrint, infoB, showStamp, type);
             previewAndPrint(templateData);
