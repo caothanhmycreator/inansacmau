@@ -6,6 +6,8 @@
   <title>Nhập Hàng & Phân Bổ Kho - Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
+  
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
   <script src="js/sidebar_loader.js"></script> 
@@ -60,6 +62,11 @@
     .ncc-btn:hover { background: #f1f5f9; }
     .ncc-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 
+    /* Phân trang */
+    .pagination-btn { background: #e2e8f0; color: #475569; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .pagination-btn:hover { background: #cbd5e1; }
+    .pagination-btn.active { background: var(--accent); color: white; cursor: default; }
+
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
         .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
@@ -91,6 +98,7 @@
         <h2 style="margin:0; color: var(--accent);">📦 QUẢN LÝ NHẬP HÀNG & TỒN KHO</h2>
         <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Ghi nhận chi phí và tự động cập nhật số lượng vật tư, nguyên liệu</p>
       </div>
+      <button type="button" onclick="getToken()" style="background:#4285F4; color:white; border:none; padding:10px 20px; border-radius:20px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🔐 KẾT NỐI DRIVE</button>
     </div>
 
     <div class="summary-box">
@@ -169,11 +177,17 @@
             <option value="Chưa thanh toán">Chưa thanh toán</option>
           </select>
         </div>
+        
         <div class="input-group" style="grid-column: span 1;">
           <label>Ghi Chú</label>
           <input type="text" id="f-ghichu" class="input-modern" placeholder="Lô hàng bị lỗi, nợ tiền,...">
         </div>
         
+        <div class="input-group" style="grid-column: span 3;">
+          <label>Chứng từ (Tải lên Drive)</label>
+          <input type="file" id="f-file" class="input-modern" style="padding: 7px;">
+        </div>
+
         <div class="input-group" style="grid-column: span 4; align-items: flex-end;">
           <button id="btn-save" class="btn-submit" style="width: 250px;" onclick="submitImport()">📥 XÁC NHẬN NHẬP HÀNG</button>
         </div>
@@ -213,18 +227,83 @@
                     <th style="width:80px; text-align:center;">SL/ĐVT</th>
                     <th style="width:100px; text-align:right;">Đơn Giá</th>
                     <th style="width:120px; text-align:right;">Thành Tiền</th>
+                    <th style="width:90px; text-align:center;">Chứng từ</th>
                     <th style="width:100px; text-align:center;">Thao tác</th>
                 </tr>
             </thead>
             <tbody id="data-container">
-                <tr><td colspan="8" style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu toàn bảng...</td></tr>
+                <tr><td colspan="9" style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu toàn bảng...</td></tr>
             </tbody>
         </table>
       </div>
+      
+      <div id="pagination-container" style="display: flex; justify-content: center; gap: 5px; margin-top: 15px;"></div>
     </div>
   </div>
 
   <script>
+    // --- CẤU HÌNH GOOGLE DRIVE AUTH ---
+    const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
+    const FOLDER_DRIVE_ID = "1GTwI_ygHPGVuWxfpC-AnIsDeIaia8Nr3";
+    let accessToken = localStorage.getItem('drive_token') || null;
+    let tokenClient;
+
+    function initTokenClient() {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: 'https://www.googleapis.com/auth/drive.file',
+            callback: (res) => { 
+                accessToken = res.access_token; 
+                localStorage.setItem('drive_token', accessToken); 
+                Swal.fire({ icon: 'success', title: 'Đã kết nối Google Drive!', timer: 1500, showConfirmButton: false });
+            }
+        });
+    }
+
+    function getToken() { 
+        if(!tokenClient) initTokenClient();
+        tokenClient.requestAccessToken(); 
+    }
+
+    async function uploadFileToDrive(file, fileName) {
+        return new Promise(async (resolve, reject) => {
+            if (!accessToken) return reject(new Error("Phiên đăng nhập hết hạn hoặc chưa kết nối Drive!"));
+            const metadata = { name: fileName, parents: [FOLDER_DRIVE_ID] };
+            try {
+                const resInit = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(metadata)
+                });
+                if (resInit.status === 401) { 
+                    accessToken = null; localStorage.removeItem('drive_token'); 
+                    return reject(new Error("Token hết hạn. Vui lòng nhấn KẾT NỐI DRIVE."));
+                }
+                const uploadUrl = resInit.headers.get('Location');
+                const xhr = new XMLHttpRequest();
+                xhr.open('PUT', uploadUrl, true);
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        Swal.update({ title: `Đang tải lên file: ${percent}%` });
+                    }
+                };
+                xhr.onload = function() {
+                    if (xhr.status === 200 || xhr.status === 201) {
+                        const result = JSON.parse(xhr.responseText);
+                        const fileLink = `https://drive.google.com/file/d/${result.id}/view`;
+                        resolve(fileLink);
+                    } else {
+                        reject(new Error("Lỗi khi tải file lên Drive."));
+                    }
+                };
+                xhr.onerror = () => reject(new Error("Lỗi mạng khi tải lên."));
+                xhr.send(file);
+            } catch(e) { reject(e); }
+        });
+    }
+    // ---------------------------------
+
     const TABLE_NHAP_HANG = "NhatKy_NhapHang";
     
     let masterData = [];     
@@ -235,6 +314,11 @@
     let currentNccFilter = ""; 
 
     let selectedItemBase = { tonKho: 0, giaVon: 0, giaBan: 0, isNguyenLieu: false };
+
+    // Phân trang
+    let currentFilteredData = [];
+    let currentPage = 1;
+    const rowsPerPage = 30;
 
     document.addEventListener("DOMContentLoaded", () => {
       const now = new Date();
@@ -281,7 +365,7 @@
             const dateParts = parts[0].split('-'); 
             const timeParts = parts[1].split(':'); 
             if (dateParts.length === 3 && timeParts.length >= 2) {
-                return `${timeParts[0]}:${timeParts[1]} ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                return `${timeParts[0]}:${timeParts[1]} <br/> ${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
             }
         }
         return dateString; 
@@ -318,7 +402,7 @@
         filterDisplayList(); 
       } catch (e) { 
           console.error("Lỗi tải dữ liệu:", e); 
-          document.getElementById('data-container').innerHTML = `<tr><td colspan="8" style="text-align:center; color:#e74c3c; font-weight:bold;">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
+          document.getElementById('data-container').innerHTML = `<tr><td colspan="9" style="text-align:center; color:#e74c3c; font-weight:bold;">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
       }
     }
 
@@ -510,11 +594,15 @@
         const ncc = document.getElementById('f-ncc').value.trim() || "KHÁCH VÃNG LAI";
         const thanhToan = document.getElementById('f-thanhtoan').value;
         const gc = document.getElementById('f-ghichu').value.trim();
+        const fileInput = document.getElementById('f-file');
         
         if (!ten) return Swal.fire('Lỗi', 'Vui lòng nhập Tên hàng hóa!', 'warning');
         if (sl <= 0) return Swal.fire('Lỗi', 'Số lượng phải lớn hơn 0!', 'warning');
+        if (fileInput.files.length > 0 && !accessToken) {
+            return Swal.fire("Lỗi", "Vui lòng nhấn KẾT NỐI DRIVE để tải file lên!", "warning");
+        }
 
-        Swal.fire({ title: 'Đang xử lý sổ sách & kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'Đang xử lý sổ sách, kho & file...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
         
         try {
@@ -527,6 +615,7 @@
 
             let finalMaHang = ma;
 
+            // Xử lý tạo mã hàng và cập nhật tồn kho gốc
             if (loaiHang === "Nguyên liệu") {
                 let targetMa = (finalMaHang && finalMaHang.startsWith("NL-")) ? finalMaHang : null;
                 let foundGoc = false;
@@ -543,16 +632,9 @@
                 if (!foundGoc) {
                     finalMaHang = "NL-" + Math.random().toString(36).substr(2, 6).toUpperCase();
                     let payloadNL = { 
-                        Ngay_Gio: ngayGio,
-                        Ma_Don: "NHẬP KHO",
-                        Khach_Hang: "Hệ thống",
-                        Ten_Hang: "Nhập hàng",
-                        Ma_Nguyen_Lieu: finalMaHang,
-                        Ten_Nguyen_Lieu: ten,
-                        DVT: dvt, 
-                        So_Luong: sl, 
-                        Ghi_Chu: "[TỒN KHO GỐC]",
-                        Nhom_Hang: nhom
+                        Ngay_Gio: ngayGio, Ma_Don: "NHẬP KHO", Khach_Hang: "Hệ thống", Ten_Hang: "Nhập hàng",
+                        Ma_Nguyen_Lieu: finalMaHang, Ten_Nguyen_Lieu: ten, DVT: dvt, So_Luong: sl, 
+                        Ghi_Chu: "[TỒN KHO GỐC]", Nhom_Hang: nhom
                     };
                     let postRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu`, { method: 'POST', headers: h, body: JSON.stringify(payloadNL) });
                     if(!postRes.ok) {
@@ -612,9 +694,31 @@
                 }
             }
 
+            // Xử lý Upload file chứng từ lên Drive
+            let linkDrive = "";
+            let finalGhiChu = gc;
+
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const cleanName = ten.replace(/[^a-zA-Z0-9]/g, '');
+                const fileName = `CT_NH_${finalMaHang || cleanName}_${new Date().getTime()}_${file.name}`;
+                linkDrive = await uploadFileToDrive(file, fileName);
+            } else if (isEditingMode && idLog) {
+                const oldLog = masterData.find(x => String(x.id || x.Id) === String(idLog));
+                if (oldLog && oldLog.Ghi_Chu) {
+                    let match = oldLog.Ghi_Chu.match(/(https:\/\/drive\.google\.com\/[^\s]+)/);
+                    if (match) linkDrive = match[0];
+                }
+            }
+
+            if (linkDrive) {
+                finalGhiChu = gc ? gc + " | Link: " + linkDrive : linkDrive;
+            }
+
             let payloadNhap = {
                 Ten_Hang: ten, Ma_Hang: finalMaHang, Nhom_Hang: nhom, DVT: dvt, 
-                So_Luong: sl, Don_Gia: dongia, Thanh_Tien: tien, Nha_Cung_Cap: ncc, Loai_Hang: loaiHang, Ghi_Chu: gc, Thanh_Toan: thanhToan
+                So_Luong: sl, Don_Gia: dongia, Thanh_Tien: tien, Nha_Cung_Cap: ncc, 
+                Loai_Hang: loaiHang, Ghi_Chu: finalGhiChu, Thanh_Toan: thanhToan
             };
 
             if (!isEditingMode) { payloadNhap.Ngay_Gio = ngayGio; }
@@ -625,7 +729,7 @@
                 await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NHAP_HANG}`, { method: 'POST', headers: h, body: JSON.stringify(payloadNhap) });
             }
 
-            Swal.fire({ icon: 'success', title: 'Đã lưu sổ sách & kho!', timer: 1500, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Đã lưu sổ sách, kho & chứng từ!', timer: 1500, showConfirmButton: false });
             resetForm();
             loadData();
         } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
@@ -646,7 +750,7 @@
 
         if (monthVal) {
             const [y, m] = monthVal.split('-');
-            const targetStr2 = `${y}-${m}`; // So khớp với chuỗi YYYY-MM
+            const targetStr2 = `${y}-${m}`; 
             
             filteredData = filteredData.filter(item => {
                 if (!item.Ngay_Gio) return false;
@@ -678,25 +782,38 @@
         const tongTien = filteredData.reduce((acc, curr) => acc + (parseFloat(curr.Thanh_Tien) || 0), 0);
         document.getElementById('tongTienThang').innerText = tongTien.toLocaleString('vi-VN') + " đ";
 
-        renderTable(filteredData);
+        // Gán cho biến phân trang toàn cục và vẽ lại
+        currentFilteredData = filteredData;
+        currentPage = 1;
+        renderPage();
     }
 
-    function renderTable(data) {
+    function renderPage() {
         const container = document.getElementById('data-container');
         container.innerHTML = "";
         
-        if(data.length === 0) { 
-            container.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#888;">Không có dữ liệu phù hợp.</td></tr>'; 
+        if(currentFilteredData.length === 0) { 
+            container.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px; color:#888;">Không có dữ liệu phù hợp.</td></tr>'; 
+            document.getElementById('pagination-container').innerHTML = '';
             return; 
         }
 
-        const rows = data.map(item => {
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        const pageData = currentFilteredData.slice(startIndex, endIndex);
+
+        const rows = pageData.map(item => {
             let badgeThanhToan = item.Thanh_Toan === "Chưa thanh toán" 
                 ? `<span class="badge-unpaid">NỢ</span>` 
                 : `<span class="badge-paid">ĐÃ TRẢ</span>`;
             
             let displayDate = formatToVietnameseTime(item.Ngay_Gio);
             let safeItemData = encodeURIComponent(JSON.stringify(item));
+
+            // Xử lý link Drive từ Ghi_Chu
+            let linkMatch = item.Ghi_Chu ? item.Ghi_Chu.match(/(https:\/\/drive\.google\.com\/[^\s]+)/) : null;
+            let fileLink = linkMatch ? linkMatch[0] : "";
+            let fileUI = fileLink ? `<a href="${fileLink}" target="_blank" style="color:var(--accent); font-weight:bold; text-decoration:none;">📁 Xem file</a>` : `<span style="color:#cbd5e1;">-</span>`;
 
             return `
             <tr>
@@ -713,6 +830,7 @@
                     <b style="color:#c0392b; display:block; margin-bottom: 2px;">${(item.Thanh_Tien || 0).toLocaleString()}đ</b>
                     ${badgeThanhToan}
                 </td>
+                <td data-label="Chứng từ" style="text-align:center;">${fileUI}</td>
                 <td data-label="Thao tác" style="text-align:center; min-width: 100px;">
                     <button onclick="editRecord('${safeItemData}')" class="btn-edit">SỬA</button> |
                     <button onclick="deleteRecord(${item.id || item.Id})" class="btn-del">XÓA</button>
@@ -721,7 +839,33 @@
         }).join('');
 
         container.innerHTML = rows;
+        renderPaginationControls(currentFilteredData.length);
     }
+
+    function renderPaginationControls(totalItems) {
+        const container = document.getElementById('pagination-container');
+        const totalPages = Math.ceil(totalItems / rowsPerPage);
+        
+        if (totalPages <= 1) {
+            container.innerHTML = "";
+            return;
+        }
+
+        let html = "";
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                html += `<button class="pagination-btn active">${i}</button>`;
+            } else {
+                html += `<button onclick="goToPage(${i})" class="pagination-btn">${i}</button>`;
+            }
+        }
+        container.innerHTML = html;
+    }
+
+    window.goToPage = function(page) {
+        currentPage = page;
+        renderPage();
+    };
 
     window.editRecord = function(encodedItem) {
         const item = JSON.parse(decodeURIComponent(encodedItem));
@@ -737,7 +881,11 @@
         document.getElementById('f-thanhtien').value = Number(item.Thanh_Tien || 0).toLocaleString('vi-VN');
         document.getElementById('f-ncc').value = item.Nha_Cung_Cap || "";
         document.getElementById('f-thanhtoan').value = item.Thanh_Toan || "Đã thanh toán";
-        document.getElementById('f-ghichu').value = item.Ghi_Chu || "";
+        
+        // Tách link ra khỏi ghi chú nếu có để hiển thị lại vào ô Ghi Chú gốc
+        let cleanGc = item.Ghi_Chu ? item.Ghi_Chu.replace(/(\s*\|\s*Link:\s*https:\/\/drive\.google\.com\/[^\s]+)/, '').replace(/(https:\/\/drive\.google\.com\/[^\s]+)/, '').trim() : "";
+        document.getElementById('f-ghichu').value = cleanGc;
+        document.getElementById('f-file').value = ""; // Đặt rỗng ô file
         
         document.getElementById('info-panel').style.display = "none";
         const btn = document.getElementById('btn-save');
@@ -778,6 +926,7 @@
         document.getElementById('f-ncc').value = "";
         document.getElementById('f-thanhtoan').value = "Đã thanh toán";
         document.getElementById('f-ghichu').value = "";
+        document.getElementById('f-file').value = "";
         document.getElementById('info-panel').style.display = "none";
         const btn = document.getElementById('btn-save');
         btn.innerHTML = "📥 XÁC NHẬN NHẬP HÀNG";
