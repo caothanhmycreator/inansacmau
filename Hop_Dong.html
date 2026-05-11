@@ -675,12 +675,12 @@
                     .no-border, .no-border td { border: none !important; padding: 0 !important; }
                     .html2pdf__page-break { page-break-before: always; height: 0; clear: both; }
                     tr, td, th { page-break-inside: avoid; }
-                </style>
-            </head>
+                ${'<'}/style>
+            ${'<'}/head>
             <body>
                 ${editedContent}
-            </body>
-            </html>
+            ${'<'}/body>
+            ${'<'}/html>
         `;
         
         let iframe = document.createElement('iframe');
