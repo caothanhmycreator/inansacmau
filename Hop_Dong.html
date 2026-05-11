@@ -505,8 +505,8 @@
             let linkFile = group.items[0].Link_File || "";
 
             const downloadBtn = linkFile 
-                ? `<a href="${linkFile}" target="_blank" class="btn-pdf" title="Tải/Xem File" style="padding: 6px; min-width: 35px; background: #3498db; color: white; border-color: #3498db; text-decoration: none;">⬇️ FILE</a>
-                   <button type="button" onclick="deleteFileLink('${group.Ma_HD}')" class="btn-del" title="Xóa liên kết File" style="padding: 6px; min-width: 35px; background: #c0392b; color: white; border: none;">🗑️ FILE</button>` 
+                ? `<a href="${linkFile}" target="_blank" class="btn-pdf" title="Tải/Xem File" style="padding: 6px; min-width: 35px; background: #3498db; color: white; border-color: #3498db; text-decoration: none;">⬇️ đã ký</a>
+                   <button type="button" onclick="deleteFileLink('${group.Ma_HD}')" class="btn-del" title="Xóa liên kết File" style="padding: 6px; min-width: 35px; background: #c0392b; color: white; border: none;">🗑️ Xóa file</button>` 
                 : ``;
 
             return `
@@ -521,7 +521,7 @@
                         <button type="button" onclick="viewGroupDetails('${group.Ma_HD}')" class="btn-pdf" title="Xem chi tiết" style="padding: 6px; min-width: 35px;">👁️</button>
                         <button type="button" onclick="exportPDFHistory('${group.Ma_HD}', 'hopdong')" class="btn-pdf" title="Xem trước Hợp Đồng" style="padding: 6px; min-width: 35px; background: #27ae60; color: white; border-color: #27ae60;">🖨️ HĐ</button>
                         <button type="button" onclick="exportPDFHistory('${group.Ma_HD}', 'nghiemthu')" class="btn-pdf" title="Xem trước Nghiệm Thu" style="padding: 6px; min-width: 35px; background: #8e44ad; color: white; border-color: #8e44ad;">🖨️ NT</button>
-                        <button type="button" onclick="triggerUpload('${group.Ma_HD}')" class="btn-pdf" title="Tải File Lên Drive" style="padding: 6px; min-width: 35px; background: #e67e22; color: white; border-color: #e67e22;">📤 LÊN</button>
+                        <button type="button" onclick="triggerUpload('${group.Ma_HD}')" class="btn-pdf" title="Tải File Lên Drive" style="padding: 6px; min-width: 35px; background: #e67e22; color: white; border-color: #e67e22;">📤 đã ký</button>
                         ${downloadBtn}
                         <button type="button" onclick="deleteGroupRecord('${group.Ma_HD}', ${group.id})" class="btn-del" title="Xóa toàn bộ" style="padding: 6px; min-width: 35px;">🗑️</button>
                     </div>
