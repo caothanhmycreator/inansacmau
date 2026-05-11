@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý Hóa Đơn - Sắc Màu</title>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://accounts.google.com/gsi/client" onload="initTokenClient()" async defer></script>
+  
   <script src="js/config.js?v=2000"></script>
   <script src="js/auth_guard.js"></script>
   <script src="js/sidebar_loader.js?v=2000"></script>
@@ -71,6 +73,11 @@
 <body>
 
   <div class="main-content">
+    
+    <div class="header-top" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px;">
+      <button type="button" onclick="getToken()" style="background:#4285F4; color:white; border:none; padding:10px 20px; border-radius:20px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🔐 KẾT NỐI DRIVE</button>
+    </div>
+
     <div class="sacmau-wrapper">
       
       <div class="sacmau-container">
@@ -167,7 +174,7 @@
                 <th>Loại HĐ</th>
                 <th style="text-align: right;">Số Tiền</th>
                 <th>Ghi Chú</th>
-                <th style="text-align: center;">File File</th>
+                <th style="text-align: center;">File</th>
               </tr>
             </thead>
             <tbody id="tableBody">
@@ -181,8 +188,32 @@
   </div>
 
   <script>
+    // --- GOOGLE DRIVE AUTH CONFIG ---
+    const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
+    const FOLDER_DRIVE_ID = "1GTwI_ygHPGVuWxfpC-AnIsDeIaia8Nr3";
+    let accessToken = localStorage.getItem('drive_token') || null;
+    let tokenClient;
+
+    function initTokenClient() {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: 'https://www.googleapis.com/auth/drive.file',
+            callback: (res) => { 
+                accessToken = res.access_token; 
+                localStorage.setItem('drive_token', accessToken); 
+                Swal.fire({ icon: 'success', title: 'Đã kết nối Google Drive!', timer: 1500, showConfirmButton: false });
+            }
+        });
+    }
+
+    function getToken() { 
+        if(!tokenClient) initTokenClient();
+        tokenClient.requestAccessToken(); 
+    }
+    // --------------------------------
+
     let danhSachHoaDon = [];
-    const TABLE_NAME = "Hoa_Don"; // CHÚ Ý: Sửa tên bảng này nếu trong Supabase bạn đặt tên khác (VD: Quan_Ly_Hoa_Don)
+    const TABLE_NAME = "Hoa_Don"; // Sửa lại tên bảng của bạn nếu cần
 
     // Format tiền khi nhập
     function formatTien(el) {
@@ -203,7 +234,7 @@
         const res = await fetch(`${SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?select=*&order=id.desc`, { headers: h });
         if(!res.ok) throw new Error("Không thể tải dữ liệu.");
         danhSachHoaDon = await res.json();
-        applyFilters(); // Render bảng và tính tổng
+        applyFilters(); 
       } catch (e) {
         console.error(e);
         document.getElementById("tableBody").innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">Lỗi tải dữ liệu. Kiểm tra lại tên bảng trong code.</td></tr>`;
@@ -252,7 +283,7 @@
     function applyFilters() {
       const searchTxt = document.getElementById("searchBox").value.toLowerCase().trim();
       const typeVal = document.getElementById("filterLoai").value;
-      const monthVal = document.getElementById("filterThang").value; // Format: YYYY-MM
+      const monthVal = document.getElementById("filterThang").value; 
 
       const filtered = danhSachHoaDon.filter(item => {
         let matchSearch = true;
@@ -282,17 +313,57 @@
       applyFilters();
     }
 
-    // Xử lý File thành Base64
-    function getBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = error => reject(error);
-      });
+    // Hàm Upload File Lên Drive sử dụng Token Client (OAuth2)
+    async function uploadFileToDrive(file, fileName) {
+        return new Promise(async (resolve, reject) => {
+            if (!accessToken) {
+                return reject(new Error("Phiên đăng nhập hết hạn hoặc chưa kết nối Drive!"));
+            }
+
+            const metadata = { name: fileName, parents: [FOLDER_DRIVE_ID] };
+            try {
+                // Khởi tạo resumable upload
+                const resInit = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(metadata)
+                });
+
+                if (resInit.status === 401) { 
+                    accessToken = null; localStorage.removeItem('drive_token'); 
+                    return reject(new Error("Token hết hạn. Vui lòng nhấn KẾT NỐI DRIVE."));
+                }
+                
+                const uploadUrl = resInit.headers.get('Location');
+
+                // Thực hiện PUT file
+                const xhr = new XMLHttpRequest();
+                xhr.open('PUT', uploadUrl, true);
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        Swal.update({ title: `Đang tải lên: ${percent}%` });
+                    }
+                };
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200 || xhr.status === 201) {
+                        const result = JSON.parse(xhr.responseText);
+                        const fileLink = `https://drive.google.com/file/d/${result.id}/view`;
+                        resolve(fileLink);
+                    } else {
+                        reject(new Error("Lỗi khi tải file lên Drive."));
+                    }
+                };
+                xhr.onerror = () => reject(new Error("Lỗi mạng khi tải lên."));
+                xhr.send(file);
+            } catch(e) {
+                reject(e);
+            }
+        });
     }
 
-    // Hàm Lưu và Upload
+    // Hàm Lưu và Upload Hóa Đơn
     async function luuHoaDon() {
       const soHoaDon = document.getElementById("soHoaDon").value.trim();
       const ngayHoaDon = document.getElementById("ngayHoaDon").value;
@@ -306,34 +377,20 @@
         return Swal.fire("Lỗi", "Vui lòng nhập Số hóa đơn, Ngày và Số tiền!", "warning");
       }
 
-      Swal.fire({ title: 'Đang xử lý...', html: 'Đang tải file lên Drive & lưu dữ liệu', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      if (fileInput.files.length > 0 && !accessToken) {
+         return Swal.fire("Lỗi", "Vui lòng nhấn KẾT NỐI DRIVE để có thể tải file lên!", "warning");
+      }
+
+      Swal.fire({ title: 'Đang xử lý...', html: 'Đang lưu dữ liệu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
       let linkDrive = "";
 
       try {
-        // 1. Upload file lên Google Drive qua Apps Script (Nếu có chọn file)
+        // 1. Upload file trực tiếp lên Drive qua API nếu có
         if (fileInput.files.length > 0) {
           const file = fileInput.files[0];
-          const base64Data = await getBase64(file);
-          
-          // GỌI API APP SCRIPT BẰNG POST (Cơ chế tiêu chuẩn từ Hop_Dong.html)
-          const obj = {
-            filename: `HD_${loaiHoaDon}_${soHoaDon}_${file.name}`,
-            mimeType: file.type,
-            fileData: base64Data
-          };
-
-          const uploadRes = await fetch(SB_CONFIG.GAS_URL, {
-            method: "POST",
-            body: JSON.stringify(obj)
-          });
-          
-          const uploadResult = await uploadRes.json();
-          if(uploadResult.url) {
-             linkDrive = uploadResult.url;
-          } else {
-             throw new Error("Lỗi tải file lên Drive");
-          }
+          const fileName = `HoaDon_${loaiHoaDon}_${soHoaDon}_${file.name}`;
+          linkDrive = await uploadFileToDrive(file, fileName);
         }
 
         // 2. Lưu vào Supabase
