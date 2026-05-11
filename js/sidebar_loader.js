@@ -67,6 +67,7 @@
                     <div class="group">
                         <div class="group-title" onclick="this.parentElement.classList.toggle('active')">📝 ĐƠN HÀNG <span>▼</span></div>
                         <div class="group-items">
+                            <a href="Tu_Van.html" id="Tu_Van" class="nav-link">💬 Tư vấn & Báo giá</a>
                             <a href="Tao_Don.html" id="Tao_Don" class="nav-link">📝 Tạo đơn mới</a>
                             <a href="Sua_Don.html" id="Sua_Phieu_Dat_Hang" class="nav-link">✏️ Sửa phiếu đặt</a>
                             <a href="Xu_Ly.html" id="Xu_Ly" class="nav-link">⚙️ Xử lý đơn</a>

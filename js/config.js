@@ -5,6 +5,7 @@ window.SB_CONFIG = {
 
 window.APP_MODULES = [
   // --- NHÓM KINH DOANH & BÁN HÀNG ---
+   { id: "Tu_Van",              label: "Tư vấn & Báo giá",       icon: "💬", file: "Tu_Van.html",      group: "Kinh doanh" },
   { id: "Tao_Don",              label: "Tạo đơn hàng",       icon: "🧾", file: "Tao_Don.html",      group: "Kinh doanh" },
   { id: "Sua_Phieu_Dat_Hang",   label: "Sửa phiếu đặt hàng",     icon: "📋", file: "Sua_Don.html",      group: "Kinh doanh" },
   { id: "Bang_Gia_San_Pham",    label: "Bảng giá sản phẩm",      icon: "🏷️", file: "Bang_Gia.html",     group: "Kinh doanh" },
