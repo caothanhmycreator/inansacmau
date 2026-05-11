@@ -1,3 +1,4 @@
+<!-- GIỮ NGUYÊN TOÀN BỘ PHẦN ĐẦU HTML VÀ CSS -->
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -54,7 +55,6 @@
     .action-group { display: flex; gap: 5px; justify-content: center; align-items: center; white-space: nowrap; flex-wrap: nowrap; }
     .cart-section { border: 2px dashed #bdc3c7; border-radius: 10px; padding: 15px; background: #fafafa; margin-top: 15px; }
 
-    /* CSS Editor Layout Bên Phải */
     div:where(.swal2-container) h2:where(.swal2-title) { display: none !important; }
     div:where(.swal2-container) div:where(.swal2-html-container) { margin: 10px 0 !important; }
 
@@ -68,7 +68,7 @@
         overflow-y: auto; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); 
         cursor: text; outline: none; 
         font-family: 'Times New Roman', Times, serif; font-size: 14pt; color: black;
-        --editor-lh: 1.2;
+        --editor-lh: 1.0;
         --editor-ps: 6pt;
     }
     #print-editor p, #print-editor td, #print-editor span, #print-editor div { line-height: var(--editor-lh); }
@@ -229,7 +229,7 @@
           <label style="font-size: 13px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center; white-space: nowrap;">
             <input type="checkbox" id="check-stamp-history" checked style="width: 16px; height: 16px; margin-right: 5px;"> CÓ CON DẤU
           </label>
-          <input type="text" id="searchFilter" class="input-modern" value="" onkeyup="filterDisplayList()">
+          <input type="text" id="searchFilter" class="input-modern" placeholder="Tìm kiếm đơn vị, hàng hóa, mã..." onkeyup="filterDisplayList()">
           <button type="button" onclick="loadData()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold; white-space: nowrap;">🔄 Tải lại</button>
         </div>
       </div>
@@ -254,9 +254,8 @@
   </div>
 
   <script>
-    // --- GOOGLE DRIVE AUTH CONFIG ---
     const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
-    const FOLDER_DRIVE_ID = "1Cn8AyIJvMxkEC4-UQnBdZOS_vhvkrnF_"; // Thư mục HOP_DONG_SAC_MAU
+    const FOLDER_DRIVE_ID = "1Cn8AyIJvMxkEC4-UQnBdZOS_vhvkrnF_";
     let accessToken = localStorage.getItem('drive_token') || null;
     let tokenClient;
 
@@ -332,8 +331,8 @@
         return chuoi;
     }
 
-    // Hàm chuẩn hóa tên file an toàn
     function normalizeFilename(str) {
+        if(!str) return "file.pdf";
         str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
         str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
         str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
@@ -348,8 +347,8 @@
         str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
         str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
         str = str.replace(/Đ/g, "D");
-        str = str.replace(/\s+/g, "_"); // Đổi khoảng trắng thành dấu _
-        str = str.replace(/[^a-zA-Z0-9.-_]/g, ""); // Xóa ký tự lạ
+        str = str.replace(/\s+/g, "_"); 
+        str = str.replace(/[^a-zA-Z0-9.-_]/g, ""); 
         str = str.replace(/_+/g, "_"); 
         return str;
     }
@@ -397,7 +396,6 @@
         document.getElementById('cart-total').innerText = Math.round(finalTotal).toLocaleString('vi-VN') + " đ";
     }
 
-    // Tự động tịnh tiến mã HĐ toàn cục
     function generateNewMaHD() {
         const d = new Date();
         const pad = (n) => n.toString().padStart(2, '0');
@@ -441,7 +439,7 @@
                 return {
                     Ngay_Gio: ngayGio, Ma_HD: maHD, Ten_Don_Vi: tenDonVi, Ten_Dai_Dien: daiDien, Chuc_Vu: chucVu, MST: mst, Dia_Chi: diaChi, So_Tai_Khoan: stk,
                     Ngan_Hang: nganHang, Ten_Hang: item.Ten_Hang, DVT: item.DVT, So_Luong: item.So_Luong, Don_Gia: item.Don_Gia, Thanh_Tien: item.Thanh_Tien,
-                    Giam_Thue: giamThueRate, Tong_Cong: tongCong, Link_File: null // Cột Link_File mặc định
+                    Giam_Thue: giamThueRate, Tong_Cong: tongCong, Link_File: null
                 };
             });
 
@@ -500,12 +498,11 @@
             let displayDate = formatDisplayTime(group.Ngay_Gio);
             let combinedNames = group.items.map(i => `• ${i.Ten_Hang} (x${i.So_Luong})`).join('<br>');
             
-            // Xử lý nút tải xuống nếu có Link_File
-            let linkFile = "";
-            if (group.items[0].Link_File) linkFile = group.items[0].Link_File;
+            let linkFile = group.items[0].Link_File || "";
 
             const downloadBtn = linkFile 
-                ? `<a href="${linkFile}" target="_blank" class="btn-pdf" title="Tải/Xem File" style="padding: 6px; min-width: 35px; background: #3498db; color: white; border-color: #3498db; text-decoration: none;">⬇️ FILE</a>` 
+                ? `<a href="${linkFile}" target="_blank" class="btn-pdf" title="Tải/Xem File" style="padding: 6px; min-width: 35px; background: #3498db; color: white; border-color: #3498db; text-decoration: none;">⬇️ FILE</a>
+                   <button type="button" onclick="deleteFileLink('${group.Ma_HD}')" class="btn-del" title="Xóa liên kết File" style="padding: 6px; min-width: 35px; background: #c0392b; color: white; border: none;">🗑️ FILE</button>` 
                 : ``;
 
             return `
@@ -522,18 +519,26 @@
                         <button type="button" onclick="exportPDFHistory('${group.Ma_HD}', 'nghiemthu')" class="btn-pdf" title="Xem trước Nghiệm Thu" style="padding: 6px; min-width: 35px; background: #8e44ad; color: white; border-color: #8e44ad;">🖨️ NT</button>
                         <button type="button" onclick="triggerUpload('${group.Ma_HD}')" class="btn-pdf" title="Tải File Lên Drive" style="padding: 6px; min-width: 35px; background: #e67e22; color: white; border-color: #e67e22;">📤 LÊN</button>
                         ${downloadBtn}
-                        <button type="button" onclick="deleteGroupRecord('${group.Ma_HD}', ${group.id})" class="btn-del" title="Xóa" style="padding: 6px; min-width: 35px;">🗑️</button>
+                        <button type="button" onclick="deleteGroupRecord('${group.Ma_HD}', ${group.id})" class="btn-del" title="Xóa toàn bộ" style="padding: 6px; min-width: 35px;">🗑️</button>
                     </div>
                 </td>
             </tr>`;
         }).join('');
     }
 
-    // Xử lý nạp File từ máy tính lên Drive
+    window.deleteFileLink = async function(maHD) {
+        const r = await Swal.fire({ title: 'Xóa liên kết file?', text: 'Thao tác này chỉ xóa Link_File, không xóa file trên Drive.', icon: 'warning', showCancelButton: true, confirmButtonText: 'ĐỒNG Ý' });
+        if (r.isConfirmed) {
+            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?Ma_HD=eq.${maHD}`, { method: 'PATCH', headers: h, body: JSON.stringify({ Link_File: null }) });
+            loadData();
+        }
+    }
+
     let currentUploadMaHD = "";
     window.triggerUpload = function(maHD) {
         currentUploadMaHD = maHD;
-        document.getElementById('global-file-upload').value = ""; // clear previous
+        document.getElementById('global-file-upload').value = "";
         document.getElementById('global-file-upload').click();
     }
     
@@ -582,7 +587,6 @@
                     const result = JSON.parse(xhr.responseText);
                     const fileLink = `https://drive.google.com/file/d/${result.id}/view`;
                     
-                    // Cập nhật Link_File vào CSDL (cập nhật cho tất cả row thuộc Ma_HD)
                     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
                     await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?Ma_HD=eq.${maHD}`, {
                         method: 'PATCH',
@@ -601,7 +605,6 @@
             Swal.fire('Lỗi', 'Lỗi: ' + e.message, 'error');
         }
     }
-
 
     window.deleteGroupRecord = async function(maHD, fallbackId) {
         const r = await Swal.fire({ title: 'Xóa hợp đồng này?', text: 'Toàn bộ dữ liệu của HĐ sẽ bị xóa.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA' });
@@ -637,10 +640,6 @@
         Swal.fire({ title: 'CHI TIẾT HỢP ĐỒNG', html: html, width: '800px', showConfirmButton: false, showCloseButton: true });
     }
 
-    // ====================================================================
-    // HỆ THỐNG TRÌNH SOẠN THẢO VÀ XUẤT FILE PDF
-    // ====================================================================
-
     window.changeLineHeight = function(val) {
         const editor = document.getElementById('print-editor');
         if(editor) editor.style.setProperty('--editor-lh', val);
@@ -655,7 +654,7 @@
 
     window.printPDFNow = () => {
         let editedContent = document.getElementById('print-editor').innerHTML;
-        let lh = window.currentLineHeight || '1.2';
+        let lh = window.currentLineHeight || '1.0';
         let ps = window.currentParaSpace || '6pt';
 
         const finalDoc = `
@@ -663,15 +662,12 @@
             <head>
                 <title>${window.currentPdfFilename || 'In Hop Dong'}</title>
                 <style>
-                    /* Lề chuẩn hành chính khi in */
                     @page { size: A4; margin: 2.5cm 2cm 2cm 3cm; }
                     body { margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; font-size: 14pt; }
                     p { text-align: justify; line-height: ${lh}; margin-top: ${ps}; margin-bottom: ${ps}; }
                     table { width: 100%; border-collapse: collapse; margin: ${ps} 0; }
                     th, td { border: 1px solid black; padding: 5px; line-height: ${lh}; }
                     .no-border, .no-border td { border: none !important; padding: 0 !important; }
-                    
-                    /* Bắt buộc ngắt trang và chống cắt dòng */
                     .html2pdf__page-break { page-break-before: always; height: 0; clear: both; }
                     tr, td, th { page-break-inside: avoid; }
                 </style>
@@ -701,7 +697,11 @@
         let year = new Date().getFullYear();
         if (infoB.Ma_HD) {
             let parts = infoB.Ma_HD.split('-');
-            if(parts.length === 3) { soHD = parts[2]; year = parts[1].substring(4,8) || year; }
+            if(parts.length === 3) { 
+                soHD = parts[2]; 
+                const dateRaw = parts[1]; // ddmmyyyy
+                year = dateRaw.substring(4,8) || year; 
+            }
         }
         const contractRef = `${soHD}/${year}/HĐDV`;
 
@@ -723,12 +723,10 @@
         let rawDaiDien = infoB.Ten_Dai_Dien || '';
         let cleanDaiDien = rawDaiDien.replace(/^(Ông|Bà)\s+/i, '').trim();
 
-        // Con dấu 360px (giảm 10%), khoảng cách 15px
         const stampHtml = showStamp 
             ? `<img src="SACMAU.png" class="stamp-img-node" style="width: 360px; display:block; margin: 15px auto;">` 
             : `<div class="stamp-img-node" style="height:150px; margin: 15px 0;"></div>`;
 
-        // Bảng ẩn giữ layout chữ ký, Mộc dời phải 50px
         const signatureTable = `
             <table class="no-border" style="margin-top: 30px; width: 100%; border: none;">
                 <tr>
@@ -870,7 +868,7 @@
     }
 
     function previewAndPrint(htmlData) {
-        window.currentLineHeight = '1.2';
+        window.currentLineHeight = '1.0';
         window.currentParaSpace = '6pt';
 
         Swal.fire({
@@ -896,7 +894,8 @@
                             <button type="button" class="toolbar-btn" onclick="document.execCommand('justifyFull',false,null)" title="Căn đều 2 bên">Đều</button>
                         </div>
                         <select class="toolbar-btn" onchange="changeLineHeight(this.value)" style="width:100%; margin-top:5px;">
-                            <option value="1.2" selected>Giãn dòng 1.2</option>
+                            <option value="1.0" selected>Giãn dòng 1.0</option>
+                            <option value="1.2">Giãn dòng 1.2</option>
                             <option value="1.5">Giãn dòng 1.5</option>
                             <option value="2.0">Giãn dòng 2.0</option>
                         </select>
@@ -943,7 +942,7 @@
             const dd = dateObj.getDate().toString().padStart(2, '0');
             const mm = (dateObj.getMonth() + 1).toString().padStart(2, '0');
             const yyyy = dateObj.getFullYear();
-            const hdSo = maHDTemp.split('-')[2];
+            
             let total = 0; currentItems.forEach(i => total += (i.Don_Gia * i.So_Luong));
             const finTotal = Math.round(total - (total * 0.2 * (infoB.Giam_Thue / 100)));
             const typeStr = type === 'hopdong' ? 'HD' : 'NT';
@@ -980,8 +979,12 @@
 
             let total = 0; itemsToPrint.forEach(i => total += (i.Don_Gia * i.So_Luong));
             const finTotal = Math.round(total - (total * 0.2 * (infoB.Giam_Thue / 100)));
-            const dateParts = first.Ngay_Gio.split(' ')[0].split('-');
+            
+            // Lấy ngày từ Ngay_Gio định dạng yyyy-mm-dd hh:mm:ss
+            const dateOnly = first.Ngay_Gio.split(' ')[0];
+            const dateParts = dateOnly.split('-');
             const hdDate = dateParts.length === 3 ? `${dateParts[2]}_${dateParts[1]}_${dateParts[0]}` : "XX_XX_XXXX";
+            
             const typeStr = type === 'hopdong' ? 'HD' : 'NT';
             window.currentPdfFilename = normalizeFilename(`${hdDate}_${typeStr}_${infoB.Ten_Don_Vi}_${finTotal}.pdf`);
 
