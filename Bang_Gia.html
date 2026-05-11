@@ -28,13 +28,25 @@
 
     .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     
-    /* Thiết kế lại phần Nhóm (Group) */
-    .group-header { background: #f8fafc; padding: 15px 20px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px; transition: 0.2s; border-left: 5px solid var(--accent); align-items: center; }
-    .group-header:hover { background: #edf2f7; color: var(--accent); }
-    .group-content { display: none; margin-top: 5px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; padding: 5px; }
-    .group-content.show { display: block; }
+    /* Layout 2 khung */
+    .split-layout { display: flex; gap: 20px; align-items: flex-start; }
+    .left-pane { flex: 0 0 360px; position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; margin-top: 0 !important; }
+    .right-pane { flex: 1; min-width: 0; margin-top: 0 !important; }
+    
+    /* Scrollbar cho left-pane */
+    .left-pane::-webkit-scrollbar { width: 6px; }
+    .left-pane::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
 
-    /* Thiết kế lại Bảng cho khoa học & đẹp mắt hơn */
+    /* Thiết kế thẻ vuông Nhóm (Group Grid) - Kích thước bằng nhau */
+    .group-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    .group-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px 10px; text-align: center; cursor: pointer; transition: 0.2s; border-bottom: 4px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1; }
+    .group-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); border-color: var(--accent); border-bottom-color: var(--accent); }
+    .group-card.active { border-color: var(--accent); border-bottom-color: var(--accent); background: #fff5eb; }
+    .group-icon { font-size: 28px; margin-bottom: 8px; }
+    .group-title { font-weight: bold; color: #2c3e50; font-size: 13px; line-height: 1.3; margin-bottom: 5px;}
+    .group-count { font-size: 11px; color: #7f8c8d; background: #e2e8f0; padding: 3px 8px; border-radius: 10px;}
+
+    /* Bảng dữ liệu */
     .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
     .table-modern th { background: #f1f5f9; color: #64748b; font-size: 12px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; }
     .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
@@ -49,7 +61,7 @@
     .img-preview:hover { transform: scale(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     .qr-preview { width: 45px; height: 45px; cursor: pointer; background: white; padding: 3px; border: 1px solid #eee; border-radius: 6px; }
     
-    /* Cập nhật class nút bấm */
+    /* Nút bấm */
     .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.3s; flex: 1; }
     .btn-submit:hover { background: #a04000; transform: translateY(-2px); }
     
@@ -60,8 +72,14 @@
     .btn-import-dm:hover { background: #1f618d; transform: translateY(-2px); }
 
     .btn-container { display: flex; gap: 15px; margin-top: 20px; width: 100%; flex-wrap: wrap; }
-
     .swal2-container { z-index: 20000 !important; }
+
+    /* Hiệu ứng trượt */
+    @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(30px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    .slide-effect { animation: slideInRight 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; }
 
     /* ========================================================
        2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
@@ -85,8 +103,12 @@
         .input-group { grid-column: span 1 !important; }
         .btn-container { flex-direction: column; gap: 10px; }
 
+        /* Chuyển 2 khung thành 1 cột */
+        .split-layout { flex-direction: column; }
+        .left-pane { flex: none; width: 100%; position: static; max-height: none; overflow-y: visible; }
+        .group-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+
         /* Biến bảng thành Card để tra cứu giá dễ dàng */
-        .group-content { overflow-x: hidden; padding: 10px 0; border: none; }
         .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; }
         .table-modern thead { display: none; }
         
@@ -157,29 +179,38 @@
       </div>
     </div>
 
-    <div class="inventory-card">
-      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-        <h3 style="margin:0;">📊 CHI TIẾT ĐƠN GIÁ</h3>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end;">
-          <input type="text" id="searchPrice" class="input-modern" placeholder="🔍 Tìm tên, nhóm, mô tả, mã SP..." style="max-width: 350px; flex: 1;" onkeyup="filterPriceList()">
-          <button onclick="loadPriceList()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">🔄 Làm mới bảng</button>
-        </div>
+    <div class="split-layout">
+      <div class="left-pane inventory-card">
+        <h3 style="margin-top:0; margin-bottom:15px; border-bottom: 2px solid #e2e8f0; padding-bottom:10px; color:#2c3e50;">📁 NHÓM SẢN PHẨM</h3>
+        <div id="group-cards-container" class="group-grid"></div>
       </div>
-      <div id="price-list-container">
-        <p style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu bảng giá...</p>
+
+      <div class="right-pane inventory-card">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+          <h3 style="margin:0;" id="current-group-title">📊 CHI TIẾT ĐƠN GIÁ</h3>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end;">
+            <input type="text" id="searchPrice" class="input-modern" placeholder="🔍 Tìm tên, nhóm, mô tả, mã SP..." style="max-width: 350px; flex: 1;" onkeyup="filterPriceList()">
+            <button onclick="loadPriceList()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">🔄 Làm mới bảng</button>
+          </div>
+        </div>
+        
+        <div id="price-list-container">
+          <p style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu bảng giá...</p>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    // TOÀN BỘ LOGIC JS GỐC GIỮ NGUYÊN 100%
+    // TOÀN BỘ LOGIC JS GỐC GIỮ NGUYÊN 100% (Chỉ thêm logic render 2 khung thay cho accordion)
     const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
     const FOLDER_ID = "1ao2E97b8YdawmGb23c8U_6u7N65hTrVN"; 
     let accessToken = localStorage.getItem('drive_access_token');
     let tokenClient;
     
-    // Biến toàn cục để lưu trữ dữ liệu phục vụ tìm kiếm
     let priceListData = [];
+    let groupedData = {};
+    let currentActiveGroup = null;
 
     function initTokenClient() {
         tokenClient = google.accounts.oauth2.initTokenClient({
@@ -200,6 +231,14 @@
       input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
     function parseNum(s) { return Number(s.toString().replace(/\./g, "")) || 0; }
+
+    // Kích hoạt animation slide-in
+    function triggerSlideEffect() {
+      const container = document.getElementById('price-list-container');
+      container.classList.remove('slide-effect');
+      void container.offsetWidth; // Trigger reflow
+      container.classList.add('slide-effect');
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(loadPriceList, 600);
@@ -275,28 +314,74 @@
       try {
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*&order=Nhom_Hang.asc`, { headers: h });
         priceListData = await res.json();
-        renderPriceTable(priceListData);
+        
+        buildGroups();
+        document.getElementById('searchPrice').value = "";
       } catch (e) { console.error(e); }
     }
 
-    // Hàm render bảng riêng biệt để dùng chung cho Lọc & Load
-    window.renderPriceTable = function(data, isSearching = false) {
+    function buildGroups() {
+      groupedData = {};
+      priceListData.forEach(item => {
+        let nhom = item.Nhom_Hang || "Chưa phân loại";
+        if (!groupedData[nhom]) groupedData[nhom] = [];
+        groupedData[nhom].push(item);
+      });
+
+      renderGroupCards();
+      
+      const groupKeys = Object.keys(groupedData).sort();
+      if(groupKeys.length > 0) {
+          selectGroup(groupKeys[0]);
+      } else {
+          document.getElementById('price-list-container').innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Không có dữ liệu.</p>';
+      }
+    }
+
+    function renderGroupCards() {
+      const container = document.getElementById('group-cards-container');
+      const keys = Object.keys(groupedData).sort();
+      
+      let html = keys.map(nhom => {
+        return `
+          <div class="group-card" id="card-${encodeURIComponent(nhom)}" onclick="selectGroup('${nhom.replace(/'/g, "\\'")}')">
+            <div class="group-icon">📂</div>
+            <div class="group-title">${nhom}</div>
+            <div class="group-count">${groupedData[nhom].length} sản phẩm</div>
+          </div>
+        `;
+      }).join('');
+      
+      container.innerHTML = html;
+      container.style.display = 'grid'; // Hiển thị lưới nhóm
+    }
+
+    window.selectGroup = function(nhom) {
+      currentActiveGroup = nhom;
+      
+      // Update UI active card
+      document.querySelectorAll('.group-card').forEach(el => el.classList.remove('active'));
+      let cardEl = document.getElementById(`card-${encodeURIComponent(nhom)}`);
+      if(cardEl) cardEl.classList.add('active');
+
+      document.getElementById('current-group-title').innerHTML = `DANH SÁCH: <span style="color:var(--primary);">${nhom.toUpperCase()}</span>`;
+      
+      document.getElementById('searchPrice').value = "";
+      
+      triggerSlideEffect();
+      renderPriceTable(groupedData[nhom]);
+    }
+
+    window.renderPriceTable = function(data) {
         const container = document.getElementById('price-list-container');
         container.innerHTML = "";
         
-        if(data.length === 0) { 
+        if(!data || data.length === 0) { 
             container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Không tìm thấy sản phẩm nào.</p>'; 
             return; 
         }
 
-        const groups = {};
-        data.forEach(item => {
-          if (!groups[item.Nhom_Hang]) groups[item.Nhom_Hang] = [];
-          groups[item.Nhom_Hang].push(item);
-        });
-
-        for (let nhom in groups) {
-          let rows = groups[nhom].map(item => {
+        let rows = data.map(item => {
             const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(item.Ma_QR)}`;
             
             let thumbDisplay = '<span style="color:#ccc">N/A</span>';
@@ -322,36 +407,40 @@
                 <button onclick='editPrice(${JSON.stringify(item)})' style="color:#2980b9; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px; font-size:13px;">SỬA</button> | 
                 <button onclick="deletePrice(${item.Id})" style="color:#e74c3c; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px; font-size:13px;">XÓA</button>
               </td>
-            </tr>`}).join('');
+            </tr>`
+        }).join('');
 
-          // Mở thư mục nếu đang tìm kiếm
-          const showClass = isSearching ? 'show' : '';
-
-          container.innerHTML += `
-            <div class="group-header" onclick="this.nextElementSibling.classList.toggle('show')">
-              <span>📁 Nhóm: ${nhom.toUpperCase()} <span style="color:#64748b; font-size:13px;">(${groups[nhom].length} sản phẩm)</span></span>
-              <span>▼</span>
-            </div>
-            <div class="group-content ${showClass}">
-              <table class="table-modern">
-                <thead><tr>
-                    <th style="width:60px; text-align:center;">Mã QR</th>
-                    <th style="width:70px; text-align:center;">Ảnh</th>
-                    <th>Tên Sản Phẩm & Quy Cách</th>
-                    <th style="width:80px;">ĐVT</th>
-                    <th style="width:110px;">Giá Lẻ</th>
-                    <th style="width:110px;">Giá Sỉ</th>
-                    <th style="width:120px; text-align:center;">Thao tác</th>
-                </tr></thead>
-                <tbody>${rows}</tbody>
-              </table>
-            </div>`;
-        }
+        container.innerHTML = `
+          <table class="table-modern">
+            <thead><tr>
+                <th style="width:60px; text-align:center;">Mã QR</th>
+                <th style="width:70px; text-align:center;">Ảnh</th>
+                <th>Tên Sản Phẩm & Quy Cách</th>
+                <th style="width:80px;">ĐVT</th>
+                <th style="width:70px;">Giá Lẻ</th>
+                <th style="width:20px;">Giá Sỉ</th>
+                <th style="width:120px; text-align:center;">Thao tác</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
     };
 
-    // Hàm Lọc/Tìm kiếm
     window.filterPriceList = function() {
         const query = document.getElementById("searchPrice").value.toLowerCase().trim();
+        const cardsContainer = document.getElementById('group-cards-container');
+        
+        if (query === "") {
+            // Quay lại view group
+            cardsContainer.style.display = 'grid';
+            if(currentActiveGroup) selectGroup(currentActiveGroup);
+            return;
+        }
+
+        // Đang search: Ẩn group card, show all matching
+        cardsContainer.style.display = 'none';
+        document.getElementById('current-group-title').innerHTML = `KẾT QUẢ TÌM KIẾM: <span style="color:var(--accent);">${query}</span>`;
+
         const filteredData = priceListData.filter(item => {
             const ten = (item.Ten_Hang || "").toLowerCase();
             const ma = (item.Ma_QR || "").toLowerCase();
@@ -360,8 +449,8 @@
             return ten.includes(query) || ma.includes(query) || nhom.includes(query) || mota.includes(query);
         });
         
-        // Truyền true để tự động mở các thẻ Group khi đang tìm kiếm
-        renderPriceTable(filteredData, query.length > 0);
+        triggerSlideEffect();
+        renderPriceTable(filteredData);
     };
 
     async function editPrice(item) {

@@ -20,11 +20,23 @@
 
     .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--accent); }
     
-    /* Thiết kế phần Nhóm (Group) */
-    .group-header { background: #f8fafc; padding: 15px 20px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px; transition: 0.2s; border-left: 5px solid var(--accent); align-items: center; }
-    .group-header:hover { background: #fdf2f2; color: var(--accent); }
-    .group-content { display: none; margin-top: 5px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; padding: 5px; }
-    .group-content.show { display: block; }
+    /* Layout 2 khung */
+    .split-layout { display: flex; gap: 20px; align-items: flex-start; }
+    .left-pane { flex: 0 0 380px; position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; margin-top: 0 !important; }
+    .right-pane { flex: 1; min-width: 0; margin-top: 0 !important; }
+    
+    /* Scrollbar cho left-pane */
+    .left-pane::-webkit-scrollbar { width: 6px; }
+    .left-pane::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+
+    /* Thiết kế thẻ vuông Nhóm (Group Grid) - Các thẻ kích thước bằng nhau */
+    .group-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    .group-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px 10px; text-align: center; cursor: pointer; transition: 0.2s; border-bottom: 4px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1; }
+    .group-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); border-color: var(--accent); border-bottom-color: var(--accent); }
+    .group-card.active { border-color: var(--accent); border-bottom-color: var(--accent); background: #fdf2f2; }
+    .group-icon { font-size: 28px; margin-bottom: 8px; }
+    .group-title { font-weight: bold; color: #2c3e50; font-size: 13px; line-height: 1.3; margin-bottom: 5px;}
+    .group-count { font-size: 11px; color: #7f8c8d; background: #e2e8f0; padding: 3px 8px; border-radius: 10px;}
 
     /* Bảng dữ liệu */
     .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
@@ -35,7 +47,7 @@
     
     .price-badge-le { background: #e0f2fe; color: #0369a1; padding: 5px 10px; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 13px; border: 1px solid #bae6fd; }
 
-    .input-modern { padding: 8px 10px; border: 2px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 14px; font-weight: bold; color: var(--accent); transition: 0.3s; width: 120px; text-align: right; }
+    .input-modern { padding: 8px 10px; border: 2px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 14px; font-weight: bold; color: var(--accent); transition: 0.3s; width: 110px; text-align: right; }
     .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.1); }
 
     .img-preview { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; transition: 0.2s; }
@@ -43,8 +55,26 @@
     
     .btn-save { background: var(--accent); color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: 0.3s; box-shadow: 0 2px 0 #922b21; }
     .btn-save:hover { background: #a93226; transform: translateY(1px); box-shadow: 0 1px 0 #922b21; }
+    
+    .btn-edit { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: 0.3s; box-shadow: 0 2px 0 #2980b9; }
+    .btn-edit:hover { background: #217dbb; transform: translateY(1px); box-shadow: 0 1px 0 #2980b9; }
 
     .swal2-container { z-index: 20000 !important; }
+
+    /* Modal CSS cho tính năng cập nhật hàng chưa có giá */
+    .custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box;}
+    .custom-modal.active { display: flex; }
+    .modal-content { background: white; width: 100%; max-width: 1000px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .modal-header { padding: 15px 20px; background: #fdf2f2; border-bottom: 1px solid #fadbd8; display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 0 20px 20px 20px; overflow-y: auto; flex: 1; }
+    .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #c0392b; line-height: 1; }
+
+    /* Hiệu ứng trượt */
+    @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(30px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    .slide-effect { animation: slideInRight 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; }
 
     /* ========================================================
        2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
@@ -61,21 +91,25 @@
         }
 
         .header-top { flex-direction: column; align-items: flex-start !important; gap: 15px; }
-        .header-top input { width: 100%; box-sizing: border-box; }
+        .header-top input, .header-top button { width: 100%; box-sizing: border-box; }
+
+        /* Chuyển 2 khung thành 1 cột */
+        .split-layout { flex-direction: column; }
+        .left-pane { flex: none; width: 100%; position: static; max-height: none; overflow-y: visible; }
+        .group-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
 
         /* Biến bảng thành Card để tra cứu giá dễ dàng */
-        .group-content { overflow-x: hidden; padding: 10px 0; border: none; }
         .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; }
         .table-modern thead { display: none; }
         
         .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .table-modern td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: flex-start; text-align: left; }
+        .table-modern td { border: none; padding: 8px 5px 8px 110px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: flex-start; text-align: left; }
         
         /* Nhãn hiển thị cột */
-        .table-modern td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
+        .table-modern td:before { position: absolute; left: 10px; width: 95px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
         
         .input-modern { width: 100%; box-sizing: border-box; text-align: left; }
-        .btn-save { width: 100%; padding: 12px; font-size: 14px; margin-top: 5px; }
+        .btn-save, .btn-edit { width: 100%; padding: 12px; font-size: 14px; margin-top: 5px; }
     }
 
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
@@ -86,27 +120,66 @@
   <div class="main-content">
     <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div>
-        <h2 style="margin:0; color: var(--accent);">💰 QUẢN LÝ GIÁ VỐN SẢN PHẨM</h2>
-        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Cập nhật giá gốc trực tiếp để tự động tính lợi nhuận</p>
+        <h2 style="margin:0; color: var(--accent);">💰 QUẢN LÝ GIÁ VỐN & GIÁ BÁN</h2>
+        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Cập nhật giá gốc & giá bán trực tiếp để tự động tính lợi nhuận</p>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button onclick="showMissingPrices()" class="btn-save" style="background:#e67e22; box-shadow: 0 2px 0 #d35400; padding:12px 20px; font-size:14px;">⚠️ CẬP NHẬT GIÁ (Hàng chưa có giá)</button>
       </div>
     </div>
 
-    <div class="inventory-card">
-      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-        <h3 style="margin:0;">📊 CHI TIẾT DANH MỤC</h3>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end;">
-          <input type="text" id="searchPrice" class="input-modern" placeholder="🔍 Tìm tên sản phẩm, nhóm..." style="max-width: 350px; flex: 1; text-align: left; font-weight: normal; color: #333;" onkeyup="filterPriceList()">
-          <button onclick="loadGiaVonList()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">🔄 Tải lại dữ liệu</button>
+    <div class="split-layout">
+      <div class="left-pane inventory-card">
+        <h3 style="margin-top:0; margin-bottom:15px; border-bottom: 2px solid #e2e8f0; padding-bottom:10px; color:#2c3e50;">📁 NHÓM SẢN PHẨM</h3>
+        <div id="group-cards-container" class="group-grid"></div>
+      </div>
+
+      <div class="right-pane inventory-card">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+          <h3 style="margin:0;" id="current-group-title">📊 SẢN PHẨM</h3>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end;">
+            <input type="text" id="searchPrice" class="input-modern" placeholder="🔍 Tìm tên sản phẩm, mã..." style="max-width: 350px; flex: 1; text-align: left; font-weight: normal; color: #333;" onkeyup="filterPriceList()">
+            <button onclick="loadGiaVonList()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">🔄 Tải lại</button>
+          </div>
+        </div>
+        
+        <div id="price-list-container">
+          <p style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu...</p>
         </div>
       </div>
-      <div id="price-list-container">
-        <p style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu...</p>
+    </div>
+  </div>
+
+  <div id="missingModal" class="custom-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="margin:0; color:var(--accent); display:flex; align-items:center; gap:10px;">⚠️ SẢN PHẨM CHƯA CẬP NHẬT GIÁ</h3>
+        <button class="close-btn" onclick="closeMissingModal()">✖</button>
+      </div>
+      <div style="padding: 15px; border-bottom: 1px solid #e2e8f0; background: #fff;">
+        <input type="text" id="searchMissing" class="input-modern" style="width:100%; max-width:100%; text-align:left; font-weight:normal; color:#333;" placeholder="🔍 Lọc nhanh trong danh sách này..." onkeyup="filterMissingPrices()">
+      </div>
+      <div class="modal-body">
+        <table class="table-modern" style="margin-top:10px;">
+          <thead>
+            <tr>
+              <th style="width:70px; text-align:center;">Ảnh</th>
+              <th >Tên Sản Phẩm</th>
+              <th style="width:100px;">Giá Bán Ra</th>
+              <th style="width:100px;">Giá Vốn Nhập</th>
+              <th style="width:100px; text-align:center;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="missing-table-body"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
   <script>
     let priceListData = [];
+    let groupedData = {};
+    let currentActiveGroup = null;
 
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(loadGiaVonList, 600);
@@ -119,21 +192,84 @@
     
     function parseNum(s) { return Number(s.toString().replace(/\./g, "")) || 0; }
 
+    // Kích hoạt animation slide-in
+    function triggerSlideEffect() {
+      const container = document.getElementById('price-list-container');
+      container.classList.remove('slide-effect');
+      void container.offsetWidth; // Trigger reflow để animation có thể chạy lại
+      container.classList.add('slide-effect');
+    }
+
     async function loadGiaVonList() {
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
       try {
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=Id,Ma_QR,Nhom_Hang,Ten_Hang,Don_Vi_Tinh,Gia_Ban,Gia_Von,Hinh_Anh&order=Nhom_Hang.asc`, { headers: h });
         priceListData = await res.json();
-        renderGiaVonTable(priceListData);
+        
+        buildGroups();
+        document.getElementById('searchPrice').value = ""; // Reset search
       } catch (e) { console.error(e); }
     }
 
-    // TÍNH NĂNG MỚI: Popup xem ảnh lớn
+    function buildGroups() {
+      groupedData = {};
+      priceListData.forEach(item => {
+        let nhom = item.Nhom_Hang || "Chưa phân loại";
+        if (!groupedData[nhom]) groupedData[nhom] = [];
+        groupedData[nhom].push(item);
+      });
+
+      renderGroupCards();
+      
+      // Mặc định chọn nhóm đầu tiên nếu có
+      const groupKeys = Object.keys(groupedData).sort();
+      if(groupKeys.length > 0) {
+          selectGroup(groupKeys[0]);
+      } else {
+          document.getElementById('price-list-container').innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Không có dữ liệu.</p>';
+      }
+    }
+
+    function renderGroupCards() {
+      const container = document.getElementById('group-cards-container');
+      const keys = Object.keys(groupedData).sort();
+      
+      let html = keys.map(nhom => {
+        return `
+          <div class="group-card" id="card-${encodeURIComponent(nhom)}" onclick="selectGroup('${nhom.replace(/'/g, "\\'")}')">
+            <div class="group-icon">📂</div>
+            <div class="group-title">${nhom}</div>
+            <div class="group-count">${groupedData[nhom].length} sản phẩm</div>
+          </div>
+        `;
+      }).join('');
+      
+      container.innerHTML = html;
+    }
+
+    window.selectGroup = function(nhom) {
+      currentActiveGroup = nhom;
+      
+      // Update UI active card
+      document.querySelectorAll('.group-card').forEach(el => el.classList.remove('active'));
+      let cardEl = document.getElementById(`card-${encodeURIComponent(nhom)}`);
+      if(cardEl) cardEl.classList.add('active');
+
+      document.getElementById('current-group-title').innerHTML = `DANH SÁCH: <span style="color:var(--primary);">${nhom.toUpperCase()}</span>`;
+      
+      // Clear search if any
+      document.getElementById('searchPrice').value = "";
+      
+      triggerSlideEffect();
+      renderMainTable(groupedData[nhom]);
+    }
+
+    // Popup xem ảnh lớn
     window.showImagePopup = function(imgUrl, title) {
         Swal.fire({
             title: title || 'Hình ảnh sản phẩm',
             imageUrl: imgUrl,
-            imageWidth: 500, // Đặt chiều rộng ảnh là 500px theo yêu cầu
+            imageWidth: 500, 
             imageAlt: 'Sản phẩm',
             showConfirmButton: true,
             confirmButtonText: 'Đóng',
@@ -141,33 +277,22 @@
         });
     }
 
-    window.renderGiaVonTable = function(data, isSearching = false) {
+    function renderMainTable(data) {
         const container = document.getElementById('price-list-container');
-        container.innerHTML = "";
         
-        if(data.length === 0) { 
+        if(!data || data.length === 0) { 
             container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Không tìm thấy sản phẩm nào.</p>'; 
             return; 
         }
 
-        const groups = {};
-        data.forEach(item => {
-          let nhom = item.Nhom_Hang || "Chưa phân loại";
-          if (!groups[nhom]) groups[nhom] = [];
-          groups[nhom].push(item);
-        });
-
-        for (let nhom in groups) {
-          let rows = groups[nhom].map(item => {
+        let rows = data.map(item => {
             let thumbDisplay = '<span style="color:#ccc">N/A</span>';
             if (item.Hinh_Anh && item.Hinh_Anh.includes('/d/')) {
                 const fileId = item.Hinh_Anh.split('/d/')[1]?.split('/')[0];
                 const finalThumb = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
-                const largeImg = `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`; // Lấy ảnh lớn 500px
-                // Đã chèn hàm showImagePopup vào event onclick
+                const largeImg = `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`; 
                 thumbDisplay = `<img src="${finalThumb}" class="img-preview" onclick="showImagePopup('${largeImg}', '${item.Ten_Hang.replace(/'/g, "\\'")}')" title="Click để xem lớn">`;
             } else if (item.Hinh_Anh) {
-                // Đã chèn hàm showImagePopup vào event onclick
                 thumbDisplay = `<img src="${item.Hinh_Anh}" class="img-preview" onclick="showImagePopup('${item.Hinh_Anh}', '${item.Ten_Hang.replace(/'/g, "\\'")}')" title="Click để xem lớn">`;
             }
 
@@ -176,43 +301,52 @@
               <td data-label="Ảnh" style="text-align:center;">${thumbDisplay}</td>
               <td data-label="Tên hàng">
                 <b style="font-size:14px; color:#2c3e50;">${item.Ten_Hang}</b><br>
-                <small style="color:#7f8c8d">Mã: ${item.Ma_QR || 'N/A'}</small>
+                <small style="color:#7f8c8d">Mã: ${item.Ma_QR || 'N/A'} | ĐVT: ${item.Don_Vi_Tinh || '-'}</small>
               </td>
-              <td data-label="ĐVT"><span style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:12px;">${item.Don_Vi_Tinh || '-'}</span></td>
-              <td data-label="Giá Lẻ Bán Ra"><span class="price-badge-le">${(item.Gia_Ban || 0).toLocaleString()}</span></td>
-              <td data-label="Giá Vốn Mới">
-                <input type="text" id="gv-${item.Id}" class="input-modern" value="${(item.Gia_Von || 0).toLocaleString('vi-VN')}" oninput="formatCurrency(this)">
+              <td data-label="Giá Bán Ra">
+                <span id="txt-gb-${item.Id}" class="price-badge-le">${(item.Gia_Ban || 0).toLocaleString('vi-VN')}</span>
+                <input type="text" id="inp-gb-${item.Id}" class="input-modern" style="display:none; color:#2980b9; border-color:#3498db;" value="${(item.Gia_Ban || 0).toLocaleString('vi-VN')}" oninput="formatCurrency(this)">
+              </td>
+              <td data-label="Giá Vốn">
+                <span id="txt-gv-${item.Id}" style="font-weight:bold; color:var(--accent); font-size:14px;">${(item.Gia_Von || 0).toLocaleString('vi-VN')}</span>
+                <input type="text" id="inp-gv-${item.Id}" class="input-modern" style="display:none;" value="${(item.Gia_Von || 0).toLocaleString('vi-VN')}" oninput="formatCurrency(this)">
               </td>
               <td data-label="Thao tác" style="text-align: center;">
-                <button onclick="saveGiaVon(${item.Id})" class="btn-save" id="btn-save-${item.Id}">💾 LƯU GIÁ VỐN</button>
+                <button onclick="editRow(${item.Id})" class="btn-edit" id="btn-edit-${item.Id}">✏️ SỬA</button>
+                <button onclick="saveRow(${item.Id})" class="btn-save" id="btn-save-${item.Id}" style="display:none;">💾 LƯU</button>
               </td>
-            </tr>`}).join('');
+            </tr>`
+        }).join('');
 
-          const showClass = isSearching ? 'show' : '';
-
-          container.innerHTML += `
-            <div class="group-header" onclick="this.nextElementSibling.classList.toggle('show')">
-              <span>📁 Nhóm: ${nhom.toUpperCase()} <span style="color:#64748b; font-size:13px;">(${groups[nhom].length} sản phẩm)</span></span>
-              <span>▼</span>
-            </div>
-            <div class="group-content ${showClass}">
-              <table class="table-modern">
-                <thead><tr>
-                    <th style="width:70px; text-align:center;">Ảnh</th>
-                    <th>Tên Sản Phẩm</th>
-                    <th style="width:80px;">ĐVT</th>
-                    <th style="width:120px;">Giá Bán Ra</th>
-                    <th style="width:150px;">Nhập Giá Vốn</th>
-                    <th style="width:120px; text-align:center;">Thao tác</th>
-                </tr></thead>
-                <tbody>${rows}</tbody>
-              </table>
-            </div>`;
-        }
-    };
+        container.innerHTML = `
+          <table class="table-modern">
+            <thead><tr>
+                <th style="width:70px; text-align:center;">Ảnh</th>
+                <th>Tên Sản Phẩm</th>
+                <th style="width:90px;">Giá Bán Ra</th>
+                <th style="width:90px;">Giá Vốn</th>
+                <th style="width:100px; text-align:center;">Thao tác</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+    }
 
     window.filterPriceList = function() {
         const query = document.getElementById("searchPrice").value.toLowerCase().trim();
+        
+        if (query === "") {
+            // Khi xoá trắng ô tìm kiếm thì load lại nhóm hiện tại
+            if(currentActiveGroup) selectGroup(currentActiveGroup);
+            return;
+        }
+
+        // Bỏ active tất cả thẻ nhóm bên trái
+        document.querySelectorAll('.group-card').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById('current-group-title').innerHTML = `KẾT QUẢ TÌM KIẾM: <span style="color:var(--accent);">${query}</span>`;
+
+        // Tìm trên toàn bộ dữ liệu
         const filteredData = priceListData.filter(item => {
             const ten = (item.Ten_Hang || "").toLowerCase();
             const ma = (item.Ma_QR || "").toLowerCase();
@@ -220,47 +354,195 @@
             return ten.includes(query) || ma.includes(query) || nhom.includes(query);
         });
         
-        renderGiaVonTable(filteredData, query.length > 0);
+        triggerSlideEffect();
+        renderMainTable(filteredData);
     };
 
-    window.saveGiaVon = async function(id) {
-        const inputEl = document.getElementById(`gv-${id}`);
-        const btnEl = document.getElementById(`btn-save-${id}`);
-        const newGiaVon = parseNum(inputEl.value);
+    // Hàm chuyển sang chế độ nhập
+    window.editRow = function(id) {
+        document.getElementById(`txt-gb-${id}`).style.display = 'none';
+        document.getElementById(`txt-gv-${id}`).style.display = 'none';
+        document.getElementById(`btn-edit-${id}`).style.display = 'none';
+        
+        document.getElementById(`inp-gb-${id}`).style.display = 'inline-block';
+        document.getElementById(`inp-gv-${id}`).style.display = 'inline-block';
+        document.getElementById(`btn-save-${id}`).style.display = 'inline-block';
+    }
 
-        btnEl.innerText = "⏳ Đang lưu...";
-        btnEl.disabled = true;
-        btnEl.style.background = "#95a5a6";
+    // Hàm lưu giá đã chỉnh sửa
+    window.saveRow = async function(id) {
+        const inpGB = document.getElementById(`inp-gb-${id}`);
+        const inpGV = document.getElementById(`inp-gv-${id}`);
+        const btnSave = document.getElementById(`btn-save-${id}`);
+        
+        const newGB = parseNum(inpGB.value);
+        const newGV = parseNum(inpGV.value);
+
+        btnSave.innerText = "⏳...";
+        btnSave.disabled = true;
 
         try {
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
             const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${id}`, { 
                 method: 'PATCH', 
                 headers: h, 
-                body: JSON.stringify({ Gia_Von: newGiaVon }) 
+                body: JSON.stringify({ Gia_Ban: newGB, Gia_Von: newGV }) 
             });
 
             if (!res.ok) throw new Error("Không thể cập nhật cơ sở dữ liệu!");
 
-            // Update mảng dữ liệu gốc để khi tìm kiếm không bị mất dữ liệu vừa sửa
+            // Cập nhật local data
             const itemIndex = priceListData.findIndex(item => item.Id === id);
-            if (itemIndex > -1) priceListData[itemIndex].Gia_Von = newGiaVon;
+            if (itemIndex > -1) {
+                priceListData[itemIndex].Gia_Ban = newGB;
+                priceListData[itemIndex].Gia_Von = newGV;
+            }
 
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã lưu giá vốn!', showConfirmButton: false, timer: 1500 });
+            // Phục hồi UI về chế độ xem
+            document.getElementById(`txt-gb-${id}`).innerText = newGB.toLocaleString('vi-VN');
+            document.getElementById(`txt-gv-${id}`).innerText = newGV.toLocaleString('vi-VN');
+
+            document.getElementById(`inp-gb-${id}`).style.display = 'none';
+            document.getElementById(`inp-gv-${id}`).style.display = 'none';
+            btnSave.style.display = 'none';
             
-            btnEl.innerText = "✔ Đã Lưu";
-            btnEl.style.background = "#27ae60";
-            setTimeout(() => {
-                btnEl.innerText = "💾 LƯU GIÁ VỐN";
-                btnEl.disabled = false;
-                btnEl.style.background = "var(--accent)";
-            }, 2000);
+            document.getElementById(`txt-gb-${id}`).style.display = 'inline-block';
+            document.getElementById(`txt-gv-${id}`).style.display = 'inline-block';
+            document.getElementById(`btn-edit-${id}`).style.display = 'inline-block';
 
+            btnSave.innerText = "💾 LƯU";
+            btnSave.disabled = false;
+
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã cập nhật giá!', showConfirmButton: false, timer: 1500 });
         } catch (error) {
             Swal.fire('Lỗi', error.message, 'error');
-            btnEl.innerText = "❌ Lỗi";
-            btnEl.style.background = "#e74c3c";
-            btnEl.disabled = false;
+            btnSave.innerText = "❌ Lỗi";
+            btnSave.disabled = false;
+        }
+    }
+
+
+    /* ========================================================
+       LOGIC CHO POPUP CẬP NHẬT GIÁ CÒN THIẾU
+       ======================================================== */
+    let missingPricesData = [];
+
+    window.showMissingPrices = function() {
+        // Lọc các sp có giá bán hoặc giá vốn <= 0 hoặc null
+        missingPricesData = priceListData.filter(x => !x.Gia_Ban || !x.Gia_Von || x.Gia_Ban == 0 || x.Gia_Von == 0);
+        document.getElementById('searchMissing').value = "";
+        renderMissingTable(missingPricesData);
+        document.getElementById('missingModal').classList.add('active');
+    }
+
+    window.closeMissingModal = function() {
+        document.getElementById('missingModal').classList.remove('active');
+        // Load lại group hiện tại để update view
+        if(currentActiveGroup) {
+            selectGroup(currentActiveGroup);
+        } else {
+            buildGroups();
+        }
+    }
+
+    window.filterMissingPrices = function() {
+        const query = document.getElementById("searchMissing").value.toLowerCase().trim();
+        const filteredData = missingPricesData.filter(item => {
+            const ten = (item.Ten_Hang || "").toLowerCase();
+            const ma = (item.Ma_QR || "").toLowerCase();
+            return ten.includes(query) || ma.includes(query);
+        });
+        renderMissingTable(filteredData);
+    }
+
+    function renderMissingTable(data) {
+        const tbody = document.getElementById('missing-table-body');
+        if(data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#27ae60; font-weight:bold;">Tuyệt vời! Tất cả sản phẩm đều đã có giá đầy đủ.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.map(item => {
+            let thumbDisplay = '<span style="color:#ccc">N/A</span>';
+            if (item.Hinh_Anh && item.Hinh_Anh.includes('/d/')) {
+                const fileId = item.Hinh_Anh.split('/d/')[1]?.split('/')[0];
+                const finalThumb = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+                const largeImg = `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`; 
+                thumbDisplay = `<img src="${finalThumb}" class="img-preview" onclick="showImagePopup('${largeImg}', '${item.Ten_Hang.replace(/'/g, "\\'")}')" title="Click để xem lớn">`;
+            } else if (item.Hinh_Anh) {
+                thumbDisplay = `<img src="${item.Hinh_Anh}" class="img-preview" onclick="showImagePopup('${item.Hinh_Anh}', '${item.Ten_Hang.replace(/'/g, "\\'")}')" title="Click để xem lớn">`;
+            }
+
+            return `
+            <tr id="row-missing-${item.Id}">
+              <td data-label="Ảnh" style="text-align:center;">${thumbDisplay}</td>
+              <td data-label="Tên hàng">
+                <b style="font-size:14px; color:#2c3e50;">${item.Ten_Hang}</b><br>
+                <small style="color:#7f8c8d">Mã: ${item.Ma_QR || 'N/A'}</small>
+              </td>
+              <td data-label="Giá Bán Ra">
+                <input type="text" id="m-gb-${item.Id}" class="input-modern" style="color:#2980b9; border-color:#3498db; width:100%;" value="${(item.Gia_Ban || 0).toLocaleString('vi-VN')}" oninput="formatCurrency(this)">
+              </td>
+              <td data-label="Giá Vốn">
+                <input type="text" id="m-gv-${item.Id}" class="input-modern" style="width:100%;" value="${(item.Gia_Von || 0).toLocaleString('vi-VN')}" oninput="formatCurrency(this)">
+              </td>
+              <td data-label="Thao tác" style="text-align: center;">
+                <button onclick="saveMissingRow(${item.Id})" class="btn-save" id="btn-m-save-${item.Id}" style="width:100%;">💾 LƯU</button>
+              </td>
+            </tr>`
+        }).join('');
+    }
+
+    window.saveMissingRow = async function(id) {
+        const inpGB = document.getElementById(`m-gb-${id}`);
+        const inpGV = document.getElementById(`m-gv-${id}`);
+        const btnSave = document.getElementById(`btn-m-save-${id}`);
+        const trRow = document.getElementById(`row-missing-${id}`);
+        
+        const newGB = parseNum(inpGB.value);
+        const newGV = parseNum(inpGV.value);
+
+        if(newGB === 0 || newGV === 0) {
+            Swal.fire({toast: true, position:'top-end', icon:'warning', title:'Giá vẫn bằng 0!', timer: 2000, showConfirmButton:false});
+            // Vẫn cho phép lưu nếu người dùng cố ý, nhưng cảnh báo.
+        }
+
+        btnSave.innerText = "⏳...";
+        btnSave.disabled = true;
+
+        try {
+            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${id}`, { 
+                method: 'PATCH', 
+                headers: h, 
+                body: JSON.stringify({ Gia_Ban: newGB, Gia_Von: newGV }) 
+            });
+
+            if (!res.ok) throw new Error("Cập nhật thất bại!");
+
+            // Cập nhật local data gốc
+            const itemIndex = priceListData.findIndex(item => item.Id === id);
+            if (itemIndex > -1) {
+                priceListData[itemIndex].Gia_Ban = newGB;
+                priceListData[itemIndex].Gia_Von = newGV;
+            }
+
+            // Loại khỏi mảng missing và gỡ khỏi UI
+            if(newGB > 0 && newGV > 0) {
+                missingPricesData = missingPricesData.filter(x => x.Id !== id);
+                trRow.style.opacity = '0';
+                setTimeout(() => { trRow.remove(); }, 300);
+            } else {
+                btnSave.innerText = "✔ LƯU LẠI";
+                btnSave.style.background = "#27ae60";
+                btnSave.disabled = false;
+            }
+
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Thành công!', showConfirmButton: false, timer: 1500 });
+        } catch (error) {
+            Swal.fire('Lỗi', error.message, 'error');
+            btnSave.innerText = "❌ Lỗi";
+            btnSave.disabled = false;
         }
     }
   </script>
