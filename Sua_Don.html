@@ -314,7 +314,22 @@ async function loadSua_DonData() {
     });
     tbody.innerHTML = "";
     const temp = document.getElementById('f12-row-temp');
-    Object.values(grouped).forEach(order => {
+
+    // Hàm phụ trợ parse chuỗi DD/MM/YYYY HH:mm:ss thành timestamp để sắp xếp chuẩn xác
+    const parseDateVn = (str) => {
+      if (!str) return 0;
+      let p = str.split(' ');
+      if (p.length !== 2) return new Date(str).getTime() || 0;
+      let d = p[0].split('/');
+      let t = p[1].split(':');
+      if (d.length === 3 && t.length >= 2) return new Date(d[2], d[1]-1, d[0], t[0], t[1], t[2]||0).getTime();
+      return new Date(str).getTime() || 0;
+    };
+
+    // Ép kiểu array và sắp xếp từ mới đến cũ
+    const sortedOrders = Object.values(grouped).sort((a, b) => parseDateVn(b.ngay) - parseDateVn(a.ngay));
+
+    sortedOrders.forEach(order => {
       if (order.statuses.has('Công nợ') || order.statuses.has('Hoàn tất')) return;
     
       const clone = temp.content.cloneNode(true);
