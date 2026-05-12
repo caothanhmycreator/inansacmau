@@ -189,7 +189,7 @@
                     <th>Hàng Hóa / Dịch Vụ</th>
                     <th style="width:120px; text-align:right;">Thành Tiền (Gốc)</th>
                     <th style="width:120px; text-align:right;">Tổng Cộng (Sau thuế)</th>
-                    <th style="width:100px; text-align:center;">Thao tác</th>
+                    <th style="width:120px; text-align:center;">Thao tác</th>
                 </tr>
             </thead>
             <tbody id="data-container">
@@ -204,6 +204,8 @@
     const TABLE_BAO_GIA = "Bao_Gia";
     let masterData = [];     
     let currentQuoteItems = []; 
+    window.editingMaBaoGia = null; 
+    window.editingNgayGio = null; 
 
     document.addEventListener("DOMContentLoaded", () => {
       loadData();
@@ -318,6 +320,8 @@
 
     function clearQuote() {
         currentQuoteItems = [];
+        window.editingMaBaoGia = null;
+        window.editingNgayGio = null;
         renderQuoteCart();
     }
 
@@ -356,7 +360,7 @@
         document.getElementById('quote-total').innerText = Math.round(finalTotal).toLocaleString('vi-VN') + " đ";
     }
 
-    // --- LƯU VÀO DATABASE SUPABASE VỚI MÃ TỰ ĐỘNG ---
+    // --- LƯU VÀO DATABASE SUPABASE VỚI MÃ TỰ ĐỘNG HOẶC CẬP NHẬT MÃ CŨ ---
     async function saveQuoteToDB() {
         const tenKh = document.getElementById('f-khachhang').value.trim();
         const diachi = document.getElementById('f-diachi').value.trim();
@@ -369,23 +373,33 @@
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
         
         try {
-            const d = new Date();
-            const pad = (n) => n.toString().padStart(2, '0');
-            const dateStr = `${pad(d.getDate())}${pad(d.getMonth() + 1)}${d.getFullYear()}`;
-            const prefix = `BG-${dateStr}-`;
-            
-            let maxSeq = 0;
-            masterData.forEach(item => {
-                if (item.Ma_Bao_Gia && item.Ma_Bao_Gia.startsWith(prefix)) {
-                    let parts = item.Ma_Bao_Gia.split('-');
-                    if(parts.length === 3) {
-                        let seq = parseInt(parts[2], 10);
-                        if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+            let maBaoGia, ngayGio;
+
+            if (window.editingMaBaoGia) {
+                // Xử lý chỉnh sửa: Dùng lại mã và ngày giờ cũ, xóa dữ liệu cũ
+                maBaoGia = window.editingMaBaoGia;
+                ngayGio = window.editingNgayGio;
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_BAO_GIA}?Ma_Bao_Gia=eq.${maBaoGia}`, { method: 'DELETE', headers: h });
+            } else {
+                // Xử lý tạo mới: Tạo mã tự động
+                const d = new Date();
+                const pad = (n) => n.toString().padStart(2, '0');
+                const dateStr = `${pad(d.getDate())}${pad(d.getMonth() + 1)}${d.getFullYear()}`;
+                const prefix = `BG-${dateStr}-`;
+                
+                let maxSeq = 0;
+                masterData.forEach(item => {
+                    if (item.Ma_Bao_Gia && item.Ma_Bao_Gia.startsWith(prefix)) {
+                        let parts = item.Ma_Bao_Gia.split('-');
+                        if(parts.length === 3) {
+                            let seq = parseInt(parts[2], 10);
+                            if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+                        }
                     }
-                }
-            });
-            const maBaoGia = `${prefix}${(maxSeq + 1).toString().padStart(3, '0')}`;
-            const ngayGio = getCleanVNTime();
+                });
+                maBaoGia = `${prefix}${(maxSeq + 1).toString().padStart(3, '0')}`;
+                ngayGio = getCleanVNTime();
+            }
             
             const payloads = currentQuoteItems.map(item => {
                 let giamThueAmount = item.Thanh_Tien * 0.2 * (giamThueRate / 100);
@@ -412,6 +426,11 @@
             ));
 
             Swal.fire({ icon: 'success', title: 'Lưu thành công!', text: `Mã báo giá: ${maBaoGia}`, timer: 2000, showConfirmButton: false });
+            
+            // Reset trạng thái sửa sau khi lưu thành công
+            window.editingMaBaoGia = null;
+            window.editingNgayGio = null;
+            
             clearQuote();
             document.getElementById('f-khachhang').value = "";
             document.getElementById('f-diachi').value = "";
@@ -488,10 +507,41 @@
                 <td data-label="Tổng cộng" style="text-align:right;"><b style="color:#c0392b;">${group.tongSauThue.toLocaleString('vi-VN')} đ</b></td>
                 <td data-label="Thao tác" style="text-align:center;">
                     <button onclick="exportPDFHistory('${group.Ma_Bao_Gia}')" class="btn-pdf" title="Xuất PDF">🖨️</button>
+                    <button onclick="editGroupRecord('${group.Ma_Bao_Gia}')" class="btn-pdf" style="color: #d35400; background: #ffedd5; border-color: #fed7aa;" title="Chỉnh sửa">✏️</button>
                     <button onclick="deleteGroupRecord('${group.Ma_Bao_Gia}', ${group.id})" class="btn-del" title="Xóa">🗑️</button>
                 </td>
             </tr>`;
         }).join('');
+    }
+
+    // Load lại vào giỏ hàng để sửa
+    window.editGroupRecord = function(maBaoGia) {
+        if (!maBaoGia || maBaoGia === 'undefined') {
+            Swal.fire('Lỗi', 'Báo giá này không có mã để chỉnh sửa!', 'error');
+            return;
+        }
+
+        const items = masterData.filter(x => x.Ma_Bao_Gia === maBaoGia);
+        if (items.length === 0) return;
+
+        document.getElementById('f-khachhang').value = items[0].Ten_Khach_Hang || '';
+        document.getElementById('f-diachi').value = items[0].Dia_Chi || '';
+        document.getElementById('f-giamthue').value = items[0].Giam_Thue || '0';
+
+        currentQuoteItems = items.map(item => ({
+            Ten_Hang: item.Ten_Hang,
+            DVT: item.DVT,
+            So_Luong: item.So_Luong,
+            Don_Gia: item.Don_Gia,
+            Thanh_Tien: item.Thanh_Tien,
+            Ghi_Chu: item.Ghi_Chu || ''
+        }));
+
+        window.editingMaBaoGia = maBaoGia;
+        window.editingNgayGio = items[0].Ngay_Gio;
+
+        renderQuoteCart();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // Xóa theo nhóm
@@ -591,7 +641,7 @@
                             ${discountRow}
                             <tr>
                                 <td colspan="5" align="right"><b>Tổng cộng thanh toán:</b></td>
-                                <td align="right"><b style="color:red; font-size:16px;">${Math.round(finalTotal).toLocaleString('vi-VN')} đ</b></td>
+                                <td align="right"><b style="color:black; font-size:16px;">${Math.round(finalTotal).toLocaleString('vi-VN')} đ</b></td>
                             </tr>
                         </tbody>
                     </table>
