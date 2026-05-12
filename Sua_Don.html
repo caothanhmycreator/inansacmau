@@ -531,9 +531,10 @@ async function f12_saveFinal() {
   let itemsToUpdate = []; let itemsToCreate = []; 
   document.querySelectorAll('#view-table-body tr').forEach(tr => {
     const inpSp = tr.querySelector('.f12-edit-sp'); const dbId = inpSp.getAttribute('data-id');
+    const currentStatus = inpSp.getAttribute('data-status') || "Chờ xử lý"; // Lấy trạng thái đã được lưu
     const gia = Number(tr.querySelector('.f12-edit-dg').value.replace(/\./g, "")) || 0;
     const sl = Number(tr.querySelector('.f12-edit-sl').value) || 0;
-    const obj = { Ma_Don: maDon, Ten_Hang: inpSp.value, So_Luong: sl, Don_Gia: gia, Thanh_Tien: sl * gia, Don_Vi_Tinh: tr.querySelector('.f12-edit-dvt').value, Trang_Thai: "Chờ xử lý", Ten_Khach_Hang: tenKH, So_Dien_Thoai: window.f12_current_info.sdt, Dia_Chi: window.f12_current_info.dc, Ngay_Gio: cleanNow, Khach_Da_Tra: 0, Con_No: 0, Tong_Don: 0 };
+    const obj = { Ma_Don: maDon, Ten_Hang: inpSp.value, So_Luong: sl, Don_Gia: gia, Thanh_Tien: sl * gia, Don_Vi_Tinh: tr.querySelector('.f12-edit-dvt').value, Trang_Thai: currentStatus, Ten_Khach_Hang: tenKH, So_Dien_Thoai: window.f12_current_info.sdt, Dia_Chi: window.f12_current_info.dc, Ngay_Gio: cleanNow, Khach_Da_Tra: 0, Con_No: 0, Tong_Don: 0 };
     if (dbId === "new") itemsToCreate.push(obj); else { obj.id = dbId; itemsToUpdate.push(obj); }
   });
 
@@ -578,7 +579,7 @@ async function f12_saveFinal() {
       
       const logBody = { 
         Ngay_Gio: cleanNow, Ma_Don: maDon, Ten_Hang: item.Ten_Hang, Khach_Hang: tenKH, 
-        Gio_Tao_Don: cleanNow, Gio_Xu_Ly: cleanNow, Trang_Thai: "Chờ xử lý", Nguoi_Thuc_Hien: "Quản trị (Sửa)" 
+        Gio_Tao_Don: cleanNow, Gio_Xu_Ly: cleanNow, Trang_Thai: item.Trang_Thai, Nguoi_Thuc_Hien: "Quản trị (Sửa)" // Sử dụng đúng trạng thái đã lấy
       };
 
       if (logData.length > 0) {
@@ -595,17 +596,18 @@ await guiThongBaoSacMau("✏️ CẬP NHẬT ĐƠN HÀNG", "Đơn của khách "
 }
 
 /* =========================================================
-   SỬA ROW VÀ DROPDOWN ĐỂ CÓ TÍNH NĂNG GỢI Ý HÌNH ẢNH
+   SỬA ROW VÀ DROPDOWN ĐỂ CÓ TÍNH NĂNG GỢI Ý HÌNH ẢNH & LƯU TRẠNG THÁI
    ========================================================= */
 function f12_renderEditRow(it) { 
   const tbody = document.getElementById('view-table-body'); 
   const tr = document.createElement('tr'); 
   const initialGia = it ? Number(it.Don_Gia).toLocaleString("vi-VN") : "0"; 
+  const initialStatus = it && it.Trang_Thai ? it.Trang_Thai : "Chờ xử lý"; // Lấy trạng thái hiện tại hoặc gán mặc định nếu là mới
   
   // Xóa datalist attribute (list="spList") để dùng dropdown custom hiển thị ảnh
   tr.innerHTML = `
     <td style="border:1px solid #ddd;padding:8px; position: relative;">
-      <input type="text" class="f12-edit-sp" autocomplete="off" value="${it?it.Ten_Hang:""}" style="width:100%; border:1px solid #ccc; padding:8px; border-radius:6px;" data-id="${it?it.id:"new"}" oninput="f12_autoFill(this); f12_showSPSuggestions(this)" onfocus="f12_showSPSuggestions(this)" onblur="setTimeout(() => f12_closeSPSuggestions(this), 200)">
+      <input type="text" class="f12-edit-sp" autocomplete="off" value="${it?it.Ten_Hang:""}" style="width:100%; border:1px solid #ccc; padding:8px; border-radius:6px;" data-id="${it?it.id:"new"}" data-status="${initialStatus}" oninput="f12_autoFill(this); f12_showSPSuggestions(this)" onfocus="f12_showSPSuggestions(this)" onblur="setTimeout(() => f12_closeSPSuggestions(this), 200)">
       <div class="f12-sp-dropdown" style="display:none; position:absolute; top:calc(100% + 2px); left:0; right:0; background:white; border:1px solid #ddd; border-radius:6px; max-height:250px; overflow-y:auto; z-index:1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
     </td>
     <td style="border:1px solid #ddd;padding:8px;">
