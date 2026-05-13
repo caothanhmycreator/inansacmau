@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sắc Màu - Thiệp Cưới 3D Premium</title>
+    <style>
+        :root {
+            --rose-gold: #e5b4a2;
+            --gold: #d4af37;
+            --cream: #fffaf0;
+            --glass: rgba(255, 255, 255, 0.15);
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background: #0f0f0f; /* Nền tối để làm nổi bật hiệu ứng kính và vàng */
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Playfair Display', serif;
+            overflow: hidden;
+            perspective: 2000px;
+        }
+
+        /* Hiệu ứng hạt bụi vàng bay lơ lửng */
+        .particles {
+            position: absolute; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+        }
+
+        /* Vùng chứa chính */
+        .scene {
+            width: 400px;
+            height: 550px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Container điều khiển trạng thái mở */
+        .invitation-wrapper {
+            width: 100%; height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            cursor: pointer;
+            animation: floating 6s ease-in-out infinite;
+        }
+
+        /* --- 1. BAO THƯ TRONG SUỐT (GLASSMORPHISM) --- */
+        .envelope {
+            position: absolute;
+            width: 100%; height: 100%;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            transform: translateZ(0px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            transition: 0.8s;
+        }
+        
+        .envelope::after {
+            content: "♥";
+            font-size: 40px;
+            color: var(--rose-gold);
+            filter: drop-shadow(0 0 10px var(--rose-gold));
+        }
+
+        /* --- 2. CÁC LỚP THIỆP BÊN TRONG --- */
+        .card {
+            position: absolute;
+            left: 5%; top: 5%;
+            width: 90%; height: 90%;
+            border-radius: 10px;
+            padding: 30px;
+            box-sizing: border-box;
+            transition: all 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform-style: preserve-3d;
+            backface-visibility: hidden;
+        }
+
+        /* Thiệp Chính (Màu kem ruy băng vàng) */
+        .main-card {
+            background: var(--cream);
+            color: #444;
+            z-index: 5;
+            transform: translateZ(5px);
+            border: 2px solid var(--gold);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* Thiệp Báo Hỷ (Nhỏ hơn, lệch) */
+        .sub-card {
+            background: #fff;
+            color: #444;
+            z-index: 4;
+            transform: translateZ(2px) rotate(-2deg);
+            border-left: 5px solid var(--rose-gold);
+        }
+
+        /* Bản đồ / Ghi chú (Màu Rose Gold trong suốt) */
+        .map-card {
+            background: rgba(229, 180, 162, 0.9);
+            color: #fff;
+            z-index: 3;
+            transform: translateZ(-2px) rotate(2deg);
+        }
+
+        /* --- TRẠNG THÁI TÁCH RỜI (ACTIVE) --- */
+        .invitation-wrapper.open .envelope {
+            transform: translateZ(-100px) translateY(200px) rotateX(80deg);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .invitation-wrapper.open .main-card {
+            transform: translate3d(0, -50px, 300px) rotateY(10deg);
+        }
+
+        .invitation-wrapper.open .sub-card {
+            transform: translate3d(180px, 100px, 150px) rotateZ(10deg) rotateX(-10deg);
+        }
+
+        .invitation-wrapper.open .map-card {
+            transform: translate3d(-180px, 150px, 80px) rotateZ(-15deg);
+        }
+
+        /* Animation bay lơ lửng */
+        @keyframes floating {
+            0%, 100% { transform: translateY(0) rotateY(-5deg); }
+            50% { transform: translateY(-20px) rotateY(5deg); }
+        }
+
+        /* Nội dung Text */
+        .main-card h2 { font-family: 'Great Vibes', cursive; color: var(--gold); margin: 0; font-size: 40px; }
+        .main-card p { font-size: 14px; line-height: 1.8; margin: 10px 0; }
+        .divider { width: 50px; height: 1px; background: var(--gold); margin: 15px 0; }
+
+        .btn-close {
+            position: fixed; bottom: 40px;
+            padding: 10px 25px;
+            background: transparent;
+            border: 1px solid var(--rose-gold);
+            color: var(--rose-gold);
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 100;
+            display: none;
+            transition: 0.3s;
+        }
+        .btn-close:hover { background: var(--rose-gold); color: white; }
+
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="particles" id="particles"></div>
+
+    <div class="scene">
+        <div class="invitation-wrapper" id="invitation">
+            <div class="envelope"></div>
+
+            <div class="card main-card">
+                <p>Mời bạn đến dự tiệc cưới của</p>
+                <h2>Mỹ & Ly</h2>
+                <div class="divider"></div>
+                <p>SỰ HIỆN DIỆN CỦA BẠN<br>LÀ NIỀM VINH HẠNH CỦA GIA ĐÌNH</p>
+                <p style="font-size: 12px; margin-top: 20px;">20 . 12 . 2015</p>
+            </div>
+
+            <div class="card sub-card">
+                <h3 style="color: var(--rose-gold);">SAVE THE DATE</h3>
+                <p>Trân trọng kính mời quý khách đến chia vui cùng gia đình chúng tôi tại: Trung tâm Hội nghị ABC.</p>
+            </div>
+
+            <div class="card map-card">
+                <h3>SƠ ĐỒ ĐƯỜNG ĐI</h3>
+                <div style="width:100%; height:120px; background: rgba(255,255,255,0.2); border-radius: 5px; display:flex; align-items:center; justify-content:center;">
+                    [Bản đồ in sắc nét]
+                </div>
+                <p style="font-size: 12px;">Hotline hỗ trợ: 0337.663.113</p>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn-close" id="closeBtn">Xếp thiệp vào bao</button>
+
+    <script>
+        const inv = document.getElementById('invitation');
+        const closeBtn = document.getElementById('closeBtn');
+
+        // Mở thiệp
+        inv.addEventListener('click', () => {
+            inv.classList.add('open');
+            closeBtn.style.display = 'block';
+        });
+
+        // Đóng thiệp
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            inv.classList.remove('open');
+            closeBtn.style.display = 'none';
+        });
+
+        // Tạo hiệu ứng hạt bụi vàng ngẫu nhiên
+        const particleCount = 40;
+        const container = document.getElementById('particles');
+        for(let i=0; i<particleCount; i++) {
+            const p = document.createElement('div');
+            p.style.position = 'absolute';
+            p.style.width = '2px';
+            p.style.height = '2px';
+            p.style.background = 'gold';
+            p.style.borderRadius = '50%';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.top = Math.random() * 100 + '%';
+            p.style.opacity = Math.random();
+            p.style.filter = 'blur(1px)';
+            p.style.animation = `floatParticle ${Math.random()*5 + 5}s linear infinite`;
+            container.appendChild(p);
+        }
+
+        // Keyframe cho hạt bụi bay
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes floatParticle {
+                0% { transform: translateY(0) translateX(0); opacity: 0; }
+                50% { opacity: 1; }
+                100% { transform: translateY(-100vh) translateX(${Math.random()*50 - 25}px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

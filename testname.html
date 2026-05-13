@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sắc Màu Name Card 3D Showcase</title>
+    <style>
+        :root {
+            --primary: #2D5A27; /* Màu xanh Sắc Màu */
+            --accent: #d35400;  /* Màu cam Sắc Màu */
+            --bg: #1a1a1a;
+            --card-w: 320px;
+            --card-h: 180px;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background: radial-gradient(circle at center, #333 0%, #000 100%);
+            color: #fff;
+            font-family: 'Times New Roman', Times, serif;
+            display: flex; flex-direction: column; align-items: center;
+            height: 100vh; overflow: hidden;
+        }
+
+        header { text-align: center; margin-top: 20px; z-index: 100; }
+        h1 { margin: 0; font-size: 28px; text-transform: uppercase; letter-spacing: 2px; }
+        p.subtitle { margin: 5px 0 20px; color: #aaa; font-style: italic; }
+
+        /* VÙNG CHỨA PHỐI CẢNH 3D CHÍNH */
+        .unboxing-area {
+            perspective: 2500px; /* Độ sâu phối cảnh */
+            width: 100%; flex: 1;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+
+        /* CONTAINER BẢO TOÀN 3D CHO CẢ HỘP VÀ CARD */
+        .box-and-cards-container {
+            position: relative;
+            transform-style: preserve-3d; /* QUAN TRỌNG: Giữ các thành phần 3D */
+            transform: rotateX(60deg) rotateZ(-30deg) translateY(100px); /* Góc nhìn isometric ban đầu */
+            transition: transform 1s ease-in-out;
+            cursor: pointer;
+        }
+
+        /* Khi được click (active class), container chính sẽ phẳng lại một chút để xem rõ hơn */
+        .box-and-cards-container.separated {
+            transform: rotateX(20deg) rotateZ(0deg) translateY(-100px) translateZ(200px);
+        }
+
+        /* --- 1. HIỂU THỊ HỘP ĐỰNG --- */
+        .card-box {
+            position: absolute;
+            width: calc(var(--card-w) + 20px);
+            height: calc(var(--card-h) + 20px);
+            background: #222;
+            border: 4px solid var(--primary);
+            border-radius: 10px;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+            transform: translate3d(-12px, -12px, -20px); /* Nằm dưới xấp card */
+            transform-style: preserve-3d;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .card-box::after {
+            content: "SẮC MÀU Name Card Box";
+            color: #444; font-weight: bold; font-size: 14px; text-transform: uppercase;
+        }
+
+        /* --- 2. HIỂU THỊ XẤP CARD & LOGIC TÁCH RỜI --- */
+        .card-stack {
+            position: relative;
+            width: var(--card-w); height: var(--card-h);
+            transform-style: preserve-3d;
+        }
+
+        /* Style chung cho từng Card */
+        .card {
+            position: absolute;
+            width: 100%; height: 100%;
+            border-radius: 8px;
+            background: #fff;
+            color: #000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: all 1s ease-in-out; /* Thời gian tách card */
+            backface-visibility: hidden; /* Giấu mặt sau khi quay */
+            transform-style: preserve-3d;
+        }
+
+        /* --- THIẾT KẾ NỘI DUNG NAME CARD (FRONT FACE) --- */
+        .card-front {
+            padding: 20px; box-sizing: border-box;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .card-front .logo { font-size: 20px; font-weight: bold; color: var(--primary); }
+        .card-front .name { font-size: 22px; font-weight: bold; }
+        .card-front .title { font-size: 14px; color: #555; }
+        .card-front .contact { font-size: 12px; color: #777; text-align: right; }
+
+        /* --- THIẾT KẾ NỘI DUNG NAME CARD (BACK FACE) --- */
+        .card-back {
+            background: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            transform: rotateY(180deg); /* Quay 180 độ */
+        }
+        .card-back .logo-back { font-size: 30px; font-weight: bold; color: #fff; }
+
+        /* --- LOGIC XẾP CHỒNG 3D BAN ĐẦU --- */
+        /* Card trên cùng */
+        .card-1 { transform: translateZ(10px); }
+        .card-2 { transform: translateZ(8px); }
+        .card-3 { transform: translateZ(6px); }
+        .card-4 { transform: translateZ(4px); }
+        .card-5 { transform: translateZ(2px); }
+        /* Card cuối cùng nằm sát đáy */
+        .card-6 { transform: translateZ(0px); }
+
+        /* --- LOGIC TÁCH RỜI (SCATTER) KHI ACTIVE --- */
+        /* Quy tắc tách rời cho mỗi Card khi lớp ".separated" được thêm vào container */
+        
+        /* Card 1: Bay lên, nghiêng về trước */
+        .separated .card-1 {
+            transform: translate3d(-200px, -250px, 400px) rotateX(-20deg) rotateY(-10deg);
+            transition-delay: 0s; /* Card này bay đầu tiên */
+        }
+
+        /* Card 2: Bay sang phải, quay 1 chút */
+        .separated .card-2 {
+            transform: translate3d(300px, -200px, 350px) rotateX(10deg) rotateY(185deg); /* Tách ra và quay mặt sau */
+            transition-delay: 0.1s;
+        }
+
+        /* Card 3: Bay xuống dưới, nghiêng mạnh */
+        .separated .card-3 {
+            transform: translate3d(0px, 300px, 300px) rotateX(40deg) rotateY(-5deg);
+            transition-delay: 0.2s;
+        }
+
+        /* Card 4: Bay sang trái */
+        .separated .card-4 {
+            transform: translate3d(-350px, 100px, 250px) rotateX(10deg) rotateY(10deg);
+            transition-delay: 0.3s;
+        }
+
+        /* Card 5: Bay chéo xuống phải, quay mặt sau */
+        .separated .card-5 {
+            transform: translate3d(250px, 350px, 200px) rotateX(-10deg) rotateY(175deg);
+            transition-delay: 0.4s;
+        }
+
+        /* Card 6: Ở lại gần hộp, nhưng bay lên nhẹ */
+        .separated .card-6 {
+            transform: translate3d(50px, -50px, 150px) rotateX(0deg) rotateY(0deg);
+            transition-delay: 0.5s; /* Card cuối cùng */
+        }
+
+        /* NÚT ĐIỀU KHIỂN reset */
+        .controls { position: fixed; bottom: 30px; z-index: 200; }
+        .btn-reset {
+            padding: 10px 20px; background: #333; color: #fff;
+            border: 2px solid #555; border-radius: 20px;
+            cursor: pointer; font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn-reset:hover { background: var(--accent); border-color: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Giới Thiệu Name Card 3D</h1>
+        <p class="subtitle">Bấm vào Hộp để trải nghiệm Unboxing độc đáo</p>
+    </header>
+
+    <div class="unboxing-area">
+        <div class="box-and-cards-container" id="mainContainer">
+            
+            <div class="card-box"></div>
+
+            <div class="card-stack">
+                
+                <div class="card card-1 card-front">
+                    <div class="logo">SẮC MÀU</div>
+                    <div>
+                        <div class="name">Nguyễn Văn A</div>
+                        <div class="title">Giám Đốc Kinh Doanh</div>
+                    </div>
+                    <div class="contact">0909.123.456<br>anv@sacmau.com</div>
+                </div>
+
+                <div class="card card-2">
+                    <div class="card card-front" style="padding: 0; box-shadow: none;">
+                        <div style="padding: 20px;">
+                            <div class="logo">SẮC MÀU</div>
+                            <div class="name" style="font-size: 16px; margin-top: 10px;">Dịch vụ In Ấn<br>Chuyên Nghiệp</div>
+                        </div>
+                    </div>
+                    <div class="card card-back">
+                        <div class="logo-back">S</div>
+                    </div>
+                </div>
+
+                <div class="card card-3 card-front">
+                    <div class="logo">SẮC MÀU</div>
+                    <div class="name" style="font-size: 18px;">In Hiflex - Decal</div>
+                    <div class="contact">sacmau.dongthap.com</div>
+                </div>
+
+                <div class="card card-4 card-front">
+                    <div class="logo">SẮC MÀU</div>
+                    <div class="name" style="font-size: 18px;">Ấn phẩm sự kiện</div>
+                    <div class="contact">sacmau.dongthap.com</div>
+                </div>
+
+                <div class="card card-5">
+                    <div class="card card-front" style="padding: 0; box-shadow: none;"></div>
+                    <div class="card card-back">
+                        <div class="logo-back">M</div>
+                    </div>
+                </div>
+
+                <div class="card card-6 card-front">
+                    <div class="logo">SẮC MÀU</div>
+                    <div class="name" style="font-size: 18px;">Thiết kế & Báo giá</div>
+                    <div class="contact">sacmau.dongthap.com</div>
+                </div>
+
+            </div> </div> </div>
+
+    <div class="controls">
+        <button class="btn-reset" id="resetBtn">Xếp lại Stack</button>
+    </div>
+
+    <script>
+        const mainContainer = document.getElementById('mainContainer');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Bấm vào container để tách/xếp card (toggle)
+        mainContainer.addEventListener('click', () => {
+            mainContainer.classList.toggle('separated');
+        });
+
+        // Bấm nút reset chỉ để xếp card lại
+        resetBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Ngăn sự kiện click lan đến mainContainer
+            mainContainer.classList.remove('separated');
+        });
+    </script>
+</body>
+</html>
