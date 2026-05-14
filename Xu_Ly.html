@@ -388,23 +388,27 @@
             titleTB = "🎨 ĐƠN CHỜ THIẾT KẾ"; 
             msgTB = `Đơn ${p.maDon} của khách ${tenKH} cần lên file thiết kế ngay!`; 
             roleMoi = "Thiet_Ke";
+            LinkMoi = "Thiet_Ke.html";
         } else if (p.newStatus === "Chờ in") {
             titleTB = "🖨️ ĐƠN CHỜ IN ẤN"; 
             msgTB = `Đơn ${p.maDon} của khách ${tenKH} đã xong file, cần in ngay!`; 
             roleMoi = "Nhan_Vien_In";
+            LinkMoi = "Cho_In.html";
         } else if (p.newStatus === "Chờ gia công") {
             titleTB = "🛠️ ĐƠN CHỜ GIA CÔNG"; 
             msgTB = `Đơn ${p.maDon} của khách ${tenKH} cần được gửi gia công!`; 
-            roleMoi = "Gia_Cong";
+            roleMoi = "Quan_Ly_Don";
+            LinkMoi = "Gia_Cong.html";
         } else if (p.newStatus === "Chờ thanh toán") {
             titleTB = "📦 HÀNG ĐÃ SẴN SÀNG"; 
             msgTB = `Đơn ${p.maDon} của khách ${tenKH} đã có sẵn cần thanh toán, giao hàng!`; 
             roleMoi = "Quan_Ly_Don";
+            LinkMoi = "Thanh_Toan.html";
         }
         
         if (titleTB !== "") {
             try {
-               await guiThongBaoSacMau(titleTB, msgTB, roleMoi);
+               await guiThongBaoSacMau(titleTB, msgTB, roleMoi, LinkMoi);
             } catch(etb) { console.log(etb); }
         }
 

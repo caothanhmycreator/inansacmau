@@ -128,7 +128,6 @@
           <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Chốt sổ đơn hàng & Ghi nhận công nợ</p>
         </div>
         <div class="header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <!-- Khu vực tổng tiền nợ -->
           <div id="totalDebtBox" style="background: rgba(255,255,255,0.15); padding: 8px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); color: white;">
             <span style="font-size: 11px; text-transform: uppercase; opacity: 0.8; display: block; line-height: 1;">Tổng nợ chưa thu</span>
             <span id="sumDebtF7" style="font-size: 18px; font-weight: bold;">0 đ</span>
@@ -378,11 +377,34 @@
         Swal.close();
         renderBill(idx, payMore, true);
 
-        // TÍNH NĂNG THÔNG BÁO - BÁO CHO QUẢN LÝ TÌNH TRẠNG THANH TOÁN
+        // TÍNH NĂNG THÔNG BÁO - BÁO CHO QUẢN LÝ TÌNH TRẠNG THANH TOÁN THEO YÊU CẦU MỚI
         try {
-            const tbTitle = isFullPay ? "💰 ĐÃ THANH TOÁN XONG" : "💸 GHI NHẬN CÔNG NỢ";
-            const tbMsg = `Đơn ${it.maDon} của khách ${it.khachHang} vừa thu thêm ${payMore.toLocaleString()}đ. Còn nợ: ${remainingDebt.toLocaleString()}đ.`;
-            await guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don");
+            let tbTitle = "";
+            let tbMsg = "";
+            let tbLink = "";
+            const fPay = payMore.toLocaleString('vi-VN');
+            const fDebt = remainingDebt.toLocaleString('vi-VN');
+            const hThuc = hinhThuc || "N/A"; 
+
+            if (isFullPay && giaoStatus === 'Giao') {
+                tbTitle = "💰 ĐÃ THANH TOÁN XONG";
+                tbMsg = `Đơn hàng ${it.maDon} của khách ${it.khachHang} vừa thu thêm số tiền ${fPay}đ với hình thức ${hThuc}. Đã giao hàng cho khách!`;
+                tbLink = "Quan_Tri.html";
+            } else if (!isFullPay && giaoStatus === 'Giao') {
+                tbTitle = "💸 GHI NHẬN CÔNG NỢ";
+                tbMsg = `Đơn hàng ${it.maDon} của khách ${it.khachHang} vừa thu thêm số tiền ${fPay}đ với hình thức ${hThuc}, còn lại ${fDebt}đ. Ghi nhận công nợ cho khách!`;
+                tbLink = "Cong_No.html";
+            } else if (!isFullPay && giaoStatus !== 'Giao') {
+                tbTitle = "⏳ THU THÊM TIỀN HÀNG";
+                tbMsg = `Đơn hàng ${it.maDon} của khách ${it.khachHang} vừa thu thêm số tiền ${fPay}đ với hình thức ${hThuc}, còn lại ${fDebt}đ!`;
+                tbLink = "Thanh_Toan.html";
+            } else if (isFullPay && giaoStatus !== 'Giao') {
+                tbTitle = "📦 ĐÃ THANH TOÁN ĐỦ, CHƯA GIAO HÀNG";
+                tbMsg = `Đơn hàng ${it.maDon} của khách ${it.khachHang} vừa thu thêm số tiền ${fPay}đ với hình thức ${hThuc}. Đã thu đủ, nhắc khách lấy hàng hoặc giao hàng cho khách.`;
+                tbLink = "Giao_Hang.html";
+            }
+
+            await guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", tbLink);
         } catch (etb) { console.log("Lỗi TB:", etb); }
 
         loadF7Data();

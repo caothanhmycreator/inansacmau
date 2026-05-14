@@ -249,7 +249,7 @@
 
         // TÍNH NĂNG THÔNG BÁO - BÁO CHO QUẢN LÝ ĐƠN ĐÃ GIAO XONG
         try {
-            await guiThongBaoSacMau("🚚 ĐÃ GIAO HÀNG", `Đơn ${it.maDon} của khách ${it.khachHang} đã giao thành công và hoàn tất!`, "Quan_Ly_Don");
+          await guiThongBaoSacMau("🚚 ĐÃ GIAO HÀNG", `Đơn ${it.maDon} của khách ${it.khachHang} đã giao thành công và hoàn tất!`, "Quan_Ly_Don", "Quan_Tri.html");
         } catch (etb) {
             console.log("Lỗi TB:", etb);
         }
