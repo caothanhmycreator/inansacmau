@@ -364,7 +364,7 @@
               // Nếu xóa món này là xóa sạch đơn hàng -> Xóa thu nợ và công nợ
               await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
               await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
-              try { await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã bị xóa vĩnh viễn.`, "Quan_Ly_Don", "Xu_Ly.html"); } catch(e){}
+              try { await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã bị xóa vĩnh viễn.`, "Quan_Ly_Don", "Quan_Tri.html"); } catch(e){}
           } else {
               // Cập nhật lại công nợ do tổng đơn giảm
               const tongDonMoi = remainingItems.reduce((sum, i) => sum + (Number(i.Thanh_Tien) || 0), 0);
