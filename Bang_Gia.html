@@ -20,31 +20,39 @@
     .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
 
     .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+    
+    /* Chỉnh sửa: Form nhập nằm trên 1 hàng ngang ở PC */
+    .form-grid { display: grid; grid-template-columns: 1.2fr 2fr 1fr 0.8fr 1.5fr 1.5fr; gap: 12px; align-items: start; }
+    
     .input-group { display: flex; flex-direction: column; }
     .input-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
-    .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; }
+    .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; height: 40px; box-sizing: border-box; }
     .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(211, 84, 0, 0.1); }
+    
+    /* Ổn định input file */
+    input[type="file"].input-modern { padding: 7px; font-size: 12px; }
 
     .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     
-    /* Layout 2 khung */
+    /* Layout 2 khung - Cột trái nới rộng ra để chứa 3 cột nhóm */
     .split-layout { display: flex; gap: 20px; align-items: flex-start; }
-    .left-pane { flex: 0 0 360px; position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; margin-top: 0 !important; }
+    .left-pane { flex: 0 0 420px; position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; margin-top: 0 !important; }
     .right-pane { flex: 1; min-width: 0; margin-top: 0 !important; }
     
     /* Scrollbar cho left-pane */
     .left-pane::-webkit-scrollbar { width: 6px; }
     .left-pane::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
 
-    /* Thiết kế thẻ vuông Nhóm (Group Grid) - Kích thước bằng nhau */
-    .group-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-    .group-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px 10px; text-align: center; cursor: pointer; transition: 0.2s; border-bottom: 4px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1; }
+    /* Thiết kế thẻ vuông Nhóm chứa được 3 hàng dọc, kích thước nhỏ hơn 20% */
+    .group-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .group-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 5px; text-align: center; cursor: pointer; transition: 0.2s; border-bottom: 4px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1; }
     .group-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); border-color: var(--accent); border-bottom-color: var(--accent); }
     .group-card.active { border-color: var(--accent); border-bottom-color: var(--accent); background: #fff5eb; }
-    .group-icon { font-size: 28px; margin-bottom: 8px; }
-    .group-title { font-weight: bold; color: #2c3e50; font-size: 13px; line-height: 1.3; margin-bottom: 5px;}
-    .group-count { font-size: 11px; color: #7f8c8d; background: #e2e8f0; padding: 3px 8px; border-radius: 10px;}
+    .group-icon { font-size: 22px; margin-bottom: 5px; }
+    
+    /* ĐÃ SỬA: Đổi tên class group-title thành price-group-title để không đụng Sidebar */
+    .price-group-title { font-weight: bold; color: #2c3e50; font-size: 11.5px; line-height: 1.2; margin-bottom: 4px; text-align: center; }
+    .group-count { font-size: 10px; color: #7f8c8d; background: #e2e8f0; padding: 2px 6px; border-radius: 8px;}
 
     /* Bảng dữ liệu */
     .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
@@ -55,20 +63,19 @@
     
     /* Nhãn giá cho nổi bật */
     .price-badge-le { background: #fee2e2; color: #b91c1c; padding: 5px 10px; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 13px; border: 1px solid #fecaca; }
-    .price-badge-si { background: #dcfce7; color: #15803d; padding: 5px 10px; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 13px; border: 1px solid #bbf7d0; }
 
     .img-preview { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
     .img-preview:hover { transform: scale(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     .qr-preview { width: 45px; height: 45px; cursor: pointer; background: white; padding: 3px; border: 1px solid #eee; border-radius: 6px; }
     
     /* Nút bấm */
-    .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.3s; flex: 1; }
+    .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; flex: 1; }
     .btn-submit:hover { background: #a04000; transform: translateY(-2px); }
     
-    .btn-import-kho { background: #2D5A27; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.3s; flex: 1; }
+    .btn-import-kho { background: #2D5A27; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; flex: 1; }
     .btn-import-kho:hover { background: #1e3f1a; transform: translateY(-2px); }
     
-    .btn-import-dm { background: #2980b9; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.3s; flex: 1; }
+    .btn-import-dm { background: #2980b9; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; flex: 1; }
     .btn-import-dm:hover { background: #1f618d; transform: translateY(-2px); }
 
     .btn-container { display: flex; gap: 15px; margin-top: 20px; width: 100%; flex-wrap: wrap; }
@@ -95,18 +102,18 @@
             padding: 8px 12px; border: none; border-radius: 4px;
         }
 
-        .header-top { flex-direction: column; align-items: flex-start !important; gap: 15px; }
-        .header-top button { width: 100%; }
+        .header-top { flex-direction: column; align-items: flex-start !important; gap: 10px; }
+        .header-title-box { flex-direction: column; align-items: flex-start !important; gap: 10px; }
+        .header-top button { width: 100%; margin-left: 0 !important; }
 
         .form-card { padding: 15px; }
         .form-grid { grid-template-columns: 1fr; }
-        .input-group { grid-column: span 1 !important; }
         .btn-container { flex-direction: column; gap: 10px; }
 
         /* Chuyển 2 khung thành 1 cột */
         .split-layout { flex-direction: column; }
         .left-pane { flex: none; width: 100%; position: static; max-height: none; overflow-y: visible; }
-        .group-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+        .group-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
 
         /* Biến bảng thành Card để tra cứu giá dễ dàng */
         .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; }
@@ -133,42 +140,38 @@
 <body>
 
   <div class="main-content">
-    <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <div>
-        <h2 style="margin:0; color: var(--accent);">🏷️ QUẢN LÝ BẢNG GIÁ SẮC MÀU</h2>
-        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Cấu trúc chuẩn từ Kho - Đồng bộ mã sản phẩm</p>
+    <div class="header-top" style="margin-bottom: 20px;">
+      <div class="header-title-box" style="display: flex; align-items: center;">
+        <h2 style="margin:0; color: var(--accent); display: inline-block;">🏷️ QUẢN LÝ BẢNG GIÁ SẮC MÀU</h2>
+        <button onclick="getToken()" style="margin-left: 15px; padding:8px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid var(--accent); background:white; color:var(--accent); transition: 0.2s;">🔐 KẾT NỐI DRIVE</button>
       </div>
-      <button onclick="getToken()" style="padding:10px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid var(--accent); background:white; color:var(--accent); transition: 0.2s;">🔐 KẾT NỐI DRIVE</button>
+      <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Cấu trúc chuẩn từ Kho - Đồng bộ mã sản phẩm</p>
     </div>
 
     <div class="form-card">
       <div class="form-grid">
         <div class="input-group">
           <label>Nhóm hàng</label>
-          <input type="text" id="f-nhom" class="input-modern" placeholder="Vd: In Bạt, Standee...">
+          <input type="text" id="f-nhom" class="input-modern" placeholder="Vd: In Bạt...">
         </div>
         <div class="input-group">
           <label>Tên sản phẩm *</label>
-          <input type="text" id="f-ten" class="input-modern" placeholder="Tên chi tiết sản phẩm...">
+          <input type="text" id="f-ten" class="input-modern" placeholder="Tên chi tiết SP...">
         </div>
         <div class="input-group">
           <label>Giá lẻ (VNĐ)</label>
           <input type="text" id="f-gia-ban" class="input-modern" value="0" oninput="formatCurrency(this)">
         </div>
         <div class="input-group">
-          <label>Giá sỉ / Thợ (VNĐ)</label>
-          <input type="text" id="f-gia-si" class="input-modern" value="0" oninput="formatCurrency(this)">
-        </div>
-        <div class="input-group">
           <label>Đơn vị tính</label>
-          <input type="text" id="f-dvt" class="input-modern" placeholder="Vd: m2, Cái, Bộ...">
+          <input type="text" id="f-dvt" class="input-modern" placeholder="Vd: Cái, Bộ...">
         </div>
         <div class="input-group">
           <label>Mô tả / Quy cách</label>
-          <input type="text" id="f-mota" class="input-modern" placeholder="Ghi chú quy cách...">
+          <input type="text" id="f-mota" class="input-modern" placeholder="Ghi chú...">
         </div>
-        <div class="input-group" style="grid-column: span 2;">
-          <label>Hình ảnh mẫu (Chọn file)</label>
+        <div class="input-group">
+          <label>Hình ảnh mẫu</label>
           <input type="file" id="f-hinh" class="input-modern" accept="image/*">
         </div>
       </div>
@@ -202,7 +205,6 @@
   </div>
 
   <script>
-    // TOÀN BỘ LOGIC JS GỐC GIỮ NGUYÊN 100% (Chỉ thêm logic render 2 khung thay cho accordion)
     const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
     const FOLDER_ID = "1ao2E97b8YdawmGb23c8U_6u7N65hTrVN"; 
     let accessToken = localStorage.getItem('drive_access_token');
@@ -232,11 +234,10 @@
     }
     function parseNum(s) { return Number(s.toString().replace(/\./g, "")) || 0; }
 
-    // Kích hoạt animation slide-in
     function triggerSlideEffect() {
       const container = document.getElementById('price-list-container');
       container.classList.remove('slide-effect');
-      void container.offsetWidth; // Trigger reflow
+      void container.offsetWidth; 
       container.classList.add('slide-effect');
     }
 
@@ -293,7 +294,7 @@
             Nhom_Hang: nhom, 
             Ten_Hang: ten, 
             Gia_Ban: parseNum(document.getElementById('f-gia-ban').value),
-            Gia_Si: parseNum(document.getElementById('f-gia-si').value),
+            Gia_Si: 0, // Bỏ giá sỉ
             Don_Vi_Tinh: document.getElementById('f-dvt').value,
             Mo_Ta: document.getElementById('f-mota').value,
             Hinh_Anh: driveLink,
@@ -346,20 +347,19 @@
         return `
           <div class="group-card" id="card-${encodeURIComponent(nhom)}" onclick="selectGroup('${nhom.replace(/'/g, "\\'")}')">
             <div class="group-icon">📂</div>
-            <div class="group-title">${nhom}</div>
+            <div class="price-group-title">${nhom}</div>
             <div class="group-count">${groupedData[nhom].length} sản phẩm</div>
           </div>
         `;
       }).join('');
       
       container.innerHTML = html;
-      container.style.display = 'grid'; // Hiển thị lưới nhóm
+      container.style.display = 'grid'; 
     }
 
     window.selectGroup = function(nhom) {
       currentActiveGroup = nhom;
       
-      // Update UI active card
       document.querySelectorAll('.group-card').forEach(el => el.classList.remove('active'));
       let cardEl = document.getElementById(`card-${encodeURIComponent(nhom)}`);
       if(cardEl) cardEl.classList.add('active');
@@ -402,7 +402,6 @@
               </td>
               <td data-label="ĐVT"><span style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:12px;">${item.Don_Vi_Tinh || '-'}</span></td>
               <td data-label="Giá lẻ"><span class="price-badge-le">${(item.Gia_Ban || 0).toLocaleString()}</span></td>
-              <td data-label="Giá sỉ"><span class="price-badge-si">${(item.Gia_Si || 0).toLocaleString()}</span></td>
               <td data-label="Thao tác" style="text-align: center;">
                 <button onclick='editPrice(${JSON.stringify(item)})' style="color:#2980b9; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px; font-size:13px;">SỬA</button> | 
                 <button onclick="deletePrice(${item.Id})" style="color:#e74c3c; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px; font-size:13px;">XÓA</button>
@@ -417,8 +416,7 @@
                 <th style="width:70px; text-align:center;">Ảnh</th>
                 <th>Tên Sản Phẩm & Quy Cách</th>
                 <th style="width:80px;">ĐVT</th>
-                <th style="width:70px;">Giá Lẻ</th>
-                <th style="width:20px;">Giá Sỉ</th>
+                <th style="width:90px;">Giá Lẻ</th>
                 <th style="width:120px; text-align:center;">Thao tác</th>
             </tr></thead>
             <tbody>${rows}</tbody>
@@ -431,13 +429,11 @@
         const cardsContainer = document.getElementById('group-cards-container');
         
         if (query === "") {
-            // Quay lại view group
             cardsContainer.style.display = 'grid';
             if(currentActiveGroup) selectGroup(currentActiveGroup);
             return;
         }
 
-        // Đang search: Ẩn group card, show all matching
         cardsContainer.style.display = 'none';
         document.getElementById('current-group-title').innerHTML = `KẾT QUẢ TÌM KIẾM: <span style="color:var(--accent);">${query}</span>`;
 
@@ -456,15 +452,14 @@
     async function editPrice(item) {
       const { value: formValues } = await Swal.fire({
         title: 'CẬP NHẬT BÁO GIÁ',
-        width: '750px',
+        width: '650px',
         html: `
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; font-size: 13px; padding: 10px;">
             <div><label><b>Nhóm hàng:</b></label><input id="e-nhom" class="swal2-input" value="${item.Nhom_Hang}" style="width:100%;"></div>
             <div><label><b>Tên hàng:</b></label><input id="e-ten" class="swal2-input" value="${item.Ten_Hang}" style="width:100%;"></div>
             <div><label><b>Giá lẻ:</b></label><input id="e-gia-ban" class="swal2-input" value="${(item.Gia_Ban || 0).toLocaleString().replace(/,/g, '.')}" oninput="formatCurrency(this)" style="width:100%;"></div>
-            <div><label><b>Giá sỉ:</b></label><input id="e-gia-si" class="swal2-input" value="${(item.Gia_Si || 0).toLocaleString().replace(/,/g, '.')}" oninput="formatCurrency(this)" style="width:100%;"></div>
             <div><label><b>Đơn vị tính:</b></label><input id="e-dvt" class="swal2-input" value="${item.Don_Vi_Tinh || ''}" style="width:100%;"></div>
-            <div><label><b>Mô tả:</b></label><input id="e-mota" class="swal2-input" value="${item.Mo_Ta || ''}" style="width:100%;"></div>
+            <div style="grid-column: span 2;"><label><b>Mô tả / Quy cách:</b></label><input id="e-mota" class="swal2-input" value="${item.Mo_Ta || ''}" style="width:100%;"></div>
             <div style="grid-column: span 2;">
                 <label><b>Thay đổi ảnh mẫu:</b></label>
                 <input type="file" id="e-hinh" class="swal2-file" accept="image/*" style="width:100%;">
@@ -485,7 +480,7 @@
             Nhom_Hang: document.getElementById('e-nhom').value,
             Ten_Hang: document.getElementById('e-ten').value,
             Gia_Ban: parseNum(document.getElementById('e-gia-ban').value),
-            Gia_Si: parseNum(document.getElementById('e-gia-si').value),
+            Gia_Si: 0, // Bỏ giá sỉ
             Don_Vi_Tinh: document.getElementById('e-dvt').value,
             Mo_Ta: document.getElementById('e-mota').value,
             Hinh_Anh: newLink
@@ -510,7 +505,7 @@
     }
 
     // =========================================================================
-    // TÍNH NĂNG 1: NHẬP GIÁ TỪ KHO VẬT TƯ (Đã bổ sung hiển thị hình ảnh)
+    // TÍNH NĂNG 1: NHẬP GIÁ TỪ KHO VẬT TƯ (Bỏ Giá Sỉ)
     // =========================================================================
     async function openKhoImportPopup() {
         Swal.fire({ title: 'Đang tải dữ liệu Kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -548,15 +543,14 @@
                         <small style="color: gray;">Mã kho: ${vt.Ma_QR}</small>
                     </td>
                     <td style="padding: 10px; text-align: center;">${vt.Quy_Cach || '-'}</td>
-                    <td style="padding: 10px;"><input type="text" id="imp-ban-${index}" class="swal2-input" placeholder="Giá lẻ" style="width: 100%; margin: 0; font-size: 13px;" oninput="formatCurrency(this)"></td>
-                    <td style="padding: 10px;"><input type="text" id="imp-si-${index}" class="swal2-input" placeholder="Giá sỉ" style="width: 100%; margin: 0; font-size: 13px;" oninput="formatCurrency(this)"></td>
+                    <td style="padding: 10px;"><input type="text" id="imp-ban-${index}" class="swal2-input" placeholder="Giá lẻ..." style="width: 100%; margin: 0; font-size: 13px;" oninput="formatCurrency(this)"></td>
                 </tr>
                 `;
             }).join('');
 
             const { value: newDataToInsert, isConfirmed } = await Swal.fire({
                 title: 'ĐỒNG BỘ GIÁ TỪ KHO',
-                width: '800px',
+                width: '700px',
                 html: `
                     <div style="max-height: 400px; overflow-y: auto;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
@@ -566,13 +560,12 @@
                                     <th style="padding: 10px; text-align: left;">Tên Vật Tư</th>
                                     <th style="padding: 10px; text-align: center;">ĐVT</th>
                                     <th style="padding: 10px;">Giá Lẻ (Nhập tay)</th>
-                                    <th style="padding: 10px;">Giá Sỉ (Nhập tay)</th>
                                 </tr>
                             </thead>
                             <tbody>${rowsHtml}</tbody>
                         </table>
                     </div>
-                    <p style="color: red; font-size: 12px; margin-top: 10px; text-align: left;">* Lưu ý: Chỉ những dòng có nhập Giá Lẻ hoặc Giá Sỉ mới được lưu vào hệ thống.</p>
+                    <p style="color: red; font-size: 12px; margin-top: 10px; text-align: left;">* Lưu ý: Chỉ những dòng có nhập Giá Lẻ mới được lưu vào hệ thống.</p>
                 `,
                 showCancelButton: true,
                 confirmButtonText: 'LƯU TẤT CẢ VÀO BẢNG GIÁ',
@@ -582,20 +575,17 @@
                     const data = [];
                     for (let i = 0; i < vatTuMoi.length; i++) {
                         const elBan = document.getElementById(`imp-ban-${i}`);
-                        const elSi = document.getElementById(`imp-si-${i}`);
-                        
-                        if (!elBan || !elSi) continue;
+                        if (!elBan) continue;
 
                         const giaBan = parseNum(elBan.value);
-                        const giaSi = parseNum(elSi.value);
                         
-                        if (giaBan > 0 || giaSi > 0) {
+                        if (giaBan > 0) {
                             let maQRSanPham = "SMP-" + Math.random().toString(36).substr(2, 6).toUpperCase();
                             data.push({
                                 Nhom_Hang: vatTuMoi[i].Nhom_Hang,
                                 Ten_Hang: vatTuMoi[i].Ten_Hang,
                                 Gia_Ban: giaBan,
-                                Gia_Si: giaSi,
+                                Gia_Si: 0,
                                 Don_Vi_Tinh: vatTuMoi[i].Quy_Cach || 'Cái', 
                                 Mo_Ta: vatTuMoi[i].Kich_Thuoc ? `KT: ${vatTuMoi[i].Kich_Thuoc}` : '',
                                 Hinh_Anh: vatTuMoi[i].Hinh_Anh,
@@ -643,24 +633,20 @@
     }
 
     // =========================================================================
-    // TÍNH NĂNG 2: CHUẨN HÓA DỮ LIỆU TỪ DANH MỤC SẢN PHẨM (DM_SanPham)
-    // LƯU TỪNG DÒNG
+    // TÍNH NĂNG 2: CHUẨN HÓA DỮ LIỆU TỪ DANH MỤC SẢN PHẨM (Bỏ Giá Sỉ)
     // =========================================================================
     async function openDMImportPopup() {
-        Swal.fire({ title: 'Đang tải Danh mục Sản phẩm...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'Đang tải Danh mục...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
 
         try {
-            // Lấy danh sách DM_SanPham
             const resDM = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_SanPham?select=*`, { headers: h });
             const dataDM = await resDM.json();
 
-            // Lấy danh sách Bảng Giá hiện tại để đối chiếu (Dựa theo Tên)
             const resGia = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=Ten_Hang`, { headers: h });
             const dataGia = await resGia.json();
             const tenDaCoTrongGia = dataGia.map(item => item.Ten_Hang ? item.Ten_Hang.toLowerCase().trim() : '');
 
-            // Lọc các sản phẩm chưa có trong Bảng Giá và chống trùng lặp nội bộ
             const spChuaCoGia = dataDM.filter(sp => {
                 if(!sp.Ten_Hang) return false;
                 return !tenDaCoTrongGia.includes(sp.Ten_Hang.toLowerCase().trim());
@@ -680,10 +666,8 @@
                 return Swal.fire('Thông báo', 'Tất cả sản phẩm trong Danh Mục đều đã có trên Bảng Giá chuẩn.', 'info');
             }
 
-            // Tạo giao diện
             let rowsHtml = uniqueSpChuaCoGia.map((sp, index) => {
                 const giaLeStr = Number(sp.Gia_Le || 0).toLocaleString("vi-VN");
-                const giaSiStr = Number(sp.Gia_Si || 0).toLocaleString("vi-VN");
                 let spId = sp.id || sp.Id || '';
                 
                 return `
@@ -693,14 +677,13 @@
                     </td>
                     <td style="padding: 10px; text-align: left; max-width: 200px;">
                         <b style="color: #2980b9;">${sp.Ten_Hang}</b><br>
-                        <small style="color: gray;">Gốc: Lẻ ${giaLeStr}đ - Sỉ ${giaSiStr}đ</small><br>
+                        <small style="color: gray;">Gốc: ${giaLeStr}đ</small><br>
                         <div style="display: flex; gap: 5px; margin-top: 5px;">
                             <input type="text" id="dm-dvt-${index}" class="swal2-input" value="${sp.DVT || 'Cái'}" placeholder="ĐVT..." style="width: 30%; margin: 0; font-size: 12px; height: 30px;">
-                            <input type="text" id="dm-mota-${index}" class="swal2-input" placeholder="Nhập mô tả (Không bắt buộc)..." style="width: 70%; margin: 0; font-size: 12px; height: 30px;">
+                            <input type="text" id="dm-mota-${index}" class="swal2-input" placeholder="Mô tả..." style="width: 70%; margin: 0; font-size: 12px; height: 30px;">
                         </div>
                     </td>
                     <td style="padding: 10px; vertical-align: top;"><input type="text" id="dm-ban-${index}" class="swal2-input" value="${giaLeStr}" style="width: 100%; margin: 0; font-size: 13px; text-align:right;" oninput="formatCurrency(this)"></td>
-                    <td style="padding: 10px; vertical-align: top;"><input type="text" id="dm-si-${index}" class="swal2-input" value="${giaSiStr}" style="width: 100%; margin: 0; font-size: 13px; text-align:right;" oninput="formatCurrency(this)"></td>
                     <td style="padding: 10px; text-align: center; vertical-align: top;">
                         <input type="file" id="dm-file-${index}" accept="image/*" style="font-size: 11px; max-width: 120px;">
                         <input type="hidden" id="dm-ten-${index}" value="${sp.Ten_Hang}">
@@ -714,7 +697,7 @@
 
             Swal.fire({
                 title: 'CHUẨN HÓA TỪ DANH MỤC',
-                width: '1100px',
+                width: '1000px',
                 html: `
                     <div style="max-height: 500px; overflow-y: auto;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
@@ -722,8 +705,7 @@
                                 <tr>
                                     <th style="padding: 12px 10px; width: 120px;">Nhóm hàng</th>
                                     <th style="padding: 12px 10px; text-align: left;">Sản phẩm / Mô tả</th>
-                                    <th style="padding: 12px 10px; width: 100px;">Giá Bán mới</th>
-                                    <th style="padding: 12px 10px; width: 100px;">Giá Sỉ mới</th>
+                                    <th style="padding: 12px 10px; width: 120px;">Giá Bán mới</th>
                                     <th style="padding: 12px 10px; text-align: center; width: 130px;">Tải ảnh Drive</th>
                                     <th style="padding: 12px 10px; text-align: center; width: 70px;">Thao tác</th>
                                 </tr>
@@ -744,21 +726,19 @@
         }
     }
 
-    // Hàm gọi ngầm khi nhấn nút Lưu từng dòng
     window.saveSingleItemFromDM = async function(index) {
         const btn = document.getElementById(`dm-btn-${index}`);
         const nhom = document.getElementById(`dm-nhom-${index}`).value.trim() || "SẢN PHẨM KHÁC";
         const ten = document.getElementById(`dm-ten-${index}`).value.trim();
         const giaBan = parseNum(document.getElementById(`dm-ban-${index}`).value);
-        const giaSi = parseNum(document.getElementById(`dm-si-${index}`).value);
         const dvt = document.getElementById(`dm-dvt-${index}`).value;
         const mota = document.getElementById(`dm-mota-${index}`).value;
         const fileInput = document.getElementById(`dm-file-${index}`);
 
-        if (giaBan <= 0 && giaSi <= 0) {
+        if (giaBan <= 0) {
             Swal.fire({
                 toast: true, position: 'top-end', icon: 'warning',
-                title: 'Nhập giá bán hoặc giá sỉ!', showConfirmButton: false, timer: 2000
+                title: 'Vui lòng nhập giá bán lớn hơn 0!', showConfirmButton: false, timer: 2000
             });
             return;
         }
@@ -777,7 +757,7 @@
                 Nhom_Hang: nhom,
                 Ten_Hang: ten,
                 Gia_Ban: giaBan,
-                Gia_Si: giaSi,
+                Gia_Si: 0,
                 Don_Vi_Tinh: dvt,
                 Mo_Ta: mota,
                 Hinh_Anh: driveLink,
@@ -809,13 +789,11 @@
             btn.innerText = "Đã lưu ✔";
             btn.style.background = "#27ae60";
             
-            // Xóa dòng sau 1 giây cho gọn bảng
             setTimeout(() => {
                 const row = document.getElementById(`dm-row-${index}`);
                 if(row) row.style.display = 'none';
             }, 1000);
 
-            // Cập nhật lại danh sách bảng giá bên ngoài ngầm
             loadPriceList();
 
         } catch (error) {
@@ -829,7 +807,6 @@
         }
     }
 
-    // Hàm gọi ngầm khi nhấn nút Xóa khỏi danh mục
     window.deleteItemFromDM = async function(index, id) {
         if (!id) {
             alert("Không tìm thấy ID sản phẩm để xóa!");
@@ -850,7 +827,6 @@
                 headers: h
             });
 
-            // Fallback nếu ID dùng viết hoa (Id)
             if (!response.ok) {
                 response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_SanPham?Id=eq.${id}`, {
                     method: 'DELETE',
