@@ -1,6 +1,6 @@
 // sidebar_loader.js
 (function() {
-    // 1. Chỉ nạp thư viện nếu chưa có
+    // 1. Chỉ nạp thư viện OneSignal nếu chưa có
     if (!document.getElementById('onesignal-sdk')) {
         const osScript = document.createElement('script');
         osScript.id = 'onesignal-sdk';
@@ -9,35 +9,30 @@
         document.head.appendChild(osScript);
     }
 
-    // Lấy thông tin user hiện tại để gán vào OneSignal
     const user = JSON.parse(localStorage.getItem('currentUser'));
 
-    // 2. Khởi tạo OneSignal và hoàn thiện tính năng thông báo
+    // 2. Khởi tạo OneSignal
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(oneSignal) {
-        // Kiểm tra xem đã khởi tạo chưa (v16 dùng .initialized)
         if (!oneSignal.initialized) {
             await oneSignal.init({
                 appId: "e06b8b48-2adf-4970-b2b3-9b509e5357d8",
                 allowLocalhostAsSecureOrigin: true,
             });
         }
-
-        // Kích hoạt Slidedown xin quyền gửi thông báo (đặc biệt quan trọng cho web app trên điện thoại)
         await oneSignal.Slidedown.promptPush();
-
-        // Định danh người dùng để gửi thông báo chính xác cho từng nhân viên/bộ phận
-        if (user && user.name) {
-            await oneSignal.login(user.name); // Liên kết thiết bị này với tên nhân viên
+        if (user && (user.Ho_Ten || user.name)) {
+            const loginName = user.Ho_Ten || user.name;
+            await oneSignal.login(loginName);
             await oneSignal.User.addTags({
-                role: user.role || "N/A"
+                role: user.Vai_Tro || user.role || "N/A"
             });
         }
     });
 })();
 
 /**
- * SIDEBAR LOADER - BẢN KHÔI PHỤC LOGIC CỦA MỸ
+ * SIDEBAR LOADER - PHIÊN BẢN TÍCH HỢP THÔNG BÁO
  */
 (function() {
     function initSidebar() {
@@ -49,7 +44,6 @@
         const userName = user.Ho_Ten || user.name || "Người dùng";
         const userRole = user.Vai_Tro || user.role || "N/A";
         
-        // KHÔI PHỤC LOGIC QUYỀN CỦA MỸ (Có user.modules)
         const moduleString = user.Danh_Sach_Module || user.modules || "";
         const myModules = moduleString.split(',').map(s => s.trim());
 
@@ -58,6 +52,23 @@
             <div id="sm-sidebar" class="sm-sidebar">
                 <div class="sm-header">
                     <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" width="60" onclick="window.location.href='index.html'" style="cursor:pointer">
+                    
+                    <!-- NÚT CHUÔNG THÔNG BÁO -->
+                    <div class="sm-noti-wrapper">
+                        <div class="sm-bell-btn" onclick="toggleNotiPopup()">
+                            🔔 <span id="noti-badge" class="sm-badge" style="display:none">0</span>
+                        </div>
+                        <div id="sm-noti-popup" class="sm-noti-popup">
+                            <div class="noti-header">
+                                📢 THÔNG BÁO 
+                                <span onclick="toggleNotiPopup()" style="float:right; cursor:pointer; opacity:0.5">✕</span>
+                            </div>
+                            <div id="noti-list" class="noti-list">
+                                <div style="padding:20px; text-align:center; font-size:12px; color:#999;">Đang tải...</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <span id="user-display" class="sm-user-info">${userName} (${userRole})</span>
                 </div>
 
@@ -113,29 +124,29 @@
                         </div>
                     </div>
 
-                        <div class="group" id="admin-only-group">
-                            <div class="group-title" onclick="this.parentElement.classList.toggle('active')">🛡️ QUẢN TRỊ <span>▼</span></div>
-                            <div class="group-items">
-                                <a href="Tien_Do.html" id="Quan_Ly_Tien_Do" class="nav-link">📈 Tiến độ chung</a>
-                                <a href="BC_Cong_Viec.html" id="Bao_Cao_Cong_Viec" class="nav-link">📝 Báo cáo công việc</a>
-                                <a href="Quan_Tri.html" id="Quan_Tri_Don_Hang" class="nav-link">🗂️ Quản trị đơn</a>
-                                <a href="Khach_Hang.html" id="Khach_Hang" class="nav-link">👥 Khách hàng</a>
-                                <a href="Admin_Quan_Ly_Nhan_Su.html" id="Admin_Quan_Ly_Nhan_Su" class="nav-link">⚙️ Quản lý nhân sự</a>
-                            </div>
+                    <div class="group" id="admin-only-group">
+                        <div class="group-title" onclick="this.parentElement.classList.toggle('active')">🛡️ QUẢN TRỊ <span>▼</span></div>
+                        <div class="group-items">
+                            <a href="Tien_Do.html" id="Quan_Ly_Tien_Do" class="nav-link">📈 Tiến độ chung</a>
+                            <a href="BC_Cong_Viec.html" id="Bao_Cao_Cong_Viec" class="nav-link">📝 Báo cáo công việc</a>
+                            <a href="Quan_Tri.html" id="Quan_Tri_Don_Hang" class="nav-link">🗂️ Quản trị đơn</a>
+                            <a href="Khach_Hang.html" id="Khach_Hang" class="nav-link">👥 Khách hàng</a>
+                            <a href="Admin_Quan_Ly_Nhan_Su.html" id="Admin_Quan_Ly_Nhan_Su" class="nav-link">⚙️ Quản lý nhân sự</a>
                         </div>
+                    </div>
               
-                <div class="group">
-    <div class="group-title" onclick="this.parentElement.classList.toggle('active')">📄 VĂN BẢN <span>▼</span></div>
-    <div class="group-items">
-        <a href="Bao_Gia.html" id="Bao_Gia" class="nav-link">📋 Báo Giá</a>
-        <a href="Hop_Dong.html" id="Hop_Dong" class="nav-link">✍️ Hợp đồng - Nghiệm thu</a>
-        <a href="Hoa_Don.html" id="Hoa_Don_Dien_Tu" class="nav-link">🧾 Hóa đơn điện tử</a>
-    </div>
-</div>
-  </div>
+                    <div class="group">
+                        <div class="group-title" onclick="this.parentElement.classList.toggle('active')">📄 VĂN BẢN <span>▼</span></div>
+                        <div class="group-items">
+                            <a href="Bao_Gia.html" id="Bao_Gia" class="nav-link">📋 Báo Giá</a>
+                            <a href="Hop_Dong.html" id="Hop_Dong" class="nav-link">✍️ Hợp đồng - Nghiệm thu</a>
+                            <a href="Hoa_Don.html" id="Hoa_Don_Dien_Tu" class="nav-link">🧾 Hóa đơn điện tử</a>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="sm-logout-box">
-                    <button onclick="logoutAction()" style="width:100%; padding:8px; background:#c0392b; color:white; border:none; cursor:pointer; border-radius:4px; font-weight:bold;">🚪 Đăng xuất</button>
+                    <button onclick="logoutAction()">🚪 Đăng xuất</button>
                 </div>
             </div>
             <button class="sm-mobile-btn" onclick="toggleMobileSidebar()">☰ MENU</button>
@@ -143,38 +154,106 @@
 
         if (document.body) {
             document.body.insertAdjacentHTML('afterbegin', sidebarHTML);
-            
             myModules.forEach(id => {
                 const el = document.getElementById(id);
-                if (el) {
-                    el.style.display = 'block';
-                }
+                if (el) el.style.display = 'block';
             });
 
             document.querySelectorAll('.sm-sidebar .group').forEach(g => {
-                if (g.querySelector('.always-show')) return;
-                
                 const hasVisibleLink = Array.from(g.querySelectorAll('.nav-link')).some(a => a.style.display === 'block');
-                if (hasVisibleLink) {
-                    g.style.display = 'block';
-                } else {
-                    g.style.display = 'none';
-                }
+                g.style.display = hasVisibleLink ? 'block' : 'none';
             });
+
+            // Tự động tải số lượng thông báo khi vừa load
+            setTimeout(loadNotifications, 1500);
         }
     }
 
+    // --- LOGIC THÔNG BÁO ---
+    window.toggleNotiPopup = function() {
+        const p = document.getElementById('sm-noti-popup');
+        p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+        if (p.style.display === 'block') loadNotifications();
+    };
+
+    window.loadNotifications = async function() {
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        const role = user.Vai_Tro || user.role || "N/A";
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+        
+        try {
+            // Lọc: vai_tro = Role hiện tại HOẶC vai_tro = All
+            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThongBao?or=(vai_tro_nhan.eq.${role},vai_tro_nhan.eq.All)&order=created_at.desc&limit=20`, { headers: h });
+            const data = await res.json();
+            
+            const listEl = document.getElementById('noti-list');
+            const badgeEl = document.getElementById('noti-badge');
+            
+            const unreadCount = data.filter(n => !n.da_doc).length;
+            if (unreadCount > 0) {
+                badgeEl.innerText = unreadCount > 5 ? '5+' : unreadCount;
+                badgeEl.style.display = 'block';
+            } else {
+                badgeEl.style.display = 'none';
+            }
+
+            if (data.length === 0) {
+                listEl.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-size:12px;">Không có thông báo nào.</div>';
+                return;
+            }
+
+            listEl.innerHTML = data.map(n => `
+                <div class="noti-item ${n.da_doc ? '' : 'unread'}" onclick="markAsRead(${n.id})">
+                    <span class="noti-title">${n.tieu_de}</span>
+                    <div style="font-size:12px; margin:2px 0; color:#555;">${n.noi_dung}</div>
+                    <span class="noti-time">${new Date(n.created_at).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</span>
+                </div>
+            `).join('');
+        } catch (e) { console.error("Lỗi load thông báo:", e); }
+    };
+
+    window.markAsRead = async function(id) {
+        const h = { 
+            'apikey': window.SB_CONFIG.KEY, 
+            'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+        };
+        try {
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThongBao?id=eq.${id}`, {
+                method: 'PATCH',
+                headers: h,
+                body: JSON.stringify({ da_doc: true })
+            });
+            loadNotifications();
+        } catch (e) { console.error(e); }
+    };
+
     window.toggleMobileSidebar = function() { document.body.classList.toggle('sm-open'); };
     window.logoutAction = function() { localStorage.removeItem('currentUser'); window.location.href = 'Login.html'; }; 
-const style = document.createElement('style');
+
+    // --- CSS STYLE ---
+    const style = document.createElement('style');
     style.textContent = `
         .sm-sidebar { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; background: #2D5A27; color: white; z-index: 10001; transition: 0.3s; display: flex; flex-direction: column; }
-        .sm-header { padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sm-header { padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative; }
         .sm-user-info { font-size: 11px; color: #a5d6a7; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 4px; display: block; margin-top: 8px; }
+        
+        /* NOTIFICATION CSS */
+        .sm-noti-wrapper { position: absolute; top: 15px; right: 15px; }
+        .sm-bell-btn { font-size: 18px; cursor: pointer; position: relative; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
+        .sm-badge { position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; font-size: 10px; padding: 2px 5px; border-radius: 10px; font-weight: bold; border: 1px solid #2D5A27; }
+        .sm-noti-popup { display: none; position: absolute; top: 40px; right: 0; width: 280px; background: white; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); z-index: 10005; color: #333; text-align: left; overflow: hidden; }
+        .noti-header { padding: 10px 15px; font-weight: bold; font-size: 13px; background: #f8f9fa; border-bottom: 1px solid #eee; color: #2D5A27; }
+        .noti-list { max-height: 350px; overflow-y: auto; }
+        .noti-item { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s; }
+        .noti-item:hover { background: #f9f9f9; }
+        .noti-item.unread { background: #f0f7ef; border-left: 4px solid #2D5A27; }
+        .noti-title { font-weight: bold; font-size: 13px; display: block; color: #333; }
+        .noti-time { font-size: 10px; color: #999; margin-top: 4px; display: block; }
         
         .sm-menu-box { flex: 1; overflow-y: auto; scrollbar-width: none; }
         .sm-menu-box::-webkit-scrollbar { display: none; }
-        
         .group { border-bottom: 1px solid rgba(255,255,255,0.05); }
         .group-title { padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; font-size: 13px; color: #8eb38a; }
         .group-items { display: none; background: #1e3d1a; }
@@ -184,25 +263,8 @@ const style = document.createElement('style');
         .nav-link:hover { background: #1a3617; color: white; border-left-color: #FF8C00; }
         .nav-link.always-show { display: block !important; padding: 15px 20px; font-weight: bold; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); }
         
-        .sm-logout-box { 
-            width: 100%; 
-            padding: 15px 20px; 
-            background: #2D5A27; 
-            box-sizing: border-box; 
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .sm-logout-box button { 
-            width: 100%; 
-            padding: 9px; 
-            background: #c0392b; 
-            color: white; 
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            font-size: 13px; 
-            transition: 0.2s; 
-        }
+        .sm-logout-box { width: 100%; padding: 15px 20px; background: #2D5A27; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.1); }
+        .sm-logout-box button { width: 100%; padding: 9px; background: #c0392b; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; }
         .sm-logout-box button:hover { background: #e74c3c; }
 
         .sm-mobile-btn { display: none; position: fixed; top: 10px; left: 10px; z-index: 10002; background: #2D5A27; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor:pointer; }
@@ -212,6 +274,7 @@ const style = document.createElement('style');
             .sm-mobile-btn { display: block; }
             body.sm-open .sm-sidebar { left: 0; }
             body.sm-open #sm-overlay { display: block; }
+            .sm-noti-popup { right: -50px; width: 260px; } /* Chỉnh vị trí trên mobile */
         }
     `;
     document.head.appendChild(style);
