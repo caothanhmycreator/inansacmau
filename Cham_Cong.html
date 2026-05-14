@@ -52,7 +52,7 @@
     let lastRemindTime = "";
 
     document.addEventListener("DOMContentLoaded", async () => {
-      if(!user) return window.location.href = 'login.html';
+      if(!user) return window.location.href = 'Login.html';
       const employeeName = user.name || user.Ho_Ten || "Nhân viên";
       document.getElementById('display-name').innerText = employeeName;
       API_URL = `${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong`;
@@ -72,13 +72,16 @@
       checkStatus();
     });
 
-    async function guiThongBaoSacMau(tieude, noidung, targetRole = "") {
+    // ĐÃ CẬP NHẬT: Thêm tham số targetLink để tùy chỉnh trang đích
+    async function guiThongBaoSacMau(tieude, noidung, targetRole = "", targetLink = "") {
         const URL_FUNCTION = "https://zatxvklirqvyacslkpgy.supabase.co/functions/v1/bright-handler";
+        const finalLink = targetLink !== "" ? targetLink : (window.location.pathname.split('/').pop() || ""); 
+
         try {
             await fetch(URL_FUNCTION, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tieude: tieude, noidung: noidung, targetRole: targetRole })
+                body: JSON.stringify({ tieude: tieude, noidung: noidung, targetRole: targetRole, link: finalLink })
             });
         } catch (e) {
             console.error("Lỗi gửi thông báo:", e);
@@ -110,7 +113,8 @@
           const btnContainer = document.getElementById('btn-container');
           // Chỉ nhắc nếu nút hiện tại vẫn là nút "VÀO CA" (class btn-vao)
           if (btnContainer.querySelector('.btn-vao')) {
-            guiThongBaoSacMau("⏰ NHẮC NHỞ CHẤM CÔNG", `Bạn ơi, đã ${hm} rồi mà hệ thống chưa thấy bạn điểm danh. Nhớ chấm công ngay nhé!`, user.username || user.User_Name || "");
+            // Đã truyền thêm link Cham_Cong.html vào cuối
+            guiThongBaoSacMau("⏰ NHẮC NHỞ CHẤM CÔNG", `Bạn ơi, đã ${hm} rồi mà hệ thống chưa thấy bạn điểm danh. Nhớ chấm công ngay nhé!`, user.username || user.User_Name || "", "Cham_Cong.html");
           }
         }
       };
@@ -215,9 +219,10 @@
         });
 
         if (postRes.ok) { 
-            // --- THÔNG BÁO CHO ADMIN KHI NHÂN VIÊN ĐÃ CHẤM CÔNG ---
+            // --- THÔNG BÁO CHO TẤT CẢ VAI TRÒ KHI NHÂN VIÊN ĐÃ CHẤM CÔNG ---
             const empName = user.name || user.Ho_Ten || "Nhân viên";
-            guiThongBaoSacMau("📍 CHẤM CÔNG MỚI", `${empName} đã có mặt và điểm danh vào lúc ${timeStr}.`, "Quan_Ly_Don");
+            // Để gửi cho tất cả thì targetRole sẽ là rỗng (""), link điều hướng là index.html
+            guiThongBaoSacMau("📍 CHẤM CÔNG MỚI", `${empName} đã có mặt và điểm danh vào lúc ${timeStr}.`, "", "index.html");
             
             Swal.fire({ icon: 'success', title: 'Đã vào ca!', timer: 1000, showConfirmButton: false }); 
             checkStatus(); 

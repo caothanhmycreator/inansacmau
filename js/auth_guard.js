@@ -34,7 +34,7 @@
         const showWarning = () => {
           if (document.body) document.body.innerHTML = ""; // Xóa trắng trang an toàn
           
-          const msg = `Mỹ chưa cấp quyền cho bạn vào mục này! (${pageIdToCheck})`;
+          const msg = `Admin chưa cấp quyền cho bạn vào mục này! (${pageIdToCheck})`;
           
           if (typeof Swal !== 'undefined') {
             Swal.fire({
