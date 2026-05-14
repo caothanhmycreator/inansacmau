@@ -1,6 +1,5 @@
 // sidebar_loader.js
 (function() {
-    // 1. Chỉ nạp thư viện OneSignal nếu chưa có
     if (!document.getElementById('onesignal-sdk')) {
         const osScript = document.createElement('script');
         osScript.id = 'onesignal-sdk';
@@ -11,7 +10,6 @@
 
     const user = JSON.parse(localStorage.getItem('currentUser'));
 
-    // 2. Khởi tạo OneSignal
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(oneSignal) {
         if (!oneSignal.initialized) {
@@ -31,9 +29,6 @@
     });
 })();
 
-/**
- * SIDEBAR LOADER - PHIÊN BẢN TÍCH HỢP THÔNG BÁO
- */
 (function() {
     function initSidebar() {
         if (document.getElementById('sm-sidebar')) return;
@@ -177,13 +172,23 @@
 
     window.loadNotifications = async function() {
         const user = JSON.parse(localStorage.getItem('currentUser'));
-        const role = user.Vai_Tro || user.role || "N/A";
+        const role = user?.Vai_Tro || user?.role || "N/A";
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
         
         try {
-            // ĐÃ SỬA: nhatky_thongbao (chữ thường)
-            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?or=(vai_tro_nhan.eq.${role},vai_tro_nhan.eq.All)&order=created_at.desc&limit=20`, { headers: h });
+            const url = `${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?or=(vai_tro_nhan.eq.${role},vai_tro_nhan.eq.All)&order=created_at.desc&limit=20`;
+            const res = await fetch(url, { headers: h });
+            
+            // Xử lý báo lỗi ngay trên giao diện nếu API trả về lỗi
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error("Supabase Error:", errorText);
+                document.getElementById('noti-list').innerHTML = '<div style="padding:20px; text-align:center; color:red; font-size:12px;">Lỗi tải dữ liệu. Bấm F12 xem Console.</div>';
+                return;
+            }
+
             const data = await res.json();
+            console.log("Dữ liệu thông báo tải về:", data);
             
             const listEl = document.getElementById('noti-list');
             const badgeEl = document.getElementById('noti-badge');
@@ -208,7 +213,9 @@
                     <span class="noti-time">${new Date(n.created_at).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</span>
                 </div>
             `).join('');
-        } catch (e) { console.error("Lỗi load thông báo:", e); }
+        } catch (e) { 
+            console.error("Lỗi Exception load thông báo:", e); 
+        }
     };
 
     window.markAsRead = async function(id) {
@@ -219,7 +226,6 @@
             'Prefer': 'return=minimal'
         };
         try {
-            // ĐÃ SỬA: nhatky_thongbao (chữ thường)
             await fetch(`${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?id=eq.${id}`, {
                 method: 'PATCH',
                 headers: h,
@@ -274,7 +280,7 @@
             .sm-mobile-btn { display: block; }
             body.sm-open .sm-sidebar { left: 0; }
             body.sm-open #sm-overlay { display: block; }
-            .sm-noti-popup { right: -50px; width: 260px; } /* Chỉnh vị trí trên mobile */
+            .sm-noti-popup { right: -50px; width: 260px; }
         }
     `;
     document.head.appendChild(style);
