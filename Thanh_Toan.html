@@ -79,6 +79,7 @@
       .header-actions { flex-direction: column; align-items: stretch !important; width: 100%; }
       #searchF7 { width: 100%; box-sizing: border-box; padding: 12px 15px !important; font-size: 14px !important; }
       .f7-header button { width: 100%; padding: 12px; font-size: 14px; }
+      #totalDebtBox { width: 100%; text-align: center; }
 
       /* --- Biến bảng ngang thành thẻ Card xếp dọc --- */
       .f7-table, .f7-table thead, .f7-table tbody, .f7-table th, .f7-table td, .f7-table tr { display: block; width: 100%; box-sizing: border-box; }
@@ -127,6 +128,12 @@
           <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.9;">Chốt sổ đơn hàng & Ghi nhận công nợ</p>
         </div>
         <div class="header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <!-- Khu vực tổng tiền nợ -->
+          <div id="totalDebtBox" style="background: rgba(255,255,255,0.15); padding: 8px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); color: white;">
+            <span style="font-size: 11px; text-transform: uppercase; opacity: 0.8; display: block; line-height: 1;">Tổng nợ chưa thu</span>
+            <span id="sumDebtF7" style="font-size: 18px; font-weight: bold;">0 đ</span>
+          </div>
+
           <input type="text" id="searchF7" placeholder="🔍 Tìm tên khách hàng..." style="padding: 8px 12px; border: none; border-radius: 8px; outline: none; font-size: 13px; min-width: 200px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);" onkeyup="filterF7()">
           <button onclick="loadF7Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition: 0.2s;">🔄 LÀM MỚI</button>
         </div>
@@ -204,14 +211,17 @@
     // Tách riêng hàm render bảng để phục vụ cho tính năng tìm kiếm
     window.renderF7Table = function(dataToRender) {
       const tbody = document.getElementById('f7-table-body');
+      let totalDebt = 0; // Biến tính tổng cộng dồn
       
       if (dataToRender.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px; color:#27ae60; font-weight:bold;">✅ Không có đơn cần thanh toán hoặc không tìm thấy.</td></tr>';
+        document.getElementById('sumDebtF7').innerText = '0 đ';
         return;
       }
 
       tbody.innerHTML = dataToRender.map((item) => {
         const conNo = item.tongDon - item.tongDaTra;
+        totalDebt += conNo; // Cộng dồn nợ của từng hàng hiển thị
         const originalIdx = window.listF7.indexOf(item); // Giữ nguyên index chuẩn để mở Popup
 
         return `<tr class="f7-row">
@@ -223,6 +233,9 @@
           <td style="text-align:center"><button class="btn-pay" onclick="openPayPopup(${originalIdx})">THANH TOÁN & IN</button></td>
         </tr>`;
       }).join('');
+
+      // Hiển thị tổng nợ
+      document.getElementById('sumDebtF7').innerText = totalDebt.toLocaleString() + ' đ';
     };
 
     // Hàm Lọc theo tên Khách hàng
