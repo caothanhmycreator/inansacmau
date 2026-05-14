@@ -93,12 +93,13 @@
 <body>
 
   <div class="main-content">
-    <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-      <div>
+    
+    <div class="header-top" style="margin-bottom: 15px;">
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 15px;">
         <h2 style="margin:0; color: var(--accent);">📦 QUẢN LÝ NHẬP HÀNG & TỒN KHO</h2>
-        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Ghi nhận chi phí và tự động cập nhật số lượng vật tư, nguyên liệu</p>
+        <button type="button" onclick="getToken()" style="background:#4285F4; color:white; border:none; padding:8px 15px; border-radius:20px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-size: 13px;">🔐 KẾT NỐI DRIVE</button>
       </div>
-      <button type="button" onclick="getToken()" style="background:#4285F4; color:white; border:none; padding:10px 20px; border-radius:20px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🔐 KẾT NỐI DRIVE</button>
+      <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Ghi nhận chi phí và tự động cập nhật số lượng vật tư, nguyên liệu</p>
     </div>
 
     <div class="summary-box">
@@ -727,6 +728,12 @@
                 await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NHAP_HANG}?id=eq.${idLog}`, { method: 'PATCH', headers: h, body: JSON.stringify(payloadNhap) });
             } else {
                 await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NHAP_HANG}`, { method: 'POST', headers: h, body: JSON.stringify(payloadNhap) });
+                
+                // --- TÍNH NĂNG THÔNG BÁO NHẬP HÀNG MỚI (DÀNH CHO ADMIN) ---
+                try {
+                    const tbMsg = `Hệ thống vừa nhập hàng ${ten} từ nhà cung cấp ${ncc} với tổng số tiền ${tien.toLocaleString('vi-VN')}đ.`;
+                    await guiThongBaoSacMau("📦 NHẬP HÀNG MỚI", tbMsg, "Admin", "Nhap_Hang.html");
+                } catch(errTB) { console.error("Lỗi gửi thông báo:", errTB); }
             }
 
             Swal.fire({ icon: 'success', title: 'Đã lưu sổ sách, kho & chứng từ!', timer: 1500, showConfirmButton: false });

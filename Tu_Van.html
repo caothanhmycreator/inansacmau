@@ -403,7 +403,7 @@
         const tbMsg = `Hệ thống vừa lên báo giá cho khách ${tenKhach} với sản phẩm [${dsSanPham}]. Tổng số tiền là ${tongTienStr}.`;
         
         // Gửi thông báo (Để targetRole trống để thông báo chung, Link trống theo yêu cầu)
-        guiThongBaoSacMau(tbTitle, tbMsg, "", ""); 
+        guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", ""); 
       } catch (err) {
         console.error("Lỗi gửi thông báo báo giá:", err);
       }
