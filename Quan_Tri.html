@@ -151,7 +151,6 @@
         </table>
       </div>
       
-      <!-- Component Phân trang -->
       <div id="pagination-container" class="pagination"></div>
     </div>
   </div>
@@ -365,7 +364,7 @@
               // Nếu xóa món này là xóa sạch đơn hàng -> Xóa thu nợ và công nợ
               await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
               await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
-              try { await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã bị xóa vĩnh viễn.`, "Quan_Ly_Don"); } catch(e){}
+              try { await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã bị xóa vĩnh viễn.`, "Quan_Ly_Don", "Xu_Ly.html"); } catch(e){}
           } else {
               // Cập nhật lại công nợ do tổng đơn giảm
               const tongDonMoi = remainingItems.reduce((sum, i) => sum + (Number(i.Thanh_Tien) || 0), 0);
@@ -498,9 +497,42 @@
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(maDon)}&Ten_Hang=eq.${encodeURIComponent(tenHang)}`, { method: 'PATCH', headers: h, body: JSON.stringify(logData) });
 
         try {
-            let roleTB = ""; let titleTB = "🛠 QUẢN TRỊ CẬP NHẬT";
-            if (newStatus === "Chờ xử lý") roleTB = "Quan_Ly_Don"; else if (newStatus === "Chờ thiết kế") roleTB = "Thiet_Ke"; else if (newStatus === "Chờ duyệt file") roleTB = "Quan_Ly_Don"; else if (newStatus === "Chờ in") roleTB = "Nhan_Vien_In"; else if (newStatus === "Chờ gia công") roleTB = "Quan_Ly_Don"; else if (newStatus === "Chờ thanh toán" || newStatus === "Hoàn tất" || newStatus === "Công nợ") roleTB = "Thu_Ngan";
-            if (roleTB !== "") await guiThongBaoSacMau(titleTB, `Sản phẩm ${tenHang} của đơn ${maDon} vừa chuyển sang: ${newStatus.toUpperCase()}`, roleTB);
+            let roleTB = ""; 
+            let titleTB = "🛠 QUẢN TRỊ CẬP NHẬT";
+            let linkTB = "";
+
+            if (newStatus === "Chờ xử lý") {
+                roleTB = "Quan_Ly_Don";
+                linkTB = "Xu_Ly.html";
+            } else if (newStatus === "Chờ thiết kế") {
+                roleTB = "Thiet_Ke";
+                linkTB = "Thiet_Ke.html";
+            } else if (newStatus === "Chờ duyệt file") {
+                roleTB = "Quan_Ly_Don";
+                linkTB = "Duyet_File.html";
+            } else if (newStatus === "Chờ in") {
+                roleTB = "Nhan_Vien_In";
+                linkTB = "Cho_In.html";
+            } else if (newStatus === "Chờ gia công") {
+                roleTB = "Quan_Ly_Don";
+                linkTB = "Gia_Cong.html";
+            } else if (newStatus === "Chờ giao hàng") {
+                roleTB = "Quan_Ly_Don";
+                linkTB = "Giao_Hang.html";
+            } else if (newStatus === "Chờ thanh toán") {
+                roleTB = "Quan_Ly_Don";
+                linkTB = "Thanh_Toan.html";
+            } else if (newStatus === "Hoàn tất") {
+                roleTB = "Quan_Ly_Don";
+                linkTB = "Quan_Tri.html";
+            } else if (newStatus === "Công nợ") {
+                roleTB = "Quan_Ly_Don";
+                linkTB = "Cong_No.html";
+            }
+
+            if (roleTB !== "") {
+                await guiThongBaoSacMau(titleTB, `Đơn ${maDon} với Sản phẩm ${tenHang} của ${tenKhach} vừa chuyển sang: ${newStatus.toUpperCase()}`, roleTB, linkTB);
+            }
         } catch (etb) { console.log(etb); }
 
         Swal.fire({ icon: 'success', title: 'Đã cập nhật!', timer: 800, showConfirmButton: false });

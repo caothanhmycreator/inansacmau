@@ -77,21 +77,23 @@
     }
 
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
-    
-    /* GỠ BỎ PHẦN @MEDIA PRINT GÂY LỖI TRƯỚC ĐÓ VÌ NAY ĐÃ IN ĐỘC LẬP QUA JS */
   </style>
 </head>
 <body>
 
   <div class="main-content">
-    <div class="header">
-      <div><h2>💰 QUẢN LÝ LƯƠNG</h2><p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">In Ấn Sắc Màu - Đồng Tháp</p></div>
-      <div class="header-controls">
-        <input type="month" id="month-selector" class="month-picker no-print" onchange="loadPayroll()">
-        <!-- THAY ĐỔI: Gọi hàm openPrintPopup() thay vì window.print() -->
-        <button class="btn-export no-print" onclick="openPrintPopup()">🖨️ TẢI BẢNG LƯƠNG</button>
+    
+    <div class="header" style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+        <h2 style="margin: 0; color: var(--primary);">💰 QUẢN LÝ LƯƠNG</h2>
+        <div class="header-controls" style="display: flex; gap: 10px; align-items: center;">
+          <input type="month" id="month-selector" class="month-picker no-print" onchange="loadPayroll()">
+          <button class="btn-export no-print" onclick="openPrintPopup()">🖨️ TẢI BẢNG LƯƠNG</button>
+        </div>
       </div>
+      <p style="margin: 0; color: #666; font-size: 14px;">In Ấn Sắc Màu - Đồng Tháp</p>
     </div>
+
     <div class="summary-box"><p>TỔNG DOANH THU TRONG THÁNG</p><h3 id="lbl-doanh-thu">0đ</h3></div>
     <div id="payroll-container" class="payroll-grid"><h3 style="color:#888;">Đang tính toán sổ sách...</h3></div>
   </div>
@@ -108,7 +110,7 @@
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
     document.addEventListener("DOMContentLoaded", () => {
-      if(!currentUser) return window.location.href = 'login.html';
+      if(!currentUser) return window.location.href = 'Login.html';
       const now = new Date();
       document.getElementById('month-selector').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       loadPayroll();
@@ -195,7 +197,6 @@
       const todayDate = new Date();
       todayDate.setHours(23, 59, 59, 999);
 
-      // KHỞI TẠO BIẾN LƯU GIAO DIỆN IN
       globalPrintHTML = `
         <div style="font-family: Arial, sans-serif; padding: 10px; max-width: 800px; margin: 0 auto; color: #333;">
             <div style="text-align: center; margin-bottom: 20px;">
@@ -278,7 +279,6 @@
 
         const titleBage = isMonthBasis ? '<span class="badge">Kết theo Tháng</span>' : '<span class="badge badge-tuan">Kết theo Tuần</span>';
 
-        // XUẤT HTML RA MÀN HÌNH CHÍNH
         container.innerHTML += `
           <div class="staff-card">
             <h3 class="staff-name">${emp.Ho_Ten} ${titleBage}</h3>
@@ -297,7 +297,6 @@
             </div>
           </div>`;
 
-        // LƯU CỘNG DỒN VÀO BIẾN IN ẤN (INLINE CSS CHUẨN ĐỂ IN)
         globalPrintHTML += `
             <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; page-break-inside: avoid; background: #fff;">
                 <h3 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px; display: flex; justify-content: space-between;">
@@ -319,10 +318,9 @@
         `;
       });
 
-      globalPrintHTML += `</div>`; // Đóng thẻ bao ngoài của giao diện in
+      globalPrintHTML += `</div>`; 
     }
 
-    // TÍNH NĂNG MỚI: MỞ POPUP TỔNG HỢP VÀ IN
     function openPrintPopup() {
         if (!globalPrintHTML || globalPrintHTML === "") {
             return Swal.fire('Thông báo', 'Chưa có dữ liệu để tải/in!', 'warning');
@@ -344,9 +342,7 @@
         });
     }
 
-    // TÍNH NĂNG MỚI: HÀM IN ĐỘC LẬP TRÁNH LỖI GIAO DIỆN CHROME
     function executePrint(htmlContent) {
-        // Mở một cửa sổ ẩn để in, đảm bảo sạch sẽ 100% không dính CSS của trang gốc
         const printWindow = window.open('', '_blank', 'width=800,height=600');
         printWindow.document.write(`
             <html>
@@ -457,7 +453,30 @@
           if (!tien) return Swal.showValidationMessage('Vui lòng nhập số tiền!');
           return { User_ID: empId, Loai: loai, So_Tien: Number(tien), Noi_Dung: document.getElementById('sw-noidung').value };
         }
-      }).then(async (r) => { if (r.isConfirmed) { await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh`, { method: 'POST', headers: h, body: JSON.stringify({...r.value, Ngay_Ghi: new Date().toISOString(), Nguoi_Xac_Nhan: currentUser.name}) }); loadPayroll(); } });
+      }).then(async (r) => { 
+          if (r.isConfirmed) { 
+              await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh`, { 
+                  method: 'POST', 
+                  headers: h, 
+                  body: JSON.stringify({...r.value, Ngay_Ghi: new Date().toISOString(), Nguoi_Xac_Nhan: currentUser.name}) 
+              }); 
+              
+              // ĐÃ BỔ SUNG: GỬI THÔNG BÁO TỰ ĐỘNG
+              try {
+                  let ndStr = r.value.Noi_Dung ? (r.value.Loai + " - " + r.value.Noi_Dung) : r.value.Loai;
+                  let soTienStr = r.value.So_Tien.toLocaleString('vi-VN') + 'đ';
+                  let tbMsg = `Đã cập nhật phụ cấp/tạm ứng [${ndStr}] cho ${empName} với số tiền ${soTienStr}`;
+                  
+                  if (typeof guiThongBaoSacMau === 'function') {
+                      await guiThongBaoSacMau("CẬP NHẬT PHỤ CẤP/ TẠM ỨNG", tbMsg, "Admin", "Quan_Ly_Luong.html");
+                  } else if (window.guiThongBaoSacMau) {
+                      await window.guiThongBaoSacMau("CẬP NHẬT PHỤ CẤP/ TẠM ỨNG", tbMsg, "Admin", "Quan_Ly_Luong.html");
+                  }
+              } catch(e) { console.error("Lỗi gửi thông báo:", e); }
+
+              loadPayroll(); 
+          } 
+      });
     }
     
   </script>
