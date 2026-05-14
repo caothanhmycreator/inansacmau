@@ -202,7 +202,7 @@
             }
 
             if (data.length === 0) {
-                listEl.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-size:12px;">Không có thông báo nào.</div>';
+                listEl.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-size:12px;">Không có thông báo nào!</div>';
                 return;
             }
 
