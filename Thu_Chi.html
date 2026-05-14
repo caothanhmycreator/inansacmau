@@ -166,7 +166,7 @@
                     ? `Két đầu ngày vừa được xác nhận: ${payload.soTien.toLocaleString()}đ.` 
                     : `Vừa chi ${payload.soTien.toLocaleString()}đ cho nội dung: ${payload.noiDung}. Người nhận: ${payload.doiTuong}.`;
                 
-                await guiThongBaoSacMau(titleTB, msgTB, "Quan_Ly_Don");
+                await guiThongBaoSacMau(titleTB, msgTB, "Quan_Ly_Don", "Thu_Chi.html");
             } catch(etb) { console.log("Lỗi TB:", etb); }
 
             document.getElementById("chi_noi_dung").value = "";
@@ -241,7 +241,7 @@
         if (response.ok) {
             // THÔNG BÁO KHI XÓA DỮ LIỆU THU CHI
             try {
-                await guiThongBaoSacMau("🗑️ XÓA DỮ LIỆU THU CHI", `Một khoản dữ liệu "${content}" trị giá ${amount.toLocaleString()}đ vừa bị xóa khỏi hệ thống bởi nhân viên.`, "Quan_Ly_Don");
+                await guiThongBaoSacMau("🗑️ XÓA DỮ LIỆU THU CHI", `Một khoản dữ liệu "${content}" trị giá ${amount.toLocaleString()}đ vừa bị xóa khỏi hệ thống bởi nhân viên.`, "Quan_Ly_Don", "Thu_Chi.html");
             } catch(etb) { console.log(etb); }
 
             loadHistoryF14();

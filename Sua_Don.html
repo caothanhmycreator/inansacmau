@@ -544,14 +544,43 @@ async function f12_saveFinal() {
   } catch(eAutoSaveSP) { console.error("Lỗi auto-save sản phẩm mới khi sửa đơn:", eAutoSaveSP); }
 
   let itemsToUpdate = []; let itemsToCreate = []; 
+  
+  // BIẾN CHO THÔNG BÁO TỰ ĐỘNG
+  let hasNewItem = false;
+  let changedElements = [];
+  let statusForLink = "";
+
   document.querySelectorAll('#view-table-body tr').forEach(tr => {
     const inpSp = tr.querySelector('.f12-edit-sp'); const dbId = inpSp.getAttribute('data-id');
     const currentStatus = inpSp.getAttribute('data-status') || "Chờ xử lý"; // Lấy trạng thái đã được lưu
     const gia = Number(tr.querySelector('.f12-edit-dg').value.replace(/\./g, "")) || 0;
     const sl = Number(tr.querySelector('.f12-edit-sl').value) || 0;
     const obj = { Ma_Don: maDon, Ten_Hang: inpSp.value, So_Luong: sl, Don_Gia: gia, Thanh_Tien: sl * gia, Don_Vi_Tinh: tr.querySelector('.f12-edit-dvt').value, Trang_Thai: currentStatus, Ten_Khach_Hang: tenKH, So_Dien_Thoai: window.f12_current_info.sdt, Dia_Chi: window.f12_current_info.dc, Ngay_Gio: cleanNow, Khach_Da_Tra: 0, Con_No: 0, Tong_Don: 0 };
-    if (dbId === "new") itemsToCreate.push(obj); else { obj.id = dbId; itemsToUpdate.push(obj); }
+    
+    if (dbId === "new") {
+        hasNewItem = true;
+        itemsToCreate.push(obj);
+    } else { 
+        // Lấy lại giá trị cũ đã lưu trên DOM để so sánh sự thay đổi
+        const oldSl = Number(tr.querySelector('.f12-edit-sl').getAttribute('data-old-sl')) || 0;
+        const oldGia = Number(tr.querySelector('.f12-edit-dg').getAttribute('data-old-gia')) || 0;
+        
+        if (sl !== oldSl && !changedElements.includes("số lượng")) changedElements.push("số lượng");
+        if (gia !== oldGia && !changedElements.includes("đơn giá")) changedElements.push("đơn giá");
+        
+        if (sl !== oldSl || gia !== oldGia) {
+            statusForLink = currentStatus; // Bắt trạng thái của món bị sửa để điều hướng link
+        }
+
+        obj.id = dbId; 
+        itemsToUpdate.push(obj); 
+    }
   });
+
+  // Bắt sự thay đổi tiền cọc
+  if (extraDeposit > 0 && !changedElements.includes("tiền cọc")) {
+      changedElements.push("tiền cọc");
+  }
 
   try {
     const totalPaidMoi = window.f12_current_info.datCocCu + extraDeposit;
@@ -603,8 +632,42 @@ async function f12_saveFinal() {
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo`, { method: 'POST', headers, body: JSON.stringify(logBody) });
       }
     }
-await guiThongBaoSacMau("✏️ CẬP NHẬT ĐƠN HÀNG", "Đơn của khách " + tenKH + " vừa được thay đổi!", "Quan_Ly_Don", "Xu_Ly.html");
-    Swal.fire('Thành công!', 'Đã đồng bộ thông tin sang tất cả các bảng.', 'success');
+    
+    // GỬI THÔNG BÁO TỰ ĐỘNG THEO YÊU CẦU MỚI
+    let tbTitle = "✏️ CẬP NHẬT ĐƠN HÀNG";
+    let tbMsg = `Đơn của khách ${tenKH} vừa được thay đổi!`;
+    let tbLink = "Xu_Ly.html";
+
+    if (hasNewItem) {
+        tbTitle = "ĐƠN HÀNG BỔ SUNG";
+        tbMsg = `Đơn hàng ${maDon} của khách hàng ${tenKH} vừa được thêm món mới.`;
+        tbLink = "Xu_Ly.html";
+    } else if (changedElements.length > 0) {
+        tbTitle = "ĐƠN HÀNG ĐƯỢC CẬP NHẬT";
+        tbMsg = `Đơn hàng ${maDon} của khách hàng ${tenKH} vừa được cập nhật ${changedElements.join(", ")}.`;
+        
+        // Căn cứ vào trạng thái món hàng để xuất Link
+        if (statusForLink) {
+            let s = statusForLink.toLowerCase();
+            if (s.includes("thiết kế")) tbLink = "Thiet_Ke.html";
+            else if (s.includes("duyệt")) tbLink = "Duyet_File.html";
+            else if (s.includes("in")) tbLink = "Cho_In.html";
+            else if (s.includes("gia công")) tbLink = "Gia_Cong.html";
+            else if (s.includes("giao")) tbLink = "Giao_Hang.html";
+            else if (s.includes("hoàn tất")) tbLink = "Quan_Tri.html";
+            else if (s.includes("công nợ")) tbLink = "Công Nợ.html";
+            else tbLink = "Xu_Ly.html";
+        } else if (changedElements.includes("tiền cọc")) {
+            tbLink = "BC_Thu_Chi.html";
+        }
+    }
+
+    // Chỉ gởi thông báo nếu thật sự có thay đổi (Thêm mới hoặc sửa cũ)
+    if (hasNewItem || changedElements.length > 0) {
+        await guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", tbLink);
+    }
+
+    Swal.fire('Thành công!', 'Đơn hàng đã được cập nhật', 'success');
     document.getElementById('f12-modal-view').style.display = 'none';
     loadSua_DonData();
   } catch (e) { Swal.fire('Lỗi hệ thống', e.message, 'error'); }
@@ -617,9 +680,10 @@ function f12_renderEditRow(it) {
   const tbody = document.getElementById('view-table-body'); 
   const tr = document.createElement('tr'); 
   const initialGia = it ? Number(it.Don_Gia).toLocaleString("vi-VN") : "0"; 
-  const initialStatus = it && it.Trang_Thai ? it.Trang_Thai : "Chờ xử lý"; // Lấy trạng thái hiện tại hoặc gán mặc định nếu là mới
+  const initialGiaNum = it ? Number(it.Don_Gia) : 0;
+  const initialSl = it ? it.So_Luong : 1;
+  const initialStatus = it && it.Trang_Thai ? it.Trang_Thai : "Chờ xử lý"; 
   
-  // Xóa datalist attribute (list="spList") để dùng dropdown custom hiển thị ảnh
   tr.innerHTML = `
     <td style="border:1px solid #ddd;padding:8px; position: relative;">
       <input type="text" class="f12-edit-sp" autocomplete="off" value="${it?it.Ten_Hang:""}" style="width:100%; border:1px solid #ccc; padding:8px; border-radius:6px;" data-id="${it?it.id:"new"}" data-status="${initialStatus}" oninput="f12_autoFill(this); f12_showSPSuggestions(this)" onfocus="f12_showSPSuggestions(this)" onblur="setTimeout(() => f12_closeSPSuggestions(this), 200)">
@@ -629,10 +693,10 @@ function f12_renderEditRow(it) {
       <input type="text" class="f12-edit-dvt" value="${it?it.Don_Vi_Tinh:""}" style="width:100%;text-align:center; border:1px solid #ccc; padding:8px; border-radius:6px;">
     </td>
     <td style="border:1px solid #ddd;padding:8px;">
-      <input type="number" class="f12-edit-sl" value="${it?it.So_Luong:1}" style="width:100%;text-align:center; border:1px solid #ccc; padding:8px; border-radius:6px;" oninput="f12_reCalc()">
+      <input type="number" class="f12-edit-sl" data-old-sl="${initialSl}" value="${initialSl}" style="width:100%;text-align:center; border:1px solid #ccc; padding:8px; border-radius:6px;" oninput="f12_reCalc()">
     </td>
     <td style="border:1px solid #ddd;padding:8px;">
-      <input type="text" class="f12-edit-dg" value="${initialGia}" style="width:100%;text-align:right; border:1px solid #ccc; padding:8px; border-radius:6px;" oninput="f12_fm(this);f12_reCalc()">
+      <input type="text" class="f12-edit-dg" data-old-gia="${initialGiaNum}" value="${initialGia}" style="width:100%;text-align:right; border:1px solid #ccc; padding:8px; border-radius:6px;" oninput="f12_fm(this);f12_reCalc()">
     </td>
     <td style="border:1px solid #ddd;padding:8px;text-align:right;font-weight:bold;" class="f12-edit-tt">0</td>
     <td style="border:1px solid #ddd;padding:8px;text-align:center;">

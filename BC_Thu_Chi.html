@@ -55,7 +55,8 @@
 
         /* Dàn hàng tiêu đề và bộ lọc ngày */
         .f15-header-row { flex-direction: column !important; align-items: flex-start !important; gap: 12px; margin-bottom: 15px !important; }
-        #f15-date-picker { width: 100%; box-sizing: border-box; padding: 10px; font-size: 16px; border: 1px solid #2D5A27; }
+        .f15-header-row > div { width: 100%; display: flex; gap: 10px; flex-direction: row; }
+        #f15-date-picker, #f15-filter-type { flex: 1; box-sizing: border-box; padding: 10px; font-size: 14px; border: 1px solid #2D5A27; }
 
         /* Dashboard: 2 cột, các thẻ chính chiếm 100% */
         .f15-dashboard { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -85,7 +86,7 @@
         .f15-table td:nth-child(1) { width: 30%; font-size: 12px; color: #7f8c8d; font-weight: bold; }
         /* Loại Thu/Chi (Badge - Góc trên phải) */
         .f15-table td:nth-child(2) { width: 70%; text-align: right; }
-        /* Nội dung (Ở giữa - Xuลง dòng tự do) */
+        /* Nội dung (Ở giữa - Xuống dòng tự do) */
         .f15-table td:nth-child(3) { width: 100%; font-size: 14px; color: var(--f15-primary); padding: 10px 0; margin: 5px 0; border-top: 1px solid #f8f9fa; border-bottom: 1px solid #f8f9fa; line-height: 1.4; font-weight: 500; }
         /* Số tiền (Góc dưới trái) */
         .f15-table td:nth-child(4) { width: 65%; text-align: left !important; font-size: 18px; font-weight: 900; }
@@ -106,9 +107,19 @@
 
 <div class="main-content">
   <div class="f15-container">
-    <div class="f15-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2 style="margin:0; color: var(--f15-primary);">💰 BÁO CÁO TÀI CHÍNH NGÀY</h2>
-      <input type="date" id="f15-date-picker" onchange="loadF15Data()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; outline: none; font-weight: bold;">
+    
+    <div class="f15-header-row" style="display: flex; justify-content: flex-start; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+      <h2 style="margin:0; color: var(--f15-primary);">💰 BÁO CÁO TÀI CHÍNH</h2>
+      <div style="display: flex; gap: 10px; align-items: center;">
+          <select id="f15-filter-type" onchange="loadF15Data()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; outline: none; font-weight: bold; cursor: pointer; color: #2D5A27;">
+              <option value="day">Theo Ngày</option>
+              <option value="week">Theo Tuần</option>
+              <option value="month">Theo Tháng</option>
+              <option value="quarter">Theo Quý</option>
+              <option value="year">Theo Năm</option>
+          </select>
+          <input type="date" id="f15-date-picker" onchange="loadF15Data()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; outline: none; font-weight: bold; cursor: pointer;">
+      </div>
     </div>
 
     <div class="f15-dashboard" id="f15-dash"></div>
@@ -118,8 +129,8 @@
       <table class="f15-table">
         <thead>
           <tr>
-            <th style="width: 10%;">Giờ</th>
-            <th style="width: 15%;">Loại</th>
+            <th style="width: 15%;">Thời gian</th>
+            <th style="width: 10%;">Loại</th>
             <th style="width: 45%;">Nội dung</th>
             <th style="text-align: right; width: 20%;">Số tiền</th>
             <th style="text-align: center; width: 10%;">Hình thức</th>
@@ -132,7 +143,6 @@
 </div>
 
 <script>
-// TOÀN BỘ LOGIC JS CỦA MỸ GIỮ NGUYÊN 100%
 document.addEventListener("DOMContentLoaded", function() {
   document.getElementById('f15-date-picker').valueAsDate = new Date();
   loadF15Data();
@@ -141,6 +151,7 @@ document.addEventListener("DOMContentLoaded", function() {
 async function loadF15Data() {
   const dateVal = document.getElementById('f15-date-picker').value;
   if (!dateVal) return;
+  const filterType = document.getElementById('f15-filter-type').value;
 
   const dash = document.getElementById('f15-dash');
   const tbody = document.getElementById('f15-table-body');
@@ -148,27 +159,81 @@ async function loadF15Data() {
   dash.innerHTML = "⚡ Đang tính toán...";
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; color:#95a5a6; font-style:italic;">☕ Đang quét sổ sách...</td></tr>';
 
-  const parts = dateVal.split('-');
-  const dateSearch = `${parts[2]}/${parts[1]}/${parts[0]}`;
+  // Lấy năm hiện tại của ngày chọn để tải dữ liệu một lần (Tối ưu API Limit)
+  const selectedDate = new Date(dateVal);
+  const yyyy = selectedDate.getFullYear();
   const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
 
   try {
     const [resPhatSinh, resThuNo] = await Promise.all([
-      fetch(`${window.SB_CONFIG.URL}/rest/v1/NK_ThuChi_PhatSinh?Ngay_Gio=like.${dateSearch}*&select=*`, { headers }),
-      fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?Ngay_Gio=like.${dateSearch}*&select=*`, { headers })
+      fetch(`${window.SB_CONFIG.URL}/rest/v1/NK_ThuChi_PhatSinh?Ngay_Gio=like.*%2F${yyyy}*&select=*&limit=10000`, { headers }),
+      fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?Ngay_Gio=like.*%2F${yyyy}*&select=*&limit=10000`, { headers })
     ]);
 
-    const dataPS = await resPhatSinh.json();
-    const dataTN = await resThuNo.json();
+    let dataPS = await resPhatSinh.json();
+    let dataTN = await resThuNo.json();
+
+    // Hàm phân tích chuỗi ngày giờ Việt Nam
+    const parseDateVn = (str) => {
+        if (!str) return new Date(0);
+        let p = str.split(' ');
+        let d = p[0].split('/');
+        let t = (p[1] || "00:00:00").split(':');
+        return new Date(d[2], d[1]-1, d[0], t[0]||0, t[1]||0, t[2]||0);
+    };
+
+    // Xác định khoảng thời gian Start - End dựa theo bộ lọc
+    let startDate = new Date(selectedDate);
+    let endDate = new Date(selectedDate);
+    
+    if (filterType === 'day') {
+        startDate.setHours(0,0,0,0);
+        endDate.setHours(23,59,59,999);
+    } else if (filterType === 'week') {
+        const day = selectedDate.getDay() || 7; // Chuyển Chủ nhật (0) thành 7
+        startDate.setHours(0,0,0,0);
+        startDate.setDate(selectedDate.getDate() - day + 1); // Thứ Hai
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6); // Chủ Nhật
+        endDate.setHours(23,59,59,999);
+    } else if (filterType === 'month') {
+        startDate.setDate(1);
+        startDate.setHours(0,0,0,0);
+        endDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999);
+    } else if (filterType === 'quarter') {
+        const q = Math.floor(selectedDate.getMonth() / 3);
+        startDate = new Date(selectedDate.getFullYear(), q * 3, 1, 0, 0, 0, 0);
+        endDate = new Date(selectedDate.getFullYear(), q * 3 + 3, 0, 23, 59, 59, 999);
+    } else if (filterType === 'year') {
+        startDate = new Date(selectedDate.getFullYear(), 0, 1, 0, 0, 0, 0);
+        endDate = new Date(selectedDate.getFullYear(), 11, 31, 23, 59, 59, 999);
+    }
+
+    const inRange = (dObj) => {
+        return dObj >= startDate && dObj <= endDate;
+    };
 
     let report = { ketDauNgay: 0, thuTM: 0, thuCK: 0, tongChi: 0, transactions: [] };
+    let earliestDate = Infinity;
 
     dataPS.forEach(i => {
+      if (!i.Ngay_Gio) return;
+      const dObj = parseDateVn(i.Ngay_Gio);
+      if (!inRange(dObj)) return; // Chỉ lấy giao dịch nằm trong khoảng bộ lọc
+
       const tien = Number(i.So_Tien) || 0;
-      if (i.Loai === "Két đầu ngày") report.ketDauNgay = tien;
+      if (i.Loai === "Két đầu ngày") {
+          // Lấy két đầu ngày của ngày xa nhất trong chu kỳ lọc làm Két đầu kỳ
+          if (dObj.getTime() < earliestDate) {
+              earliestDate = dObj.getTime();
+              report.ketDauNgay = tien;
+          }
+      }
       else if (i.Loai === "Chi TM") {
         report.tongChi += tien;
         report.transactions.push({
+          fullDate: dObj,
+          ngay: i.Ngay_Gio.split(' ')[0].substring(0, 5),
           gio: i.Ngay_Gio.split(' ')[1].substring(0, 5),
           loai: "Chi", noiDung: i.Noi_Dung, soTien: tien, hinhThuc: "TM", maDon: ""
         });
@@ -176,41 +241,51 @@ async function loadF15Data() {
     });
 
     dataTN.forEach(i => {
+      if (!i.Ngay_Gio) return;
+      const dObj = parseDateVn(i.Ngay_Gio);
+      if (!inRange(dObj)) return;
+
       const tien = Number(i.So_Tien_Thu) || 0;
       const ht = i.Hinh_Thuc_Thanh_Toan;
       if (ht === "TM") report.thuTM += tien;
       else if (ht === "CK") report.thuCK += tien;
 
       report.transactions.push({
+        fullDate: dObj,
+        ngay: i.Ngay_Gio.split(' ')[0].substring(0, 5),
         gio: i.Ngay_Gio.split(' ')[1].substring(0, 5),
         loai: "Thu", noiDung: `${i.Khach_Hang} (${i.Ten_Hang || 'Thanh toán đơn'})`,
         soTien: tien, hinhThuc: ht, maDon: i.Ma_Don
       });
     });
 
-    report.transactions.sort((a, b) => a.gio.localeCompare(b.gio));
+    // SẮP XẾP GIAO DỊCH TỪ MỚI ĐẾN CŨ (Descending)
+    report.transactions.sort((a, b) => b.fullDate.getTime() - a.fullDate.getTime());
+    
     const tongThu = report.thuTM + report.thuCK;
     const tonCuoi = report.ketDauNgay + report.thuTM - report.tongChi;
 
     dash.innerHTML = `
-      <div class="f15-card card-ket"><h4>Két đầu ngày</h4><span class="value">${report.ketDauNgay.toLocaleString()} đ</span></div>
+      <div class="f15-card card-ket"><h4>Két đầu kỳ</h4><span class="value">${report.ketDauNgay.toLocaleString()} đ</span></div>
       <div class="f15-card card-thu"><h4>Tổng Thu (TM+CK)</h4><span class="value" style="color:var(--f15-green)">+ ${tongThu.toLocaleString()} đ</span></div>
       <div class="f15-card card-tm"><h4>Thu Tiền mặt</h4><span class="value" style="color:#27ae60">${report.thuTM.toLocaleString()} đ</span></div>
       <div class="f15-card card-ck"><h4>Thu Chuyển khoản</h4><span class="value" style="color:var(--f15-blue)">${report.thuCK.toLocaleString()} đ</span></div>
       <div class="f15-card card-chi"><h4>Tổng Chi</h4><span class="value" style="color:var(--f15-red)">- ${report.tongChi.toLocaleString()} đ</span></div>
-      <div class="f15-card card-cuoi"><h4>Tồn két cuối ngày</h4><span class="value" style="color:#f39c12">${tonCuoi.toLocaleString()} đ</span></div>
+      <div class="f15-card card-cuoi"><h4>Tồn két cuối kỳ</h4><span class="value" style="color:#f39c12">${tonCuoi.toLocaleString()} đ</span></div>
     `;
 
     if (report.transactions.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; font-weight:bold; color:var(--f15-primary);">Ngày này chưa phát sinh giao dịch.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; font-weight:bold; color:var(--f15-primary);">Kỳ này chưa phát sinh giao dịch.</td></tr>';
       return;
     }
 
     tbody.innerHTML = report.transactions.map(t => `
       <tr onclick="showF15Detail('${t.maDon}', '${t.noiDung.replace(/'/g, "\\'")}')">
-        <td>${t.gio}</td>
+        <td style="color:#7f8c8d; font-weight:500;">
+          ${filterType !== 'day' ? `<b style="color:#34495e;">${t.ngay}</b><br>` : ''}${t.gio}
+        </td>
         <td><span class="badge ${t.loai === 'Thu' ? 'bg-thu' : 'bg-chi'}">${t.loai.toUpperCase()}</span></td>
-        <td><b>${t.noiDung}</b></td>
+        <td><b style="color:#2c3e50;">${t.noiDung}</b></td>
         <td style="text-align: right; font-weight: bold; color: ${t.loai === 'Thu' ? '#27ae60' : '#e74c3c'}; font-size:15px;">
           ${t.loai === 'Thu' ? '+' : '-'} ${t.soTien.toLocaleString()}
         </td>

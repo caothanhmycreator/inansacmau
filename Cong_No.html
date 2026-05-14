@@ -6,7 +6,7 @@
   <title>Công nợ - Tiệm In Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/config.js?v=2000"></script>
+  <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
   <script src="js/sidebar_loader.js?v=2000"></script> 
   <style>
@@ -429,7 +429,7 @@
 
         // THÔNG BÁO - NHẬP NỢ MỚI
         try {
-            await guiThongBaoSacMau("💸 PHÁT SINH CÔNG NỢ", `Khách ${data.kh} vừa được ghi nhận nợ mới: ${data.conlai.toLocaleString()}đ.`, "Quan_Ly_Don");
+            await guiThongBaoSacMau("💸 PHÁT SINH CÔNG NỢ", `Khách ${data.kh} vừa được ghi nhận nợ mới: ${data.conlai.toLocaleString()}đ.`, "Quan_Ly_Don", "Cong_No.html");
         } catch(etb) { console.log(etb); }
 
         Swal.fire({ icon: 'success', title: 'Đã lưu nợ!', timer: 1000, showConfirmButton: false });
@@ -564,7 +564,7 @@
 
         // THÔNG BÁO - THU NỢ THÀNH CÔNG
         try {
-            await guiThongBaoSacMau("💰 THU NỢ THÀNH CÔNG", `Vừa thu ${soTienThu_Total.toLocaleString()}đ nợ của khách ${it.Khach_Hang}. Hình thức: ${hinhThuc}.`, "Quan_Ly_Don");
+            await guiThongBaoSacMau("💰 THU NỢ THÀNH CÔNG", `Vừa thu ${soTienThu_Total.toLocaleString()}đ nợ của khách ${it.Khach_Hang}. Hình thức: ${hinhThuc}.`, "Quan_Ly_Don", "BC_Thu_Chi.html");
         } catch(etb) { console.log(etb); }
 
         Swal.close();

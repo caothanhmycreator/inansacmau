@@ -116,7 +116,6 @@
 </head>
 <body>
 
-  <!-- AI Chat Box -->
   <div class="ai-chat-container no-print">
     <div class="ai-chat-header" onclick="toggleChat()">
       <span style="display:flex; align-items:center; gap:8px;">🤖 <span>Trợ lý ảo Sắc Màu</span></span>
@@ -140,7 +139,6 @@
           📋 LẬP BÁO GIÁ SẢN PHẨM
         </h2>
 
-        <!-- Khu vực thông tin khách hàng -->
         <div class="form-section">
           <div class="sacmau-row">
             <div class="col-md">
@@ -159,7 +157,6 @@
           </div>
         </div>
 
-        <!-- Khu vực chọn sản phẩm -->
         <div class="form-section product-area">
           <div class="sacmau-row">
             <div class="col-lg" style="position: relative;">
@@ -174,7 +171,6 @@
             </div>
           </div>
 
-          <!-- Bổ sung Quy cách và Ghi chú -->
           <div class="sacmau-row">
             <div class="col-md">
               <label class="sacmau-label">Chi tiết quy cách (Kích thước, chất liệu...)</label>
@@ -239,9 +235,6 @@
         </div>
       </div>
 
-      <!-- ==============================================
-           GIAO DIỆN BẢN IN BÁO GIÁ MỚI 
-           ============================================== -->
       <div id="vung-in-sacmau">
         <div class="print-header">
           <div>
@@ -371,7 +364,9 @@
 
     function inHoaDon() {
       if (cart.length === 0) return Swal.fire('Lỗi', 'Chưa có sản phẩm nào trong báo giá!', 'warning');
-      document.getElementById("p-ten").innerText = document.getElementById("tenKhach").value || "Khách lẻ";
+      
+      const tenKhach = document.getElementById("tenKhach").value || "Khách lẻ";
+      document.getElementById("p-ten").innerText = tenKhach;
       document.getElementById("p-sdt").innerText = document.getElementById("sdt").value || "---";
       document.getElementById("p-diachi").innerText = document.getElementById("diaChi").value || "---";
       
@@ -380,7 +375,9 @@
       document.getElementById("p-ngay").innerText = typeof formatDateTimeVN === "function" ? formatDateTimeVN() : dStr;
       
       let h = ""; 
+      let spNamesArr = []; // Mảng chứa tên các SP để phục vụ thông báo
       cart.forEach(i => { 
+        spNamesArr.push(i.sp);
         h += `<tr>
                 <td>
                   <b style="font-size:15px;">${i.sp}</b>
@@ -396,7 +393,21 @@
       document.getElementById("p-body").innerHTML = h;
       
       let t = cart.reduce((s, i) => s + (i.sl * i.dg), 0);
-      document.getElementById("p-tong-in").innerText = t.toLocaleString() + " VNĐ";
+      document.getElementById("p-tong-in").innerText = t.toLocaleString('vi-VN') + " VNĐ";
+      
+      // LOGIC GỬI THÔNG BÁO TỰ ĐỘNG
+      try {
+        const tbTitle = "BÁO GIÁ";
+        const dsSanPham = spNamesArr.join(", ");
+        const tongTienStr = t.toLocaleString('vi-VN') + "đ";
+        const tbMsg = `Hệ thống vừa lên báo giá cho khách ${tenKhach} với sản phẩm [${dsSanPham}]. Tổng số tiền là ${tongTienStr}.`;
+        
+        // Gửi thông báo (Để targetRole trống để thông báo chung, Link trống theo yêu cầu)
+        guiThongBaoSacMau(tbTitle, tbMsg, "", ""); 
+      } catch (err) {
+        console.error("Lỗi gửi thông báo báo giá:", err);
+      }
+
       window.print();
     }
 
