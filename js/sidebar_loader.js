@@ -53,7 +53,6 @@
                 <div class="sm-header">
                     <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" width="60" onclick="window.location.href='index.html'" style="cursor:pointer">
                     
-                    <!-- NÚT CHUÔNG THÔNG BÁO -->
                     <div class="sm-noti-wrapper">
                         <div class="sm-bell-btn" onclick="toggleNotiPopup()">
                             🔔 <span id="noti-badge" class="sm-badge" style="display:none">0</span>
@@ -182,8 +181,8 @@
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
         
         try {
-            // Lọc: vai_tro = Role hiện tại HOẶC vai_tro = All
-            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThongBao?or=(vai_tro_nhan.eq.${role},vai_tro_nhan.eq.All)&order=created_at.desc&limit=20`, { headers: h });
+            // ĐÃ SỬA: nhatky_thongbao (chữ thường)
+            const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?or=(vai_tro_nhan.eq.${role},vai_tro_nhan.eq.All)&order=created_at.desc&limit=20`, { headers: h });
             const data = await res.json();
             
             const listEl = document.getElementById('noti-list');
@@ -220,7 +219,8 @@
             'Prefer': 'return=minimal'
         };
         try {
-            await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThongBao?id=eq.${id}`, {
+            // ĐÃ SỬA: nhatky_thongbao (chữ thường)
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?id=eq.${id}`, {
                 method: 'PATCH',
                 headers: h,
                 body: JSON.stringify({ da_doc: true })
