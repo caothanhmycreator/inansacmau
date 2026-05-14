@@ -428,7 +428,7 @@ async function napDuLieuTrang() {
             console.error("Lỗi khi trừ kho:", errKho);
         }
 
-        await guiThongBaoSacMau("🔥 ĐƠN HÀNG MỚI", "Khách " + tenKH + " vừa lên đơn tại Sắc Màu!", "Quan_Ly_Don");
+        await guiThongBaoSacMau("🔥 ĐƠN HÀNG MỚI", "Khách " + tenKH + " vừa lên đơn tại Sắc Màu!", "Quan_Ly_Don", "Xu_Ly.html");
         Swal.fire('Thành công', 'Đã lưu đơn: ' + ma, 'success').then(() => { location.reload(); });
 
       } catch (e) { 

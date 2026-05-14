@@ -40,15 +40,18 @@ window.formatDateTimeVN = function() {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
-async function guiThongBaoSacMau(tieude, noidung, targetRole = "") {
+// ĐÃ CẬP NHẬT: Thêm tham số targetLink để tùy chỉnh trang đích
+async function guiThongBaoSacMau(tieude, noidung, targetRole = "", targetLink = "") {
     const URL_FUNCTION = "https://zatxvklirqvyacslkpgy.supabase.co/functions/v1/bright-handler";
-    const currentLink = window.location.pathname.split('/').pop() || ""; 
+    
+    // Nếu có truyền link đích thì dùng, nếu không thì tự lấy tên trang hiện tại
+    const finalLink = targetLink !== "" ? targetLink : (window.location.pathname.split('/').pop() || ""); 
 
     try {
         await fetch(URL_FUNCTION, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tieude: tieude, noidung: noidung, targetRole: targetRole, link: currentLink })
+            body: JSON.stringify({ tieude: tieude, noidung: noidung, targetRole: targetRole, link: finalLink })
         });
     } catch (e) {
         console.error("Lỗi gửi thông báo:", e);
@@ -59,7 +62,6 @@ async function guiThongBaoSacMau(tieude, noidung, targetRole = "") {
 // KHU VỰC THÔNG BÁO, ONESIGNAL & INJECT UI CHUÔNG ĐỘC LẬP
 // =====================================================================
 (function() {
-    // 1. Chèn script OneSignal
     if (!document.getElementById('onesignal-sdk')) {
         const osScript = document.createElement('script');
         osScript.id = 'onesignal-sdk';
@@ -70,7 +72,6 @@ async function guiThongBaoSacMau(tieude, noidung, targetRole = "") {
 
     const user = JSON.parse(localStorage.getItem('currentUser'));
 
-    // 2. Khởi tạo OneSignal
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(oneSignal) {
         if (!oneSignal.initialized) {
@@ -89,20 +90,12 @@ async function guiThongBaoSacMau(tieude, noidung, targetRole = "") {
         }
     });
 
-    // 3. Style của Chuông Thông Báo (Cố định góc trên bên phải)
     const style = document.createElement('style');
     style.textContent = `
-        /* Khung bao bọc chuông, cố định ở góc trên bên phải */
         .sm-noti-wrapper { position: fixed; top: 15px; right: 25px; z-index: 9999; }
-        
-        /* Giao diện nút chuông */
         .sm-bell-btn { font-size: 20px; cursor: pointer; position: relative; background: #fff; border: 1px solid #e2e8f0; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.2s; color: #2D5A27; }
         .sm-bell-btn:hover { background: #f8fafc; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
-        
-        /* Hiệu ứng đếm số */
         .sm-badge { position: absolute; top: -2px; right: -2px; background: #e74c3c; color: white; font-size: 11px; padding: 2px 6px; border-radius: 12px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(231,76,60,0.3); }
-        
-        /* Khung popup thông báo */
         .sm-noti-popup { display: none; position: absolute; top: 55px; right: 0; width: 320px; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 10005; color: #333; text-align: left; overflow: hidden; border: 1px solid #f0f0f0; }
         .noti-header { padding: 12px 15px; font-weight: bold; font-size: 14px; background: #fdfdfd; border-bottom: 1px solid #eee; color: #2D5A27; display: flex; justify-content: space-between; align-items: center; }
         .noti-list { max-height: 380px; overflow-y: auto; }
@@ -111,18 +104,11 @@ async function guiThongBaoSacMau(tieude, noidung, targetRole = "") {
         .noti-item.unread { background: #f4f9f4; border-left: 4px solid #27ae60; }
         .noti-title { font-weight: bold; font-size: 13px; display: block; color: #2c3e50; }
         .noti-time { font-size: 11px; color: #95a5a6; margin-top: 5px; display: block; }
-        
-        /* Ẩn khi in phiếu */
         @media print { .sm-noti-wrapper { display: none !important; } }
-        
-        @media (max-width: 768px) { 
-            .sm-noti-wrapper { top: 10px; right: 15px; }
-            .sm-noti-popup { width: 280px; } 
-        }
+        @media (max-width: 768px) { .sm-noti-wrapper { top: 10px; right: 15px; } .sm-noti-popup { width: 280px; } }
     `;
     document.head.appendChild(style);
 
-    // 4. Bơm trực tiếp UI Chuông vào Body thay vì Sidebar
     window.addEventListener('DOMContentLoaded', () => {
         if (!document.querySelector('.sm-noti-wrapper')) {
             const notiHTML = `
@@ -141,10 +127,7 @@ async function guiThongBaoSacMau(tieude, noidung, targetRole = "") {
                     </div>
                 </div>
             `;
-            // Chèn vào cuối body để nó nổi lên trên trang web
             document.body.insertAdjacentHTML('beforeend', notiHTML);
-            
-            // Tải thông báo lần đầu
             setTimeout(loadNotifications, 500);
         }
     });
@@ -161,10 +144,10 @@ window.loadNotifications = async function() {
     if (!user) return;
 
     const role = user.Vai_Tro || user.role || "N/A";
+    const loginName = user.Ho_Ten || user.name || "Unknown";
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
     
     try {
-        // ADMIN THẤY TẤT CẢ
         let filterQuery = "";
         if (role !== "Admin") {
             filterQuery = `&or=(vai_tro_nhan.eq.${role},vai_tro_nhan.eq.All)`;
@@ -174,7 +157,7 @@ window.loadNotifications = async function() {
         const res = await fetch(url, { headers: h });
         
         if (!res.ok) {
-            document.getElementById('noti-list').innerHTML = '<div style="padding:20px; text-align:center; color:red; font-size:12px;">Lỗi tải dữ liệu. Bấm F12 xem Console.</div>';
+            document.getElementById('noti-list').innerHTML = '<div style="padding:20px; text-align:center; color:red; font-size:12px;">Lỗi tải dữ liệu.</div>';
             return;
         }
 
@@ -182,7 +165,9 @@ window.loadNotifications = async function() {
         const listEl = document.getElementById('noti-list');
         const badgeEl = document.getElementById('noti-badge');
         
-        const unreadCount = data.filter(n => !n.da_doc).length;
+        // ĐÃ CẬP NHẬT: Kiểm tra xem Tên User đã nằm trong danh sách người đọc chưa
+        const unreadCount = data.filter(n => !(n.nguoi_da_doc || "").includes(loginName)).length;
+        
         if (unreadCount > 0) {
             badgeEl.innerText = unreadCount > 9 ? '9+' : unreadCount;
             badgeEl.style.display = 'block';
@@ -197,37 +182,49 @@ window.loadNotifications = async function() {
 
         listEl.innerHTML = data.map(n => {
             const redirectLink = n.link ? n.link : ''; 
+            const currentReaders = n.nguoi_da_doc || '';
+            const isRead = currentReaders.includes(loginName);
+
             return `
-            <div class="noti-item ${n.da_doc ? '' : 'unread'}" onclick="markAsRead(${n.id}, '${redirectLink}')">
+            <div class="noti-item ${isRead ? '' : 'unread'}" onclick="markAsRead(${n.id}, '${redirectLink}', '${currentReaders}')">
                 <span class="noti-title">${n.tieu_de}</span>
                 <div style="font-size:12px; margin:4px 0; color:#555;">${n.noi_dung}</div>
                 <span class="noti-time">${new Date(n.created_at).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</span>
             </div>
         `}).join('');
     } catch (e) { 
-        console.error("Lỗi Exception load thông báo:", e); 
+        console.error("Lỗi load thông báo:", e); 
     }
 };
 
-window.markAsRead = async function(id, redirectLink) {
-    const h = { 
-        'apikey': window.SB_CONFIG.KEY, 
-        'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-    };
-    try {
-        await fetch(`${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?id=eq.${id}`, {
-            method: 'PATCH',
-            headers: h,
-            body: JSON.stringify({ da_doc: true })
-        });
-        
-        // Chuyển trang nếu có link, ngược lại chỉ reload UI thông báo
-        if (redirectLink && redirectLink !== 'undefined' && redirectLink !== '') {
-            window.location.href = redirectLink;
-        } else {
-            loadNotifications(); 
-        }
-    } catch (e) { console.error(e); }
+window.markAsRead = async function(id, redirectLink, currentReaders) {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    const loginName = user?.Ho_Ten || user?.name || "Unknown";
+
+    // Nếu user hiện tại chưa đọc thì mới gọi API ghi tên vào
+    if (!currentReaders.includes(loginName)) {
+        const h = { 
+            'apikey': window.SB_CONFIG.KEY, 
+            'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+        };
+
+        const newReaders = currentReaders ? currentReaders + ',' + loginName : loginName;
+
+        try {
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?id=eq.${id}`, {
+                method: 'PATCH',
+                headers: h,
+                body: JSON.stringify({ nguoi_da_doc: newReaders })
+            });
+        } catch (e) { console.error("Lỗi đánh dấu đã đọc:", e); }
+    }
+    
+    // Dù đã đọc rồi hay chưa đọc, click vào là phải chuyển trang (nếu có link)
+    if (redirectLink && redirectLink !== 'undefined' && redirectLink !== '') {
+        window.location.href = redirectLink;
+    } else {
+        loadNotifications(); 
+    }
 };
