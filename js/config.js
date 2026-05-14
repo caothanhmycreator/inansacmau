@@ -4,15 +4,12 @@ window.SB_CONFIG = {
 };
 
 window.APP_MODULES = [
-  // --- NHÓM KINH DOANH & BÁN HÀNG ---
-   { id: "Tu_Van",              label: "Tư vấn & Báo giá",       icon: "💬", file: "Tu_Van.html",      group: "Kinh doanh" },
+  { id: "Tu_Van",              label: "Tư vấn & Báo giá",       icon: "💬", file: "Tu_Van.html",      group: "Kinh doanh" },
   { id: "Tao_Don",              label: "Tạo đơn hàng",       icon: "🧾", file: "Tao_Don.html",      group: "Kinh doanh" },
   { id: "Sua_Phieu_Dat_Hang",   label: "Sửa phiếu đặt hàng",     icon: "📋", file: "Sua_Don.html",      group: "Kinh doanh" },
   { id: "Bang_Gia_San_Pham",    label: "Bảng giá sản phẩm",      icon: "🏷️", file: "Bang_Gia.html",     group: "Kinh doanh" },
   { id: "Gia_Von",              label: "Giá Vốn",                 icon: "💰", file: "Gia_Von.html",     group: "Kinh doanh" },
   { id: "Cong_No",              label: "Công nợ khách hàng",     icon: "💸", file: "Cong_No.html",      group: "Kinh doanh" },
-
-  // --- NHÓM THIẾT KẾ & SẢN XUẤT ---
   { id: "Xu_Ly",                label: "Xử lý đơn hàng",         icon: "⚙️", file: "Xu_Ly.html",        group: "Sản xuất" },
   { id: "Thiet_Ke",             label: "Thiết kế đồ họa",        icon: "🎨", file: "Thiet_Ke.html",      group: "Sản xuất" },
   { id: "Duyet_File",           label: "Duyệt File in",          icon: "✅", file: "Duyet_File.html",    group: "Sản xuất" },
@@ -20,29 +17,21 @@ window.APP_MODULES = [
   { id: "Gia_Cong_Lien_Ket",    label: "Gia công liên kết",      icon: "🔗", file: "Gia_Cong.html",      group: "Sản xuất" },
   { id: "Giao_Hang",            label: "Giao hàng",              icon: "🚚", file: "Giao_Hang.html",     group: "Sản xuất" },
   { id: "Quan_Ly_Tien_Do",      label: "Quản lý tiến độ",        icon: "🛰️", file: "Tien_Do.html",       group: "Sản xuất" },
-
-  // --- NHÓM KHO & NGUYÊN LIỆU ---
   { id: "Kho_Vat_Tu",           label: "Kho vật tư",             icon: "🏗️", file: "Kho.html",          group: "Kho" },
   { id: "Dinh_Muc_Nguyen_Lieu", label: "Định mức nguyên liệu",   icon: "🧪", file: "Nguyen_Lieu.html",   group: "Kho" },
-
-  // --- NHÓM KẾ TOÁN & TÀI CHÍNH ---
   { id: "Thanh_Toan",           label: "Thanh toán đơn hàng",    icon: "💳", file: "Thanh_Toan.html",    group: "Kế toán" },
   { id: "Thu_Chi",              label: "Tiền mặt & Chi",         icon: "💵", file: "Thu_Chi.html",      group: "Kế toán" },
   { id: "Nhap_Hang",            label: "Nhập hàng & Hóa đơn",    icon: "📥", file: "Nhap_Hang.html",      group: "Kế toán" },
   { id: "Bao_Cao_Thu_Chi",      label: "Báo cáo thu chi",        icon: "📊", file: "BC_Thu_Chi.html",    group: "Kế toán" },
-
-  // --- NHÓM QUẢN TRỊ & NHÂN SỰ ---
   { id: "Quan_Tri_Don_Hang",    label: "Quản trị đơn hàng",      icon: "🗂️", file: "Quan_Tri.html",      group: "Quản trị" },
   { id: "Bao_Cao_Cong_Viec",    label: "Báo cáo công việc",      icon: "📝", file: "BC_Cong_Viec.html",  group: "Quản trị" },
   { id: "Cham_Cong",            label: "Chấm công nhanh",        icon: "🕒", file: "Cham_Cong.html",     group: "Quản trị" },
   { id: "Quan_Ly_Luong",        label: "Bảng tính lương",        icon: "💵", file: "Quan_Ly_Luong.html", group: "Quản trị" },
   { id: "Khach_Hang",           label: "Khách hàng",             icon: "👥", file: "Khach_Hang.html",    group: "Quản trị" },
   { id: "Admin_Quan_Ly_Nhan_Su",label: "Quản trị nhân sự",       icon: "🛠️", file: "Admin_Quan_Ly_Nhan_Su.html", group: "Quản trị" },
-
-  // --- NHÓM VĂN BẢN ---
   { id: "Bao_Gia",          label: "Báo Giá",             icon: "📋", file: "Bao_Gia.html",      group: "Văn bản" },
   { id: "Hop_Dong",         label: "✍️ Hợp đồng - Nghiệm thu",            icon: "🤝", file: "Hop_Dong.html",     group: "Văn bản" },
-   { id: "Hoa_Don_Dien_Tu",  label: "Hóa đơn điện tử",     icon: "🧾", file: "Hoa_Don.html",      group: "Văn bản" },
+  { id: "Hoa_Don_Dien_Tu",  label: "Hóa đơn điện tử",     icon: "🧾", file: "Hoa_Don.html",      group: "Văn bản" }
 ];
 
 window.formatDateTimeVN = function() {
@@ -53,13 +42,192 @@ window.formatDateTimeVN = function() {
 
 async function guiThongBaoSacMau(tieude, noidung, targetRole = "") {
     const URL_FUNCTION = "https://zatxvklirqvyacslkpgy.supabase.co/functions/v1/bright-handler";
+    const currentLink = window.location.pathname.split('/').pop() || ""; 
+
     try {
         await fetch(URL_FUNCTION, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tieude: tieude, noidung: noidung, targetRole: targetRole })
+            body: JSON.stringify({ tieude: tieude, noidung: noidung, targetRole: targetRole, link: currentLink })
         });
     } catch (e) {
         console.error("Lỗi gửi thông báo:", e);
     }
 }
+
+// =====================================================================
+// KHU VỰC THÔNG BÁO, ONESIGNAL & INJECT UI CHUÔNG ĐỘC LẬP
+// =====================================================================
+(function() {
+    // 1. Chèn script OneSignal
+    if (!document.getElementById('onesignal-sdk')) {
+        const osScript = document.createElement('script');
+        osScript.id = 'onesignal-sdk';
+        osScript.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+        osScript.defer = true;
+        document.head.appendChild(osScript);
+    }
+
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+
+    // 2. Khởi tạo OneSignal
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(oneSignal) {
+        if (!oneSignal.initialized) {
+            await oneSignal.init({
+                appId: "e06b8b48-2adf-4970-b2b3-9b509e5357d8",
+                allowLocalhostAsSecureOrigin: true,
+            });
+        }
+        await oneSignal.Slidedown.promptPush();
+        if (user && (user.Ho_Ten || user.name)) {
+            const loginName = user.Ho_Ten || user.name;
+            await oneSignal.login(loginName);
+            await oneSignal.User.addTags({
+                role: user.Vai_Tro || user.role || "N/A"
+            });
+        }
+    });
+
+    // 3. Style của Chuông Thông Báo (Cố định góc trên bên phải)
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Khung bao bọc chuông, cố định ở góc trên bên phải */
+        .sm-noti-wrapper { position: fixed; top: 15px; right: 25px; z-index: 9999; }
+        
+        /* Giao diện nút chuông */
+        .sm-bell-btn { font-size: 20px; cursor: pointer; position: relative; background: #fff; border: 1px solid #e2e8f0; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.2s; color: #2D5A27; }
+        .sm-bell-btn:hover { background: #f8fafc; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+        
+        /* Hiệu ứng đếm số */
+        .sm-badge { position: absolute; top: -2px; right: -2px; background: #e74c3c; color: white; font-size: 11px; padding: 2px 6px; border-radius: 12px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(231,76,60,0.3); }
+        
+        /* Khung popup thông báo */
+        .sm-noti-popup { display: none; position: absolute; top: 55px; right: 0; width: 320px; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 10005; color: #333; text-align: left; overflow: hidden; border: 1px solid #f0f0f0; }
+        .noti-header { padding: 12px 15px; font-weight: bold; font-size: 14px; background: #fdfdfd; border-bottom: 1px solid #eee; color: #2D5A27; display: flex; justify-content: space-between; align-items: center; }
+        .noti-list { max-height: 380px; overflow-y: auto; }
+        .noti-item { padding: 12px 15px; border-bottom: 1px solid #f4f4f4; cursor: pointer; transition: 0.2s; }
+        .noti-item:hover { background: #fafafa; }
+        .noti-item.unread { background: #f4f9f4; border-left: 4px solid #27ae60; }
+        .noti-title { font-weight: bold; font-size: 13px; display: block; color: #2c3e50; }
+        .noti-time { font-size: 11px; color: #95a5a6; margin-top: 5px; display: block; }
+        
+        /* Ẩn khi in phiếu */
+        @media print { .sm-noti-wrapper { display: none !important; } }
+        
+        @media (max-width: 768px) { 
+            .sm-noti-wrapper { top: 10px; right: 15px; }
+            .sm-noti-popup { width: 280px; } 
+        }
+    `;
+    document.head.appendChild(style);
+
+    // 4. Bơm trực tiếp UI Chuông vào Body thay vì Sidebar
+    window.addEventListener('DOMContentLoaded', () => {
+        if (!document.querySelector('.sm-noti-wrapper')) {
+            const notiHTML = `
+                <div class="sm-noti-wrapper no-print">
+                    <div class="sm-bell-btn" onclick="toggleNotiPopup()">
+                        🔔 <span id="noti-badge" class="sm-badge" style="display:none">0</span>
+                    </div>
+                    <div id="sm-noti-popup" class="sm-noti-popup">
+                        <div class="noti-header">
+                            <span>📢 THÔNG BÁO</span> 
+                            <span onclick="toggleNotiPopup()" style="cursor:pointer; opacity:0.5; font-size:16px;">✕</span>
+                        </div>
+                        <div id="noti-list" class="noti-list">
+                            <div style="padding:20px; text-align:center; font-size:12px; color:#999;">Đang tải...</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            // Chèn vào cuối body để nó nổi lên trên trang web
+            document.body.insertAdjacentHTML('beforeend', notiHTML);
+            
+            // Tải thông báo lần đầu
+            setTimeout(loadNotifications, 500);
+        }
+    });
+})();
+
+window.toggleNotiPopup = function() {
+    const p = document.getElementById('sm-noti-popup');
+    p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+    if (p.style.display === 'block') loadNotifications();
+};
+
+window.loadNotifications = async function() {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    if (!user) return;
+
+    const role = user.Vai_Tro || user.role || "N/A";
+    const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+    
+    try {
+        // ADMIN THẤY TẤT CẢ
+        let filterQuery = "";
+        if (role !== "Admin") {
+            filterQuery = `&or=(vai_tro_nhan.eq.${role},vai_tro_nhan.eq.All)`;
+        }
+
+        const url = `${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?order=created_at.desc&limit=20${filterQuery}`;
+        const res = await fetch(url, { headers: h });
+        
+        if (!res.ok) {
+            document.getElementById('noti-list').innerHTML = '<div style="padding:20px; text-align:center; color:red; font-size:12px;">Lỗi tải dữ liệu. Bấm F12 xem Console.</div>';
+            return;
+        }
+
+        const data = await res.json();
+        const listEl = document.getElementById('noti-list');
+        const badgeEl = document.getElementById('noti-badge');
+        
+        const unreadCount = data.filter(n => !n.da_doc).length;
+        if (unreadCount > 0) {
+            badgeEl.innerText = unreadCount > 9 ? '9+' : unreadCount;
+            badgeEl.style.display = 'block';
+        } else {
+            badgeEl.style.display = 'none';
+        }
+
+        if (data.length === 0) {
+            listEl.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-size:12px;">Không có thông báo nào.</div>';
+            return;
+        }
+
+        listEl.innerHTML = data.map(n => {
+            const redirectLink = n.link ? n.link : ''; 
+            return `
+            <div class="noti-item ${n.da_doc ? '' : 'unread'}" onclick="markAsRead(${n.id}, '${redirectLink}')">
+                <span class="noti-title">${n.tieu_de}</span>
+                <div style="font-size:12px; margin:4px 0; color:#555;">${n.noi_dung}</div>
+                <span class="noti-time">${new Date(n.created_at).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</span>
+            </div>
+        `}).join('');
+    } catch (e) { 
+        console.error("Lỗi Exception load thông báo:", e); 
+    }
+};
+
+window.markAsRead = async function(id, redirectLink) {
+    const h = { 
+        'apikey': window.SB_CONFIG.KEY, 
+        'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+    };
+    try {
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: h,
+            body: JSON.stringify({ da_doc: true })
+        });
+        
+        // Chuyển trang nếu có link, ngược lại chỉ reload UI thông báo
+        if (redirectLink && redirectLink !== 'undefined' && redirectLink !== '') {
+            window.location.href = redirectLink;
+        } else {
+            loadNotifications(); 
+        }
+    } catch (e) { console.error(e); }
+};

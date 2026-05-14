@@ -1,35 +1,5 @@
 // sidebar_loader.js
 (function() {
-    if (!document.getElementById('onesignal-sdk')) {
-        const osScript = document.createElement('script');
-        osScript.id = 'onesignal-sdk';
-        osScript.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
-        osScript.defer = true;
-        document.head.appendChild(osScript);
-    }
-
-    const user = JSON.parse(localStorage.getItem('currentUser'));
-
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function(oneSignal) {
-        if (!oneSignal.initialized) {
-            await oneSignal.init({
-                appId: "e06b8b48-2adf-4970-b2b3-9b509e5357d8",
-                allowLocalhostAsSecureOrigin: true,
-            });
-        }
-        await oneSignal.Slidedown.promptPush();
-        if (user && (user.Ho_Ten || user.name)) {
-            const loginName = user.Ho_Ten || user.name;
-            await oneSignal.login(loginName);
-            await oneSignal.User.addTags({
-                role: user.Vai_Tro || user.role || "N/A"
-            });
-        }
-    });
-})();
-
-(function() {
     function initSidebar() {
         if (document.getElementById('sm-sidebar')) return;
 
@@ -47,22 +17,6 @@
             <div id="sm-sidebar" class="sm-sidebar">
                 <div class="sm-header">
                     <img src="https://i.ibb.co/twFkxYFk/LOGO-SAC-MAU-CHUAN.png" width="60" onclick="window.location.href='index.html'" style="cursor:pointer">
-                    
-                    <div class="sm-noti-wrapper">
-                        <div class="sm-bell-btn" onclick="toggleNotiPopup()">
-                            🔔 <span id="noti-badge" class="sm-badge" style="display:none">0</span>
-                        </div>
-                        <div id="sm-noti-popup" class="sm-noti-popup">
-                            <div class="noti-header">
-                                📢 THÔNG BÁO 
-                                <span onclick="toggleNotiPopup()" style="float:right; cursor:pointer; opacity:0.5">✕</span>
-                            </div>
-                            <div id="noti-list" class="noti-list">
-                                <div style="padding:20px; text-align:center; font-size:12px; color:#999;">Đang tải...</div>
-                            </div>
-                        </div>
-                    </div>
-
                     <span id="user-display" class="sm-user-info">${userName} (${userRole})</span>
                 </div>
 
@@ -157,106 +111,18 @@
                 const hasVisibleLink = Array.from(g.querySelectorAll('.nav-link')).some(a => a.style.display === 'block');
                 g.style.display = hasVisibleLink ? 'block' : 'none';
             });
-
-            // Tự động tải số lượng thông báo khi vừa load
-            setTimeout(loadNotifications, 1500);
         }
     }
-
-    // --- LOGIC THÔNG BÁO ---
-    window.toggleNotiPopup = function() {
-        const p = document.getElementById('sm-noti-popup');
-        p.style.display = (p.style.display === 'block') ? 'none' : 'block';
-        if (p.style.display === 'block') loadNotifications();
-    };
-
-    window.loadNotifications = async function() {
-        const user = JSON.parse(localStorage.getItem('currentUser'));
-        const role = user?.Vai_Tro || user?.role || "N/A";
-        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-        
-        try {
-            const url = `${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?or=(vai_tro_nhan.eq.${role},vai_tro_nhan.eq.All)&order=created_at.desc&limit=20`;
-            const res = await fetch(url, { headers: h });
-            
-            // Xử lý báo lỗi ngay trên giao diện nếu API trả về lỗi
-            if (!res.ok) {
-                const errorText = await res.text();
-                console.error("Supabase Error:", errorText);
-                document.getElementById('noti-list').innerHTML = '<div style="padding:20px; text-align:center; color:red; font-size:12px;">Lỗi tải dữ liệu. Bấm F12 xem Console.</div>';
-                return;
-            }
-
-            const data = await res.json();
-            console.log("Dữ liệu thông báo tải về:", data);
-            
-            const listEl = document.getElementById('noti-list');
-            const badgeEl = document.getElementById('noti-badge');
-            
-            const unreadCount = data.filter(n => !n.da_doc).length;
-            if (unreadCount > 0) {
-                badgeEl.innerText = unreadCount > 5 ? '5+' : unreadCount;
-                badgeEl.style.display = 'block';
-            } else {
-                badgeEl.style.display = 'none';
-            }
-
-            if (data.length === 0) {
-                listEl.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-size:12px;">Không có thông báo nào!</div>';
-                return;
-            }
-
-            listEl.innerHTML = data.map(n => `
-                <div class="noti-item ${n.da_doc ? '' : 'unread'}" onclick="markAsRead(${n.id})">
-                    <span class="noti-title">${n.tieu_de}</span>
-                    <div style="font-size:12px; margin:2px 0; color:#555;">${n.noi_dung}</div>
-                    <span class="noti-time">${new Date(n.created_at).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</span>
-                </div>
-            `).join('');
-        } catch (e) { 
-            console.error("Lỗi Exception load thông báo:", e); 
-        }
-    };
-
-    window.markAsRead = async function(id) {
-        const h = { 
-            'apikey': window.SB_CONFIG.KEY, 
-            'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-        };
-        try {
-            await fetch(`${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?id=eq.${id}`, {
-                method: 'PATCH',
-                headers: h,
-                body: JSON.stringify({ da_doc: true })
-            });
-            loadNotifications();
-        } catch (e) { console.error(e); }
-    };
 
     window.toggleMobileSidebar = function() { document.body.classList.toggle('sm-open'); };
     window.logoutAction = function() { localStorage.removeItem('currentUser'); window.location.href = 'Login.html'; }; 
 
-    // --- CSS STYLE ---
+    // --- CSS STYLE THUẦN SIDEBAR ---
     const style = document.createElement('style');
     style.textContent = `
         .sm-sidebar { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; background: #2D5A27; color: white; z-index: 10001; transition: 0.3s; display: flex; flex-direction: column; }
         .sm-header { padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative; }
         .sm-user-info { font-size: 11px; color: #a5d6a7; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 4px; display: block; margin-top: 8px; }
-        
-        /* NOTIFICATION CSS */
-        .sm-noti-wrapper { position: absolute; top: 15px; right: 15px; }
-        .sm-bell-btn { font-size: 18px; cursor: pointer; position: relative; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
-        .sm-badge { position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; font-size: 10px; padding: 2px 5px; border-radius: 10px; font-weight: bold; border: 1px solid #2D5A27; }
-        .sm-noti-popup { display: none; position: absolute; top: 40px; right: 0; width: 280px; background: white; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); z-index: 10005; color: #333; text-align: left; overflow: hidden; }
-        .noti-header { padding: 10px 15px; font-weight: bold; font-size: 13px; background: #f8f9fa; border-bottom: 1px solid #eee; color: #2D5A27; }
-        .noti-list { max-height: 350px; overflow-y: auto; }
-        .noti-item { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s; }
-        .noti-item:hover { background: #f9f9f9; }
-        .noti-item.unread { background: #f0f7ef; border-left: 4px solid #2D5A27; }
-        .noti-title { font-weight: bold; font-size: 13px; display: block; color: #333; }
-        .noti-time { font-size: 10px; color: #999; margin-top: 4px; display: block; }
         
         .sm-menu-box { flex: 1; overflow-y: auto; scrollbar-width: none; }
         .sm-menu-box::-webkit-scrollbar { display: none; }
@@ -280,7 +146,6 @@
             .sm-mobile-btn { display: block; }
             body.sm-open .sm-sidebar { left: 0; }
             body.sm-open #sm-overlay { display: block; }
-            .sm-noti-popup { right: -50px; width: 260px; }
         }
     `;
     document.head.appendChild(style);
