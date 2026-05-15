@@ -18,7 +18,8 @@
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
     .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; min-width: 0; }
     
-    .header { border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+    .header { border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 25px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+    .header-top-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
     .header h2 { margin: 0; color: var(--primary); }
 
     .admin-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); margin-bottom: 30px; }
@@ -31,7 +32,7 @@
     .attendance-table td input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary); }
     
     .shift-label { font-weight: bold; color: #64748b; background: #f8fafc !important; width: 60px; position: sticky; left: 0; z-index: 5; }
-    .month-picker { padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold; outline: none; background: white; }
+    .month-picker { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold; outline: none; background: white; }
 
     .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 12px; text-transform: uppercase; }
     .btn-edit { background: var(--accent); color: white; }
@@ -54,8 +55,8 @@
             padding: 8px 12px; border: none; border-radius: 4px;
         }
 
-        .header { flex-direction: column; align-items: flex-start; }
-        .month-picker { width: 100%; }
+        .header-top-row { flex-direction: column; align-items: flex-start; }
+        .month-picker { width: 100%; box-sizing: border-box; }
 
         .staff-header { flex-direction: column; align-items: flex-start; gap: 12px; }
         .staff-header > div { width: 100%; display: flex; justify-content: space-between; align-items: center; }
@@ -79,12 +80,13 @@
 <body>
 
   <div class="main-content">
+    
     <div class="header">
-      <div>
+      <div class="header-top-row">
         <h2>⚙️ QUẢN TRỊ NHÂN SỰ</h2>
-        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Điều chỉnh hệ số & Chốt công tháng</p>
+        <input type="month" id="month-selector" class="month-picker" onchange="loadAllData()">
       </div>
-      <input type="month" id="month-selector" class="month-picker" onchange="loadAllData()">
+      <p style="color: #666; font-size: 14px; margin: 0;">Điều chỉnh hệ số & Chốt công tháng</p>
     </div>
 
     <div id="admin-container">
@@ -97,6 +99,15 @@
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
     let listStaff = [];
     let listAttendance = [];
+
+    // --- HÀM PHỤ TRỢ GỬI THÔNG BÁO TỚI ADMIN ---
+    async function notifyAdmin(title, message) {
+      try {
+        if (typeof window.guiThongBaoSacMau === 'function') {
+          await window.guiThongBaoSacMau(title, message, "Admin", "Admin_Quan_Ly_Nhan_Su.html");
+        }
+      } catch (e) { console.error("Lỗi gửi thông báo:", e); }
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
       const now = new Date();
@@ -136,8 +147,8 @@
             headerRow += `<th style="${bg}">${d}<br><small>${getDayName(dateObj)}</small></th>`;
             const logS = findLog(s.id, dateStr, 'morning');
             const logC = findLog(s.id, dateStr, 'afternoon');
-            morningRow += `<td style="${bg}"><input type="checkbox" ${logS ? 'checked' : ''} onchange="toggleAttendance(this, '${s.id}', '${dateStr}', 'morning', '${logS?logS.id:''}')"></td>`;
-            afternoonRow += `<td style="${bg}"><input type="checkbox" ${logC ? 'checked' : ''} onchange="toggleAttendance(this, '${s.id}', '${dateStr}', 'afternoon', '${logC?logC.id:''}')"></td>`;
+            morningRow += `<td style="${bg}"><input type="checkbox" ${logS ? 'checked' : ''} onchange="toggleAttendance(this, '${s.id}', '${s.Ho_Ten}', '${dateStr}', 'morning', '${logS?logS.id:''}')"></td>`;
+            afternoonRow += `<td style="${bg}"><input type="checkbox" ${logC ? 'checked' : ''} onchange="toggleAttendance(this, '${s.id}', '${s.Ho_Ten}', '${dateStr}', 'afternoon', '${logC?logC.id:''}')"></td>`;
         }
         return `
           <div class="admin-card">
@@ -146,7 +157,7 @@
               <div>
                 <span style="font-size:12px; font-weight:bold; color:#475569;">Lương CB: </span>
                 <input type="number" id="base-${s.id}" class="edit-input" value="${s.Luong_Co_Ban}">
-                <button class="btn btn-edit" style="padding: 8px 12px;" onclick="updateSalary('${s.id}')">LƯU</button>
+                <button class="btn btn-edit" style="padding: 8px 12px;" onclick="updateSalary('${s.id}', '${s.Ho_Ten}')">LƯU</button>
               </div>
             </div>
             <div class="table-responsive"><table class="attendance-table">${headerRow}</tr>${morningRow}</tr>${afternoonRow}</tr></table></div>
@@ -164,27 +175,32 @@
         });
     }
 
-    async function toggleAttendance(checkbox, userId, day, shift, existingId) {
+    async function toggleAttendance(checkbox, userId, empName, day, shift, existingId) {
+        const shiftName = shift === 'morning' ? 'Sáng' : 'Chiều';
+        
         if (checkbox.checked) {
             const gioVao = shift === 'morning' ? "07:30:00" : "13:30:00";
             const gioRa = shift === 'morning' ? "11:30:00" : "17:30:00";
             await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong`, {
                 method: 'POST', headers: h, body: JSON.stringify({ User_ID: userId, Ngay: day, Gio_Vao: gioVao, Gio_Ra: gioRa, Status: 'Đã về' })
             });
+            await notifyAdmin("CẬP NHẬT CHẤM CÔNG", `Đã BỔ SUNG chấm công ca ${shiftName} ngày ${day} cho nhân viên ${empName}.`);
             loadAllData();
         } else {
             Swal.fire({ title: 'Xóa công?', text: 'Bạn muốn xóa ngày công này?', icon: 'warning', showCancelButton: true, confirmButtonText: 'XÓA', cancelButtonText: 'HỦY' }).then(async (result) => {
                 if (result.isConfirmed) {
                     await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?id=eq.${existingId}`, { method: 'DELETE', headers: h });
+                    await notifyAdmin("CẬP NHẬT CHẤM CÔNG", `Đã XÓA BỎ chấm công ca ${shiftName} ngày ${day} của nhân viên ${empName}.`);
                     loadAllData();
                 } else checkbox.checked = true;
             });
         }
     }
 
-    async function updateSalary(id) {
+    async function updateSalary(id, empName) {
       const newVal = document.getElementById(`base-${id}`).value;
       await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?id=eq.${id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ Luong_Co_Ban: Number(newVal) }) });
+      await notifyAdmin("CẬP NHẬT LƯƠNG CƠ BẢN", `Lương cơ bản của ${empName} đã được điều chỉnh thành ${Number(newVal).toLocaleString('vi-VN')} đ.`);
       Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã cập nhật lương cơ bản', showConfirmButton: false, timer: 1500 });
     }
 
@@ -201,15 +217,15 @@
             <small style="color:#888;">Nội dung: ${f.Noi_Dung || '...'}</small>
           </div>
           <div style="display:flex; gap:5px;">
-            <button class="btn btn-edit" style="padding:5px 8px; font-size:10px; width:auto; margin:0;" onclick='editFinanceItem(${JSON.stringify(f)})'>Sửa</button>
-            <button class="btn btn-danger" style="padding:5px 8px; font-size:10px; width:auto; margin:0;" onclick="deleteFinance('${f.id}')">Xóa</button>
+            <button class="btn btn-edit" style="padding:5px 8px; font-size:10px; width:auto; margin:0;" onclick='editFinanceItem(${JSON.stringify(f)}, "${name}")'>Sửa</button>
+            <button class="btn btn-danger" style="padding:5px 8px; font-size:10px; width:auto; margin:0;" onclick="deleteFinance('${f.id}', '${name}', '${f.Loai}', ${f.So_Tien})">Xóa</button>
           </div>
         </div>`;
       }).join('');
       Swal.fire({ title: `<span style="font-size:18px;">TÀI CHÍNH: ${name}</span>`, html: `<div style="max-height:400px; overflow-y:auto; border:1px solid #eee; border-radius:8px;">${html || '<p style="padding:20px; color:#888;">Chưa có kê khai</p>'}</div>`, showConfirmButton: false, width: '650px', showCloseButton: true });
     }
 
-    async function editFinanceItem(item) {
+    async function editFinanceItem(item, empName) {
         const d = new Date(item.Ngay_Ghi);
         const dateVal = d.toISOString().split('T')[0];
         const timeVal = d.toTimeString().split(' ')[0].substring(0,5);
@@ -239,7 +255,7 @@
             showCancelButton: true,
             confirmButtonText: 'LƯU THAY ĐỔI',
             cancelButtonText: 'HỦY',
-            confirmButtonColor: '#2D5A27', // ĐÃ FIX: DÙNG MÃ MÀU TRỰC TIẾP
+            confirmButtonColor: '#2D5A27', 
             preConfirm: () => {
                 return {
                     Ngay_Ghi: document.getElementById('edit-date').value + 'T' + document.getElementById('edit-time').value + ':00',
@@ -255,16 +271,18 @@
                 method: 'PATCH', headers: h, body: JSON.stringify(formValues)
             });
             if(res.ok) {
+                await notifyAdmin("CẬP NHẬT KÊ KHAI TÀI CHÍNH", `Đã sửa khoản [${formValues.Loai} - ${formValues.Noi_Dung}] của ${empName} thành mức ${formValues.So_Tien.toLocaleString('vi-VN')} đ.`);
                 Swal.fire({ icon: 'success', title: 'Đã cập nhật!', timer: 1000, showConfirmButton: false });
                 loadAllData();
             }
         }
     }
 
-    async function deleteFinance(id) {
+    async function deleteFinance(id, empName, loaiStr, soTienNum) {
         Swal.fire({ title: 'Xóa khoản này?', text: 'Dữ liệu sẽ bị xóa vĩnh viễn!', icon: 'warning', showCancelButton: true, confirmButtonText: 'XÓA', cancelButtonText: 'HỦY', confirmButtonColor: '#e74c3c' }).then(async (r) => {
             if (r.isConfirmed) {
                 await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?id=eq.${id}`, { method: 'DELETE', headers: h });
+                await notifyAdmin("XÓA KÊ KHAI TÀI CHÍNH", `Khoản [${loaiStr}] trị giá ${soTienNum.toLocaleString('vi-VN')} đ của nhân viên ${empName} đã bị xóa bỏ khỏi hệ thống.`);
                 Swal.fire({ icon: 'success', title: 'Đã xóa!', timer: 800, showConfirmButton: false });
                 loadAllData();
             }

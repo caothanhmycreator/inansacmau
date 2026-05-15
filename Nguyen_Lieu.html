@@ -18,7 +18,6 @@
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
     .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
 
-    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
     .search-box { width: 100%; max-width: 400px; padding: 12px 15px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
     .search-box:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(45, 90, 39, 0.1); }
 
@@ -54,9 +53,8 @@
             padding: 8px 12px; border: none; border-radius: 4px;
         }
 
-        .header-top { flex-direction: column; align-items: stretch !important; }
         .search-box { max-width: 100%; box-sizing: border-box; }
-        .btn-add { width: 100%; }
+        .btn-add { width: 100%; margin-top: 10px;}
 
         table, thead, tbody, th, td, tr { display: block; width: 100%; box-sizing: border-box; }
         thead { display: none; }
@@ -76,12 +74,13 @@
 <body>
 
   <div class="main-content">
-    <div class="header-top">
-      <div>
+    
+    <div class="header-top" style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap; width: 100%;">
         <h2 style="margin:0; color: var(--primary);">🧪 QUẢN LÝ NGUYÊN LIỆU</h2>
-        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Thiết lập và theo dõi định mức tồn kho vật tư in</p>
+        <button class="btn-add" onclick="addMaterial()" style="padding: 8px 15px; font-size: 13px; width: auto;">+ THÊM NGUYÊN LIỆU MỚI</button>
       </div>
-      <button class="btn-add" onclick="addMaterial()">+ THÊM NGUYÊN LIỆU MỚI</button>
+      <p style="color: #666; font-size: 14px; margin: 0;">Thiết lập và theo dõi định mức tồn kho vật tư in</p>
     </div>
 
     <div class="inventory-card">
@@ -127,6 +126,15 @@
       const d = new Date();
       const pad = (n) => n.toString().padStart(2, '0');
       return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    // --- HÀM PHỤ TRỢ GỬI THÔNG BÁO ---
+    async function sendNotification(title, msg) {
+        try {
+            if (typeof window.guiThongBaoSacMau === 'function') {
+                await window.guiThongBaoSacMau(title, msg, "Admin", "Nguyen_Lieu.html");
+            }
+        } catch(e) { console.error("Noti error", e); }
     }
 
     async function loadMaterials() {
@@ -253,6 +261,12 @@
               throw new Error(err.message || "Cơ sở dữ liệu từ chối cập nhật!");
           }
 
+          // THÔNG BÁO KHI SỬA
+          await sendNotification(
+            "CẬP NHẬT NGUYÊN LIỆU", 
+            `${formValues.Ten_Nguyen_Lieu} thuộc ${formValues.Nhom_Hang} vừa được cập nhật số lượng mới là ${formValues.So_Luong} ${formValues.DVT || ''}`
+          );
+
           Swal.fire({icon: 'success', title: 'Đã cập nhật!', timer: 1000, showConfirmButton: false});
           loadMaterials(); 
         } catch (e) {
@@ -344,6 +358,12 @@
               throw new Error(err.message || "Cơ sở dữ liệu từ chối lưu bản ghi này!");
           }
           
+          // THÔNG BÁO KHI TẠO MỚI
+          await sendNotification(
+            "THÊM NGUYÊN LIỆU MỚI", 
+            `Kho nguyên liệu vừa được thêm ${formValues.So_Luong} ${formValues.DVT || ''} ${formValues.Ten_Nguyen_Lieu} thuộc ${formValues.Nhom_Hang}`
+          );
+
           Swal.fire({icon: 'success', title: 'Đã thêm nguyên liệu!', timer: 1000, showConfirmButton: false});
           loadMaterials(); 
         } catch (e) {
@@ -435,6 +455,12 @@
               throw new Error(err.message || "Cơ sở dữ liệu từ chối lưu nhật ký hủy!");
           }
 
+          // THÔNG BÁO KHI XUẤT HỦY
+          await sendNotification(
+            "XUẤT HỦY NGUYÊN LIỆU", 
+            `${slHuy} ${item.DVT || ''} ${item.Ten_Nguyen_Lieu} thuộc ${item.Nhom_Hang} vừa được XUẤT HỦY.`
+          );
+
           Swal.fire({icon: 'success', title: 'Đã ghi nhận xuất hủy!', timer: 1200, showConfirmButton: false});
           loadMaterials(); 
         } catch (e) {
@@ -444,6 +470,8 @@
     }
 
     async function deleteMaterial(id) {
+      const item = materialsData.find(x => x.id === id);
+
       const r = await Swal.fire({ 
           title: 'Xóa nguyên liệu này?', 
           text: 'Thao tác này sẽ xóa vĩnh viễn bản ghi nguyên liệu này!',
@@ -465,6 +493,14 @@
             if (!response.ok) {
               const err = await response.json();
               throw new Error(err.message || "Xóa thất bại!");
+            }
+
+            // THÔNG BÁO KHI XÓA
+            if (item) {
+                await sendNotification(
+                    "XÓA NGUYÊN LIỆU", 
+                    `${item.So_Luong} ${item.DVT || ''} ${item.Ten_Nguyen_Lieu} thuộc ${item.Nhom_Hang} vừa được xóa khỏi hệ thống`
+                );
             }
 
             Swal.fire({icon: 'success', title: 'Đã xóa!', timer: 1000, showConfirmButton: false});
@@ -537,8 +573,8 @@
                 <td style="padding: 8px; border-bottom: 1px solid #eee; line-height: 1.4;">${item.Ten_Nguyen_Lieu || ''}</td>
                 <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center; color: red; font-weight: bold;">${item.So_Luong || 0}</td>
                 <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center; white-space: nowrap;">
-                    <button onclick="editHistoryItem(${item.id}, '${item.Ten_Nguyen_Lieu}', ${item.So_Luong}, '${item.Ma_Nguyen_Lieu}')" style="background: none; border: none; color: #3498db; cursor: pointer; font-weight: bold; padding: 2px;">Sửa</button> |
-                    <button onclick="deleteHistoryItem(${item.id}, '${item.Ma_Nguyen_Lieu}', ${item.So_Luong})" style="background: none; border: none; color: #e74c3c; cursor: pointer; font-weight: bold; padding: 2px;">Xóa</button>
+                    <button onclick="editHistoryItem(${item.id}, '${item.Ten_Nguyen_Lieu.replace(/'/g, "\\'")}', ${item.So_Luong}, '${item.Ma_Nguyen_Lieu}')" style="background: none; border: none; color: #3498db; cursor: pointer; font-weight: bold; padding: 2px;">Sửa</button> |
+                    <button onclick="deleteHistoryItem(${item.id}, '${item.Ma_Nguyen_Lieu}', ${item.So_Luong}, '${item.Ten_Nguyen_Lieu.replace(/'/g, "\\'")}')" style="background: none; border: none; color: #e74c3c; cursor: pointer; font-weight: bold; padding: 2px;">Xóa</button>
                 </td>
             </tr>
         `).join('');
@@ -617,6 +653,13 @@
                 
                 if (!res.ok) throw new Error("Database từ chối cập nhật!");
 
+                // THÔNG BÁO KHI CẬP NHẬT LỊCH SỬ
+                let titleTB = window.currentHistoryType === '[XUẤT HỦY]' ? 'CẬP NHẬT LỊCH SỬ XUẤT HỦY NGUYÊN LIỆU' : 'CẬP NHẬT LỊCH SỬ DÙNG NGUYÊN LIỆU';
+                let msgTB = window.currentHistoryType === '[XUẤT HỦY]' 
+                    ? `${tenNL} vừa được cập nhật số lượng đã được XUẤT HỦY là ${slMoi}` 
+                    : `${tenNL} vừa được cập nhật số lượng đã được sử dụng mới là ${slMoi}`;
+                await sendNotification(titleTB, msgTB);
+
                 Swal.fire({icon: 'success', title: 'Đã sửa lịch sử & Cập nhật kho!', timer: 1500, showConfirmButton: false}).then(() => {
                     viewHistory(window.currentHistoryType); 
                     loadMaterials(); 
@@ -629,7 +672,7 @@
         }
     };
 
-    window.deleteHistoryItem = async function(id, maNL, slCu) {
+    window.deleteHistoryItem = async function(id, maNL, slCu, tenNL) {
         const r = await Swal.fire({ 
             title: 'Xóa dòng lịch sử này?', 
             icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'XÓA NGAY', cancelButtonText: 'ĐÓNG'
@@ -654,6 +697,13 @@
                 // 2. Xóa dòng lịch sử
                 const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${id}`, { method: 'DELETE', headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` } });
                 if (!res.ok) throw new Error("Database từ chối xóa!");
+
+                // THÔNG BÁO KHI XÓA LỊCH SỬ
+                let titleTB = window.currentHistoryType === '[XUẤT HỦY]' ? 'XÓA NGUYÊN LIỆU XUẤT HỦY' : 'XÓA LỊCH SỬ DÙNG NGUYÊN LIỆU';
+                let msgTB = window.currentHistoryType === '[XUẤT HỦY]' 
+                    ? `${slCu} ${tenNL} vừa được XÓA khỏi lịch sử XUẤT HỦY.` 
+                    : `${slCu} ${tenNL} vừa được XÓA khỏi lịch sử sử dụng.`;
+                await sendNotification(titleTB, msgTB);
 
                 Swal.fire({icon: 'success', title: 'Đã xóa & Hoàn số lượng kho!', timer: 1500, showConfirmButton: false}).then(() => {
                     viewHistory(window.currentHistoryType); 

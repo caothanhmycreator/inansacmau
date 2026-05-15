@@ -407,7 +407,17 @@
 
         // TÍNH NĂNG THÔNG BÁO - BÁO CHO THU NGÂN ĐƠN ĐÃ IN XONG
         try {
-            await guiThongBaoSacMau("🖨️ ĐÃ IN HOÀN TẤT", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã in xong, sẵn sàng để báo khách thanh toán và giao hàng!`, "Quan_Ly_Don", "Thanh_Toan.html");
+            let usedMaterials = [];
+            if (data.existingData && data.existingData.length > 0) {
+                data.existingData.forEach(e => usedMaterials.push(`${e.slDung} ${e.tenNL}`));
+            }
+            if (data.newData && data.newData.length > 0) {
+                data.newData.forEach(n => usedMaterials.push(`${n.slDung} ${n.tenNL}`));
+            }
+            let usedStr = usedMaterials.join(', ');
+            
+            let tbMsg = `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã in xong, sẵn sàng để báo khách thanh toán và giao hàng!. Đã trừ ${usedStr}!`;
+            await guiThongBaoSacMau("🖨️ ĐÃ IN HOÀN TẤT", tbMsg, "Quan_Ly_Don", "Thanh_Toan.html");
         } catch (etb) {
             console.log("Lỗi TB:", etb);
         }

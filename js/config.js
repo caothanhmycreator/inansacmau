@@ -163,7 +163,7 @@ window.loadNotifications = async function() {
             filterQuery = `&or=(vai_tro_nhan.eq.${role},vai_tro_nhan.eq.All)`;
         }
 
-        const url = `${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?order=created_at.desc&limit=20${filterQuery}`;
+        const url = `${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?order=created_at.desc&limit=50${filterQuery}`;
         const res = await fetch(url, { headers: h });
         
         if (!res.ok) {

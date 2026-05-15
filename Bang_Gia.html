@@ -269,6 +269,7 @@
       const ten = document.getElementById('f-ten').value.trim();
       const nhom = document.getElementById('f-nhom').value.trim() || "Chưa phân loại";
       const file = document.getElementById('f-hinh').files[0];
+      const giaBanRaw = document.getElementById('f-gia-ban').value;
 
       if(!ten) return Swal.fire('Lỗi', 'Vui lòng nhập tên sản phẩm!', 'warning');
       
@@ -293,8 +294,8 @@
           method: 'POST', headers: h, body: JSON.stringify({
             Nhom_Hang: nhom, 
             Ten_Hang: ten, 
-            Gia_Ban: parseNum(document.getElementById('f-gia-ban').value),
-            Gia_Si: 0, // Bỏ giá sỉ
+            Gia_Ban: parseNum(giaBanRaw),
+            Gia_Si: 0, 
             Don_Vi_Tinh: document.getElementById('f-dvt').value,
             Mo_Ta: document.getElementById('f-mota').value,
             Hinh_Anh: driveLink,
@@ -302,6 +303,20 @@
             Ghi_Chu: "" 
           })
         });
+
+        // --- GỬI THÔNG BÁO THÊM SẢN PHẨM MỚI ---
+        try {
+            const userObj = JSON.parse(localStorage.getItem('currentUser'));
+            const userName = userObj?.Ho_Ten || userObj?.name || "Một tài khoản";
+            const tbTitle = "THÊM SẢN PHẨM MỚI";
+            const tbMsg = `${userName} vừa thêm sản phẩm ${ten} với giá ${parseNum(giaBanRaw).toLocaleString('vi-VN')}đ vào bảng giá.`;
+            
+            if (typeof window.guiThongBaoSacMau === 'function') {
+                window.guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", "Bang_Gia.html");
+            } else if (typeof guiThongBaoSacMau === 'function') {
+                guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", "Bang_Gia.html");
+            }
+        } catch (etb) { console.error("Lỗi gửi thông báo:", etb); }
 
         Swal.fire('Thành công', `Đã lưu sản phẩm mã: ${maQR}`, 'success');
         document.getElementById('f-ten').value = "";
@@ -480,7 +495,7 @@
             Nhom_Hang: document.getElementById('e-nhom').value,
             Ten_Hang: document.getElementById('e-ten').value,
             Gia_Ban: parseNum(document.getElementById('e-gia-ban').value),
-            Gia_Si: 0, // Bỏ giá sỉ
+            Gia_Si: 0, 
             Don_Vi_Tinh: document.getElementById('e-dvt').value,
             Mo_Ta: document.getElementById('e-mota').value,
             Hinh_Anh: newLink
@@ -619,6 +634,20 @@
                         const errInfo = await response.json();
                         throw new Error(errInfo.message || "Cơ sở dữ liệu từ chối gói thông tin!");
                     }
+
+                    // --- GỬI THÔNG BÁO CẬP NHẬT GIÁ TỪ KHO VẬT TƯ ---
+                    try {
+                        const userObj = JSON.parse(localStorage.getItem('currentUser'));
+                        const userName = userObj?.Ho_Ten || userObj?.name || "Một tài khoản";
+                        const tbTitle = "CẬP NHẬT GIÁ TỪ KHO VẬT TƯ";
+                        const tbMsg = `${userName} vừa cập nhật giá ${newDataToInsert.length} sản phẩm trong Kho vật tư vào bảng giá.`;
+                        
+                        if (typeof window.guiThongBaoSacMau === 'function') {
+                            window.guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", "Bang_Gia.html");
+                        } else if (typeof guiThongBaoSacMau === 'function') {
+                            guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", "Bang_Gia.html");
+                        }
+                    } catch (etb) { console.error("Lỗi gửi thông báo:", etb); }
 
                     Swal.fire('Thành công', `Đã đồng bộ ${newDataToInsert.length} vật tư vào Bảng Giá.`, 'success');
                     loadPriceList();
