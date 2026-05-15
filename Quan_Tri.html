@@ -179,7 +179,7 @@
       }
     }
 
-    // Hàm gom nhóm dữ liệu theo Mã Đơn
+    // ĐÃ CẬP NHẬT: Hàm gom nhóm dữ liệu theo Mã Đơn và sắp xếp từ mới đến cũ
     function groupData(dataArray) {
         const grouped = {};
         dataArray.forEach(item => {
@@ -188,12 +188,18 @@
                     Ma_Don: item.Ma_Don,
                     Ngay_Gio: item.Ngay_Gio,
                     Ten_Khach_Hang: item.Ten_Khach_Hang,
+                    maxId: item.id, // Theo dõi ID lớn nhất trong nhóm
                     items: []
                 };
             }
+            if (item.id > grouped[item.Ma_Don].maxId) {
+                grouped[item.Ma_Don].maxId = item.id;
+            }
             grouped[item.Ma_Don].items.push(item);
         });
-        return Object.values(grouped);
+        
+        // Trả về mảng đã sắp xếp dựa trên maxId giảm dần (từ mới đến cũ)
+        return Object.values(grouped).sort((a, b) => b.maxId - a.maxId);
     }
 
     function renderF10Table() {
@@ -364,7 +370,7 @@
               // Nếu xóa món này là xóa sạch đơn hàng -> Xóa thu nợ và công nợ
               await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
               await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
-              try { await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã bị xóa vĩnh viễn.`, "Quan_Ly_Don", "Quan_Tri.html"); } catch(e){}
+              try { await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã bị xóa vĩnh viễn.`, "Quan_Ly_Don", "Xu_Ly.html"); } catch(e){}
           } else {
               // Cập nhật lại công nợ do tổng đơn giảm
               const tongDonMoi = remainingItems.reduce((sum, i) => sum + (Number(i.Thanh_Tien) || 0), 0);
@@ -520,13 +526,13 @@
                 roleTB = "Quan_Ly_Don";
                 linkTB = "Giao_Hang.html";
             } else if (newStatus === "Chờ thanh toán") {
-                roleTB = "Quan_Ly_Don";
+                roleTB = "Thu_Ngan";
                 linkTB = "Thanh_Toan.html";
             } else if (newStatus === "Hoàn tất") {
-                roleTB = "Quan_Ly_Don";
+                roleTB = "Thu_Ngan";
                 linkTB = "Quan_Tri.html";
             } else if (newStatus === "Công nợ") {
-                roleTB = "Quan_Ly_Don";
+                roleTB = "Thu_Ngan";
                 linkTB = "Cong_No.html";
             }
 
