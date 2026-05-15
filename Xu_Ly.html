@@ -51,6 +51,11 @@
     .btn-drive-up { background: #1e73be; color: white; border: none; padding: 0 12px; border-radius: 4px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0; }
     .btn-drive-up:hover { filter: brightness(90%); }
 
+    /* CSS THANH TIẾN ĐỘ THỜI GIAN */
+    .tk-progress-track { height: 2px; background: #e2e8f0; border-radius: 2px; margin-top: 6px; width: 100%; overflow: hidden; }
+    .tk-progress-bar { height: 100%; transition: width 0.5s ease; }
+    .tk-time-label { font-size: 11px; font-weight: 700; margin-top: 5px; display: inline-block; }
+
     /* Ưu tiên z-index cho SweetAlert */
     .swal2-container { z-index: 20000 !important; }
 
@@ -239,6 +244,27 @@
         });
     }
 
+    // --- CÁC HÀM XỬ LÝ THỜI GIAN ---
+    function parseVNTime(vnStr) {
+      if (!vnStr || vnStr === "EMPTY") return new Date();
+      const parts = vnStr.split(' ');
+      if(parts.length < 2) return new Date(); 
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].split(':');
+      return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
+    }
+
+    function formatWaitTime(mins) {
+      if (mins < 0) return "0 phút";
+      if (mins < 60) return `${mins} phút`;
+      const hours = Math.floor(mins / 60);
+      const m = mins % 60;
+      if (hours < 24) return `${hours} giờ ${m}p`;
+      const days = Math.floor(hours / 24);
+      const h = hours % 24;
+      return `${days} ngày ${h}h`;
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => { loadF2Data(); }, 600);
     });
@@ -249,13 +275,54 @@
       try {
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=eq.Chờ xử lý&select=*&order=id.desc`, { headers: h });
         const data = await res.json();
+        
         if (!data || data.length === 0) {
           tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px;">✨ Tuyệt vời! Hiện tại không còn đơn nào chờ điều phối.</td></tr>';
           return;
         }
-        tbody.innerHTML = data.map(item => `
+
+        // Truy xuất thời gian chuyển trạng thái từ Log_TienDo
+        const maDons = [...new Set(data.map(item => item.Ma_Don))];
+        let logData = [];
+        if (maDons.length > 0) {
+            try {
+                const logRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=in.(${maDons.join(',')})&select=Ma_Don,Ten_Hang,Gio_Tao_Don,Ngay_Gio`, { headers: h });
+                if (logRes.ok) logData = await logRes.json();
+            } catch (err) { console.error("Lỗi tải Log_TienDo:", err); }
+        }
+
+        const now = new Date();
+
+        tbody.innerHTML = data.map(item => {
+          // --- TÍNH TOÁN THỜI GIAN VÀ THANH TIẾN ĐỘ ---
+          const logItem = logData.find(l => l.Ma_Don === item.Ma_Don && l.Ten_Hang === item.Ten_Hang);
+          const startTimeStr = (logItem && logItem.Gio_Tao_Don && logItem.Gio_Tao_Don !== "EMPTY") ? logItem.Gio_Tao_Don : (logItem ? logItem.Ngay_Gio : item.Ngay_Gio);
+          
+          const startTime = parseVNTime(startTimeStr);
+          const diffMins = Math.floor((now - startTime) / 60000);
+          
+          // Tính toán phần trăm thanh tiến độ (Max 3 giờ = 180 phút = 100%)
+          let color = "#27ae60"; // Mặc định Xanh
+          let percent = Math.min((diffMins / (3 * 60)) * 100, 100);
+          
+          if (diffMins >= 2 * 60) {
+              color = "#e74c3c"; // >= 2 giờ Đỏ
+          } else if (diffMins >= 1 * 60) {
+              color = "#f39c12"; // >= 1 giờ Vàng
+          }
+          
+          const waitTimeStr = formatWaitTime(Math.max(0, diffMins));
+
+          return `
           <tr class="f2-row">
-            <td><small>${item.Ngay_Gio.split(' ')[0]}</small><br><b>${item.Ma_Don}</b></td>
+            <td>
+              <small>${item.Ngay_Gio.split(' ')[0]}</small><br>
+              <b>${item.Ma_Don}</b><br>
+              <span class="tk-time-label" style="color: ${color}">⏳ Đã chờ: ${waitTimeStr}</span>
+              <div class="tk-progress-track">
+                <div class="tk-progress-bar" style="width: ${percent}%; background-color: ${color};"></div>
+              </div>
+            </td>
             <td><b>${item.Ten_Khach_Hang}</b></td>
             <td>
               <b style="color:#2c3e50">${item.Ten_Hang}</b><br>
@@ -270,7 +337,8 @@
                 <button class="btn-stt btn-ready" onclick="updateStatus('${item.Ma_Don}', '${item.Ten_Hang}', 'Chờ thanh toán')">📦 CÓ SẴN</button>
               </div>
             </td>
-          </tr>`).join('');
+          </tr>`
+        }).join('');
       } catch (e) { console.error(e); }
     }
 

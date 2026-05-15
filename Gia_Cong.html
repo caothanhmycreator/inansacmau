@@ -44,6 +44,12 @@
     
     .btn-done { background: #27ae60; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%; transition: 0.2s; box-shadow: 0 4px 0 #1e8449; }
     .btn-done:active { transform: translateY(2px); box-shadow: 0 2px 0 #1e8449; }
+
+    /* CSS THANH TIẾN ĐỘ THỜI GIAN */
+    .tk-progress-track { height: 2px; background: #e2e8f0; border-radius: 2px; margin-top: 6px; width: 100%; overflow: hidden; }
+    .tk-progress-bar { height: 100%; transition: width 0.5s ease; }
+    .tk-time-label { font-size: 11px; font-weight: 700; margin-top: 5px; display: inline-block; }
+
     .swal2-container { z-index: 20000 !important; }
     
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
@@ -126,6 +132,27 @@
   </div>
 
   <script>
+    // --- CÁC HÀM XỬ LÝ THỜI GIAN ---
+    function parseVNTime(vnStr) {
+      if (!vnStr || vnStr === "EMPTY") return new Date();
+      const parts = vnStr.split(' ');
+      if(parts.length < 2) return new Date(); 
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].split(':');
+      return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
+    }
+
+    function formatWaitTime(mins) {
+      if (mins < 0) return "0 phút";
+      if (mins < 60) return `${mins} phút`;
+      const hours = Math.floor(mins / 60);
+      const m = mins % 60;
+      if (hours < 24) return `${hours} giờ ${m}p`;
+      const days = Math.floor(hours / 24);
+      const h = hours % 24;
+      return `${days} ngày ${h}h`;
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => { loadF6Data(); }, 600);
     });
@@ -150,8 +177,39 @@
         
         // Gộp mảng: Chưa gửi lên trước, đã gửi xuống dưới
         const sortedData = [...unsentItems, ...sentItems];
+
+        // Truy xuất thời gian chuyển trạng thái từ Log_TienDo
+        const maDons = [...new Set(sortedData.map(item => item.Ma_Don))];
+        let logData = [];
+        if (maDons.length > 0) {
+            try {
+                const logRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=in.(${maDons.join(',')})&select=Ma_Don,Ten_Hang,Gio_Gia_Cong,Ngay_Gio`, { headers: h });
+                if (logRes.ok) logData = await logRes.json();
+            } catch (err) { console.error("Lỗi tải Log_TienDo:", err); }
+        }
+
+        const now = new Date();
         
         tbody.innerHTML = sortedData.map(item => {
+          // --- TÍNH TOÁN THỜI GIAN VÀ THANH TIẾN ĐỘ ---
+          const logItem = logData.find(l => l.Ma_Don === item.Ma_Don && l.Ten_Hang === item.Ten_Hang);
+          const startTimeStr = (logItem && logItem.Gio_Gia_Cong && logItem.Gio_Gia_Cong !== "EMPTY") ? logItem.Gio_Gia_Cong : (logItem ? logItem.Ngay_Gio : item.Ngay_Gio);
+          
+          const startTime = parseVNTime(startTimeStr);
+          const diffMins = Math.floor((now - startTime) / 60000);
+          
+          // Tính toán phần trăm thanh tiến độ (Max 5 ngày = 5*24*60 phút = 100%)
+          let color = "#27ae60"; // Mặc định Xanh
+          let percent = Math.min((diffMins / (5 * 24 * 60)) * 100, 100);
+          
+          if (diffMins > 3 * 24 * 60) {
+              color = "#e74c3c"; // > 3 ngày Đỏ
+          } else if (diffMins > 2 * 24 * 60) {
+              color = "#f39c12"; // > 2 ngày Vàng
+          }
+          
+          const waitTimeStr = formatWaitTime(Math.max(0, diffMins));
+
           const link = item.Link_Anh || "";
           let imgHtml = "";
 
@@ -177,8 +235,15 @@
           let rowClass = isSent ? "f6-row processed" : "f6-row";
 
           return `<tr class="${rowClass}">
-            <td><small style="color:#64748b;">#${item.Ngay_Gio.split(' ')[0]}</small><br><b style="font-size:15px; color:#2c3e50;">${item.Ma_Don}</b></td>
-            <td><b>${item.Ten_Khach_Hang}</b><br><small style="color:#8e44ad; font-weight:500;">${item.Ten_Hang}</small></td>
+            <td>
+              <small style="color:#64748b;">#${item.Ngay_Gio.split(' ')[0]}</small><br>
+              <b style="font-size:15px; color:#2c3e50;">${item.Ma_Don}</b><br>
+              <span class="tk-time-label" style="color: ${color}">⏳ Đã chờ: ${waitTimeStr}</span>
+              <div class="tk-progress-track">
+                <div class="tk-progress-bar" style="width: ${percent}%; background-color: ${color};"></div>
+              </div>
+            </td>
+            <td><b>${item.Ten_Khach_Hang}</b><br><small style="color:#8e44ad; font-weight:500;">${item.Ten_Hang}</small><br><small style="font-weight:600; color:#d35400;">SL: ${item.So_Luong || 0} ${item.Don_Vi_Tinh || ''}</small></td>
             <td><div class="img-container">${imgHtml}</div></td>
             <td>
               <div class="badge">📏 ${item.Kich_Thuoc || 'N/A'}</div> <div class="badge">🧪 ${item.Chat_Lieu || 'N/A'}</div>

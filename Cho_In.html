@@ -45,6 +45,11 @@
     .nl-row { display: grid; grid-template-columns: 2fr 1fr 0.8fr 1.5fr 40px; gap: 5px; margin-bottom: 8px; align-items: center; }
     .nl-input { padding: 8px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; width: 100%; box-sizing: border-box; }
 
+    /* CSS THANH TIẾN ĐỘ THỜI GIAN */
+    .tk-progress-track { height: 2px; background: #e2e8f0; border-radius: 2px; margin-top: 6px; width: 100%; overflow: hidden; }
+    .tk-progress-bar { height: 100%; transition: width 0.5s ease; }
+    .tk-time-label { font-size: 11px; font-weight: 700; margin-top: 5px; display: inline-block; }
+
     .swal2-container { z-index: 20000 !important; }
   
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
@@ -131,6 +136,27 @@
   </div>
 
   <script>
+    // --- CÁC HÀM XỬ LÝ THỜI GIAN ---
+    function parseVNTime(vnStr) {
+      if (!vnStr || vnStr === "EMPTY") return new Date();
+      const parts = vnStr.split(' ');
+      if(parts.length < 2) return new Date(); 
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].split(':');
+      return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
+    }
+
+    function formatWaitTime(mins) {
+      if (mins < 0) return "0 phút";
+      if (mins < 60) return `${mins} phút`;
+      const hours = Math.floor(mins / 60);
+      const m = mins % 60;
+      if (hours < 24) return `${hours} giờ ${m}p`;
+      const days = Math.floor(hours / 24);
+      const h = hours % 24;
+      return `${days} ngày ${h}h`;
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => { loadF5Data(); }, 600);
     });
@@ -149,7 +175,38 @@
           return;
         }
 
+        // Truy xuất thời gian chuyển trạng thái từ Log_TienDo
+        const maDons = [...new Set(data.map(item => item.Ma_Don))];
+        let logData = [];
+        if (maDons.length > 0) {
+            try {
+                const logRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=in.(${maDons.join(',')})&select=Ma_Don,Ten_Hang,Gio_In,Ngay_Gio`, { headers: h });
+                if (logRes.ok) logData = await logRes.json();
+            } catch (err) { console.error("Lỗi tải Log_TienDo:", err); }
+        }
+
+        const now = new Date();
+
         tbody.innerHTML = data.map(item => {
+          // --- TÍNH TOÁN THỜI GIAN VÀ THANH TIẾN ĐỘ ---
+          const logItem = logData.find(l => l.Ma_Don === item.Ma_Don && l.Ten_Hang === item.Ten_Hang);
+          const startTimeStr = (logItem && logItem.Gio_In && logItem.Gio_In !== "EMPTY") ? logItem.Gio_In : (logItem ? logItem.Ngay_Gio : item.Ngay_Gio);
+          
+          const startTime = parseVNTime(startTimeStr);
+          const diffMins = Math.floor((now - startTime) / 60000);
+          
+          // Tính toán phần trăm thanh tiến độ (Max 8h = 480 phút = 100%)
+          let color = "#27ae60"; // Mặc định Xanh
+          let percent = Math.min((diffMins / (8 * 60)) * 100, 100);
+          
+          if (diffMins >= 8 * 60) {
+              color = "#e74c3c"; // >= 8h Đỏ
+          } else if (diffMins >= 4 * 60) {
+              color = "#f39c12"; // >= 4h Vàng
+          }
+          
+          const waitTimeStr = formatWaitTime(Math.max(0, diffMins));
+
           const link = item.Link_Anh || "";
           let imgHtml = "";
 
@@ -169,7 +226,14 @@
           }
 
           return `<tr class="f5-row">
-            <td><small>#${item.Ngay_Gio.split(' ')[0]}</small><br><b style="font-size:15px;">${item.Ma_Don}</b></td>
+            <td>
+              <small>#${item.Ngay_Gio.split(' ')[0]}</small><br>
+              <b style="font-size:15px;">${item.Ma_Don}</b><br>
+              <span class="tk-time-label" style="color: ${color}">⏳ Đã chờ: ${waitTimeStr}</span>
+              <div class="tk-progress-track">
+                <div class="tk-progress-bar" style="width: ${percent}%; background-color: ${color};"></div>
+              </div>
+            </td>
             <td><b>${item.Ten_Khach_Hang}</b><br><small>${item.Ten_Hang}</small></td>
             <td><div class="img-container">${imgHtml}</div></td>
             <td>

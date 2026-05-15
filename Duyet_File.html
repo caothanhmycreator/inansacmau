@@ -48,6 +48,11 @@
     .img-preview { max-width: 100%; max-height: 100%; object-fit: contain; cursor: pointer; transition: 0.2s; }
     .img-preview:hover { transform: scale(1.05); }
 
+    /* CSS THANH TIẾN ĐỘ THỜI GIAN */
+    .tk-progress-track { height: 2px; background: #e2e8f0; border-radius: 2px; margin-top: 6px; width: 100%; overflow: hidden; }
+    .tk-progress-bar { height: 100%; transition: width 0.5s ease; }
+    .tk-time-label { font-size: 11px; font-weight: 700; margin-top: 5px; display: inline-block; }
+
     .swal2-container { z-index: 20000 !important; }
   
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
@@ -128,6 +133,27 @@
   </div>
 
   <script>
+    // --- CÁC HÀM XỬ LÝ THỜI GIAN ---
+    function parseVNTime(vnStr) {
+      if (!vnStr || vnStr === "EMPTY") return new Date();
+      const parts = vnStr.split(' ');
+      if(parts.length < 2) return new Date(); 
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].split(':');
+      return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
+    }
+
+    function formatWaitTime(mins) {
+      if (mins < 0) return "0 phút";
+      if (mins < 60) return `${mins} phút`;
+      const hours = Math.floor(mins / 60);
+      const m = mins % 60;
+      if (hours < 24) return `${hours} giờ ${m}p`;
+      const days = Math.floor(hours / 24);
+      const h = hours % 24;
+      return `${days} ngày ${h}h`;
+    }
+
     // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100%
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => { loadF4Data(); }, 600);
@@ -147,7 +173,38 @@
           return;
         }
 
+        // Truy xuất thời gian chuyển trạng thái từ Log_TienDo
+        const maDons = [...new Set(data.map(item => item.Ma_Don))];
+        let logData = [];
+        if (maDons.length > 0) {
+            try {
+                const logRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=in.(${maDons.join(',')})&select=Ma_Don,Ten_Hang,Gio_Duyet_File,Ngay_Gio`, { headers: h });
+                if (logRes.ok) logData = await logRes.json();
+            } catch (err) { console.error("Lỗi tải Log_TienDo:", err); }
+        }
+
+        const now = new Date();
+
         tbody.innerHTML = data.map(item => {
+          // --- TÍNH TOÁN THỜI GIAN VÀ THANH TIẾN ĐỘ ---
+          const logItem = logData.find(l => l.Ma_Don === item.Ma_Don && l.Ten_Hang === item.Ten_Hang);
+          const startTimeStr = (logItem && logItem.Gio_Duyet_File && logItem.Gio_Duyet_File !== "EMPTY") ? logItem.Gio_Duyet_File : (logItem ? logItem.Ngay_Gio : item.Ngay_Gio);
+          
+          const startTime = parseVNTime(startTimeStr);
+          const diffMins = Math.floor((now - startTime) / 60000);
+          
+          // Tính toán phần trăm thanh tiến độ (Max 6h = 360 phút = 100%)
+          let color = "#27ae60"; // Dưới 1h Xanh
+          let percent = Math.min((diffMins / (6 * 60)) * 100, 100);
+          
+          if (diffMins > 3 * 60) {
+              color = "#e74c3c"; // Trên 3h Đỏ
+          } else if (diffMins > 1 * 60) {
+              color = "#f39c12"; // Trên 1h Vàng
+          }
+          
+          const waitTimeStr = formatWaitTime(Math.max(0, diffMins));
+
           // --- XỬ LÝ HIỂN THỊ THÔNG MINH: ẢNH / PDF / THƯ MỤC ---
           const link = item.Link_Anh || "";
           let imgHtml = "";
@@ -172,7 +229,14 @@
           }
 
           return `<tr class="f4-row">
-            <td><small style="color:#64748b;">#${item.Ngay_Gio.split(' ')[0]}</small><br><b style="font-size:15px; color:#2c3e50;">${item.Ma_Don}</b></td>
+            <td>
+              <small style="color:#64748b;">#${item.Ngay_Gio.split(' ')[0]}</small><br>
+              <b style="font-size:15px; color:#2c3e50;">${item.Ma_Don}</b><br>
+              <span class="tk-time-label" style="color: ${color}">⏳ Đã chờ: ${waitTimeStr}</span>
+              <div class="tk-progress-track">
+                <div class="tk-progress-bar" style="width: ${percent}%; background-color: ${color};"></div>
+              </div>
+            </td>
             <td><b>${item.Ten_Khach_Hang}</b><br><small style="color:#27ae60; font-weight: 500;">${item.Ten_Hang}</small></td>
             <td><div class="img-container">${imgHtml}</div></td>
             <td>

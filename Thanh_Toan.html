@@ -45,6 +45,11 @@
     .pay-sld-f7.ck, .pay-sld-f7.chua { left: 66.66%; background: #2980b9; width: calc(33.33% - 2px); }
     .pay-sld-f7.mid { left: 33.33%; background: #bbb; }
 
+    /* CSS THANH TIẾN ĐỘ THỜI GIAN */
+    .tk-progress-track { height: 2px; background: #e2e8f0; border-radius: 2px; margin-top: 6px; width: 100%; overflow: hidden; }
+    .tk-progress-bar { height: 100%; transition: width 0.5s ease; }
+    .tk-time-label { font-size: 11px; font-weight: 700; margin-top: 5px; display: inline-block; }
+
     /* Ưu tiên SweetAlert */
     .swal2-container { z-index: 20000 !important; }
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
@@ -161,8 +166,30 @@
   <div id="vung-in-f7"></div>
 
   <script>
+    // --- CÁC HÀM XỬ LÝ THỜI GIAN ---
+    function parseVNTime(vnStr) {
+      if (!vnStr || vnStr === "EMPTY") return new Date();
+      const parts = vnStr.split(' ');
+      if(parts.length < 2) return new Date(); 
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].split(':');
+      return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
+    }
+
+    function formatWaitTime(mins) {
+      if (mins < 0) return "0 phút";
+      if (mins < 60) return `${mins} phút`;
+      const hours = Math.floor(mins / 60);
+      const m = mins % 60;
+      if (hours < 24) return `${hours} giờ ${m}p`;
+      const days = Math.floor(hours / 24);
+      const h = hours % 24;
+      return `${days} ngày ${h}h`;
+    }
+
     // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100%
     window.listF7 = [];
+    window.logDataF7 = [];
     let currentPayF7 = "";
     let currentDeliveryF7 = ""; 
 
@@ -186,8 +213,10 @@
             grouped[maDon] = {
               maDon: maDon, khachHang: row.Ten_Khach_Hang, sdt: row.So_Dien_Thoai || "",
               ngay: row.Ngay_Gio ? row.Ngay_Gio.split(' ')[0] : "",
+              ngayGioRaw: row.Ngay_Gio,
               cacMon: [], tongDon: 0, tongDaTra: 0, 
-              allInWaitPay: true 
+              allInWaitPay: true,
+              maxId: row.id // Đảm bảo việc sắp xếp từ mới đến cũ chính xác
             };
           }
           
@@ -202,6 +231,19 @@
 
         window.listF7 = Object.values(grouped).filter(g => g.allInWaitPay && g.cacMon.length > 0);
         
+        // Sắp xếp danh sách từ Mới nhất -> Cũ nhất
+        window.listF7.sort((a, b) => b.maxId - a.maxId);
+        
+        // Truy xuất thời gian chuyển trạng thái từ Log_TienDo
+        window.logDataF7 = [];
+        const maDons = [...new Set(window.listF7.map(item => item.maDon))];
+        if (maDons.length > 0) {
+            try {
+                const logRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=in.(${maDons.join(',')})&select=Ma_Don,Gio_Giao_Hang,Ngay_Gio`, { headers: h });
+                if (logRes.ok) window.logDataF7 = await logRes.json();
+            } catch (err) { console.error("Lỗi tải Log_TienDo:", err); }
+        }
+
         filterF7(); // Gọi filter để render bảng (tự động giữ kết quả tìm kiếm nếu có)
 
       } catch (e) { console.error(e); }
@@ -218,13 +260,42 @@
         return;
       }
 
+      const now = new Date();
+
       tbody.innerHTML = dataToRender.map((item) => {
         const conNo = item.tongDon - item.tongDaTra;
         totalDebt += conNo; // Cộng dồn nợ của từng hàng hiển thị
         const originalIdx = window.listF7.indexOf(item); // Giữ nguyên index chuẩn để mở Popup
 
+        // --- TÍNH TOÁN THỜI GIAN VÀ THANH TIẾN ĐỘ ---
+        const logItem = window.logDataF7.find(l => l.Ma_Don === item.maDon);
+        // Ở đây lấy Gio_Giao_Hang vì khi In/Gia công xong chuyển sang Chờ thanh toán đã gán Gio_Giao_Hang
+        const startTimeStr = (logItem && logItem.Gio_Giao_Hang && logItem.Gio_Giao_Hang !== "EMPTY") ? logItem.Gio_Giao_Hang : (logItem ? logItem.Ngay_Gio : item.ngayGioRaw);
+        
+        const startTime = parseVNTime(startTimeStr);
+        const diffMins = Math.floor((now - startTime) / 60000);
+        
+        // Tính toán phần trăm thanh tiến độ (Max 5 ngày = 5 * 24 * 60 phút = 100%)
+        let color = "#27ae60"; // Mặc định Xanh
+        let percent = Math.min((diffMins / (5 * 24 * 60)) * 100, 100);
+        
+        if (diffMins >= 3 * 24 * 60) {
+            color = "#e74c3c"; // >= 3 ngày Đỏ
+        } else if (diffMins >= 1 * 24 * 60) {
+            color = "#f39c12"; // >= 1 ngày Vàng
+        }
+        
+        const waitTimeStr = formatWaitTime(Math.max(0, diffMins));
+
         return `<tr class="f7-row">
-          <td><b style="color:#2c3e50;">${item.maDon}</b><br><small style="color:#7f8c8d;">${item.ngay}</small></td>
+          <td>
+            <b style="color:#2c3e50;">${item.maDon}</b><br>
+            <small style="color:#7f8c8d;">${item.ngay}</small><br>
+            <span class="tk-time-label" style="color: ${color}">⏳ Đã chờ: ${waitTimeStr}</span>
+            <div class="tk-progress-track">
+              <div class="tk-progress-bar" style="width: ${percent}%; background-color: ${color};"></div>
+            </div>
+          </td>
           <td><b>${item.khachHang}</b><br><small style="color:#7f8c8d;">${item.sdt}</small></td>
           <td style="color:#27ae60; font-weight: 500;">${item.cacMon.map(m => m.tenMon).join(", ")}</td>
           <td>T: ${item.tongDon.toLocaleString()}<br><small style="color:#27ae60; font-weight:bold;">Đ: ${item.tongDaTra.toLocaleString()}</small></td>

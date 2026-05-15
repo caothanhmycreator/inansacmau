@@ -34,6 +34,11 @@
     
     .popup-row { display: grid; grid-template-columns: 2fr 0.8fr 1.2fr 1fr; gap: 8px; padding: 12px; border-bottom: 1px solid #eee; align-items: center; font-size: 13px; }
 
+    /* CSS THANH TIẾN ĐỘ THỜI GIAN */
+    .tk-progress-track { height: 2px; background: #e2e8f0; border-radius: 2px; margin-top: 6px; width: 100%; overflow: hidden; }
+    .tk-progress-bar { height: 100%; transition: width 0.5s ease; }
+    .tk-time-label { font-size: 11px; font-weight: 700; margin-top: 5px; display: inline-block; }
+
     .swal2-container { z-index: 20000 !important; }
     
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
@@ -139,6 +144,27 @@
   <div id="vung-in-f8"></div>
 
   <script>
+    // --- CÁC HÀM XỬ LÝ THỜI GIAN ---
+    function parseVNTime(vnStr) {
+      if (!vnStr || vnStr === "EMPTY") return new Date();
+      const parts = vnStr.split(' ');
+      if(parts.length < 2) return new Date(); 
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].split(':');
+      return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
+    }
+
+    function formatWaitTime(mins) {
+      if (mins < 0) return "0 phút";
+      if (mins < 60) return `${mins} phút`;
+      const hours = Math.floor(mins / 60);
+      const m = mins % 60;
+      if (hours < 24) return `${hours} giờ ${m}p`;
+      const days = Math.floor(hours / 24);
+      const h = hours % 24;
+      return `${days} ngày ${h}h`;
+    }
+
     // TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100%
     window.listF8 = [];
 
@@ -177,10 +203,50 @@
           return;
         }
 
+        // Truy xuất thời gian chuyển trạng thái từ Log_TienDo
+        const maDons = [...new Set(window.listF8.map(item => item.maDon))];
+        let logData = [];
+        if (maDons.length > 0) {
+            try {
+                const logRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=in.(${maDons.join(',')})&select=Ma_Don,Gio_Giao_Hang,Ngay_Gio`, { headers: h });
+                if (logRes.ok) logData = await logRes.json();
+            } catch (err) { console.error("Lỗi tải Log_TienDo:", err); }
+        }
+
+        const now = new Date();
+
         tbody.innerHTML = window.listF8.map((item, index) => {
           const dsMon = item.cacMon.filter(m => m.Trang_Thai === "Chờ giao hàng").map(m => m.Ten_Hang).join(", ");
+          
+          // --- TÍNH TOÁN THỜI GIAN VÀ THANH TIẾN ĐỘ ---
+          const fallbackTime = item.cacMon[0].Ngay_Gio;
+          const logItem = logData.find(l => l.Ma_Don === item.maDon);
+          const startTimeStr = (logItem && logItem.Gio_Giao_Hang && logItem.Gio_Giao_Hang !== "EMPTY") ? logItem.Gio_Giao_Hang : fallbackTime;
+          
+          const startTime = parseVNTime(startTimeStr);
+          const diffMins = Math.floor((now - startTime) / 60000);
+          
+          // Tính toán phần trăm thanh tiến độ (Max 6 ngày = 6 * 24 * 60 phút = 100%)
+          let color = "#27ae60"; // Mặc định Xanh
+          let percent = Math.min((diffMins / (6 * 24 * 60)) * 100, 100);
+          
+          if (diffMins >= 4 * 24 * 60) {
+              color = "#e74c3c"; // >= 4 ngày Đỏ
+          } else if (diffMins >= 2 * 24 * 60) {
+              color = "#f39c12"; // >= 2 ngày Vàng
+          }
+          
+          const waitTimeStr = formatWaitTime(Math.max(0, diffMins));
+
           return `<tr class="f8-row">
-            <td><b style="color:#2c3e50;">${item.maDon}</b><br><small style="color:#7f8c8d;">${item.ngay}</small></td>
+            <td>
+              <b style="color:#2c3e50;">${item.maDon}</b><br>
+              <small style="color:#7f8c8d;">${item.ngay}</small><br>
+              <span class="tk-time-label" style="color: ${color}">⏳ Đã chờ: ${waitTimeStr}</span>
+              <div class="tk-progress-track">
+                <div class="tk-progress-bar" style="width: ${percent}%; background-color: ${color};"></div>
+              </div>
+            </td>
             <td><b>${item.khachHang}</b><br><small style="color:#7f8c8d;">${item.sdt}</small></td>
             <td style="color:#2980b9; font-weight: 500;">${dsMon}</td>
             <td>T: ${item.tongDon.toLocaleString()}<br><small style="color:#27ae60; font-weight:bold;">Đ: ${item.tongDaTra.toLocaleString()}</small></td>
