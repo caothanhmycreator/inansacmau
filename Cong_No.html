@@ -47,6 +47,11 @@
     .f9-input-group input:focus { border-color: #c0392b; }
     .f9-input-group input[readonly] { background: #f8fafc; color: #c0392b; font-weight: bold; border-style: dashed; }
 
+    /* CSS THANH TIẾN ĐỘ THỜI GIAN */
+    .tk-progress-track { height: 2px; background: #e2e8f0; border-radius: 2px; margin-top: 6px; width: 100%; overflow: hidden; }
+    .tk-progress-bar { height: 100%; transition: width 0.5s ease; }
+    .tk-time-label { font-size: 11px; font-weight: 700; margin-top: 5px; display: inline-block; }
+
     #vung-in-f9 { display: none; }
     @media print {
       body * { visibility: hidden; }
@@ -88,7 +93,7 @@
         .f9-row td:before { position: absolute; left: 12px; top: 10px; font-weight: bold; color: #555; font-size: 12px; text-transform: uppercase; }
         .f9-row td:nth-child(1):before { content: "Mã Đơn:"; }
         .f9-row td:nth-child(2):before { content: "Khách hàng:"; }
-        .f9-row td:nth-child(3):before { content: "Ngày nợ:"; }
+        .f9-row td:nth-child(3):before { content: "Nợ từ:"; }
         .f9-row td:nth-child(4):before { content: "Tổng/Đã trả:"; }
         .f9-row td:nth-child(5):before { content: "CÒN NỢ:"; color: #c0392b; font-size: 13px;}
         
@@ -136,7 +141,7 @@
             <tr>
               <th style="width: 15%;">Mã đơn</th>
               <th style="width: 25%;">Khách hàng</th>
-              <th style="width: 15%;">Ngày nợ</th>
+              <th style="width: 15%;">Nợ từ</th>
               <th style="width: 20%;">Tổng nợ / Đã trả</th>
               <th style="width: 15%; color: #c0392b;">Còn nợ</th>
               <th style="width: 10%; text-align: center;">Thao tác</th>
@@ -153,7 +158,29 @@
   <div id="vung-in-f9"></div>
 
   <script>
+    // --- CÁC HÀM XỬ LÝ THỜI GIAN ---
+    function parseVNTime(vnStr) {
+      if (!vnStr || vnStr === "EMPTY") return new Date();
+      const parts = vnStr.split(' ');
+      if(parts.length < 2) return new Date(); 
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].split(':');
+      return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
+    }
+
+    function formatWaitTime(mins) {
+      if (mins < 0) return "0 phút";
+      if (mins < 60) return `${mins} phút`;
+      const hours = Math.floor(mins / 60);
+      const m = mins % 60;
+      if (hours < 24) return `${hours} giờ ${m}p`;
+      const days = Math.floor(hours / 24);
+      const h = hours % 24;
+      return `${days} ngày ${h}h`;
+    }
+
     window.groupedF9 = [];
+    window.logDataF9 = [];
     let currentPayF9 = "";
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -189,6 +216,25 @@
         });
         window.groupedF9 = Object.values(groupedObj);
 
+        // Truy xuất thời gian Cong_No từ Log_TienDo để hiển thị SLA nợ
+        window.logDataF9 = [];
+        let maDons = [];
+        window.groupedF9.forEach(g => {
+            g.orders.forEach(o => {
+                if (o.Ma_Don && o.Ma_Don !== "NHẬP KHO") maDons.push(o.Ma_Don);
+            });
+        });
+        
+        if (maDons.length > 0) {
+            try {
+                // Giới hạn query size hoặc chia nhỏ (nếu số lượng mã đơn quá nhiều)
+                let uniqueMaDons = [...new Set(maDons)];
+                // Lấy Cong_No từ Log_TienDo
+                const logRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=in.(${uniqueMaDons.join(',')})&select=Ma_Don,Cong_No,Ngay_Gio`, { headers: h });
+                if (logRes.ok) window.logDataF9 = await logRes.json();
+            } catch (err) { console.error("Lỗi tải Log_TienDo:", err); }
+        }
+
         const elTongNo = document.getElementById('f9-tong-no');
         if (elTongNo) {
             elTongNo.innerText = tongTatCaNo.toLocaleString('vi-VN');
@@ -199,13 +245,33 @@
           return;
         }
 
+        const now = new Date();
+
         tbody.innerHTML = window.groupedF9.map((it, idx) => {
           let maDonTxt = it.orders.length > 1 ? `<span style="color:#e67e22;">Gộp ${it.orders.length} đơn</span>` : it.orders[0].Ma_Don;
+          
+          // Lấy mã đơn đại diện đầu tiên để tính thời gian
+          let repMaDon = it.orders[0].Ma_Don;
+          const logItem = window.logDataF9.find(l => l.Ma_Don === repMaDon);
+          const startTimeStr = (logItem && logItem.Cong_No && logItem.Cong_No !== "EMPTY") ? logItem.Cong_No : it.Ngay_Gio;
+          
+          const startTime = parseVNTime(startTimeStr);
+          const diffMins = Math.floor((now - startTime) / 60000);
+          
+          let color = "#e74c3c"; // Mặc định Đỏ (Nợ càng lâu càng đỏ)
+          let percent = 100; // Thanh nợ sẽ luôn đầy hoặc tính % theo một mốc nợ nào đó tùy bạn, hiện tại để cố định
+          const waitTimeStr = formatWaitTime(Math.max(0, diffMins));
+
           return `
           <tr class="f9-row">
-            <td onclick="viewOrderDetails_Group(${idx})"><b style="color:#2c3e50;">${maDonTxt}</b></td>
+            <td onclick="viewOrderDetails_Group(${idx})">
+              <b style="color:#2c3e50;">${maDonTxt}</b>
+            </td>
             <td onclick="viewOrderDetails_Group(${idx})"><b>${it.Khach_Hang}</b></td>
-            <td style="color:#64748b;" onclick="viewOrderDetails_Group(${idx})">${it.Ngay_Gio}</td>
+            <td style="color:#64748b;" onclick="viewOrderDetails_Group(${idx})">
+              <small>${it.Ngay_Gio.split(' ')[0]}</small><br>
+              <span class="tk-time-label" style="color: ${color}">⏳ Nợ được: ${waitTimeStr}</span>
+            </td>
             <td onclick="viewOrderDetails_Group(${idx})">T: ${it.Tong_Don.toLocaleString()}<br><small style="color:#27ae60; font-weight:bold;">Đ: ${it.Da_Tra.toLocaleString()}</small></td>
             <td style="color:#e74c3c; font-weight:bold; font-size:14px;" onclick="viewOrderDetails_Group(${idx})">${it.Con_Lai.toLocaleString()} đ</td>
             <td style="text-align:center"><button class="btn-debt" onclick="openDebtPopup(${idx})">💵 THU NỢ</button></td>
@@ -549,20 +615,57 @@
             if(!targetOrder) continue;
             const moiDaTra = parseFloat(targetOrder.Da_Tra || 0) + payItem.ThanhToan;
             const moiConLai = parseFloat(targetOrder.Con_Lai || 0) - payItem.ThanhToan;
+            const isFullPay = moiConLai <= 0;
+            
+            // 1. Cập nhật bảng Cong_No
             await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?id=eq.${payItem.id}`, {
               method: 'PATCH', headers: h,
               body: JSON.stringify({ Da_Tra: String(moiDaTra), Con_Lai: String(moiConLai < 0 ? 0 : moiConLai) })
             });
+
+            // 2. Nếu đơn đó đã trả hết -> Cập nhật Trang_Thai trong NhatKy_BanHang thành "Hoàn tất"
+            if (isFullPay && payItem.Ma_Don && payItem.Ma_Don !== "NHẬP KHO") {
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${payItem.Ma_Don}`, {
+                  method: 'PATCH', headers: h,
+                  body: JSON.stringify({ Trang_Thai: "Hoàn tất" })
+                });
+
+                // Cập nhật Log_TienDo: Thay Nguoi_Thuc_Hien thành "Bộ phận Công nợ" và ghi Gio_Hoan_Tat (Không chạm vào Cong_No)
+                const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${payItem.Ma_Don}&select=id`, { headers: h });
+                const rowLog = await resLog.json();
+                if (rowLog && rowLog.length > 0) {
+                    for(let rLog of rowLog) {
+                        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rLog.id}`, {
+                            method: 'PATCH', headers: h,
+                            body: JSON.stringify({ Trang_Thai: "Hoàn tất", Gio_Hoan_Tat: nowFull, Nguoi_Thuc_Hien: "Bộ phận Công nợ" })
+                        });
+                    }
+                }
+            } else if (!isFullPay && payItem.Ma_Don && payItem.Ma_Don !== "NHẬP KHO") {
+                // Trả chưa đủ -> Chỉ cập nhật Nguoi_Thuc_Hien (giữ nguyên trạng thái Công nợ)
+                const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${payItem.Ma_Don}&select=id`, { headers: h });
+                const rowLog = await resLog.json();
+                if (rowLog && rowLog.length > 0) {
+                    for(let rLog of rowLog) {
+                        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rLog.id}`, {
+                            method: 'PATCH', headers: h,
+                            body: JSON.stringify({ Nguoi_Thuc_Hien: "Bộ phận Công nợ" })
+                        });
+                    }
+                }
+            }
+
             maDonList.push(payItem.Ma_Don);
         }
 
+        // 3. Ghi vào NhatKy_ThuNo
         let strMaDon = maDonList.join(", ");
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, {
           method: 'POST', headers: h,
           body: JSON.stringify({ Ngay_Gio: nowFull, Ma_Don: strMaDon.length > 50 ? strMaDon.substring(0,47) + "..." : strMaDon, Khach_Hang: it.Khach_Hang, Ten_Hang: "Thu nợ: " + strMaDon, So_Tien_Thu: soTienThu_Total, Hinh_Thuc_Thanh_Toan: hinhThuc, id: Math.floor(Date.now() / 1000) })
         });
 
-        // THÔNG BÁO - THU NỢ THÀNH CÔNG
+        // 4. THÔNG BÁO - THU NỢ THÀNH CÔNG
         try {
             await guiThongBaoSacMau("💰 THU NỢ THÀNH CÔNG", `Vừa thu ${soTienThu_Total.toLocaleString()}đ nợ của khách ${it.Khach_Hang}. Hình thức: ${hinhThuc}.`, "Quan_Ly_Don", "BC_Thu_Chi.html");
         } catch(etb) { console.log(etb); }

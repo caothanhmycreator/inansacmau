@@ -393,10 +393,21 @@ async function napDuLieuTrang() {
           Ma_VT: i.ma_vt
         }));
         
-        const rowsLog = cart.map(i => ({ Ngay_Gio: cleanTime, Ma_Don: ma, Ten_Hang: i.sp, Khach_Hang: tenKH, Gio_Tao_Don: cleanTime, Gio_Xu_Ly: cleanTime, Trang_Thai: "Chờ xử lý", Nguoi_Thuc_Hien: "Hệ thống" }));
+        // --- CHỈNH SỬA LOGIC LƯU VÀO Log_TienDo THEO YÊU CẦU ---
+        const rowsLog = cart.map(i => ({ 
+          Ngay_Gio: cleanTime, 
+          Ma_Don: ma, 
+          Ten_Hang: i.sp, 
+          Khach_Hang: tenKH, 
+          Gio_Tao_Don: cleanTime, 
+          Gio_Xu_Ly: cleanTime, 
+          Trang_Thai: "Chờ xử lý", 
+          Nguoi_Thuc_Hien: "Bộ phận Tạo đơn" 
+        }));
         
         await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_BanHang`, { method: 'POST', headers: h, body: JSON.stringify(rowsBH) });
         await fetch(`${SB_CONFIG.URL}/rest/v1/Log_TienDo`, { method: 'POST', headers: h, body: JSON.stringify(rowsLog) });
+        
         if (daTra > 0) { 
             await fetch(`${SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers: h, body: JSON.stringify({ Ngay_Gio: cleanTime, Ma_Don: ma, Khach_Hang: tenKH, Ten_Hang: cart.map(x => x.sp).join(", "), So_Tien_Thu: daTra, Hinh_Thuc_Thanh_Toan: currentPayMethod }) }); 
         }

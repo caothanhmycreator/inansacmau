@@ -20,8 +20,26 @@
     .f10-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .f10-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
     
-    .filter-bar { display: grid; grid-template-columns: 2fr 1.2fr 1fr; gap: 10px; margin: 15px 0; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
-    .filter-bar input, .filter-bar select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 13px; }
+    /* CSS MỚI CHO VÙNG TÌM KIẾM VÀ NÚT LỌC MÀU SẮC */
+    .filter-container { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin: 15px 0; }
+    .filter-top { display: flex; gap: 10px; margin-bottom: 12px; }
+    .filter-top input { flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 13px; }
+    .status-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+    .status-btn { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; border: 2px solid transparent; color: white; opacity: 0.4; transition: 0.2s; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .status-btn:hover { opacity: 0.8; }
+    .status-btn.active { opacity: 1; transform: scale(1.05); border-color: #2c3e50; box-shadow: 0 3px 8px rgba(0,0,0,0.2); }
+    
+    /* MÀU SẮC TRẠNG THÁI */
+    .st-all { background: #34495e; }
+    .st-cxl { background: #95a5a6; color: #fff; }
+    .st-ctk { background: #3498db; }
+    .st-cdf { background: #9b59b6; }
+    .st-ci { background: #e67e22; }
+    .st-cgc { background: #f1c40f; color: #333; }
+    .st-cgh { background: #1abc9c; }
+    .st-ctt { background: #e84393; }
+    .st-cn { background: #c0392b; }
+    .st-ht { background: #27ae60; }
 
     .f10-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
     .f10-table th { padding: 12px 15px; color: #64748b; font-size: 12px; text-transform: uppercase; text-align: left; }
@@ -43,8 +61,10 @@
     .group-row:hover { background: #e2e8f0; }
     .child-row { display: none; }
     .child-row.show { display: table-row; }
-    .child-row td:first-child { padding-left: 30px; border-left: 4px solid #3498db !important; }
+    .child-row td:first-child { padding-left: 30px; }
     .toggle-icon { display: inline-block; width: 20px; transition: 0.3s; color: #3498db; }
+
+    .status-badge-mini { padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px; font-weight: bold; border: 1px solid; }
 
     .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 20px; flex-wrap: wrap; }
     .page-btn { padding: 6px 12px; border: 1px solid #cbd5e1; background: white; border-radius: 4px; cursor: pointer; transition: 0.2s; font-size: 13px; }
@@ -72,8 +92,8 @@
         .f10-header { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }
         .f10-header button { width: 100%; }
 
-        .filter-bar { grid-template-columns: 1fr; gap: 10px; padding: 15px; }
-        .filter-bar input, .filter-bar select { font-size: 15px; padding: 12px; }
+        .filter-top { flex-direction: column; }
+        .filter-top input { font-size: 15px; padding: 12px; }
 
         /* Biến bảng thành Dạng Thẻ (Card) */
         .f10-table, .f10-table thead, .f10-table tbody, .f10-table th, .f10-table td, .f10-table tr { display: block; width: 100%; box-sizing: border-box; }
@@ -93,7 +113,7 @@
         .child-row { display: none !important; }
         .child-row.show { display: block !important; } 
 
-        .group-row td { padding-left: 15px !important; }
+        .group-row td { padding-left: 15px !important; display: block; }
         .group-row td:before { display: none; }
         
         /* SweetAlert Popup Mobile */
@@ -117,21 +137,14 @@
         <button onclick="loadF10Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 TẢI LẠI</button>
       </div>
 
-      <div class="filter-bar">
-        <input type="text" id="f10-search" placeholder="🔍 Tìm mã đơn, tên khách..." oninput="filterF10()">
-        <select id="f10-status-filter" onchange="filterF10()">
-          <option value="">-- Tất cả trạng thái --</option>
-          <option value="Chờ xử lý">Chờ xử lý</option>
-          <option value="Chờ thiết kế">Chờ thiết kế</option>
-          <option value="Chờ duyệt file">Chờ duyệt file</option>
-          <option value="Chờ in">Chờ in</option>
-          <option value="Chờ gia công">Chờ gia công</option>
-          <option value="Chờ giao hàng">Chờ giao hàng</option>
-          <option value="Chờ thanh toán">Chờ thanh toán</option>
-          <option value="Công nợ">Công nợ</option>
-          <option value="Hoàn tất">Hoàn tất</option>
-        </select>
-        <input type="date" id="f10-date-filter" onchange="filterF10()">
+      <div class="filter-container">
+        <div class="filter-top">
+          <input type="text" id="f10-search" placeholder="🔍 Tìm mã đơn, tên khách..." oninput="filterF10()">
+          <input type="date" id="f10-date-filter" onchange="filterF10()" style="max-width: 200px;">
+        </div>
+        <div class="status-buttons" id="status-btn-container">
+          <!-- Các nút màu sẽ được JS tạo ra ở đây -->
+        </div>
       </div>
 
       <div style="overflow-x: auto;">
@@ -156,16 +169,52 @@
   </div>
 
   <script>
-    window.listAllF10 = [];
-    window.filteredGroupedData = []; // Dữ liệu sau khi lọc, đã được gom nhóm
-    let currentPage = 1;
-    const itemsPerPage = 50;
+    // BẢNG MÀU ÁNH XẠ CHO CÁC TRẠNG THÁI
+    const STATUS_MAP = [
+      { name: "", label: "Tất cả", class: "st-all", color: "#34495e" },
+      { name: "Chờ xử lý", label: "Chờ xử lý", class: "st-cxl", color: "#95a5a6" },
+      { name: "Chờ thiết kế", label: "Chờ thiết kế", class: "st-ctk", color: "#3498db" },
+      { name: "Chờ duyệt file", label: "Chờ duyệt file", class: "st-cdf", color: "#9b59b6" },
+      { name: "Chờ in", label: "Chờ in", class: "st-ci", color: "#e67e22" },
+      { name: "Chờ gia công", label: "Chờ gia công", class: "st-cgc", color: "#f1c40f" },
+      { name: "Chờ giao hàng", label: "Chờ giao hàng", class: "st-cgh", color: "#1abc9c" },
+      { name: "Chờ thanh toán", label: "Chờ thanh toán", class: "st-ctt", color: "#e84393" },
+      { name: "Công nợ", label: "Công nợ", class: "st-cn", color: "#c0392b" },
+      { name: "Hoàn tất", label: "Hoàn tất", class: "st-ht", color: "#27ae60" }
+    ];
 
-    const statuses = ["Chờ xử lý", "Chờ thiết kế", "Chờ duyệt file", "Chờ in", "Chờ gia công", "Chờ giao hàng", "Chờ thanh toán", "Công nợ", "Hoàn tất"];
+    window.listAllF10 = [];
+    window.filteredGroupedData = []; 
+    window.expandedGroups = new Set(); // Biến ghi nhớ các nhóm đơn đang mở
+    
+    let currentStatusFilter = "";
+    let currentPage = 1;
+    const itemsPerPage = 30; // ĐÃ CHỈNH SỬA XUỐNG 30 DÒNG
+
+    const statuses = STATUS_MAP.filter(s => s.name !== "").map(s => s.name);
 
     document.addEventListener("DOMContentLoaded", () => {
+      renderStatusButtons();
       setTimeout(() => { loadF10Data(); }, 600);
     });
+
+    // Render các nút trạng thái nhiều màu sắc
+    function renderStatusButtons() {
+      const container = document.getElementById('status-btn-container');
+      let html = '';
+      STATUS_MAP.forEach(st => {
+        let activeCls = st.name === currentStatusFilter ? "active" : "";
+        html += `<button class="status-btn ${st.class} ${activeCls}" onclick="setStatusFilter('${st.name}')">${st.label}</button>`;
+      });
+      container.innerHTML = html;
+    }
+
+    // Set bộ lọc trạng thái khi bấm nút
+    window.setStatusFilter = function(statusName) {
+      currentStatusFilter = statusName;
+      renderStatusButtons();
+      filterF10();
+    }
 
     async function loadF10Data() {
       const tbody = document.getElementById('f10-table-body');
@@ -173,13 +222,13 @@
       try {
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*&order=id.desc`, { headers: h });
         window.listAllF10 = await res.json();
-        filterF10(); // Gọi filter để gom nhóm và render
+        filterF10(); 
       } catch (e) {
         tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Lỗi: ${e.message}</td></tr>`;
       }
     }
 
-    // ĐÃ CẬP NHẬT: Hàm gom nhóm dữ liệu theo Mã Đơn và sắp xếp từ mới đến cũ
+    // Hàm gom nhóm dữ liệu theo Mã Đơn và sắp xếp từ mới đến cũ
     function groupData(dataArray) {
         const grouped = {};
         dataArray.forEach(item => {
@@ -220,33 +269,61 @@
 
       let html = '';
       paginatedGroups.forEach(group => {
+          const isExpanded = window.expandedGroups.has(group.Ma_Don);
+          const displayStyle = isExpanded ? 'show' : '';
+          const iconText = isExpanded ? '▼' : '▶';
+
+          // --- XỬ LÝ MÀU SẮC DÒNG NHÓM (PARENT ROW) ---
+          let uniqueStatuses = [...new Set(group.items.map(i => i.Trang_Thai))];
+          let parentBorderColor = "#34495e"; // Mặc định nếu trộn nhiều trạng thái
+          
+          if (uniqueStatuses.length === 1) {
+              const stObj = STATUS_MAP.find(s => s.name === uniqueStatuses[0]);
+              if (stObj) parentBorderColor = stObj.color;
+          }
+
+          let badgesHtml = uniqueStatuses.map(s => {
+              const stObj = STATUS_MAP.find(x => x.name === s);
+              const color = stObj ? stObj.color : "#333";
+              const bg = (s === "Chờ gia công") ? color : color + "20"; // Xử lý nền riêng cho chữ vàng dễ đọc
+              const txtColor = (s === "Chờ gia công") ? "#333" : color;
+              return `<span class="status-badge-mini" style="background:${bg}; color:${txtColor}; border-color:${color};">${s}</span>`;
+          }).join('');
+
           // Render dòng Cha (Group)
           html += `
           <tr class="f10-row group-row" onclick="toggleOrderGroup('${group.Ma_Don}')">
-            <td colspan="4">
-              <span class="toggle-icon" id="icon-${group.Ma_Don}">▶</span>
-              <b style="color:#e67e22;">${group.Ma_Don}</b> - <b>${group.Ten_Khach_Hang}</b> <small style="color:#7f8c8d; margin-left:10px;">(${group.items.length} mặt hàng)</small>
+            <td colspan="4" style="border-left: 4px solid ${parentBorderColor} !important;">
+              <span class="toggle-icon" id="icon-${group.Ma_Don}">${iconText}</span>
+              <b style="color:#e67e22;">${group.Ma_Don}</b> - <b>${group.Ten_Khach_Hang}</b> <small style="color:#7f8c8d; margin-left:5px;">(${group.items.length} SP)</small>
+              <div style="display:inline-block; margin-top: 4px; margin-left: 10px;">${badgesHtml}</div>
             </td>
-            <td style="text-align:center;">
-              <button class="btn-detail" onclick="event.stopPropagation(); viewF10Detail('${group.Ma_Don}')" title="Xem chi tiết thanh toán">👁️ XEM CHI TIẾT</button>
+            <td style="text-align:center; border-left: none !important;">
+              <button class="btn-detail" onclick="event.stopPropagation(); viewF10Detail('${group.Ma_Don}')" title="Xem chi tiết thanh toán">👁️ CHI TIẾT</button>
             </td>
           </tr>`;
 
           // Render các dòng Con (Items)
           group.items.forEach(item => {
               let options = statuses.map(s => `<option value="${s}" ${item.Trang_Thai === s ? 'selected' : ''}>${s}</option>`).join('');
+              
+              const stObj = STATUS_MAP.find(s => s.name === item.Trang_Thai);
+              const itemBorderColor = stObj ? stObj.color : "#ccc";
+
               html += `
-              <tr class="f10-row child-row child-of-${group.Ma_Don}">
-                <td data-label="Mã/Ngày"><small style="color:#7f8c8d;">${item.Ngay_Gio ? item.Ngay_Gio.split(' ')[0] : ""}</small></td>
+              <tr class="f10-row child-row child-of-${group.Ma_Don} ${displayStyle}">
+                <td data-label="Mã/Ngày" style="border-left: 4px solid ${itemBorderColor} !important;">
+                  <small style="color:#7f8c8d;">${item.Ngay_Gio ? item.Ngay_Gio.split(' ')[0] : ""}</small>
+                </td>
                 <td data-label="Khách hàng"><span style="color:#7f8c8d;">---</span></td>
-                <td data-label="Sản phẩm" style="color:#2980b9;"><b>${item.Ten_Hang}</b></td>
+                <td data-label="Sản phẩm" style="color:#2980b9;"><b>${item.Ten_Hang}</b><br><small style="color:#d35400;">SL: ${item.So_Luong} ${item.Don_Vi_Tinh || ""}</small></td>
                 <td data-label="Trạng thái">
-                  <select class="status-select" onchange="changeStatusF10(${item.id}, this.value, '${item.Ma_Don}', '${item.Ten_Hang.replace(/'/g, "\\'")}', '${item.Ten_Khach_Hang.replace(/'/g, "\\'")}')">
+                  <select class="status-select" style="border-left: 3px solid ${itemBorderColor};" onchange="changeStatusF10(${item.id}, this.value, '${item.Ma_Don}', '${item.Ten_Hang.replace(/'/g, "\\'")}', '${item.Ten_Khach_Hang.replace(/'/g, "\\'")}')">
                     ${options}
                   </select>
                 </td>
                 <td data-label="Thao tác" style="text-align:center">
-                  <button class="btn-del" onclick="confirmDeleteF10(${item.id})" title="Xóa vĩnh viễn mặt hàng này">🗑️ XÓA MÓN & HOÀN KHO</button>
+                  <button class="btn-del" onclick="confirmDeleteF10(${item.id}, '${item.Ma_Don}')" title="Xóa vĩnh viễn mặt hàng này">🗑️ XÓA MÓN & HOÀN KHO</button>
                 </td>
               </tr>`;
           });
@@ -258,10 +335,20 @@
 
     function toggleOrderGroup(maDon) {
         const rows = document.querySelectorAll(`.child-of-${maDon}`);
-        rows.forEach(r => r.classList.toggle('show'));
         const icon = document.getElementById(`icon-${maDon}`);
-        if (icon.innerText === '▶') icon.innerText = '▼';
-        else icon.innerText = '▶';
+        
+        if (rows.length > 0) {
+            const isCurrentlyHidden = !rows[0].classList.contains('show');
+            if (isCurrentlyHidden) {
+                rows.forEach(r => r.classList.add('show'));
+                icon.innerText = '▼';
+                window.expandedGroups.add(maDon); 
+            } else {
+                rows.forEach(r => r.classList.remove('show'));
+                icon.innerText = '▶';
+                window.expandedGroups.delete(maDon); 
+            }
+        }
     }
 
     function renderPagination(totalPages) {
@@ -282,7 +369,7 @@
 
     function filterF10() {
       const search = document.getElementById('f10-search').value.toLowerCase();
-      const status = document.getElementById('f10-status-filter').value;
+      const status = currentStatusFilter;
       const date = document.getElementById('f10-date-filter').value;
       
       const filteredItems = window.listAllF10.filter(it => {
@@ -295,13 +382,12 @@
       });
 
       window.filteredGroupedData = groupData(filteredItems);
-      currentPage = 1; // Reset về trang 1 khi lọc
+      // Xoá currentPage = 1 khi gọi filter ngầm để không bị nhảy trang lúc load lại
       renderF10Table();
     }
 
-    // TÍNH NĂNG XÓA VÀ HOÀN KHO (ĐÃ CẬP NHẬT THEO LOGIC MỚI)
-    async function confirmDeleteF10(itemId) {
-      // 1. Tìm thông tin mặt hàng cần xóa
+    // TÍNH NĂNG XÓA VÀ HOÀN KHO (ĐÃ CẬP NHẬT ĐỂ GIỮ STATE NHÓM ĐƠN)
+    async function confirmDeleteF10(itemId, maDon) {
       const item = window.listAllF10.find(i => i.id === itemId);
       if (!item) return;
 
@@ -319,25 +405,21 @@
           // 🔥 PHA 1: XỬ LÝ NGUYÊN LIỆU (Nhatky_nguyenlieu)
           const resNL = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, {headers: h});
           const nlData = await resNL.json();
-          // Tìm các dòng Đã sử dụng (SD-)
           const sdItems = nlData.filter(nl => nl.Ma_Nguyen_Lieu && nl.Ma_Nguyen_Lieu.startsWith('SD-'));
 
           for (let sd of sdItems) {
               const soLuongSD = Number(sd.So_Luong) || 0;
               const maGoc = sd.Ma_Nguyen_Lieu.replace('SD-', 'NL-');
 
-              // Tìm dòng tồn kho gốc
               const resGoc = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${encodeURIComponent(maGoc)}`, {headers: h});
               const gocData = await resGoc.json();
               
               if (gocData && gocData.length > 0) {
                   const tonGoc = Number(gocData[0].So_Luong) || 0;
-                  // Cộng trả số lượng vào kho gốc
                   await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${gocData[0].id}`, {
                       method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonGoc + soLuongSD })
                   });
               }
-              // Xoá dòng lịch sử SD-
               await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${sd.id}`, { method: 'DELETE', headers: h });
           }
 
@@ -348,7 +430,6 @@
               if (vtData && vtData.length > 0) {
                   const tonVT = Number(vtData[0].So_Luong) || 0;
                   const traVT = Number(item.So_Luong) || 0;
-                  // Cộng trả số lượng vào kho vật tư
                   await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${vtData[0].id}`, {
                       method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonVT + traVT })
                   });
@@ -356,23 +437,17 @@
           }
 
           // 🔥 PHA 3: DỌN DẸP DỮ LIỆU & CÂN ĐỐI CÔNG NỢ
-          // Xóa Log Tiến Độ và Gia Công
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { method: 'DELETE', headers: h });
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_giacong?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { method: 'DELETE', headers: h });
-
-          // Xóa bản ghi trong NhatKy_BanHang
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${item.id}`, { method: 'DELETE', headers: h });
 
-          // Xử lý Công nợ
           const remainingItems = window.listAllF10.filter(i => i.Ma_Don === item.Ma_Don && i.id !== item.id);
           
           if (remainingItems.length === 0) {
-              // Nếu xóa món này là xóa sạch đơn hàng -> Xóa thu nợ và công nợ
               await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
               await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
               try { await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã bị xóa vĩnh viễn.`, "Quan_Ly_Don", "Xu_Ly.html"); } catch(e){}
           } else {
-              // Cập nhật lại công nợ do tổng đơn giảm
               const tongDonMoi = remainingItems.reduce((sum, i) => sum + (Number(i.Thanh_Tien) || 0), 0);
               const resCN = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, {headers: h});
               const cnData = await resCN.json();
@@ -387,7 +462,9 @@
           }
 
           Swal.fire('Hoàn tất!', 'Đã thu hồi kho và dọn dẹp dữ liệu.', 'success');
-          loadF10Data(); // Tải lại bảng
+          // Ghi nhớ nhóm này để mở ra sau khi tải lại
+          window.expandedGroups.add(item.Ma_Don);
+          loadF10Data(); 
         } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
       }
     }
@@ -450,7 +527,7 @@
       });
     };
 
-    // GIỮ NGUYÊN LOGIC ĐỔI TRẠNG THÁI (ĐÃ CÓ XỬ LÝ CÔNG NỢ)
+    // LOGIC ĐỔI TRẠNG THÁI MỚI (Lưu Log_TienDo chính xác 100%)
     async function changeStatusF10(id, newStatus, maDon, tenHang, tenKhach) {
       const confirmResult = await Swal.fire({
         title: 'CHUYỂN TRẠNG THÁI?',
@@ -462,6 +539,7 @@
 
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
+      // Xử lý riêng nếu chuyển thành Công nợ (tạo record bên bảng Cong_No)
       if (newStatus === "Công nợ") {
         const dsMon = window.listAllF10.filter(it => it.Ma_Don === maDon);
         const khachHang = dsMon.length > 0 ? dsMon[0].Ten_Khach_Hang : "";
@@ -492,12 +570,26 @@
 
       Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const nowVN = window.formatDateTimeVN();
-      const colMap = { "Chờ xử lý": "Gio_Xu_Ly", "Chờ thiết kế": "Gio_Thiet_Ke", "Chờ duyệt file": "Gio_Duyet_File", "Chờ in": "Gio_In", "Chờ gia công": "Gio_Gia_Cong", "Chờ giao hàng": "Gio_Giao_Hang", "Chờ thanh toán": "Gio_Thanh_Toan", "Hoàn tất": "Gio_Hoan_Tat", "Công nợ": "Cong_No" };
+      
+      // LOGIC MỚI: Chỉ map cột đích đến
+      const colMap = { 
+          "Chờ xử lý": "Gio_Xu_Ly", 
+          "Chờ thiết kế": "Gio_Thiet_Ke", 
+          "Chờ duyệt file": "Gio_Duyet_File", 
+          "Chờ in": "Gio_In", 
+          "Chờ gia công": "Gio_Gia_Cong", 
+          "Chờ giao hàng": "Gio_Giao_Hang", 
+          "Chờ thanh toán": "Gio_Thanh_Toan", 
+          "Hoàn tất": "Gio_Hoan_Tat", 
+          "Công nợ": "Cong_No" 
+      };
 
       try {
+        // Cập nhật Trang_Thai vào NhatKy_BanHang
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ "Trang_Thai": newStatus }) });
 
-        let logData = { "Trang_Thai": newStatus, "Nguoi_Thuc_Hien": "Quản trị (F10)", "Gio_Xu_Ly": null, "Gio_Thiet_Ke": null, "Gio_Duyet_File": null, "Gio_In": null, "Gio_Gia_Cong": null, "Gio_Giao_Hang": null, "Gio_Thanh_Toan": null, "Gio_Hoan_Tat": null, "Cong_No": null };
+        // LOGIC MỚI LƯU Log_TienDo: KHÔNG set null các cột khác, chỉ ghi đè cột đích đến
+        let logData = { "Trang_Thai": newStatus, "Nguoi_Thuc_Hien": "Bộ phận Quản trị đơn" };
         if (colMap[newStatus]) logData[colMap[newStatus]] = nowVN;
 
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(maDon)}&Ten_Hang=eq.${encodeURIComponent(tenHang)}`, { method: 'PATCH', headers: h, body: JSON.stringify(logData) });
@@ -542,6 +634,8 @@
         } catch (etb) { console.log(etb); }
 
         Swal.fire({ icon: 'success', title: 'Đã cập nhật!', timer: 800, showConfirmButton: false });
+        // Ghi nhớ nhóm này để mở ra sau khi tải lại
+        window.expandedGroups.add(maDon);
         loadF10Data();
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }

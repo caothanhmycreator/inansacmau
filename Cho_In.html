@@ -225,6 +225,7 @@
                         onerror="this.parentElement.innerHTML='🖼️ Click xem ảnh';">`;
           }
 
+          // HIỂN THỊ SỐ LƯỢNG SẢN PHẨM Ở CỘT KHÁCH HÀNG / SẢN PHẨM
           return `<tr class="f5-row">
             <td>
               <small>#${item.Ngay_Gio.split(' ')[0]}</small><br>
@@ -234,7 +235,11 @@
                 <div class="tk-progress-bar" style="width: ${percent}%; background-color: ${color};"></div>
               </div>
             </td>
-            <td><b>${item.Ten_Khach_Hang}</b><br><small>${item.Ten_Hang}</small></td>
+            <td>
+              <b>${item.Ten_Khach_Hang}</b><br>
+              <small>${item.Ten_Hang}</small><br>
+              <small style="font-weight: 600; color: #d35400;">SL: ${item.So_Luong || 0} ${item.Don_Vi_Tinh || ''}</small>
+            </td>
             <td><div class="img-container">${imgHtml}</div></td>
             <td>
               <div style="margin-bottom:5px;">
@@ -461,15 +466,16 @@
         const rowLog = await resLog.json();
 
         if (rowLog.length > 0) {
+          // --- LOGIC MỚI: Ghi vào Gio_Thanh_Toan, Đổi Nguoi_Thuc_Hien thành Bộ phận In ---
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
             method: 'PATCH', headers: h,
-            body: JSON.stringify({ Trang_Thai: statusMoi, Gio_Giao_Hang: cleanNow, Nguoi_Thuc_Hien: "Máy in" })
+            body: JSON.stringify({ Trang_Thai: statusMoi, Gio_Thanh_Toan: cleanNow, Nguoi_Thuc_Hien: "Bộ phận In" })
           });
         }
 
         Swal.fire({ icon: 'success', title: 'Hoàn tất in!', timer: 1000, showConfirmButton: false });
 
-        // TÍNH NĂNG THÔNG BÁO - BÁO CHO THU NGÂN ĐƠN ĐÃ IN XONG
+        // TÍNH NĂNG THÔNG BÁO - NỘI DUNG MỚI
         try {
             let usedMaterials = [];
             if (data.existingData && data.existingData.length > 0) {
@@ -480,7 +486,7 @@
             }
             let usedStr = usedMaterials.join(', ');
             
-            let tbMsg = `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã in xong, sẵn sàng để báo khách thanh toán và giao hàng!. Đã trừ ${usedStr}!`;
+            let tbMsg = `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã in xong, sẵn sàng giao khách. Đã trừ ${usedStr}!`;
             await guiThongBaoSacMau("🖨️ ĐÃ IN HOÀN TẤT", tbMsg, "Quan_Ly_Don", "Thanh_Toan.html");
         } catch (etb) {
             console.log("Lỗi TB:", etb);

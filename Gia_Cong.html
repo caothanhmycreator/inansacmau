@@ -191,6 +191,11 @@
         const now = new Date();
         
         tbody.innerHTML = sortedData.map(item => {
+          // KIỂM TRA TRẠNG THÁI GHI CHÚ ĐỂ XÁC ĐỊNH LABEL THỜI GIAN
+          let ghiChuHienTai = item.Ghi_Chu || "";
+          let isSent = ghiChuHienTai.includes("[Đã gửi file]");
+          let rowClass = isSent ? "f6-row processed" : "f6-row";
+
           // --- TÍNH TOÁN THỜI GIAN VÀ THANH TIẾN ĐỘ ---
           const logItem = logData.find(l => l.Ma_Don === item.Ma_Don && l.Ten_Hang === item.Ten_Hang);
           const startTimeStr = (logItem && logItem.Gio_Gia_Cong && logItem.Gio_Gia_Cong !== "EMPTY") ? logItem.Gio_Gia_Cong : (logItem ? logItem.Ngay_Gio : item.Ngay_Gio);
@@ -209,6 +214,9 @@
           }
           
           const waitTimeStr = formatWaitTime(Math.max(0, diffMins));
+          
+          // --- LOGIC MỚI: Hiển thị text theo trạng thái Đã gửi ---
+          let timeLabelText = isSent ? `Đã chờ gia công ${waitTimeStr}` : `Đã chờ gửi ${waitTimeStr}`;
 
           const link = item.Link_Anh || "";
           let imgHtml = "";
@@ -229,16 +237,11 @@
                        </div>`;
           }
 
-          // KIỂM TRA TRẠNG THÁI GHI CHÚ
-          let ghiChuHienTai = item.Ghi_Chu || "";
-          let isSent = ghiChuHienTai.includes("[Đã gửi file]");
-          let rowClass = isSent ? "f6-row processed" : "f6-row";
-
           return `<tr class="${rowClass}">
             <td>
               <small style="color:#64748b;">#${item.Ngay_Gio.split(' ')[0]}</small><br>
               <b style="font-size:15px; color:#2c3e50;">${item.Ma_Don}</b><br>
-              <span class="tk-time-label" style="color: ${color}">⏳ Đã chờ: ${waitTimeStr}</span>
+              <span class="tk-time-label" style="color: ${color}">⏳ ${timeLabelText}</span>
               <div class="tk-progress-track">
                 <div class="tk-progress-bar" style="width: ${percent}%; background-color: ${color};"></div>
               </div>
@@ -355,9 +358,10 @@
         const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${item.Ma_Don}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}&select=id`, { headers: h });
         const rowLog = await resLog.json();
         if (rowLog.length > 0) {
+          // --- LOGIC MỚI: Ghi vào Gio_Thanh_Toan, Đổi Nguoi_Thuc_Hien thành Bộ phận Gia công ---
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, {
             method: 'PATCH', headers: h,
-            body: JSON.stringify({ Trang_Thai: sttMoi, Gio_Giao_Hang: cleanNow, Nguoi_Thuc_Hien: "Gia công (Hàng về)" })
+            body: JSON.stringify({ Trang_Thai: sttMoi, Gio_Thanh_Toan: cleanNow, Nguoi_Thuc_Hien: "Bộ phận Gia công" })
           });
         }
 

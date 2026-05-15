@@ -149,7 +149,7 @@
             <tr>
               <th style="width: 15%;">Mã đơn</th>
               <th style="width: 20%;">Khách hàng</th>
-              <th style="width: 25%;">Tên hàng (Tích hợp)</th>
+              <th style="width: 25%;">Danh sách hàng hóa</th>
               <th style="width: 15%;">Tổng / Đã trả</th>
               <th style="width: 15%;">Còn nợ</th>
               <th style="width: 10%; text-align: center;">Thao tác</th>
@@ -224,7 +224,16 @@
             grouped[maDon].allInWaitPay = false;
           }
 
-          grouped[maDon].cacMon.push({ tenMon: row.Ten_Hang, sl: row.So_Luong, thanhTien: row.Thanh_Tien || 0, trangThai: row.Trang_Thai, id: row.id });
+          // LƯU ĐẦY ĐỦ THÔNG TIN SẢN PHẨM (SL, ĐVT, ĐG, TT) ĐỂ HIỂN THỊ
+          grouped[maDon].cacMon.push({ 
+            tenMon: row.Ten_Hang, 
+            sl: row.So_Luong, 
+            dongia: row.Don_Gia || 0,
+            dvt: row.Don_Vi_Tinh || "",
+            thanhTien: row.Thanh_Tien || 0, 
+            trangThai: row.Trang_Thai, 
+            id: row.id 
+          });
           grouped[maDon].tongDon += (row.Thanh_Tien || 0);
           if (row.Khach_Da_Tra > grouped[maDon].tongDaTra) grouped[maDon].tongDaTra = row.Khach_Da_Tra;
         });
@@ -234,12 +243,12 @@
         // Sắp xếp danh sách từ Mới nhất -> Cũ nhất
         window.listF7.sort((a, b) => b.maxId - a.maxId);
         
-        // Truy xuất thời gian chuyển trạng thái từ Log_TienDo
+        // Truy xuất thời gian chuyển trạng thái từ Log_TienDo (Lấy Gio_Thanh_Toan thay vì Gio_Giao_Hang)
         window.logDataF7 = [];
         const maDons = [...new Set(window.listF7.map(item => item.maDon))];
         if (maDons.length > 0) {
             try {
-                const logRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=in.(${maDons.join(',')})&select=Ma_Don,Gio_Giao_Hang,Ngay_Gio`, { headers: h });
+                const logRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=in.(${maDons.join(',')})&select=Ma_Don,Gio_Thanh_Toan,Ngay_Gio`, { headers: h });
                 if (logRes.ok) window.logDataF7 = await logRes.json();
             } catch (err) { console.error("Lỗi tải Log_TienDo:", err); }
         }
@@ -267,10 +276,9 @@
         totalDebt += conNo; // Cộng dồn nợ của từng hàng hiển thị
         const originalIdx = window.listF7.indexOf(item); // Giữ nguyên index chuẩn để mở Popup
 
-        // --- TÍNH TOÁN THỜI GIAN VÀ THANH TIẾN ĐỘ ---
+        // --- TÍNH TOÁN THỜI GIAN VÀ THANH TIẾN ĐỘ TỪ Gio_Thanh_Toan ---
         const logItem = window.logDataF7.find(l => l.Ma_Don === item.maDon);
-        // Ở đây lấy Gio_Giao_Hang vì khi In/Gia công xong chuyển sang Chờ thanh toán đã gán Gio_Giao_Hang
-        const startTimeStr = (logItem && logItem.Gio_Giao_Hang && logItem.Gio_Giao_Hang !== "EMPTY") ? logItem.Gio_Giao_Hang : (logItem ? logItem.Ngay_Gio : item.ngayGioRaw);
+        const startTimeStr = (logItem && logItem.Gio_Thanh_Toan && logItem.Gio_Thanh_Toan !== "EMPTY") ? logItem.Gio_Thanh_Toan : (logItem ? logItem.Ngay_Gio : item.ngayGioRaw);
         
         const startTime = parseVNTime(startTimeStr);
         const diffMins = Math.floor((now - startTime) / 60000);
@@ -297,8 +305,17 @@
             </div>
           </td>
           <td><b>${item.khachHang}</b><br><small style="color:#7f8c8d;">${item.sdt}</small></td>
-          <td style="color:#27ae60; font-weight: 500;">${item.cacMon.map(m => m.tenMon).join(", ")}</td>
-          <td>T: ${item.tongDon.toLocaleString()}<br><small style="color:#27ae60; font-weight:bold;">Đ: ${item.tongDaTra.toLocaleString()}</small></td>
+          <td style="color:#2c3e50;">
+            ${item.cacMon.map(m => `
+              <div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed #e2e8f0;">
+                <div style="font-weight: 600; font-size: 13px; color: #27ae60;">${m.tenMon}</div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                  SL: <b style="color:#d35400">${m.sl} ${m.dvt}</b> | ĐG: ${Number(m.dongia).toLocaleString()} đ | TT: <b style="color:#2980b9">${Number(m.thanhTien).toLocaleString()} đ</b>
+                </div>
+              </div>
+            `).join("")}
+          </td>
+          <td>Tổng: ${item.tongDon.toLocaleString()}<br><small style="color:#27ae60; font-weight:bold;">Đã trả: ${item.tongDaTra.toLocaleString()}</small></td>
           <td style="color:red; font-weight:bold; font-size:14px;">${conNo.toLocaleString()} đ</td>
           <td style="text-align:center"><button class="btn-pay" onclick="openPayPopup(${originalIdx})">THANH TOÁN & IN</button></td>
         </tr>`;
@@ -425,13 +442,23 @@
           const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${it.maDon}&Ten_Hang=eq.${encodeURIComponent(m.tenMon)}&select=id`, { headers: h });
           const rowLog = await resLog.json();
           if (rowLog.length > 0) {
-            let logData = { Trang_Thai: "Hoàn tất", Gio_Hoan_Tat: cleanNow, Nguoi_Thuc_Hien: "Kế toán" };
-            if (!isFullPay) { logData.Cong_No = cleanNow; }
+            // --- LOGIC MỚI LƯU THỜI GIAN VÀO Log_TienDo ---
+            let logData = { Trang_Thai: finalStatusBH, Nguoi_Thuc_Hien: "Bộ phận Thanh toán" };
+            
+            if (isFullPay && giaoStatus === 'Giao') {
+                logData.Gio_Hoan_Tat = cleanNow;
+            } else if (isFullPay && giaoStatus !== 'Giao') {
+                logData.Gio_Giao_Hang = cleanNow;
+            } else if (!isFullPay && giaoStatus === 'Giao') {
+                logData.Cong_No = cleanNow;
+            }
+            // Không xóa Gio_Thanh_Toan cũ, cũng không cập nhật gì về thời gian nếu (!isFullPay && giaoStatus !== 'Giao')
+
             await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${rowLog[0].id}`, { method: 'PATCH', headers: h, body: JSON.stringify(logData) });
           }
         }
 
-        if (!isFullPay) {
+        if (!isFullPay && giaoStatus === 'Giao') { // Ghi vào bảng công nợ khi xác nhận Công nợ
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No`, {
             method: 'POST', headers: h,
             body: JSON.stringify({ Ngay_Gio: cleanNow, Ma_Don: it.maDon, Khach_Hang: it.khachHang, Tong_Don: String(it.tongDon), Da_Tra: String(newPaid), Con_Lai: String(remainingDebt), id: Math.floor(Date.now() / 1000) })
@@ -448,7 +475,7 @@
         Swal.close();
         renderBill(idx, payMore, true);
 
-        // TÍNH NĂNG THÔNG BÁO - BÁO CHO QUẢN LÝ TÌNH TRẠNG THANH TOÁN THEO YÊU CẦU MỚI
+        // TÍNH NĂNG THÔNG BÁO TỰ ĐỘNG
         try {
             let tbTitle = "";
             let tbMsg = "";
@@ -497,7 +524,7 @@
           <div style="background: #f4f9f4; padding: 15px; border-radius: 8px; border: 1px solid #dcfce7; font-size: 14px; margin-bottom:15px;"><p>👤 <b>Khách hàng:</b> ${it.khachHang}</p><p>📱 <b>SĐT:</b> ${it.sdt || '---'}</p></div>
           <table class="print-table-f7"><thead><tr><th>Sản phẩm</th><th style="width:60px; text-align:center;">SL</th><th style="width:120px; text-align:right;">Tiền</th></tr></thead><tbody>${rows}</tbody></table>
           <div style="margin-left: auto; width: 340px; background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; position: relative;">
-            ${isFull ? '<div style="position:absolute; left:-140px; top:10px; color:#2D5A27; border:4px double #2D5A27; padding:5px 10px; font-weight:bold; transform:rotate(-15deg); background:rgba(255,255,255,0.9);">ĐÃ HOÀN TẤT</div>' : ''}
+            ${isFull ? '<div style="position:absolute; left:-140px; top:10px; color:#2D5A27; border:4px double #2D5A27; padding:5px 10px; font-weight:bold; transform:rotate(-15deg); background:rgba(255,255,255,0.9);">HOÀN TẤT</div>' : ''}
             <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Tổng đơn:</span><b>${it.tongDon.toLocaleString()} đ</b></div>
             <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Cọc cũ:</span><b>-${it.tongDaTra.toLocaleString()} đ</b></div>
             <div style="display:flex; justify-content:space-between; color:#d35400;"><span>Thu thêm:</span><b>-${payMore.toLocaleString()} đ</b></div>
