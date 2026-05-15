@@ -68,6 +68,7 @@
                         <div class="group-items">
                             <a href="Kho.html" id="Kho_Vat_Tu" class="nav-link">🏗️ Kho vật tư</a>
                             <a href="Bang_Gia.html" id="Bang_Gia_San_Pham" class="nav-link">🏷️ Bảng giá</a>
+                            <a href="Gia_Von.html" id="Gia_Von" target="_parent" class="nav-link">💰 Giá Vốn</a>
                             <a href="Nguyen_Lieu.html" id="Dinh_Muc_Nguyen_Lieu" class="nav-link">🧪 Nguyên liệu</a>
                         </div>
                     </div>

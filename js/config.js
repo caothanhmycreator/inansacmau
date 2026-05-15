@@ -40,11 +40,8 @@ window.formatDateTimeVN = function() {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
-// ĐÃ CẬP NHẬT: Thêm tham số targetLink để tùy chỉnh trang đích
 async function guiThongBaoSacMau(tieude, noidung, targetRole = "", targetLink = "") {
     const URL_FUNCTION = "https://zatxvklirqvyacslkpgy.supabase.co/functions/v1/bright-handler";
-    
-    // Nếu có truyền link đích thì dùng, nếu không thì tự lấy tên trang hiện tại
     const finalLink = targetLink !== "" ? targetLink : (window.location.pathname.split('/').pop() || ""); 
 
     try {
@@ -96,7 +93,7 @@ async function guiThongBaoSacMau(tieude, noidung, targetRole = "", targetLink = 
         .sm-bell-btn { font-size: 20px; cursor: pointer; position: relative; background: #fff; border: 1px solid #e2e8f0; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.2s; color: #2D5A27; }
         .sm-bell-btn:hover { background: #f8fafc; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
         .sm-badge { position: absolute; top: -2px; right: -2px; background: #e74c3c; color: white; font-size: 11px; padding: 2px 6px; border-radius: 12px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(231,76,60,0.3); }
-        .sm-noti-popup { display: none; position: absolute; top: 55px; right: 0; width: 320px; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 10005; color: #333; text-align: left; overflow: hidden; border: 1px solid #f0f0f0; }
+        .sm-noti-popup { display: none; position: absolute; top: 55px; right: 0; width: 340px; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 10005; color: #333; text-align: left; overflow: hidden; border: 1px solid #f0f0f0; }
         .noti-header { padding: 12px 15px; font-weight: bold; font-size: 14px; background: #fdfdfd; border-bottom: 1px solid #eee; color: #2D5A27; display: flex; justify-content: space-between; align-items: center; }
         .noti-list { max-height: 380px; overflow-y: auto; }
         .noti-item { padding: 12px 15px; border-bottom: 1px solid #f4f4f4; cursor: pointer; transition: 0.2s; }
@@ -105,7 +102,7 @@ async function guiThongBaoSacMau(tieude, noidung, targetRole = "", targetLink = 
         .noti-title { font-weight: bold; font-size: 13px; display: block; color: #2c3e50; }
         .noti-time { font-size: 11px; color: #95a5a6; margin-top: 5px; display: block; }
         @media print { .sm-noti-wrapper { display: none !important; } }
-        @media (max-width: 768px) { .sm-noti-wrapper { top: 10px; right: 15px; } .sm-noti-popup { width: 280px; } }
+        @media (max-width: 768px) { .sm-noti-wrapper { top: 10px; right: 15px; } .sm-noti-popup { width: 300px; } }
     `;
     document.head.appendChild(style);
 
@@ -119,7 +116,11 @@ async function guiThongBaoSacMau(tieude, noidung, targetRole = "", targetLink = 
                     <div id="sm-noti-popup" class="sm-noti-popup">
                         <div class="noti-header">
                             <span>📢 THÔNG BÁO</span> 
-                            <span onclick="toggleNotiPopup()" style="cursor:pointer; opacity:0.5; font-size:16px;">✕</span>
+                            <div style="display:flex; align-items:center; gap: 10px;">
+                                <span id="btn-del-noti" onclick="deleteNotiByDate()" style="cursor:pointer; font-size:12px; color:#e74c3c; display:none;" title="Xóa thông báo theo ngày">🗑 Xóa</span>
+                                <span onclick="markAllAsRead()" style="cursor:pointer; font-size:12px; color:#2980b9;" title="Đánh dấu đã đọc tất cả">✔ Đọc hết</span>
+                                <span onclick="toggleNotiPopup()" style="cursor:pointer; opacity:0.5; font-size:16px; margin-left: 5px;">✕</span>
+                            </div>
                         </div>
                         <div id="noti-list" class="noti-list">
                             <div style="padding:20px; text-align:center; font-size:12px; color:#999;">Đang tải...</div>
@@ -128,6 +129,13 @@ async function guiThongBaoSacMau(tieude, noidung, targetRole = "", targetLink = 
                 </div>
             `;
             document.body.insertAdjacentHTML('beforeend', notiHTML);
+            
+            // Check nếu là Admin thì hiện nút Xóa
+            if (user && (user.Vai_Tro === 'Admin' || user.role === 'Admin')) {
+                const btnDel = document.getElementById('btn-del-noti');
+                if (btnDel) btnDel.style.display = 'inline-block';
+            }
+
             setTimeout(loadNotifications, 500);
         }
     });
@@ -138,6 +146,8 @@ window.toggleNotiPopup = function() {
     p.style.display = (p.style.display === 'block') ? 'none' : 'block';
     if (p.style.display === 'block') loadNotifications();
 };
+
+window.unreadNotisData = []; // Lưu trữ danh sách chưa đọc
 
 window.loadNotifications = async function() {
     const user = JSON.parse(localStorage.getItem('currentUser'));
@@ -165,8 +175,8 @@ window.loadNotifications = async function() {
         const listEl = document.getElementById('noti-list');
         const badgeEl = document.getElementById('noti-badge');
         
-        // ĐÃ CẬP NHẬT: Kiểm tra xem Tên User đã nằm trong danh sách người đọc chưa
-        const unreadCount = data.filter(n => !(n.nguoi_da_doc || "").includes(loginName)).length;
+        window.unreadNotisData = data.filter(n => !(n.nguoi_da_doc || "").includes(loginName));
+        const unreadCount = window.unreadNotisData.length;
         
         if (unreadCount > 0) {
             badgeEl.innerText = unreadCount > 9 ? '9+' : unreadCount;
@@ -201,7 +211,6 @@ window.markAsRead = async function(id, redirectLink, currentReaders) {
     const user = JSON.parse(localStorage.getItem('currentUser'));
     const loginName = user?.Ho_Ten || user?.name || "Unknown";
 
-    // Nếu user hiện tại chưa đọc thì mới gọi API ghi tên vào
     if (!currentReaders.includes(loginName)) {
         const h = { 
             'apikey': window.SB_CONFIG.KEY, 
@@ -221,10 +230,68 @@ window.markAsRead = async function(id, redirectLink, currentReaders) {
         } catch (e) { console.error("Lỗi đánh dấu đã đọc:", e); }
     }
     
-    // Dù đã đọc rồi hay chưa đọc, click vào là phải chuyển trang (nếu có link)
     if (redirectLink && redirectLink !== 'undefined' && redirectLink !== '') {
         window.location.href = redirectLink;
     } else {
         loadNotifications(); 
+    }
+};
+
+// --- TÍNH NĂNG MỚI: ĐỌC TẤT CẢ ---
+window.markAllAsRead = async function() {
+    if (!window.unreadNotisData || window.unreadNotisData.length === 0) return;
+
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    const loginName = user?.Ho_Ten || user?.name || "Unknown";
+    const h = { 
+        'apikey': window.SB_CONFIG.KEY, 
+        'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+    };
+
+    document.getElementById('noti-list').innerHTML = '<div style="padding:20px; text-align:center; font-size:12px; color:#999;">Đang đánh dấu đã đọc...</div>';
+
+    const promises = window.unreadNotisData.map(n => {
+        const currentReaders = n.nguoi_da_doc || '';
+        const newReaders = currentReaders ? currentReaders + ',' + loginName : loginName;
+        return fetch(`${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?id=eq.${n.id}`, {
+            method: 'PATCH',
+            headers: h,
+            body: JSON.stringify({ nguoi_da_doc: newReaders })
+        });
+    });
+
+    await Promise.all(promises);
+    loadNotifications();
+};
+
+// --- TÍNH NĂNG MỚI: XÓA THEO NGÀY (CHỈ ADMIN) ---
+window.deleteNotiByDate = async function() {
+    const { value: dateStr } = await Swal.fire({
+        title: 'Xóa Thông Báo',
+        text: 'Chọn ngày để xóa toàn bộ thông báo:',
+        input: 'date',
+        showCancelButton: true,
+        confirmButtonText: 'XÓA NGAY',
+        cancelButtonText: 'HỦY',
+        confirmButtonColor: '#e74c3c'
+    });
+
+    if (dateStr) {
+        Swal.fire({ title: 'Đang xử lý...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+        
+        try {
+            await fetch(`${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?created_at=gte.${dateStr}T00:00:00&created_at=lte.${dateStr}T23:59:59.999`, {
+                method: 'DELETE',
+                headers: h
+            });
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã xóa thành công!', showConfirmButton: false, timer: 1500 });
+            loadNotifications();
+        } catch(e) {
+            console.error(e);
+            Swal.fire('Lỗi', 'Không thể xóa thông báo', 'error');
+        }
     }
 };

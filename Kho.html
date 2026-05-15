@@ -116,12 +116,13 @@
 <body>
 
   <div class="main-content">
-    <div class="header-top" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <div>
+    
+    <div class="header-top" style="margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 15px;">
         <h2 style="margin:0; color: var(--primary);">📦 KHO VẬT TƯ SẮC MÀU</h2>
-        <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Quản lý kho & Cập nhật hình ảnh Drive</p>
+        <button onclick="getToken()" class="no-print" style="padding:8px 15px; cursor:pointer; font-weight:bold; border-radius:20px; border:1px solid var(--primary); background:white; color:var(--primary); transition: 0.2s; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">🔐 KẾT NỐI DRIVE</button>
       </div>
-      <button onclick="getToken()" class="no-print" style="padding:10px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid var(--primary); background:white; color:var(--primary); transition: 0.2s;">🔐 KẾT NỐI DRIVE</button>
+      <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">Quản lý kho & Cập nhật hình ảnh Drive</p>
     </div>
 
     <div class="form-card no-print">
@@ -252,6 +253,19 @@
           })
         });
 
+        // ĐÃ CẬP NHẬT: GỬI THÔNG BÁO TỰ ĐỘNG SAU KHI LƯU KHO THÀNH CÔNG
+        try {
+            const rolesTB = ["Admin", "Quan_Ly_Don", "Nhan_Vien_In"];
+            const msgTB = `Hệ thống vừa thêm ${sl} ${ten} vào kho vật tư`;
+            rolesTB.forEach(r => {
+                if (typeof guiThongBaoSacMau === 'function') {
+                    guiThongBaoSacMau("THÊM VẬT TƯ MỚI", msgTB, r, "Kho.html").catch(e => {});
+                } else if (window.guiThongBaoSacMau) {
+                    window.guiThongBaoSacMau("THÊM VẬT TƯ MỚI", msgTB, r, "Kho.html").catch(e => {});
+                }
+            });
+        } catch(etb) { console.log(etb); }
+
         Swal.fire('Thành công', `Đã lưu vật tư: ${maQR}`, 'success');
         document.getElementById('f-ten').value = "";
         document.getElementById('f-hinh').value = "";
@@ -364,6 +378,20 @@
       if (formValues) {
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${item.id}`, { method: 'PATCH', headers: h, body: JSON.stringify(formValues) });
+        
+        // ĐÃ CẬP NHẬT: GỬI THÔNG BÁO TỰ ĐỘNG SAU KHI SỬA THÀNH CÔNG
+        try {
+            const rolesTB = ["Admin", "Quan_Ly_Don", "Nhan_Vien_In"];
+            const msgTB = `Hệ thống vừa thay đổi thành ${formValues.So_Luong} ${formValues.Ten_Hang} trong kho vật tư`;
+            rolesTB.forEach(r => {
+                if (typeof guiThongBaoSacMau === 'function') {
+                    guiThongBaoSacMau("CẬP NHẬT VẬT TƯ", msgTB, r, "Kho.html").catch(e => {});
+                } else if (window.guiThongBaoSacMau) {
+                    window.guiThongBaoSacMau("CẬP NHẬT VẬT TƯ", msgTB, r, "Kho.html").catch(e => {});
+                }
+            });
+        } catch(etb) { console.log(etb); }
+
         loadInventory();
         Swal.fire({icon: 'success', title: 'Đã cập nhật', showConfirmButton: false, timer: 1000});
       }
