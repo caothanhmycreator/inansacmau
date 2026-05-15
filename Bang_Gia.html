@@ -348,7 +348,12 @@
       
       const groupKeys = Object.keys(groupedData).sort();
       if(groupKeys.length > 0) {
-          selectGroup(groupKeys[0]);
+          // GIỮ NGUYÊN VỊ TRÍ NHÓM ĐANG XEM SAU KHI SỬA
+          if (currentActiveGroup && groupKeys.includes(currentActiveGroup)) {
+              selectGroup(currentActiveGroup);
+          } else {
+              selectGroup(groupKeys[0]);
+          }
       } else {
           document.getElementById('price-list-container').innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Không có dữ liệu.</p>';
       }
@@ -430,7 +435,7 @@
                 <th style="width:60px; text-align:center;">Mã QR</th>
                 <th style="width:70px; text-align:center;">Ảnh</th>
                 <th>Tên Sản Phẩm & Quy Cách</th>
-                <th style="width:80px;">ĐVT</th>
+                <th style="width:120px;">ĐVT</th>
                 <th style="width:90px;">Giá Lẻ</th>
                 <th style="width:120px; text-align:center;">Thao tác</th>
             </tr></thead>
@@ -464,21 +469,50 @@
         renderPriceTable(filteredData);
     };
 
+    // --- CẬP NHẬT GIAO DIỆN & TÍNH NĂNG POPUP SỬA BẢNG GIÁ ---
     async function editPrice(item) {
+      // 1. Lấy danh sách Nhóm Hàng duy nhất cho Datalist
+      const uniqueGroups = [...new Set(priceListData.map(i => i.Nhom_Hang))].filter(Boolean);
+      const datalistHtml = `<datalist id="editGroupList">${uniqueGroups.map(g => `<option value="${g}">`).join('')}</datalist>`;
+
       const { value: formValues } = await Swal.fire({
         title: 'CẬP NHẬT BÁO GIÁ',
         width: '650px',
         html: `
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; font-size: 13px; padding: 10px;">
-            <div><label><b>Nhóm hàng:</b></label><input id="e-nhom" class="swal2-input" value="${item.Nhom_Hang}" style="width:100%;"></div>
-            <div><label><b>Tên hàng:</b></label><input id="e-ten" class="swal2-input" value="${item.Ten_Hang}" style="width:100%;"></div>
-            <div><label><b>Giá lẻ:</b></label><input id="e-gia-ban" class="swal2-input" value="${(item.Gia_Ban || 0).toLocaleString().replace(/,/g, '.')}" oninput="formatCurrency(this)" style="width:100%;"></div>
-            <div><label><b>Đơn vị tính:</b></label><input id="e-dvt" class="swal2-input" value="${item.Don_Vi_Tinh || ''}" style="width:100%;"></div>
-            <div style="grid-column: span 2;"><label><b>Mô tả / Quy cách:</b></label><input id="e-mota" class="swal2-input" value="${item.Mo_Ta || ''}" style="width:100%;"></div>
-            <div style="grid-column: span 2;">
-                <label><b>Thay đổi ảnh mẫu:</b></label>
-                <input type="file" id="e-hinh" class="swal2-file" accept="image/*" style="width:100%;">
-            </div>
+          ${datalistHtml}
+          <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 10px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; text-align: left;">
+                  
+                  <div style="grid-column: span 2;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">NHÓM HÀNG</label>
+                      <input id="e-nhom" list="editGroupList" class="swal2-input" value="${item.Nhom_Hang}" style="width:100%; margin: 5px 0 0 0; font-size: 14px; height: 40px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+                  
+                  <div style="grid-column: span 2;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">TÊN SẢN PHẨM *</label>
+                      <input id="e-ten" class="swal2-input" value="${item.Ten_Hang}" style="width:100%; margin: 5px 0 0 0; font-size: 14px; height: 40px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+                  
+                  <div style="grid-column: span 1;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">GIÁ LẺ</label>
+                      <input id="e-gia-ban" class="swal2-input" value="${(item.Gia_Ban || 0).toLocaleString().replace(/,/g, '.')}" oninput="formatCurrency(this)" style="width:100%; margin: 5px 0 0 0; font-size: 14px; height: 40px; box-sizing: border-box; color: #d35400; font-weight: bold; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+                  
+                  <div style="grid-column: span 1;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">ĐVT</label>
+                      <input id="e-dvt" class="swal2-input" value="${item.Don_Vi_Tinh || ''}" style="width:100%; margin: 5px 0 0 0; font-size: 14px; height: 40px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+                  
+                  <div style="grid-column: span 2;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">MÔ TẢ / QUY CÁCH</label>
+                      <input id="e-mota" class="swal2-input" value="${item.Mo_Ta || ''}" style="width:100%; margin: 5px 0 0 0; font-size: 14px; height: 40px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+
+                  <div style="grid-column: span 4;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">THAY ĐỔI ẢNH MẪU</label>
+                      <input type="file" id="e-hinh" class="swal2-file" accept="image/*" style="width:100%; margin: 5px 0 0 0; font-size: 13px; padding: 6px; box-sizing: border-box; background: white; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+              </div>
           </div>`,
         showCancelButton: true,
         confirmButtonText: 'LƯU THAY ĐỔI',
@@ -502,19 +536,40 @@
           }
         }
       });
+
       if (formValues) {
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${item.Id}`, { method: 'PATCH', headers: h, body: JSON.stringify(formValues) });
+        
         loadPriceList();
         Swal.fire({icon: 'success', title: 'Đã cập nhật bảng giá', timer: 1000, showConfirmButton: false});
       }
     }
 
     async function deletePrice(id) {
+      const item = priceListData.find(x => x.Id === id);
+
       const r = await Swal.fire({ title: 'Xóa báo giá này?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'XÓA NGAY' });
       if (r.isConfirmed) {
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${id}`, { method: 'DELETE', headers: h });
+        
+        // --- GỬI THÔNG BÁO XÓA SẢN PHẨM ---
+        if (item) {
+            try {
+                const userObj = JSON.parse(localStorage.getItem('currentUser'));
+                const userName = userObj?.Ho_Ten || userObj?.name || "Một tài khoản";
+                const tbTitle = "XÓA SẢN PHẨM";
+                const tbMsg = `${userName} vừa xóa sản phẩm ${item.Ten_Hang} khỏi bảng giá.`;
+                
+                if (typeof window.guiThongBaoSacMau === 'function') {
+                    window.guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", "Bang_Gia.html");
+                } else if (typeof guiThongBaoSacMau === 'function') {
+                    guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", "Bang_Gia.html");
+                }
+            } catch (etb) { console.error("Lỗi gửi thông báo:", etb); }
+        }
+
         loadPriceList();
       }
     }
