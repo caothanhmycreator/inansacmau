@@ -29,17 +29,17 @@
     .status-btn:hover { opacity: 0.8; }
     .status-btn.active { opacity: 1; transform: scale(1.05); border-color: #2c3e50; box-shadow: 0 3px 8px rgba(0,0,0,0.2); }
     
-    /* MÀU SẮC TRẠNG THÁI */
-    .st-all { background: #34495e; }
-    .st-cxl { background: #95a5a6; color: #fff; }
-    .st-ctk { background: #3498db; }
-    .st-cdf { background: #9b59b6; }
+    /* MÀU SẮC TRẠNG THÁI (ĐÃ CẬP NHẬT THEO YÊU CẦU MỚI) */
+    .st-all { background: #2c3e50; }
+    .st-cxl { background: #27ae60; }
+    .st-ctk { background: #2980b9; }
+    .st-cdf { background: #f39c12; }
     .st-ci { background: #e67e22; }
-    .st-cgc { background: #f1c40f; color: #333; }
-    .st-cgh { background: #1abc9c; }
+    .st-cgc { background: #8e44ad; }
+    .st-cgh { background: #00a8ff; }
     .st-ctt { background: #e84393; }
     .st-cn { background: #c0392b; }
-    .st-ht { background: #27ae60; }
+    .st-ht { background: #2ecc71; }
 
     .f10-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
     .f10-table th { padding: 12px 15px; color: #64748b; font-size: 12px; text-transform: uppercase; text-align: left; }
@@ -61,7 +61,7 @@
     .group-row:hover { background: #e2e8f0; }
     .child-row { display: none; }
     .child-row.show { display: table-row; }
-    .child-row td:first-child { padding-left: 30px; }
+    .child-row td:first-child { padding-left: 30px; border-left: 4px solid #3498db !important; }
     .toggle-icon { display: inline-block; width: 20px; transition: 0.3s; color: #3498db; }
 
     .status-badge-mini { padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px; font-weight: bold; border: 1px solid; }
@@ -143,8 +143,7 @@
           <input type="date" id="f10-date-filter" onchange="filterF10()" style="max-width: 200px;">
         </div>
         <div class="status-buttons" id="status-btn-container">
-          <!-- Các nút màu sẽ được JS tạo ra ở đây -->
-        </div>
+          </div>
       </div>
 
       <div style="overflow-x: auto;">
@@ -169,18 +168,18 @@
   </div>
 
   <script>
-    // BẢNG MÀU ÁNH XẠ CHO CÁC TRẠNG THÁI
+    // BẢNG MÀU ÁNH XẠ CHO CÁC TRẠNG THÁI (ĐÃ CẬP NHẬT THEO YÊU CẦU)
     const STATUS_MAP = [
-      { name: "", label: "Tất cả", class: "st-all", color: "#34495e" },
-      { name: "Chờ xử lý", label: "Chờ xử lý", class: "st-cxl", color: "#95a5a6" },
-      { name: "Chờ thiết kế", label: "Chờ thiết kế", class: "st-ctk", color: "#3498db" },
-      { name: "Chờ duyệt file", label: "Chờ duyệt file", class: "st-cdf", color: "#9b59b6" },
+      { name: "", label: "Tất cả", class: "st-all", color: "#2c3e50" },
+      { name: "Chờ xử lý", label: "Chờ xử lý", class: "st-cxl", color: "#27ae60" },
+      { name: "Chờ thiết kế", label: "Chờ thiết kế", class: "st-ctk", color: "#2980b9" },
+      { name: "Chờ duyệt file", label: "Chờ duyệt file", class: "st-cdf", color: "#f39c12" },
       { name: "Chờ in", label: "Chờ in", class: "st-ci", color: "#e67e22" },
-      { name: "Chờ gia công", label: "Chờ gia công", class: "st-cgc", color: "#f1c40f" },
-      { name: "Chờ giao hàng", label: "Chờ giao hàng", class: "st-cgh", color: "#1abc9c" },
+      { name: "Chờ gia công", label: "Chờ gia công", class: "st-cgc", color: "#8e44ad" },
+      { name: "Chờ giao hàng", label: "Chờ giao hàng", class: "st-cgh", color: "#00a8ff" },
       { name: "Chờ thanh toán", label: "Chờ thanh toán", class: "st-ctt", color: "#e84393" },
       { name: "Công nợ", label: "Công nợ", class: "st-cn", color: "#c0392b" },
-      { name: "Hoàn tất", label: "Hoàn tất", class: "st-ht", color: "#27ae60" }
+      { name: "Hoàn tất", label: "Hoàn tất", class: "st-ht", color: "#2ecc71" }
     ];
 
     window.listAllF10 = [];
@@ -189,7 +188,7 @@
     
     let currentStatusFilter = "";
     let currentPage = 1;
-    const itemsPerPage = 30; // ĐÃ CHỈNH SỬA XUỐNG 30 DÒNG
+    const itemsPerPage = 30; // Giữ nguyên phân trang 30 dòng
 
     const statuses = STATUS_MAP.filter(s => s.name !== "").map(s => s.name);
 
@@ -275,7 +274,7 @@
 
           // --- XỬ LÝ MÀU SẮC DÒNG NHÓM (PARENT ROW) ---
           let uniqueStatuses = [...new Set(group.items.map(i => i.Trang_Thai))];
-          let parentBorderColor = "#34495e"; // Mặc định nếu trộn nhiều trạng thái
+          let parentBorderColor = "#2c3e50"; // Mặc định nếu trộn nhiều trạng thái
           
           if (uniqueStatuses.length === 1) {
               const stObj = STATUS_MAP.find(s => s.name === uniqueStatuses[0]);
@@ -285,8 +284,8 @@
           let badgesHtml = uniqueStatuses.map(s => {
               const stObj = STATUS_MAP.find(x => x.name === s);
               const color = stObj ? stObj.color : "#333";
-              const bg = (s === "Chờ gia công") ? color : color + "20"; // Xử lý nền riêng cho chữ vàng dễ đọc
-              const txtColor = (s === "Chờ gia công") ? "#333" : color;
+              const bg = color + "20"; // Cập nhật nền đồng bộ nhạt 20%
+              const txtColor = color; // Text đồng bộ cùng màu gốc
               return `<span class="status-badge-mini" style="background:${bg}; color:${txtColor}; border-color:${color};">${s}</span>`;
           }).join('');
 
@@ -340,10 +339,12 @@
         if (rows.length > 0) {
             const isCurrentlyHidden = !rows[0].classList.contains('show');
             if (isCurrentlyHidden) {
+                // Đang ẩn -> Mở ra
                 rows.forEach(r => r.classList.add('show'));
                 icon.innerText = '▼';
                 window.expandedGroups.add(maDon); 
             } else {
+                // Đang mở -> Ẩn đi
                 rows.forEach(r => r.classList.remove('show'));
                 icon.innerText = '▶';
                 window.expandedGroups.delete(maDon); 
@@ -382,11 +383,11 @@
       });
 
       window.filteredGroupedData = groupData(filteredItems);
-      // Xoá currentPage = 1 khi gọi filter ngầm để không bị nhảy trang lúc load lại
+      // Không gán lại currentPage = 1 ngầm định
       renderF10Table();
     }
 
-    // TÍNH NĂNG XÓA VÀ HOÀN KHO (ĐÃ CẬP NHẬT ĐỂ GIỮ STATE NHÓM ĐƠN)
+    // TÍNH NĂNG XÓA VÀ HOÀN KHO
     async function confirmDeleteF10(itemId, maDon) {
       const item = window.listAllF10.find(i => i.id === itemId);
       if (!item) return;
@@ -439,6 +440,7 @@
           // 🔥 PHA 3: DỌN DẸP DỮ LIỆU & CÂN ĐỐI CÔNG NỢ
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { method: 'DELETE', headers: h });
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_giacong?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { method: 'DELETE', headers: h });
+
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${item.id}`, { method: 'DELETE', headers: h });
 
           const remainingItems = window.listAllF10.filter(i => i.Ma_Don === item.Ma_Don && i.id !== item.id);
@@ -462,14 +464,13 @@
           }
 
           Swal.fire('Hoàn tất!', 'Đã thu hồi kho và dọn dẹp dữ liệu.', 'success');
-          // Ghi nhớ nhóm này để mở ra sau khi tải lại
           window.expandedGroups.add(item.Ma_Don);
           loadF10Data(); 
         } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
       }
     }
 
-    // TÍNH NĂNG XEM CHI TIẾT NÂNG CẤP TÀI CHÍNH
+    // TÍNH NĂNG XEM CHI TIẾT
     window.viewF10Detail = function(maDon) {
       const dsMon = window.listAllF10.filter(it => it.Ma_Don === maDon);
       if (dsMon.length === 0) return;
@@ -527,7 +528,6 @@
       });
     };
 
-    // LOGIC ĐỔI TRẠNG THÁI MỚI (Lưu Log_TienDo chính xác 100%)
     async function changeStatusF10(id, newStatus, maDon, tenHang, tenKhach) {
       const confirmResult = await Swal.fire({
         title: 'CHUYỂN TRẠNG THÁI?',
@@ -539,7 +539,6 @@
 
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
-      // Xử lý riêng nếu chuyển thành Công nợ (tạo record bên bảng Cong_No)
       if (newStatus === "Công nợ") {
         const dsMon = window.listAllF10.filter(it => it.Ma_Don === maDon);
         const khachHang = dsMon.length > 0 ? dsMon[0].Ten_Khach_Hang : "";
@@ -571,7 +570,6 @@
       Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const nowVN = window.formatDateTimeVN();
       
-      // LOGIC MỚI: Chỉ map cột đích đến
       const colMap = { 
           "Chờ xử lý": "Gio_Xu_Ly", 
           "Chờ thiết kế": "Gio_Thiet_Ke", 
@@ -585,10 +583,8 @@
       };
 
       try {
-        // Cập nhật Trang_Thai vào NhatKy_BanHang
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ "Trang_Thai": newStatus }) });
 
-        // LOGIC MỚI LƯU Log_TienDo: KHÔNG set null các cột khác, chỉ ghi đè cột đích đến
         let logData = { "Trang_Thai": newStatus, "Nguoi_Thuc_Hien": "Bộ phận Quản trị đơn" };
         if (colMap[newStatus]) logData[colMap[newStatus]] = nowVN;
 
@@ -634,7 +630,6 @@
         } catch (etb) { console.log(etb); }
 
         Swal.fire({ icon: 'success', title: 'Đã cập nhật!', timer: 800, showConfirmButton: false });
-        // Ghi nhớ nhóm này để mở ra sau khi tải lại
         window.expandedGroups.add(maDon);
         loadF10Data();
       } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }

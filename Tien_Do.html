@@ -3,325 +3,446 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Radar Tiến Độ - Tiệm In Sắc Màu</title>
+  <title>Tiến độ đơn hàng - Tiệm In Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="js/config.js"></script>
+  <script src="js/config.js?v=2000"></script>
   <script src="js/auth_guard.js"></script>
-<script src="js/sidebar_loader.js"></script> 
+  <script src="js/sidebar_loader.js?v=2000"></script> 
   <style>
-    :root { --primary-radar: #1a4d2e; --header-gradient: linear-gradient(135deg, #1a4d2e 0%, #2d5a27 100%); --bg-light: #f8fafc; }
+    /* ========================================================
+       1. GIAO DIỆN CHUNG & PC
+       ======================================================== */
+    :root { --primary-f10: #1e00a2; --header-gradient: linear-gradient(135deg, #0d0047 0%, #001e89 100%); --bg-light: #f8fafc; }
     body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
-    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; }
     
-    .radar-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .radar-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
+    .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; min-width: 0; }
+    .f10-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .f10-header { background: var(--header-gradient); padding: 20px; border-radius: 12px 12px 4px 4px; color: white; display: flex; justify-content: space-between; align-items: center; }
     
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 15px 0; }
-    .stat-card { padding: 12px; border-radius: 10px; text-align: center; font-weight: 800; border: 1px solid rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; }
-    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-    .stat-card.dimmed { opacity: 0.4; filter: grayscale(50%); } /* Làm mờ rõ hơn khi bị deselected */
+    .filter-container { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin: 15px 0; }
+    .filter-top { display: flex; gap: 10px; margin-bottom: 12px; }
+    .filter-top input { flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 13px; }
+    .status-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+    .status-btn { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; border: 2px solid transparent; opacity: 0.4; transition: 0.2s; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1); color: #fff; }
+    .status-btn:hover { opacity: 0.8; }
+    .status-btn.active { opacity: 1; transform: scale(1.05); border-color: #2c3e50; box-shadow: 0 3px 8px rgba(0,0,0,0.2); }
     
-    .stat-xanh { background: #f1f8f4; color: #28a745; border-color: #d4edda; }
-    .stat-cam { background: #fffdf5; color: #ffc107; border-color: #ffeeba; }
-    .stat-do { background: #fff5f5; color: #dc3545; border-color: #f8d7da; }
+    /* MÀU SẮC TRẠNG THÁI MỚI */
+    .st-all { background: #2c3e50; }
+    .st-cxl { background: #27ae60; }
+    .st-ctk { background: #2980b9; }
+    .st-cdf { background: #f39c12; }
+    .st-ci { background: #e67e22; }
+    .st-cgc { background: #8e44ad; }
+    .st-cgh { background: #00a8ff; }
+    .st-ctt { background: #e84393; }
+    .st-cn { background: #c0392b; }
+    .st-ht { background: #2ecc71; }
 
-    /* CSS cho thanh lọc Trạng thái */
-    .filter-container { display: flex; gap: 8px; overflow-x: auto; margin: 10px 0 15px 0; padding-bottom: 5px; scrollbar-width: none; }
-    .filter-container::-webkit-scrollbar { display: none; }
-    .filter-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; border: 1px solid #cbd5e1; background: white; color: #475569; transition: 0.2s; }
-    .filter-btn:hover { background: #f1f5f9; }
-    .filter-btn.active { background: var(--primary-radar); color: white; border-color: var(--primary-radar); }
+    .f10-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
+    .f10-table th { padding: 12px 15px; color: #64748b; font-size: 12px; text-transform: uppercase; text-align: left; }
+    .f10-row { background: white; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .f10-row td { padding: 12px 8px; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; vertical-align: middle; font-size: 13px; }
+    .f10-row td:first-child { border-left: 1px solid #e2e8f0; border-radius: 8px 0 0 8px; }
+    .f10-row td:last-child { border-right: 1px solid #e2e8f0; border-radius: 0 8px 8px 0; }
+    
+    .group-row { background: #f1f5f9; cursor: pointer; font-weight: bold; }
+    .group-row td { border-top: 2px solid #cbd5e1 !important; border-bottom: 2px solid #cbd5e1 !important; color: #2c3e50; }
+    .group-row:hover { background: #e2e8f0; }
+    .child-row { display: none; }
+    .child-row.show { display: table-row; }
+    .child-row td:first-child { padding-left: 30px; }
+    .toggle-icon { display: inline-block; width: 20px; transition: 0.3s; color: #3498db; }
 
-    .radar-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-    .radar-card { background: white; border-radius: 8px; padding: 12px 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-left: 6px solid #eee; transition: 0.2s; }
-    .radar-card:hover { transform: translateX(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .status-badge-mini { padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px; font-weight: bold; border: 1px solid; }
 
-    .progress-track { height: 4px; background: #eee; border-radius: 2px; margin-top: 6px; width: 120px; overflow: hidden; }
-    .progress-bar { height: 100%; transition: 0.5s; }
+    .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 20px; flex-wrap: wrap; }
+    .page-btn { padding: 6px 12px; border: 1px solid #cbd5e1; background: white; border-radius: 4px; cursor: pointer; transition: 0.2s; font-size: 13px; }
+    .page-btn.active { background: var(--primary-f10); color: white; border-color: var(--primary-f10); font-weight: bold; }
+    .page-btn:hover:not(.active) { background: #f1f5f9; }
 
-    .status-badge { padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; }
-
-    @media (max-width: 768px) { 
-      .main-content { margin-left: 0; } 
-      .radar-card { flex-direction: column; align-items: flex-start; gap: 8px; } 
-      .radar-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-      .header-actions { flex-direction: column; align-items: stretch !important; width: 100%; }
-      #searchRadar { width: 100%; box-sizing: border-box; }
-      .radar-header button { width: 100%; padding: 12px; font-size: 14px; }
+    /* CSS THANH TIẾN TRÌNH SLA */
+    .timeline-container { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 5px 0; }
+    .tl-step { padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; text-align: center; min-width: 60px; font-size: 11px; color: #475569; position: relative; }
+    .tl-step.past { background: #f1f5f9; opacity: 0.85; }
+    .tl-step.xanh { background: #eafaf1; border-color: #27ae60; color: #27ae60; font-weight: bold; box-shadow: 0 2px 5px rgba(39,174,96,0.2); }
+    .tl-step.vang { background: #fef9e7; border-color: #f39c12; color: #d35400; font-weight: bold; box-shadow: 0 2px 5px rgba(243,156,18,0.2); }
+    .tl-step.do { background: #fdedec; border-color: #e74c3c; color: #c0392b; font-weight: bold; box-shadow: 0 2px 5px rgba(231,76,60,0.2); animation: pulse 2s infinite; }
+    .tl-arrow { color: #cbd5e1; font-weight: bold; }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(231,76,60,0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(231,76,60,0); }
+      100% { box-shadow: 0 0 0 0 rgba(231,76,60,0); }
     }
- 
- 
-    /* PC: Chừa lề 250px cố định */
-#sidebar-frame { 
-    width: 250px; height: 100vh; position: fixed; 
-    left: 0; top: 0; z-index: 9999; border: none; 
-}
 
-.main-content { 
-    margin-left: 250px; /* Giữ lề cố định */
-    transition: 0.3s; 
-    padding: 20px; 
-}
+    /* Fix Sidebar lề PC */
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; z-index: 9999; border: none; }
+    .swal2-container { z-index: 20000 !important; }
 
-/* Mobile: Sidebar ẩn và Nội dung tràn màn hình */
-@media (max-width: 768px) {
-    #sidebar-frame { left: -250px; }
-    .main-content { margin-left: 0 !important; }
-    body.sidebar-open #sidebar-frame { left: 0; }
-    
-    .mobile-nav-btn {
-        display: block; position: fixed; top: 10px; left: 10px; 
-        z-index: 1000; background: #2D5A27; color: white; 
-        padding: 8px 12px; border: none; border-radius: 4px;
+    /* ========================================================
+       2. MOBILE RESPONSIVE
+       ======================================================== */
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 70px; }
+        body.sidebar-open #sidebar-frame { left: 0; }
+        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: #2D5A27; color: white; padding: 8px 12px; border: none; border-radius: 4px; }
+        .f10-header { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }
+        .f10-header button { width: 100%; }
+        .filter-top { flex-direction: column; }
+        .filter-top input { font-size: 15px; padding: 12px; }
+
+        .f10-table, .f10-table thead, .f10-table tbody, .f10-table th, .f10-table td, .f10-table tr { display: block; width: 100%; box-sizing: border-box; }
+        .f10-table thead { display: none; } 
+        .f10-row { margin-bottom: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #eee; background: #fff; padding: 5px 0; }
+        .f10-row td { border: none !important; border-bottom: 1px solid #f8f9fa !important; padding: 10px 15px !important; text-align: left; position: relative; padding-left: 110px !important; min-height: 45px; display: flex; align-items: center; }
+        .f10-row td:last-child { border-bottom: none !important; background: #fdfdfd; padding-left: 15px !important; display: flex; justify-content: center; gap: 10px; }
+        
+        .f10-row td:before { position: absolute; left: 15px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
+        .child-row { display: none !important; }
+        .child-row.show { display: block !important; } 
+        .group-row td { padding-left: 15px !important; display: block; }
+        .group-row td:before { display: none; }
     }
-}
-
-@media (min-width: 769px) { .mobile-nav-btn { display: none; } }
+    @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
 <body>
 
   <div class="main-content">
-    <div class="radar-container">
-      <div class="radar-header">
-        <div style="flex: 1;">
-          <h2 style="margin:0; font-size: 18px;">📡 RADAR TIẾN ĐỘ ƯU TIÊN</h2>
-          <p style="margin:5px 0 0 0; font-size: 11px; opacity: 0.9;">Phân tích thời gian thực đơn hàng tồn đọng</p>
+    <div class="f10-container">
+      <div class="f10-header">
+        <div>
+          <h2 style="margin:0; font-size: 18px;">📈 TIẾN ĐỘ ĐƠN HÀNG</h2>
+          <p style="margin:5px 0 0 0; font-size: 11px; opacity: 0.9;">Theo dõi hành trình, SLA thực tế và cảnh báo trễ hạn</p>
         </div>
-        <div class="header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <input type="text" id="searchRadar" placeholder="🔍 Tìm khách hàng..." style="padding: 8px 12px; border: none; border-radius: 8px; outline: none; font-size: 13px; min-width: 200px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); color: #333;" oninput="applyFilters()">
-          <button onclick="loadRadarData()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600; transition: 0.2s;">🔄 CẬP NHẬT</button>
+        <button onclick="loadF10Data()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">🔄 TẢI LẠI TIẾN ĐỘ</button>
+      </div>
+
+      <div class="filter-container">
+        <div class="filter-top">
+          <input type="text" id="f10-search" placeholder="🔍 Tìm mã đơn, tên khách..." oninput="filterF10()">
+          <input type="date" id="f10-date-filter" onchange="filterF10()" style="max-width: 200px;">
         </div>
+        <div class="status-buttons" id="status-btn-container"></div>
       </div>
 
-      <div class="stats-grid" id="radar-stats">
-        <div class="stat-card stat-xanh">🟢 AN TOÀN: --</div>
-        <div class="stat-card stat-cam">🟠 CẢNH BÁO: --</div>
-        <div class="stat-card stat-do">🔴 CẦN GẤP: --</div>
+      <div style="overflow-x: auto;">
+        <table class="f10-table">
+          <thead>
+            <tr>
+              <th style="width: 15%">Mã/Ngày</th>
+              <th style="width: 15%">Khách hàng</th>
+              <th style="width: 15%">Sản phẩm</th>
+              <th style="width: 55%">Tiến trình & Thời gian SLA</th>
+            </tr>
+          </thead>
+          <tbody id="f10-table-body">
+            <tr><td colspan="4" style="text-align:center; padding:50px; color:#64748b; font-style: italic;">⚡ Đang đồng bộ dữ liệu tiến độ...</td></tr>
+          </tbody>
+        </table>
       </div>
-
-      <!-- Khu vực bộ lọc trạng thái (Đã fixed cứng các trạng thái) -->
-      <div id="status-filters" class="filter-container">
-        <!-- Render bằng JS -->
-      </div>
-
-      <div id="radar-list" class="radar-list">
-        <div style="text-align:center; padding:50px; color:#64748b;">📡 Đang quét tín hiệu đơn hàng...</div>
-      </div>
+      
+      <div id="pagination-container" class="pagination"></div>
     </div>
   </div>
 
   <script>
-    const FULL_STATUSES = [
-      "Chờ xử lý", "Chờ thiết kế", "Chờ duyệt file", "Chờ in", 
-      "Chờ gia công", "Chờ giao hàng", "Chờ thanh toán", "Công nợ"
+    // BẢNG MÀU VÀ NGƯỠNG SLA THEO PHÚT (MÀU SẮC ĐÃ CẬP NHẬT)
+    const STATUS_MAP = [
+      { name: "", label: "Tất cả", class: "st-all", color: "#2c3e50" },
+      { name: "Chờ xử lý", label: "Chờ xử lý", class: "st-cxl", color: "#27ae60", limX: 60, limV: 120 },
+      { name: "Chờ thiết kế", label: "Chờ thiết kế", class: "st-ctk", color: "#2980b9", limX: 1440, limV: 2880 },
+      { name: "Chờ duyệt file", label: "Chờ duyệt file", class: "st-cdf", color: "#f39c12", limX: 60, limV: 180 },
+      { name: "Chờ in", label: "Chờ in", class: "st-ci", color: "#e67e22", limX: 60, limV: 240 },
+      { name: "Chờ gia công", label: "Chờ gia công", class: "st-cgc", color: "#8e44ad", limX: 2880, limV: 4320 },
+      { name: "Chờ giao hàng", label: "Chờ giao hàng", class: "st-cgh", color: "#00a8ff", limX: 2880, limV: 5760 },
+      { name: "Chờ thanh toán", label: "Chờ thanh toán", class: "st-ctt", color: "#e84393", limX: 1440, limV: 4320 },
+      { name: "Công nợ", label: "Công nợ", class: "st-cn", color: "#c0392b", limX: 0, limV: 0 },
+      { name: "Hoàn tất", label: "Hoàn tất", class: "st-ht", color: "#2ecc71", limX: 999999, limV: 999999 }
     ];
 
-    const STATUS_STYLE = {
-      "Chờ xử lý":     { icon: "⏳", color: "#607d8b" },
-      "Chờ thiết kế":  { icon: "🎨", color: "#2196f3" },
-      "Chờ duyệt file": { icon: "📝", color: "#9c27b0" },
-      "Chờ in":        { icon: "🖨️", color: "#009688" },
-      "Chờ gia công":  { icon: "🛠️", color: "#ff9800" },
-      "Chờ giao hàng":  { icon: "🚚", color: "#4caf50" },
-      "Chờ thanh toán": { icon: "💰", color: "#ffc107" },
-      "Đã giao lẻ":    { icon: "📦", color: "#2980b9" },
-      "Công nợ":       { icon: "💳", color: "#8e44ad" } 
-    };
-
-    const SLA_CONFIG = {
-      "Chờ xử lý": 30, "Chờ duyệt file": 60, "Chờ thiết kế": 180, 
-      "Chờ in": 120, "Chờ gia công": 240, "Chờ giao hàng": 60, 
-      "Chờ thanh toán": 1440, "Đã giao lẻ": 1440
-    };
-
-    /** 🚀 MAPPING TRẠNG THÁI VỚI CỘT GIỜ TRONG LOG_TIENDO */
-    const COL_MAP = { 
-      "Chờ xử lý": "Gio_Xu_Ly", "Chờ thiết kế": "Gio_Thiet_Ke", "Chờ duyệt file": "Gio_Duyet_File", 
-      "Chờ in": "Gio_In", "Chờ gia công": "Gio_Gia_Cong", "Chờ giao hàng": "Gio_Giao_Hang", 
-      "Chờ thanh toán": "Gio_Thanh_Toan", "Đã giao lẻ": "Gio_Giao_Hang", "Công nợ": "Cong_No"
-    };
-
-    let globalItems = [];
-    let globalStats = { xanh: 0, cam: 0, do: 0 };
-    let filterUrgency = 'all';
-    let filterStatus = 'all';
+    window.listAllF10 = [];
+    window.listAllLog = [];
+    window.filteredGroupedData = []; 
+    window.expandedGroups = new Set();
+    
+    let currentStatusFilter = "";
+    let currentPage = 1;
+    const itemsPerPage = 30;
 
     document.addEventListener("DOMContentLoaded", () => {
-      renderFilterBar(); // Render sẵn thanh trạng thái cố định
-      setTimeout(() => { loadRadarData(); }, 600);
+      renderStatusButtons();
+      setTimeout(() => { loadF10Data(); }, 600);
     });
 
-    async function loadRadarData() {
-      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
-      try {
-        /** 🚀 CHỈ BỎ QUA "Hoàn tất" ĐỂ QUÉT LUÔN CẢ CÔNG NỢ */
-        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Trang_Thai=not.in.("Hoàn tất")&order=id.desc`, { headers: h });
-        const data = await res.json();
-        processRadar(data);
-      } catch (e) { console.error(e); }
-    }
-
-    function processRadar(data) {
-      globalStats = { xanh: 0, cam: 0, do: 0 };
-      let items = [];
-
-      data.forEach(item => {
-        const now = new Date();
-        
-        /** XỬ LÝ SỰ TRÙNG LẶP: NẾU ĐÃ GHI NHẬN CÔNG NỢ THÌ ƯU TIÊN LÀ CÔNG NỢ */
-        if (item.Cong_No && item.Cong_No !== "EMPTY" && item.Cong_No !== null) {
-            item.Trang_Thai = "Công nợ";
-        }
-        
-        const colName = COL_MAP[item.Trang_Thai];
-        const timeVal = item[colName] || item.Ngay_Gio; // Nếu cột giờ trống thì lấy giờ tạo đơn
-        const startTime = parseVNTime(timeVal);
-        
-        const diffMins = Math.floor((now - startTime) / (1000 * 60));
-        const limit = SLA_CONFIG[item.Trang_Thai] || 120;
-        
-        let level = "xanh";
-        let alertColor = "#28a745";
-        let percent = 0;
-
-        if (item.Trang_Thai === "Công nợ") {
-            level = "cong_no";
-            alertColor = "#8e44ad"; // Chuyển sang màu Tím riêng biệt
-            percent = 100;
-        } else {
-            if (diffMins >= limit) {
-              level = "do"; alertColor = "#dc3545"; globalStats.do++;
-            } else if (diffMins >= limit / 2) {
-              level = "cam"; alertColor = "#FF9800"; globalStats.cam++;
-            } else {
-              globalStats.xanh++;
-            }
-            percent = Math.min(Math.floor((diffMins / limit) * 100), 100);
-        }
-
-        const displayTime = formatDuration(diffMins);
-
-        items.push({ ...item, level, alertColor, percent, displayTime });
+    function renderStatusButtons() {
+      const container = document.getElementById('status-btn-container');
+      let html = '';
+      STATUS_MAP.forEach(st => {
+        let activeCls = st.name === currentStatusFilter ? "active" : "";
+        html += `<button class="status-btn ${st.class} ${activeCls}" onclick="setStatusFilter('${st.name}')">${st.label}</button>`;
       });
-
-      // SẮP XẾP THEO ƯU TIÊN: Đỏ -> Cam -> Xanh -> Công nợ
-      items.sort((a, b) => {
-        const priority = { 'do': 1, 'cam': 2, 'xanh': 3, 'cong_no': 4 };
-        return priority[a.level] - priority[b.level];
-      });
-
-      globalItems = items;
-      applyFilters();
+      container.innerHTML = html;
     }
 
-    // --- CÁC HÀM XỬ LÝ LỌC TRẠNG THÁI VÀ TÌM KIẾM ---
-    window.applyFilters = function() {
-        let filtered = globalItems;
-        
-        // 1. Lọc theo thanh Tìm Kiếm Khách hàng
-        const searchQuery = document.getElementById('searchRadar').value.toLowerCase().trim();
-        if (searchQuery !== "") {
-            filtered = filtered.filter(it => it.Khach_Hang.toLowerCase().includes(searchQuery) || it.Ma_Don.toLowerCase().includes(searchQuery));
-        }
-
-        // 2. Lọc theo Mức độ Cấp bách (Xanh, Cam, Đỏ)
-        if (filterUrgency !== 'all') {
-            filtered = filtered.filter(it => it.level === filterUrgency);
-        }
-
-        // 3. Lọc theo Trạng thái (Chờ in, Gia công...)
-        if (filterStatus !== 'all') {
-            filtered = filtered.filter(it => it.Trang_Thai === filterStatus);
-        }
-        
-        renderRadarStats(globalStats); // Luôn hiện số tổng của toàn xưởng
-        renderRadarList(filtered);
+    window.setStatusFilter = function(statusName) {
+      currentStatusFilter = statusName;
+      renderStatusButtons();
+      filterF10();
     }
 
-    window.toggleUrgency = function(u) {
-        // Nhấn lại thẻ đang chọn sẽ hủy lọc (trở về Tất cả)
-        filterUrgency = (filterUrgency === u) ? 'all' : u;
-        applyFilters();
-    }
-
-    window.toggleStatus = function(s) {
-        filterStatus = s; // Không toggle off chỗ này vì đã có nút "Tất cả trạng thái"
-        renderFilterBar(); // Đổi CSS active
-        applyFilters();
-    }
-
-    function renderFilterBar() {
-        let html = `<div class="filter-btn ${filterStatus === 'all' ? 'active' : ''}" onclick="toggleStatus('all')">Tất cả trạng thái</div>`;
-        FULL_STATUSES.forEach(st => {
-            html += `<div class="filter-btn ${filterStatus === st ? 'active' : ''}" onclick="toggleStatus('${st}')">${st}</div>`;
-        });
-        document.getElementById('status-filters').innerHTML = html;
-    }
-
-    function renderRadarStats(s) {
-      document.getElementById('radar-stats').innerHTML = `
-        <div class="stat-card stat-xanh ${filterUrgency !== 'all' && filterUrgency !== 'xanh' ? 'dimmed' : ''}" onclick="toggleUrgency('xanh')" title="Nhấn để lọc">🟢 AN TOÀN: ${s.xanh}</div>
-        <div class="stat-card stat-cam ${filterUrgency !== 'all' && filterUrgency !== 'cam' ? 'dimmed' : ''}" onclick="toggleUrgency('cam')" title="Nhấn để lọc">🟠 CẢNH BÁO: ${s.cam}</div>
-        <div class="stat-card stat-do ${filterUrgency !== 'all' && filterUrgency !== 'do' ? 'dimmed' : ''}" onclick="toggleUrgency('do')" title="Nhấn để lọc">🔴 CẦN GẤP: ${s.do}</div>
-      `;
-    }
-
-    function renderRadarList(items) {
-      if (items.length === 0) {
-        document.getElementById('radar-list').innerHTML = '<div style="text-align:center; padding:50px; font-weight:bold; color:#27ae60;">✅ Tuyệt vời! Không tìm thấy đơn hàng nào tồn đọng theo bộ lọc.</div>';
-        return;
-      }
-
-      document.getElementById('radar-list').innerHTML = items.map(it => {
-        const st = STATUS_STYLE[it.Trang_Thai] || { icon: "📍", color: "#95a5a6" };
-        return `
-          <div class="radar-card" style="border-left-color: ${it.alertColor}">
-            <div style="flex: 1.5; min-width: 150px;">
-              <div style="font-size: 13px; font-weight: 800; color: #1e293b;">${it.Khach_Hang}</div>
-              <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Mã: #${it.Ma_Don}</div>
-              <div class="progress-track">
-                <div class="progress-bar" style="width: ${it.percent}%; background: ${it.alertColor};"></div>
-              </div>
-            </div>
-
-            <div style="flex: 2; font-size: 12px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              ${it.Ten_Hang}
-            </div>
-
-            <div style="flex: 1; text-align: center;">
-              <span class="status-badge" style="background: ${st.color}15; color: ${st.color}; border: 1px solid ${st.color}30;">
-                ${st.icon} ${it.Trang_Thai}
-              </span>
-            </div>
-
-            <div style="flex: 1; text-align: right; font-size: 13px; font-weight: 800; color: ${it.alertColor};">
-              ${it.displayTime}
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
+    // --- HÀM XỬ LÝ THỜI GIAN ---
     function parseVNTime(vnStr) {
       if (!vnStr || vnStr === "EMPTY") return new Date();
       const parts = vnStr.split(' ');
-      if(parts.length < 2) return new Date(); // Safeguard format
+      if(parts.length < 2) return new Date(); 
       const dateParts = parts[0].split('/');
       const timeParts = parts[1].split(':');
       return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
     }
 
-    function formatDuration(mins) {
-      if (mins < 0) return "0 phút";
-      if (mins < 60) return `${mins} phút`;
+    function formatWaitTime(mins) {
+      if (mins < 0) return "0p";
+      if (mins < 60) return `${mins}p`;
       const hours = Math.floor(mins / 60);
       const m = mins % 60;
-      if (hours < 24) return `${hours} giờ ${m}p`;
+      if (hours < 24) return `${hours}h ${m}p`;
       const days = Math.floor(hours / 24);
       const h = hours % 24;
-      return `${days} ngày ${h}h`;
+      return `${days}d ${h}h`;
+    }
+
+    async function loadF10Data() {
+      const tbody = document.getElementById('f10-table-body');
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+      try {
+        // Fetch dữ liệu bán hàng
+        const resBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*&order=id.desc`, { headers: h });
+        window.listAllF10 = await resBH.json();
+        
+        // Fetch dữ liệu Log Tiến Độ
+        const resLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?select=*&limit=10000`, { headers: h });
+        window.listAllLog = await resLog.json();
+
+        filterF10(); 
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Lỗi: ${e.message}</td></tr>`;
+      }
+    }
+
+    function groupData(dataArray) {
+        const grouped = {};
+        dataArray.forEach(item => {
+            if (!grouped[item.Ma_Don]) {
+                grouped[item.Ma_Don] = {
+                    Ma_Don: item.Ma_Don,
+                    Ngay_Gio: item.Ngay_Gio,
+                    Ten_Khach_Hang: item.Ten_Khach_Hang,
+                    maxId: item.id,
+                    items: []
+                };
+            }
+            if (item.id > grouped[item.Ma_Don].maxId) {
+                grouped[item.Ma_Don].maxId = item.id;
+            }
+            grouped[item.Ma_Don].items.push(item);
+        });
+        return Object.values(grouped).sort((a, b) => b.maxId - a.maxId);
+    }
+
+    function buildTimelineHtml(item) {
+        const logItem = window.listAllLog.find(l => l.Ma_Don === item.Ma_Don && l.Ten_Hang === item.Ten_Hang);
+        if (!logItem) return `<span style="color:#e74c3c; font-size:12px;">Không có dữ liệu tiến độ.</span>`;
+
+        // Các mốc thời gian tuần tự theo quy trình
+        const milestones = [
+           { k: 'Gio_Xu_Ly', n: 'Chờ xử lý' },
+           { k: 'Gio_Thiet_Ke', n: 'Chờ thiết kế' },
+           { k: 'Gio_Duyet_File', n: 'Chờ duyệt file' },
+           { k: 'Gio_In', n: 'Chờ in' },
+           { k: 'Gio_Gia_Cong', n: 'Chờ gia công' },
+           { k: 'Gio_Thanh_Toan', n: 'Chờ thanh toán' },
+           { k: 'Gio_Giao_Hang', n: 'Chờ giao hàng' },
+           { k: 'Cong_No', n: 'Công nợ' },
+           { k: 'Gio_Hoan_Tat', n: 'Hoàn tất' }
+        ];
+
+        let events = [];
+        milestones.forEach(obj => {
+            if (logItem[obj.k] && logItem[obj.k] !== "EMPTY") {
+                events.push({ key: obj.k, name: obj.n, timeNum: parseVNTime(logItem[obj.k]).getTime(), timeStr: logItem[obj.k] });
+            }
+        });
+        
+        // Bổ sung giờ tạo đơn nếu thiếu mốc xử lý
+        if (events.length === 0 || events[0].key !== 'Gio_Xu_Ly') {
+            events.unshift({ key: 'Ngay_Gio', name: 'Tạo đơn', timeNum: parseVNTime(item.Ngay_Gio).getTime(), timeStr: item.Ngay_Gio });
+        }
+        
+        events.sort((a, b) => a.timeNum - b.timeNum);
+
+        let timelineHtml = `<div class="timeline-container">`;
+        const now = new Date().getTime();
+
+        for (let i = 0; i < events.length; i++) {
+            let ev = events[i];
+            let isCurrent = (i === events.length - 1 && ev.name !== 'Hoàn tất');
+            let endTime = (i < events.length - 1) ? events[i+1].timeNum : now;
+
+            // Xử lý riêng chặng Hoàn Tất
+            if (ev.name === 'Hoàn tất') {
+               timelineHtml += `<div class="tl-step xanh"><span style="opacity:0.7;">Hoàn tất</span><br><b style="font-size:12px;">${ev.timeStr.split(' ')[1]}</b></div>`;
+               continue;
+            }
+
+            let diffMins = Math.floor((endTime - ev.timeNum) / 60000);
+            let timeStr = formatWaitTime(Math.max(0, diffMins));
+
+            let colorClass = "past";
+            if (isCurrent) {
+                const stObj = STATUS_MAP.find(s => s.name === ev.name);
+                const limX = stObj ? stObj.limX : 60;
+                const limV = stObj ? stObj.limV : 120;
+                
+                if (diffMins < limX) colorClass = "xanh";
+                else if (diffMins < limV) colorClass = "vang";
+                else colorClass = "do";
+            }
+
+            let arrow = (i < events.length - 1) ? `<span class="tl-arrow">→</span>` : "";
+
+            timelineHtml += `
+               <div class="tl-step ${colorClass}">
+                  <span style="opacity:0.7;">${ev.name}</span><br>
+                  <b style="font-size:12px;">${timeStr}</b>
+               </div>
+               ${arrow}
+            `;
+        }
+        timelineHtml += `</div>`;
+        return timelineHtml;
+    }
+
+    function renderF10Table() {
+      const tbody = document.getElementById('f10-table-body');
+      const pagination = document.getElementById('pagination-container');
+      
+      if (window.filteredGroupedData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px;">❌ Không có dữ liệu đơn hàng.</td></tr>';
+        pagination.innerHTML = '';
+        return;
+      }
+
+      const totalPages = Math.ceil(window.filteredGroupedData.length / itemsPerPage);
+      if (currentPage > totalPages) currentPage = totalPages;
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const paginatedGroups = window.filteredGroupedData.slice(startIndex, startIndex + itemsPerPage);
+
+      let html = '';
+      paginatedGroups.forEach(group => {
+          const isExpanded = window.expandedGroups.has(group.Ma_Don);
+          const displayStyle = isExpanded ? 'show' : '';
+          const iconText = isExpanded ? '▼' : '▶';
+
+          let uniqueStatuses = [...new Set(group.items.map(i => i.Trang_Thai))];
+          let parentBorderColor = "#2c3e50"; 
+          
+          if (uniqueStatuses.length === 1) {
+              const stObj = STATUS_MAP.find(s => s.name === uniqueStatuses[0]);
+              if (stObj) parentBorderColor = stObj.color;
+          }
+
+          let badgesHtml = uniqueStatuses.map(s => {
+              const stObj = STATUS_MAP.find(x => x.name === s);
+              const color = stObj ? stObj.color : "#333";
+              const bg = color + "20"; 
+              const txtColor = color;
+              return `<span class="status-badge-mini" style="background:${bg}; color:${txtColor}; border-color:${color};">${s}</span>`;
+          }).join('');
+
+          html += `
+          <tr class="f10-row group-row" onclick="toggleOrderGroup('${group.Ma_Don}')">
+            <td colspan="4" style="border-left: 4px solid ${parentBorderColor} !important;">
+              <span class="toggle-icon" id="icon-${group.Ma_Don}">${iconText}</span>
+              <b style="color:#e67e22;">${group.Ma_Don}</b> - <b>${group.Ten_Khach_Hang}</b> <small style="color:#7f8c8d; margin-left:5px;">(${group.items.length} SP)</small>
+              <div style="display:inline-block; margin-top: 4px; margin-left: 10px;">${badgesHtml}</div>
+            </td>
+          </tr>`;
+
+          group.items.forEach(item => {
+              const stObj = STATUS_MAP.find(s => s.name === item.Trang_Thai);
+              const itemBorderColor = stObj ? stObj.color : "#ccc";
+              const timelineHtml = buildTimelineHtml(item);
+
+              html += `
+              <tr class="f10-row child-row child-of-${group.Ma_Don} ${displayStyle}">
+                <td data-label="Mã/Ngày" style="border-left: 4px solid ${itemBorderColor} !important;">
+                  <small style="color:#7f8c8d;">${item.Ngay_Gio ? item.Ngay_Gio.split(' ')[0] : ""}</small>
+                </td>
+                <td data-label="Khách hàng"><span style="color:#7f8c8d;">---</span></td>
+                <td data-label="Sản phẩm" style="color:#2980b9;"><b>${item.Ten_Hang}</b><br><small style="color:#d35400;">SL: ${item.So_Luong} ${item.Don_Vi_Tinh || ""}</small></td>
+                <td data-label="Tiến trình">${timelineHtml}</td>
+              </tr>`;
+          });
+      });
+
+      tbody.innerHTML = html;
+      renderPagination(totalPages);
+    }
+
+    function toggleOrderGroup(maDon) {
+        const rows = document.querySelectorAll(`.child-of-${maDon}`);
+        const icon = document.getElementById(`icon-${maDon}`);
+        
+        if (rows.length > 0) {
+            const isCurrentlyHidden = !rows[0].classList.contains('show');
+            if (isCurrentlyHidden) {
+                rows.forEach(r => r.classList.add('show'));
+                icon.innerText = '▼';
+                window.expandedGroups.add(maDon); 
+            } else {
+                rows.forEach(r => r.classList.remove('show'));
+                icon.innerText = '▶';
+                window.expandedGroups.delete(maDon); 
+            }
+        }
+    }
+
+    function renderPagination(totalPages) {
+        const container = document.getElementById('pagination-container');
+        if (totalPages <= 1) { container.innerHTML = ''; return; }
+        
+        let html = '';
+        for (let i = 1; i <= totalPages; i++) {
+            html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+        }
+        container.innerHTML = html;
+    }
+
+    window.changePage = function(page) {
+        currentPage = page;
+        renderF10Table();
+    }
+
+    function filterF10() {
+      const search = document.getElementById('f10-search').value.toLowerCase();
+      const status = currentStatusFilter;
+      const date = document.getElementById('f10-date-filter').value;
+      
+      const filteredItems = window.listAllF10.filter(it => {
+        const matchSearch = it.Ma_Don.toLowerCase().includes(search) || it.Ten_Khach_Hang.toLowerCase().includes(search);
+        const matchStatus = status === "" || it.Trang_Thai === status;
+        const parts = it.Ngay_Gio ? it.Ngay_Gio.split(' ')[0].split('/') : [];
+        const formattedDate = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : "";
+        const matchDate = date === "" || formattedDate === date;
+        return matchSearch && matchStatus && matchDate;
+      });
+
+      window.filteredGroupedData = groupData(filteredItems);
+      renderF10Table();
     }
   </script>
 </body>
