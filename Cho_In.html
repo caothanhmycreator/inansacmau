@@ -409,10 +409,10 @@
         try {
             let usedMaterials = [];
             if (data.existingData && data.existingData.length > 0) {
-                data.existingData.forEach(e => usedMaterials.push(`${e.slDung} ${e.tenNL}`));
+                data.existingData.forEach(e => usedMaterials.push(`${e.slDung} ${e.dvt} ${e.tenNL}`));
             }
             if (data.newData && data.newData.length > 0) {
-                data.newData.forEach(n => usedMaterials.push(`${n.slDung} ${n.tenNL}`));
+                data.newData.forEach(n => usedMaterials.push(`${n.slDung} ${n.dvt} ${n.tenNL}`));
             }
             let usedStr = usedMaterials.join(', ');
             
