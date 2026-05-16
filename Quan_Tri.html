@@ -168,7 +168,7 @@
   </div>
 
   <script>
-    // BẢNG MÀU ÁNH XẠ CHO CÁC TRẠNG THÁI (ĐÃ CẬP NHẬT THEO YÊU CẦU)
+    // BẢNG MÀU ÁNH XẠ CHO CÁC TRẠNG THÁI (ĐÃ CẬP NHẬT THEO YÊU CẦU MỚI)
     const STATUS_MAP = [
       { name: "", label: "Tất cả", class: "st-all", color: "#2c3e50" },
       { name: "Chờ xử lý", label: "Chờ xử lý", class: "st-cxl", color: "#27ae60" },
@@ -191,6 +191,8 @@
     const itemsPerPage = 30; // Giữ nguyên phân trang 30 dòng
 
     const statuses = STATUS_MAP.filter(s => s.name !== "").map(s => s.name);
+    // Danh sách chặn chuyển trạng thái bằng Select Box
+    const blockedStatuses = ["Chờ giao hàng", "Công nợ", "Hoàn tất"];
 
     document.addEventListener("DOMContentLoaded", () => {
       renderStatusButtons();
@@ -304,7 +306,12 @@
 
           // Render các dòng Con (Items)
           group.items.forEach(item => {
-              let options = statuses.map(s => `<option value="${s}" ${item.Trang_Thai === s ? 'selected' : ''}>${s}</option>`).join('');
+              // LOGIC MỚI: Ẩn các trạng thái bị block, trừ phi nó đang là trạng thái hiện tại
+              let options = statuses.map(s => {
+                  let isCurrent = item.Trang_Thai === s;
+                  if (blockedStatuses.includes(s) && !isCurrent) return '';
+                  return `<option value="${s}" ${isCurrent ? 'selected' : ''}>${s}</option>`;
+              }).join('');
               
               const stObj = STATUS_MAP.find(s => s.name === item.Trang_Thai);
               const itemBorderColor = stObj ? stObj.color : "#ccc";
@@ -387,87 +394,158 @@
       renderF10Table();
     }
 
-    // TÍNH NĂNG XÓA VÀ HOÀN KHO
+    // TÍNH NĂNG XÓA VÀ HOÀN KHO KÈM CHI TIẾT TÀI CHÍNH
     async function confirmDeleteF10(itemId, maDon) {
       const item = window.listAllF10.find(i => i.id === itemId);
       if (!item) return;
 
-      const result = await Swal.fire({
-        title: 'XÓA MÓN & HOÀN KHO?',
-        text: `Mặt hàng "${item.Ten_Hang}" thuộc đơn ${item.Ma_Don} sẽ bị xóa. Hệ thống sẽ tự động hoàn trả nguyên liệu và vật tư (nếu có). Hành động này không thể hoàn tác!`,
-        icon: 'warning', showCancelButton: true, confirmButtonColor: '#e74c3c', confirmButtonText: 'ĐỒNG Ý XÓA'
-      });
+      Swal.fire({ title: 'Đang trích xuất dữ liệu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
-      if (result.isConfirmed) {
-        Swal.fire({ title: 'Đang xử lý hoàn kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
-        
-        try {
-          // 🔥 PHA 1: XỬ LÝ NGUYÊN LIỆU (Nhatky_nguyenlieu)
-          const resNL = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, {headers: h});
+      try {
+          // 1. Tính toán tài chính
+          const dsMon = window.listAllF10.filter(it => it.Ma_Don === maDon);
+          const tongDon = dsMon.reduce((sum, it) => sum + (Number(it.Thanh_Tien) || 0), 0);
+          const khachDaTra = Math.max(...dsMon.map(it => Number(it.Khach_Da_Tra) || 0));
+          
+          const giaTriXoa = Number(item.Thanh_Tien) || 0;
+          const tongDonMoi = tongDon - giaTriXoa;
+
+          // 2. Lấy thông tin Nguyên Liệu gia công (SD-)
+          const resNL = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Don=eq.${encodeURIComponent(maDon)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, {headers: h});
           const nlData = await resNL.json();
           const sdItems = nlData.filter(nl => nl.Ma_Nguyen_Lieu && nl.Ma_Nguyen_Lieu.startsWith('SD-'));
+          
+          let nlHtml = sdItems.length > 0 
+              ? sdItems.map(sd => `<li>+ ${sd.So_Luong} ${sd.DVT || ''} ${sd.Ten_Nguyen_Lieu}</li>`).join('') 
+              : "<li>Không có nguyên liệu gia công</li>";
 
-          for (let sd of sdItems) {
-              const soLuongSD = Number(sd.So_Luong) || 0;
-              const maGoc = sd.Ma_Nguyen_Lieu.replace('SD-', 'NL-');
-
-              const resGoc = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${encodeURIComponent(maGoc)}`, {headers: h});
-              const gocData = await resGoc.json();
-              
-              if (gocData && gocData.length > 0) {
-                  const tonGoc = Number(gocData[0].So_Luong) || 0;
-                  await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${gocData[0].id}`, {
-                      method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonGoc + soLuongSD })
-                  });
+          // 3. Lấy thông tin Vật Tư kho (SMK-)
+          let vtHtml = "<li>Không có vật tư hệ thống</li>";
+          let maVTToRestore = item.Ma_VT;
+          
+          // Fallback: Nếu NhatKy_BanHang không lưu Ma_VT, tìm lại trong Bang_Gia_San_Pham
+          if (!maVTToRestore || !maVTToRestore.startsWith('SMK-')) {
+              const resBG = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}&select=Ghi_Chu`, {headers: h});
+              const bgData = await resBG.json();
+              if (bgData && bgData.length > 0 && bgData[0].Ghi_Chu && bgData[0].Ghi_Chu.startsWith('SMK-')) {
+                  maVTToRestore = bgData[0].Ghi_Chu;
               }
-              await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${sd.id}`, { method: 'DELETE', headers: h });
           }
 
-          // 🔥 PHA 2: XỬ LÝ VẬT TƯ (Kho_Vat_Tu)
-          if (item.Ma_VT && item.Ma_VT.startsWith('SMK-')) {
-              const resVT = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${encodeURIComponent(item.Ma_VT)}`, {headers: h});
+          let vtDataToRestore = null;
+          if (maVTToRestore && maVTToRestore.startsWith('SMK-')) {
+              const resVT = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${encodeURIComponent(maVTToRestore)}`, {headers: h});
               const vtData = await resVT.json();
               if (vtData && vtData.length > 0) {
-                  const tonVT = Number(vtData[0].So_Luong) || 0;
+                  vtDataToRestore = vtData[0];
+                  vtHtml = `<li>+ ${item.So_Luong} ${item.Don_Vi_Tinh || ''} (Vật tư: ${vtDataToRestore.Ten_Hang} - Mã: ${maVTToRestore})</li>`;
+              }
+          }
+
+          Swal.close();
+
+          // HIỂN THỊ POPUP CHI TIẾT
+          const result = await Swal.fire({
+              title: 'XÓA MÓN & HOÀN KHO?',
+              width: '600px',
+              html: `
+                  <div style="text-align:left; font-size:14px;">
+                      <p>Bạn đang yêu cầu xóa vĩnh viễn mặt hàng <b style="color:#2980b9">"${item.Ten_Hang}"</b> khỏi đơn <b>${maDon}</b>.</p>
+                      
+                      <div style="background:#f8fafc; padding:10px; border-left:4px solid #3498db; margin-bottom:10px; border-radius:4px;">
+                          <b style="color:#2c3e50;">📊 HIỆN TRẠNG TÀI CHÍNH:</b><br>
+                          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-top:5px; font-size:13px;">
+                              <span>Tổng đơn hiện tại:</span> <b>${tongDon.toLocaleString()} đ</b>
+                              <span>Khách đã trả:</span> <b>${khachDaTra.toLocaleString()} đ</b>
+                              <span>Giá trị món bị xóa:</span> <b style="color:#e74c3c">-${giaTriXoa.toLocaleString()} đ</b>
+                              <span>Tổng đơn mới:</span> <b style="color:#27ae60">${tongDonMoi.toLocaleString()} đ</b>
+                          </div>
+                      </div>
+
+                      <div style="background:#fffbeb; padding:10px; border-left:4px solid #f39c12; margin-bottom:15px; border-radius:4px;">
+                          <b style="color:#d35400;">📦 VẬT TƯ SẼ ĐƯỢC HOÀN KHO:</b>
+                          <ul style="margin:5px 0 10px 0; padding-left:20px; color:#d35400; font-size:13px;">
+                              ${vtHtml}
+                          </ul>
+                          <b style="color:#d35400;">✂️ NGUYÊN LIỆU SẼ HOÀN KHO:</b>
+                          <ul style="margin:5px 0 0 0; padding-left:20px; color:#d35400; font-size:13px;">
+                              ${nlHtml}
+                          </ul>
+                      </div>
+                      <p style="color:#e74c3c; font-weight:bold; margin-bottom:0; text-align:center;">Hành động này không thể hoàn tác! Bạn có chắc chắn?</p>
+                  </div>
+              `,
+              icon: 'warning', 
+              showCancelButton: true, 
+              confirmButtonColor: '#e74c3c', 
+              cancelButtonColor: '#95a5a6',
+              confirmButtonText: 'ĐỒNG Ý XÓA'
+          });
+
+          if (result.isConfirmed) {
+              Swal.fire({ title: 'Đang xử lý hoàn kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+              
+              // 🔥 PHA 1: XỬ LÝ NGUYÊN LIỆU (Nhatky_nguyenlieu)
+              for (let sd of sdItems) {
+                  const soLuongSD = Number(sd.So_Luong) || 0;
+                  const maGoc = sd.Ma_Nguyen_Lieu.replace('SD-', 'NL-');
+
+                  const resGoc = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?Ma_Nguyen_Lieu=eq.${encodeURIComponent(maGoc)}`, {headers: h});
+                  const gocData = await resGoc.json();
+                  
+                  if (gocData && gocData.length > 0) {
+                      const tonGoc = Number(gocData[0].So_Luong) || 0;
+                      await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${gocData[0].id}`, {
+                          method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonGoc + soLuongSD })
+                      });
+                  }
+                  await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_nguyenlieu?id=eq.${sd.id}`, { method: 'DELETE', headers: h });
+              }
+
+              // 🔥 PHA 2: XỬ LÝ VẬT TƯ (Kho_Vat_Tu)
+              if (vtDataToRestore) {
+                  const tonVT = Number(vtDataToRestore.So_Luong) || 0;
                   const traVT = Number(item.So_Luong) || 0;
-                  await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${vtData[0].id}`, {
+                  await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${vtDataToRestore.id}`, {
                       method: 'PATCH', headers: h, body: JSON.stringify({ So_Luong: tonVT + traVT })
                   });
               }
-          }
 
-          // 🔥 PHA 3: DỌN DẸP DỮ LIỆU & CÂN ĐỐI CÔNG NỢ
-          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { method: 'DELETE', headers: h });
-          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_giacong?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { method: 'DELETE', headers: h });
+              // 🔥 PHA 3: DỌN DẸP DỮ LIỆU & CÂN ĐỐI CÔNG NỢ
+              await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { method: 'DELETE', headers: h });
+              await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_giacong?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { method: 'DELETE', headers: h });
+              await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${item.id}`, { method: 'DELETE', headers: h });
 
-          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${item.id}`, { method: 'DELETE', headers: h });
+              const remainingItems = window.listAllF10.filter(i => i.Ma_Don === item.Ma_Don && i.id !== item.id);
+              
+              // Gửi thông báo xóa sản phẩm hiện tại
+              try { 
+                  await guiThongBaoSacMau("🗑️ XÓA MẶT HÀNG", `Mặt hàng "${item.Ten_Hang}" thuộc đơn ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã bị xóa và hoàn kho.`, "Quan_Ly_Don", "Xu_Ly.html"); 
+              } catch(e){}
 
-          const remainingItems = window.listAllF10.filter(i => i.Ma_Don === item.Ma_Don && i.id !== item.id);
-          
-          if (remainingItems.length === 0) {
-              await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
-              await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
-              try { await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã bị xóa vĩnh viễn.`, "Quan_Ly_Don", "Xu_Ly.html"); } catch(e){}
-          } else {
-              const tongDonMoi = remainingItems.reduce((sum, i) => sum + (Number(i.Thanh_Tien) || 0), 0);
-              const resCN = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, {headers: h});
-              const cnData = await resCN.json();
-              if (cnData && cnData.length > 0) {
-                  const daTra = Number(cnData[0].Da_Tra) || 0;
-                  let conLai = tongDonMoi - daTra;
-                  if (conLai < 0) conLai = 0;
-                  await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, {
-                      method: 'PATCH', headers: h, body: JSON.stringify({ Tong_Don: tongDonMoi.toString(), Con_Lai: conLai.toString() })
-                  });
+              if (remainingItems.length === 0) {
+                  await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
+                  await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, { method: 'DELETE', headers: h });
+                  try { await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã bị xóa vĩnh viễn do không còn mặt hàng nào.`, "Quan_Ly_Don", "Xu_Ly.html"); } catch(e){}
+              } else {
+                  const resCN = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, {headers: h});
+                  const cnData = await resCN.json();
+                  if (cnData && cnData.length > 0) {
+                      const daTra = Number(cnData[0].Da_Tra) || 0;
+                      let conLai = tongDonMoi - daTra;
+                      if (conLai < 0) conLai = 0;
+                      await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(item.Ma_Don)}`, {
+                          method: 'PATCH', headers: h, body: JSON.stringify({ Tong_Don: tongDonMoi.toString(), Con_Lai: conLai.toString() })
+                      });
+                  }
               }
-          }
 
-          Swal.fire('Hoàn tất!', 'Đã thu hồi kho và dọn dẹp dữ liệu.', 'success');
-          window.expandedGroups.add(item.Ma_Don);
-          loadF10Data(); 
-        } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
-      }
+              Swal.fire('Hoàn tất!', 'Đã thu hồi kho và dọn dẹp dữ liệu.', 'success');
+              window.expandedGroups.add(item.Ma_Don);
+              loadF10Data(); 
+          }
+      } catch (err) { Swal.fire('Lỗi', err.message, 'error'); }
     }
 
     // TÍNH NĂNG XEM CHI TIẾT
@@ -528,6 +606,7 @@
       });
     };
 
+    // LOGIC ĐỔI TRẠNG THÁI MỚI VÀ RESET CÁC CỘT TƯƠNG LAI
     async function changeStatusF10(id, newStatus, maDon, tenHang, tenKhach) {
       const confirmResult = await Swal.fire({
         title: 'CHUYỂN TRẠNG THÁI?',
@@ -539,6 +618,7 @@
 
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
+      // Xử lý riêng nếu chuyển thành Công nợ (tạo record bên bảng Cong_No)
       if (newStatus === "Công nợ") {
         const dsMon = window.listAllF10.filter(it => it.Ma_Don === maDon);
         const khachHang = dsMon.length > 0 ? dsMon[0].Ten_Khach_Hang : "";
@@ -570,23 +650,35 @@
       Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const nowVN = window.formatDateTimeVN();
       
-      const colMap = { 
-          "Chờ xử lý": "Gio_Xu_Ly", 
-          "Chờ thiết kế": "Gio_Thiet_Ke", 
-          "Chờ duyệt file": "Gio_Duyet_File", 
-          "Chờ in": "Gio_In", 
-          "Chờ gia công": "Gio_Gia_Cong", 
-          "Chờ giao hàng": "Gio_Giao_Hang", 
-          "Chờ thanh toán": "Gio_Thanh_Toan", 
-          "Hoàn tất": "Gio_Hoan_Tat", 
-          "Công nợ": "Cong_No" 
-      };
+      // MẢNG TUYẾN TÍNH CÁC TRẠNG THÁI (DÙNG ĐỂ RESET TƯƠNG LAI)
+      const statusTimeline = [
+          { name: "Chờ xử lý", col: "Gio_Xu_Ly" },
+          { name: "Chờ thiết kế", col: "Gio_Thiet_Ke" },
+          { name: "Chờ duyệt file", col: "Gio_Duyet_File" },
+          { name: "Chờ in", col: "Gio_In" },
+          { name: "Chờ gia công", col: "Gio_Gia_Cong" },
+          { name: "Chờ thanh toán", col: "Gio_Thanh_Toan" },
+          { name: "Chờ giao hàng", col: "Gio_Giao_Hang" },
+          { name: "Công nợ", col: "Cong_No" },
+          { name: "Hoàn tất", col: "Gio_Hoan_Tat" }
+      ];
 
       try {
+        // Cập nhật Trang_Thai vào NhatKy_BanHang
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ "Trang_Thai": newStatus }) });
 
+        // LOGIC MỚI: TÌM VỊ TRÍ, GÁN GIỜ HIỆN TẠI VÀ XÓA TƯƠNG LAI BẰNG NULL
         let logData = { "Trang_Thai": newStatus, "Nguoi_Thuc_Hien": "Bộ phận Quản trị đơn" };
-        if (colMap[newStatus]) logData[colMap[newStatus]] = nowVN;
+        const currentIndex = statusTimeline.findIndex(s => s.name === newStatus);
+
+        if (currentIndex !== -1) {
+            logData[statusTimeline[currentIndex].col] = nowVN;
+            
+            // Ép null để xóa trắng các cột thời gian ở trạng thái tương lai
+            for (let i = currentIndex + 1; i < statusTimeline.length; i++) {
+                logData[statusTimeline[i].col] = null;
+            }
+        }
 
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(maDon)}&Ten_Hang=eq.${encodeURIComponent(tenHang)}`, { method: 'PATCH', headers: h, body: JSON.stringify(logData) });
 
@@ -596,32 +688,23 @@
             let linkTB = "";
 
             if (newStatus === "Chờ xử lý") {
-                roleTB = "Quan_Ly_Don";
-                linkTB = "Xu_Ly.html";
+                roleTB = "Quan_Ly_Don"; linkTB = "Xu_Ly.html";
             } else if (newStatus === "Chờ thiết kế") {
-                roleTB = "Thiet_Ke";
-                linkTB = "Thiet_Ke.html";
+                roleTB = "Thiet_Ke"; linkTB = "Thiet_Ke.html";
             } else if (newStatus === "Chờ duyệt file") {
-                roleTB = "Quan_Ly_Don";
-                linkTB = "Duyet_File.html";
+                roleTB = "Quan_Ly_Don"; linkTB = "Duyet_File.html";
             } else if (newStatus === "Chờ in") {
-                roleTB = "Nhan_Vien_In";
-                linkTB = "Cho_In.html";
+                roleTB = "Nhan_Vien_In"; linkTB = "Cho_In.html";
             } else if (newStatus === "Chờ gia công") {
-                roleTB = "Quan_Ly_Don";
-                linkTB = "Gia_Cong.html";
+                roleTB = "Quan_Ly_Don"; linkTB = "Gia_Cong.html";
             } else if (newStatus === "Chờ giao hàng") {
-                roleTB = "Quan_Ly_Don";
-                linkTB = "Giao_Hang.html";
+                roleTB = "Quan_Ly_Don"; linkTB = "Giao_Hang.html";
             } else if (newStatus === "Chờ thanh toán") {
-                roleTB = "Thu_Ngan";
-                linkTB = "Thanh_Toan.html";
+                roleTB = "Thu_Ngan"; linkTB = "Thanh_Toan.html";
             } else if (newStatus === "Hoàn tất") {
-                roleTB = "Thu_Ngan";
-                linkTB = "Quan_Tri.html";
+                roleTB = "Thu_Ngan"; linkTB = "Quan_Tri.html";
             } else if (newStatus === "Công nợ") {
-                roleTB = "Thu_Ngan";
-                linkTB = "Cong_No.html";
+                roleTB = "Thu_Ngan"; linkTB = "Cong_No.html";
             }
 
             if (roleTB !== "") {

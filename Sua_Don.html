@@ -91,7 +91,7 @@
       }
       
       /* Nút Tắt Popup dễ bấm hơn */
-      #f12-modal-view > div > button { top: 10px !important; right: 10px !important; width: 35px !important; height: 35px !important; font-size: 16px !important; z-index: 99 !important; }
+      #f12-modal-view > div > button { top: 15px !important; right: 55px !important; width: 35px !important; height: 35px !important; font-size: 16px !important; z-index: 99 !important; }
 
       /* Bảng Khách hàng xếp dọc gọn gàng */
       #f12-modal-view > div > div:nth-of-type(1) { grid-template-columns: 1fr !important; gap: 8px !important; padding: 15px 10px !important; }
@@ -260,11 +260,9 @@
 </div>
 
 <script>
-// TOÀN BỘ LOGIC JS ĐƯỢC GIỮ NGUYÊN 100%
 var f12_prods = []; var f12_hinhThuc = ""; var f12_id_money_row = null;
 var f12_originalItems = {}; 
 
-// KHAI BÁO BIẾN TOÀN CỤC ĐỂ LƯU DỮ LIỆU SẢN PHẨM GỐC
 var dsSP_Goc = [];
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -291,17 +289,8 @@ async function loadSua_DonData() {
     window.dsGia = await resBG.json() || []; 
     dsSP_Goc = await resSPGoc.json() || [];
 
-    // Map thêm trường Hinh_Anh để dùng cho tính năng gợi ý
     f12_prods = window.dsGia.map(s => ({ ten: s.Ten_Hang, dvt: s.Don_Vi_Tinh, dongia: s.Gia_Ban, Hinh_Anh: s.Hinh_Anh }));
 
-    let spListEl = document.getElementById("spList");
-    if (!spListEl) {
-        spListEl = document.createElement("datalist");
-        spListEl.id = "spList";
-        document.body.appendChild(spListEl);
-    }
-    spListEl.innerHTML = window.dsGia.map(s => `<option value="${s.Ten_Hang}">`).join("");
-    
     const data = await resBH.json();
     const grouped = {};
     data.forEach(item => {
@@ -315,7 +304,6 @@ async function loadSua_DonData() {
     tbody.innerHTML = "";
     const temp = document.getElementById('f12-row-temp');
 
-    // Hàm phụ trợ parse chuỗi DD/MM/YYYY HH:mm:ss thành timestamp để sắp xếp chuẩn xác
     const parseDateVn = (str) => {
       if (!str) return 0;
       let p = str.split(' ');
@@ -326,7 +314,6 @@ async function loadSua_DonData() {
       return new Date(str).getTime() || 0;
     };
 
-    // Ép kiểu array và sắp xếp từ mới đến cũ
     const sortedOrders = Object.values(grouped).sort((a, b) => parseDateVn(b.ngay) - parseDateVn(a.ngay));
 
     sortedOrders.forEach(order => {
@@ -361,10 +348,10 @@ async function f12_viewDetail(maDon) {
     f12_id_money_row = moneyRow.id;
     window.f12_current_info = { maDon: moneyRow.Ma_Don, kh: moneyRow.Ten_Khach_Hang, sdt: moneyRow.So_Dien_Thoai, dc: moneyRow.Dia_Chi, datCocCu: Number(moneyRow.Khach_Da_Tra) || 0 };
     
+    // ĐÃ SỬA: Key là id để định danh duy nhất
     f12_originalItems = {};
     data.forEach(item => {
-        if (!f12_originalItems[item.Ten_Hang]) f12_originalItems[item.Ten_Hang] = 0;
-        f12_originalItems[item.Ten_Hang] += Number(item.So_Luong) || 0;
+        f12_originalItems[item.id] = { sl: Number(item.So_Luong) || 0, sp: item.Ten_Hang, maVT: item.Ma_VT };
     });
 
     document.getElementById('view-ma-don').textContent = moneyRow.Ma_Don;
@@ -421,15 +408,124 @@ async function f12_saveFinal() {
   const extraDeposit = Number(document.getElementById('view-inp-extra').value.replace(/\./g, "")) || 0;
   var tongMoi = 0;
   
-  let newItemsCount = {};
+  let itemsToUpdate = []; 
+  let itemsToCreate = []; 
+  let itemsToDelete = [];
+  let productsChoDuyet = [];
+  let khoDelta = {};
+  
+  let hasNewItem = false;
+  let changedElements = [];
+  let statusForLink = "";
+  let processedDbIds = []; 
+
+  const cleanNow = getCleanVNTime();
+  const maDon = window.f12_current_info.maDon;
+  const tenKH = window.f12_current_info.kh;
+
+  // Lặp qua từng dòng trên giao diện để tính toán
   document.querySelectorAll('#view-table-body tr').forEach(tr => { 
-      let sl = Number(tr.querySelector('.f12-edit-sl').value)||0;
-      let spName = tr.querySelector('.f12-edit-sp').value;
-      tongMoi += sl * (Number(tr.querySelector('.f12-edit-dg').value.replace(/\./g, ""))||0); 
+      const inpSp = tr.querySelector('.f12-edit-sp'); 
+      const dbId = inpSp.getAttribute('data-id');
+      const currentStatus = inpSp.getAttribute('data-status') || "Chờ xử lý";
+      const tenHang = inpSp.value.trim();
+      const tenSPLower = tenHang.toLowerCase();
       
-      if (!newItemsCount[spName]) newItemsCount[spName] = 0;
-      newItemsCount[spName] += sl;
+      let sl = Number(tr.querySelector('.f12-edit-sl').value)||0;
+      let gia = Number(tr.querySelector('.f12-edit-dg').value.replace(/\./g, ""))||0;
+      let dvt = tr.querySelector('.f12-edit-dvt').value || "Cái";
+      
+      tongMoi += sl * gia; 
+      
+      // LOGIC MỚI: Truy xuất Ma_SP, Ma_VT & Đẩy SP mới
+      let ma_sp = "";
+      let ma_vt = "";
+      let spDB = window.dsGia.find(s => s.Ten_Hang && s.Ten_Hang.toLowerCase() === tenSPLower);
+      
+      if (spDB) {
+          ma_sp = spDB.Ma_QR || "";
+          ma_vt = spDB.Ghi_Chu || "";
+      } else {
+          if (!productsChoDuyet.some(p => p.Ten_Hang.toLowerCase() === tenSPLower)) {
+              let newQR = "";
+              while (true) {
+                  newQR = "SMP-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+                  if (!window.dsGia.some(s => s.Ma_QR === newQR) && !productsChoDuyet.some(p => p.Ma_QR === newQR)) break;
+              }
+              ma_sp = newQR;
+              productsChoDuyet.push({
+                  Nhom_Hang: "Chờ duyệt",
+                  Ten_Hang: tenHang,
+                  Don_Vi_Tinh: dvt,
+                  Gia_Ban: gia,
+                  Gia_Si: 0,
+                  Ma_QR: newQR,
+                  Mo_Ta: "",
+                  Hinh_Anh: null,
+                  Ghi_Chu: `Tạo từ đơn sửa ${maDon}`,
+                  Gia_Von: 0
+              });
+          } else {
+              ma_sp = productsChoDuyet.find(p => p.Ten_Hang.toLowerCase() === tenSPLower).Ma_QR;
+          }
+          // YÊU CẦU ĐẶC BIỆT: Không lưu Ma_SP và Ma_VT vào NhatKy_BanHang đối với món mới lạ
+          ma_sp = ""; 
+          ma_vt = "";
+      }
+
+      // Xử lý Delta Kho Vật Tư
+      if (dbId !== "new") {
+          processedDbIds.push(dbId);
+          let oldItem = f12_originalItems[dbId];
+          if (oldItem) {
+              let delta = sl - oldItem.sl;
+              if (delta !== 0 && oldItem.maVT && oldItem.maVT.startsWith('SMK-')) {
+                  if (!khoDelta[oldItem.maVT]) khoDelta[oldItem.maVT] = 0;
+                  khoDelta[oldItem.maVT] += delta;
+              }
+              
+              const oldSl = oldItem.sl;
+              const oldGia = Number(tr.querySelector('.f12-edit-dg').getAttribute('data-old-gia')) || 0;
+              if (sl !== oldSl && !changedElements.includes("số lượng")) changedElements.push("số lượng");
+              if (gia !== oldGia && !changedElements.includes("đơn giá")) changedElements.push("đơn giá");
+              if (sl !== oldSl || gia !== oldGia) statusForLink = currentStatus;
+          }
+      } else {
+          hasNewItem = true;
+          if (ma_vt && ma_vt.startsWith('SMK-')) {
+              if (!khoDelta[ma_vt]) khoDelta[ma_vt] = 0;
+              khoDelta[ma_vt] += sl; 
+          }
+      }
+
+      const obj = { 
+          Ma_Don: maDon, Ten_Hang: tenHang, So_Luong: sl, Don_Gia: gia, Thanh_Tien: sl * gia, 
+          Don_Vi_Tinh: dvt, Trang_Thai: currentStatus, Ten_Khach_Hang: tenKH, 
+          So_Dien_Thoai: window.f12_current_info.sdt, Dia_Chi: window.f12_current_info.dc, 
+          Ngay_Gio: cleanNow, Khach_Da_Tra: 0, Con_No: 0, Tong_Don: 0,
+          Ma_SP: ma_sp, Ma_VT: ma_vt
+      };
+      
+      if (dbId === "new") {
+          obj.Trang_Thai = "Chờ xử lý"; 
+          itemsToCreate.push(obj);
+      } else { 
+          obj.id = dbId; 
+          itemsToUpdate.push(obj); 
+      }
   });
+
+  // Tìm các món bị XÓA khỏi DOM
+  for (let dbId in f12_originalItems) {
+      if (!processedDbIds.includes(dbId)) {
+          itemsToDelete.push(dbId);
+          let oldItem = f12_originalItems[dbId];
+          if (oldItem.maVT && oldItem.maVT.startsWith('SMK-')) {
+              if (!khoDelta[oldItem.maVT]) khoDelta[oldItem.maVT] = 0;
+              khoDelta[oldItem.maVT] -= oldItem.sl; 
+          }
+      }
+  }
   
   var noThucTe = tongMoi - window.f12_current_info.datCocCu;
 
@@ -438,34 +534,7 @@ async function f12_saveFinal() {
   if (extraDeposit > 0 && f12_hinhThuc === "") return Swal.fire('Thiếu hình thức', 'Vui lòng chọn TM hoặc CK cho tiền cọc thêm!', 'warning');
 
   Swal.fire({ title: 'Đang kiểm tra kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-  
   const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
-  let khoDelta = {};
-
-  for (let spName in newItemsCount) {
-      let slMoi = newItemsCount[spName];
-      let slCu = f12_originalItems[spName] || 0;
-      let delta = slMoi - slCu;
-      
-      if (delta !== 0) {
-          let spDB = window.dsGia.find(s => s.Ten_Hang === spName);
-          if (spDB && spDB.Ghi_Chu && spDB.Ghi_Chu.startsWith('SMK-')) {
-              if (!khoDelta[spDB.Ghi_Chu]) khoDelta[spDB.Ghi_Chu] = 0;
-              khoDelta[spDB.Ghi_Chu] += delta; 
-          }
-      }
-  }
-
-  for (let spName in f12_originalItems) {
-      if (!newItemsCount[spName]) {
-          let delta = -f12_originalItems[spName]; 
-          let spDB = window.dsGia.find(s => s.Ten_Hang === spName);
-          if (spDB && spDB.Ghi_Chu && spDB.Ghi_Chu.startsWith('SMK-')) {
-              if (!khoDelta[spDB.Ghi_Chu]) khoDelta[spDB.Ghi_Chu] = 0;
-              khoDelta[spDB.Ghi_Chu] += delta;
-          }
-      }
-  }
 
   try {
       let amKhoCaches = [];
@@ -473,12 +542,14 @@ async function f12_saveFinal() {
 
       for (let maKho in khoDelta) {
           let deltaBan = khoDelta[maKho];
+          if (deltaBan === 0) continue; 
+
           const resKho = await fetch(`${SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?Ma_QR=eq.${maKho}&select=id,Ten_Hang,So_Luong`, { headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` } });
           const dataKho = await resKho.json();
           
           if (dataKho && dataKho.length > 0) {
               let tonKho = Number(dataKho[0].So_Luong) || 0;
-              let tonMoi = tonKho - deltaBan;
+              let tonMoi = tonKho - deltaBan; 
               
               if (tonMoi < 0) {
                   amKhoCaches.push(`- <b>${dataKho[0].Ten_Hang}</b> (Tồn: ${tonKho}, Trừ thêm: ${deltaBan})`);
@@ -510,186 +581,144 @@ async function f12_saveFinal() {
   }
 
   Swal.fire({ title: '⚡ Đang đồng bộ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-  const cleanNow = getCleanVNTime();
-  const maDon = window.f12_current_info.maDon;
-  const tenKH = window.f12_current_info.kh;
 
   try {
-      const newProductsToSave = [];
-      document.querySelectorAll('#view-table-body tr').forEach(tr => {
-          const inpSp = tr.querySelector('.f12-edit-sp');
-          const tenSPLower = inpSp.value.toLowerCase().trim();
-          const gia = Number(tr.querySelector('.f12-edit-dg').value.replace(/\./g, "")) || 0;
-          const dvt = tr.querySelector('.f12-edit-dvt').value || "Cái";
-
-          if (tenSPLower !== "" && !dsSP_Goc.some(s => s.Ten_Hang && s.Ten_Hang.toLowerCase().trim() === tenSPLower) && !newProductsToSave.some(p => p.Ten_Hang.toLowerCase().trim() === tenSPLower)) {
-              newProductsToSave.push({
-                  Ma_Hang: "SP" + Math.random().toString(36).substr(2, 6).toUpperCase(),
-                  Ten_Hang: inpSp.value.trim(),
-                  DVT: dvt,
-                  Gia_Le: gia.toString(), 
-                  Gia_Von: "0",
-                  Gia_Si: "0"
-              });
-          }
-      });
-
-      if (newProductsToSave.length > 0) {
-          await fetch(`${SB_CONFIG.URL}/rest/v1/DM_SanPham`, { 
+      if (productsChoDuyet.length > 0) {
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/San_Pham_Cho_Duyet`, { 
               method: 'POST', 
               headers: headers, 
-              body: JSON.stringify(newProductsToSave) 
+              body: JSON.stringify(productsChoDuyet) 
           });
       }
-  } catch(eAutoSaveSP) { console.error("Lỗi auto-save sản phẩm mới khi sửa đơn:", eAutoSaveSP); }
 
-  let itemsToUpdate = []; let itemsToCreate = []; 
-  
-  // BIẾN CHO THÔNG BÁO TỰ ĐỘNG
-  let hasNewItem = false;
-  let changedElements = [];
-  let statusForLink = "";
-
-  document.querySelectorAll('#view-table-body tr').forEach(tr => {
-    const inpSp = tr.querySelector('.f12-edit-sp'); const dbId = inpSp.getAttribute('data-id');
-    const currentStatus = inpSp.getAttribute('data-status') || "Chờ xử lý"; // Lấy trạng thái đã được lưu
-    const gia = Number(tr.querySelector('.f12-edit-dg').value.replace(/\./g, "")) || 0;
-    const sl = Number(tr.querySelector('.f12-edit-sl').value) || 0;
-    const obj = { Ma_Don: maDon, Ten_Hang: inpSp.value, So_Luong: sl, Don_Gia: gia, Thanh_Tien: sl * gia, Don_Vi_Tinh: tr.querySelector('.f12-edit-dvt').value, Trang_Thai: currentStatus, Ten_Khach_Hang: tenKH, So_Dien_Thoai: window.f12_current_info.sdt, Dia_Chi: window.f12_current_info.dc, Ngay_Gio: cleanNow, Khach_Da_Tra: 0, Con_No: 0, Tong_Don: 0 };
-    
-    if (dbId === "new") {
-        hasNewItem = true;
-        obj.Trang_Thai = "Chờ xử lý"; // Gán cứng trạng thái món mới
-        itemsToCreate.push(obj);
-    } else { 
-        // Lấy lại giá trị cũ đã lưu trên DOM để so sánh sự thay đổi
-        const oldSl = Number(tr.querySelector('.f12-edit-sl').getAttribute('data-old-sl')) || 0;
-        const oldGia = Number(tr.querySelector('.f12-edit-dg').getAttribute('data-old-gia')) || 0;
-        
-        if (sl !== oldSl && !changedElements.includes("số lượng")) changedElements.push("số lượng");
-        if (gia !== oldGia && !changedElements.includes("đơn giá")) changedElements.push("đơn giá");
-        
-        if (sl !== oldSl || gia !== oldGia) {
-            statusForLink = currentStatus; // Bắt trạng thái của món bị sửa để điều hướng link
-        }
-
-        obj.id = dbId; 
-        itemsToUpdate.push(obj); 
-    }
-  });
-
-  // Bắt sự thay đổi tiền cọc
-  if (extraDeposit > 0 && !changedElements.includes("tiền cọc")) {
-      changedElements.push("tiền cọc");
-  }
-
-  try {
-    const totalPaidMoi = window.f12_current_info.datCocCu + extraDeposit;
-    let targetRow = itemsToUpdate.find(x => x.id == f12_id_money_row) || itemsToUpdate[0] || itemsToCreate[0];
-    if (targetRow) { 
-      targetRow.Khach_Da_Tra = totalPaidMoi; 
-      targetRow.Con_No = tongMoi - totalPaidMoi; 
-      targetRow.Hinh_Thuc_Thanh_Toan = f12_hinhThuc || ""; 
-      targetRow.Tong_Don = tongMoi;
-    }
-
-    for (let item of itemsToUpdate) {
-      const { id, ...p } = item;
-      await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, { method: 'PATCH', headers, body: JSON.stringify(p) });
-    }
-    if (itemsToCreate.length > 0) {
-      await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang`, { method: 'POST', headers, body: JSON.stringify(itemsToCreate) });
-    }
-
-    if (window.khoUpdatesFinal && window.khoUpdatesFinal.length > 0) {
-        for (let update of window.khoUpdatesFinal) {
-            await fetch(`${SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${update.id}`, {
-                method: 'PATCH',
-                headers: headers,
-                body: JSON.stringify({ So_Luong: update.tonMoi })
-            });
-        }
-    }
-
-    if (extraDeposit > 0) {
-      await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers, body: JSON.stringify({ 
-        Ngay_Gio: cleanNow, Ma_Don: maDon, Khach_Hang: tenKH, So_Tien_Thu: extraDeposit, Hinh_Thuc_Thanh_Toan: f12_hinhThuc, Ten_Hang: "Cọc thêm đơn " + maDon
-      }) });
-    }
-
-    // --- XỬ LÝ GHI LOG THEO LOGIC MỚI ---
-    // 1. Đối với các món hàng cũ (itemsToUpdate)
-    for (let item of itemsToUpdate) {
-      const checkLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${maDon}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` } });
-      const logData = await checkLog.json();
-      
-      const logBodyUpdate = { 
-        Nguoi_Thuc_Hien: "Bộ phận Sửa đơn"
-      };
-
-      if (logData.length > 0) {
-        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${logData[0].id}`, { method: 'PATCH', headers, body: JSON.stringify(logBodyUpdate) });
+      const totalPaidMoi = window.f12_current_info.datCocCu + extraDeposit;
+      let targetRow = itemsToUpdate.find(x => x.id == f12_id_money_row) || itemsToUpdate[0] || itemsToCreate[0];
+      if (targetRow) { 
+        targetRow.Khach_Da_Tra = totalPaidMoi; 
+        targetRow.Con_No = tongMoi - totalPaidMoi; 
+        targetRow.Hinh_Thuc_Thanh_Toan = f12_hinhThuc || ""; 
+        targetRow.Tong_Don = tongMoi;
       }
-    }
 
-    // 2. Đối với các món hàng mới (itemsToCreate)
-    for (let item of itemsToCreate) {
-      const logBodyCreate = { 
-        Ngay_Gio: cleanNow, 
-        Ma_Don: maDon, 
-        Ten_Hang: item.Ten_Hang, 
-        Khach_Hang: tenKH, 
-        Gio_Tao_Don: cleanNow, 
-        Gio_Xu_Ly: cleanNow, 
-        Trang_Thai: "Chờ xử lý", 
-        Nguoi_Thuc_Hien: "Bộ phận Sửa đơn" 
-      };
-      await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo`, { method: 'POST', headers, body: JSON.stringify(logBodyCreate) });
-    }
-    
-    // GỬI THÔNG BÁO TỰ ĐỘNG THEO YÊU CẦU MỚI
-    let tbTitle = "✏️ CẬP NHẬT ĐƠN HÀNG";
-    let tbMsg = `Đơn của khách ${tenKH} vừa được thay đổi!`;
-    let tbLink = "Xu_Ly.html";
+      // Xóa các món bị gỡ bỏ
+      for (let delId of itemsToDelete) {
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${delId}`, { method: 'DELETE', headers });
+          let delItemInfo = f12_originalItems[delId];
+          if (delItemInfo) {
+              await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${encodeURIComponent(maDon)}&Ten_Hang=eq.${encodeURIComponent(delItemInfo.sp)}`, { method: 'DELETE', headers });
+              await fetch(`${window.SB_CONFIG.URL}/rest/v1/Nhatky_giacong?Ma_Don=eq.${encodeURIComponent(maDon)}&Ten_Hang=eq.${encodeURIComponent(delItemInfo.sp)}`, { method: 'DELETE', headers });
+          }
+      }
 
-    if (hasNewItem) {
-        tbTitle = "ĐƠN HÀNG BỔ SUNG";
-        tbMsg = `Đơn hàng ${maDon} của khách hàng ${tenKH} vừa được thêm món mới.`;
-        tbLink = "Xu_Ly.html";
-    } else if (changedElements.length > 0) {
-        tbTitle = "ĐƠN HÀNG ĐƯỢC CẬP NHẬT";
-        tbMsg = `Đơn hàng ${maDon} của khách hàng ${tenKH} vừa được cập nhật ${changedElements.join(", ")}.`;
+      for (let item of itemsToUpdate) {
+        const { id, ...p } = item;
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, { method: 'PATCH', headers, body: JSON.stringify(p) });
+      }
+      if (itemsToCreate.length > 0) {
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang`, { method: 'POST', headers, body: JSON.stringify(itemsToCreate) });
+      }
+
+      if (window.khoUpdatesFinal && window.khoUpdatesFinal.length > 0) {
+          for (let update of window.khoUpdatesFinal) {
+              await fetch(`${SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${update.id}`, {
+                  method: 'PATCH',
+                  headers: headers,
+                  body: JSON.stringify({ So_Luong: update.tonMoi })
+              });
+          }
+      }
+
+      if (extraDeposit > 0) {
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo`, { method: 'POST', headers, body: JSON.stringify({ 
+          Ngay_Gio: cleanNow, Ma_Don: maDon, Khach_Hang: tenKH, So_Tien_Thu: extraDeposit, Hinh_Thuc_Thanh_Toan: f12_hinhThuc, Ten_Hang: "Cọc thêm đơn " + maDon
+        }) });
+      }
+
+      for (let item of itemsToUpdate) {
+        const checkLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${maDon}&Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}`, { headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` } });
+        const logData = await checkLog.json();
         
-        // Căn cứ vào trạng thái món hàng để xuất Link
-        if (statusForLink) {
-            let s = statusForLink.toLowerCase();
-            if (s.includes("thiết kế")) tbLink = "Thiet_Ke.html";
-            else if (s.includes("duyệt")) tbLink = "Duyet_File.html";
-            else if (s.includes("in")) tbLink = "Cho_In.html";
-            else if (s.includes("gia công")) tbLink = "Gia_Cong.html";
-            else if (s.includes("giao")) tbLink = "Giao_Hang.html";
-            else if (s.includes("hoàn tất")) tbLink = "Quan_Tri.html";
-            else if (s.includes("công nợ")) tbLink = "Công Nợ.html";
-            else tbLink = "Xu_Ly.html";
-        } else if (changedElements.includes("tiền cọc")) {
-            tbLink = "BC_Thu_Chi.html";
+        if (logData.length > 0) {
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?id=eq.${logData[0].id}`, { method: 'PATCH', headers, body: JSON.stringify({ Nguoi_Thuc_Hien: "Bộ phận Sửa đơn" }) });
         }
-    }
+      }
 
-    // Chỉ gởi thông báo nếu thật sự có thay đổi (Thêm mới hoặc sửa cũ)
-    if (hasNewItem || changedElements.length > 0) {
-        await guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", tbLink);
-    }
+      for (let item of itemsToCreate) {
+        const logBodyCreate = { 
+          Ngay_Gio: cleanNow, 
+          Ma_Don: maDon, 
+          Ten_Hang: item.Ten_Hang, 
+          Khach_Hang: tenKH, 
+          Gio_Tao_Don: cleanNow, 
+          Gio_Xu_Ly: cleanNow, 
+          Trang_Thai: "Chờ xử lý", 
+          Nguoi_Thuc_Hien: "Bộ phận Sửa đơn" 
+        };
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo`, { method: 'POST', headers, body: JSON.stringify(logBodyCreate) });
+      }
 
-    Swal.fire('Thành công!', 'Đơn hàng đã được cập nhật', 'success');
-    document.getElementById('f12-modal-view').style.display = 'none';
-    loadSua_DonData();
+      // Nếu toàn bộ đơn bị xóa
+      if (itemsToUpdate.length === 0 && itemsToCreate.length === 0) {
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?Ma_Don=eq.${encodeURIComponent(maDon)}`, { method: 'DELETE', headers });
+          await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(maDon)}`, { method: 'DELETE', headers });
+          try { await guiThongBaoSacMau("🗑️ HỦY ĐƠN HÀNG", `Đơn hàng ${maDon} của khách ${tenKH} đã bị xóa vĩnh viễn do không còn mặt hàng nào.`, "Quan_Ly_Don", "Xu_Ly.html"); } catch(e){}
+      } else {
+          const resCN = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(maDon)}`, {headers});
+          const cnData = await resCN.json();
+          if (cnData && cnData.length > 0) {
+              const daTra = Number(cnData[0].Da_Tra) || 0;
+              let conLai = tongMoi - daTra;
+              if (conLai < 0) conLai = 0;
+              await fetch(`${window.SB_CONFIG.URL}/rest/v1/Cong_No?Ma_Don=eq.${encodeURIComponent(maDon)}`, {
+                  method: 'PATCH', headers, body: JSON.stringify({ Tong_Don: tongMoi.toString(), Con_Lai: conLai.toString() })
+              });
+          }
+      }
+      
+      if (extraDeposit > 0 && !changedElements.includes("tiền cọc")) {
+          changedElements.push("tiền cọc");
+      }
+
+      let tbTitle = "✏️ CẬP NHẬT ĐƠN HÀNG";
+      let tbMsg = `Đơn của khách ${tenKH} vừa được thay đổi!`;
+      let tbLink = "Xu_Ly.html";
+
+      if (hasNewItem) {
+          tbTitle = "ĐƠN HÀNG BỔ SUNG";
+          tbMsg = `Đơn hàng ${maDon} của khách hàng ${tenKH} vừa được thêm món mới.`;
+          tbLink = "Xu_Ly.html";
+      } else if (itemsToDelete.length > 0) {
+          tbTitle = "🗑️ XÓA MẶT HÀNG";
+          tbMsg = `Khách hàng ${tenKH} vừa hủy bớt mặt hàng trong đơn ${maDon}. Đã hoàn lại kho.`;
+      } else if (changedElements.length > 0) {
+          tbTitle = "ĐƠN HÀNG ĐƯỢC CẬP NHẬT";
+          tbMsg = `Đơn hàng ${maDon} của khách hàng ${tenKH} vừa được cập nhật ${changedElements.join(", ")}.`;
+          
+          if (statusForLink) {
+              let s = statusForLink.toLowerCase();
+              if (s.includes("thiết kế")) tbLink = "Thiet_Ke.html";
+              else if (s.includes("duyệt")) tbLink = "Duyet_File.html";
+              else if (s.includes("in")) tbLink = "Cho_In.html";
+              else if (s.includes("gia công")) tbLink = "Gia_Cong.html";
+              else if (s.includes("giao")) tbLink = "Giao_Hang.html";
+              else if (s.includes("hoàn tất")) tbLink = "Quan_Tri.html";
+              else if (s.includes("công nợ")) tbLink = "Công Nợ.html";
+              else tbLink = "Xu_Ly.html";
+          } else if (changedElements.includes("tiền cọc")) {
+              tbLink = "BC_Thu_Chi.html";
+          }
+      }
+
+      if (hasNewItem || changedElements.length > 0 || itemsToDelete.length > 0) {
+          await guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", tbLink);
+      }
+
+      Swal.fire('Thành công!', 'Đơn hàng đã được cập nhật', 'success');
+      document.getElementById('f12-modal-view').style.display = 'none';
+      loadSua_DonData();
   } catch (e) { Swal.fire('Lỗi hệ thống', e.message, 'error'); }
 }
 
-/* =========================================================
-   SỬA ROW VÀ DROPDOWN ĐỂ CÓ TÍNH NĂNG GỢI Ý HÌNH ẢNH & LƯU TRẠNG THÁI
-   ========================================================= */
 function f12_renderEditRow(it) { 
   const tbody = document.getElementById('view-table-body'); 
   const tr = document.createElement('tr'); 
@@ -802,7 +831,6 @@ function f12_fm(input) { var v = input.value.replace(/\D/g, ""); input.value = v
 function f12_addNewRowToEdit() { f12_renderEditRow(null); }
 function f12_setPay(val) { f12_hinhThuc = val; const slider = document.getElementById('f12-slider'); ['f12-opt-tm','f12-opt-mid','f12-opt-ck'].forEach(id => document.getElementById(id).classList.remove('active')); if (val === 'TM') { slider.className = 'pay-sld-f12 tm'; document.getElementById('f12-opt-tm').classList.add('active'); } else if (val === 'CK') { slider.className = 'pay-sld-f12 ck'; document.getElementById('f12-opt-ck').classList.add('active'); } else { slider.className = 'pay-sld-f12 mid'; document.getElementById('f12-opt-mid').classList.add('active'); } }
 
-// Hàm tìm kiếm trực tiếp
 function f12_searchOrders() {
   const val = document.getElementById('f12-search').value.toLowerCase();
   const rows = document.querySelectorAll('#f12-list-body tr');

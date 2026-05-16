@@ -13,7 +13,7 @@
     /* ========================================================
        1. GIAO DIỆN CHUNG & PC
        ======================================================== */
-    :root { --primary-f10: #1e00a2; --header-gradient: linear-gradient(135deg, #0d0047 0%, #001e89 100%); --bg-light: #f8fafc; }
+    :root { --primary-f10: #34495e; --header-gradient: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); --bg-light: #f8fafc; }
     body { margin: 0; background: var(--bg-light); display: flex; font-family: 'Segoe UI', sans-serif; }
     
     .main-content { flex: 1; margin-left: 250px; padding: 20px; transition: 0.3s; min-width: 0; }
@@ -150,18 +150,18 @@
   </div>
 
   <script>
-    // BẢNG MÀU VÀ NGƯỠNG SLA THEO PHÚT (MÀU SẮC ĐÃ CẬP NHẬT)
+    // BẢNG MÀU VÀ NGƯỠNG SLA THEO PHÚT (MÀU SẮC ĐÃ CẬP NHẬT CHÍNH XÁC)
     const STATUS_MAP = [
-      { name: "", label: "Tất cả", class: "st-all", color: "#2c3e50" },
-      { name: "Chờ xử lý", label: "Chờ xử lý", class: "st-cxl", color: "#27ae60", limX: 60, limV: 120 },
-      { name: "Chờ thiết kế", label: "Chờ thiết kế", class: "st-ctk", color: "#2980b9", limX: 1440, limV: 2880 },
-      { name: "Chờ duyệt file", label: "Chờ duyệt file", class: "st-cdf", color: "#f39c12", limX: 60, limV: 180 },
-      { name: "Chờ in", label: "Chờ in", class: "st-ci", color: "#e67e22", limX: 60, limV: 240 },
-      { name: "Chờ gia công", label: "Chờ gia công", class: "st-cgc", color: "#8e44ad", limX: 2880, limV: 4320 },
-      { name: "Chờ giao hàng", label: "Chờ giao hàng", class: "st-cgh", color: "#00a8ff", limX: 2880, limV: 5760 },
-      { name: "Chờ thanh toán", label: "Chờ thanh toán", class: "st-ctt", color: "#e84393", limX: 1440, limV: 4320 },
-      { name: "Công nợ", label: "Công nợ", class: "st-cn", color: "#c0392b", limX: 0, limV: 0 },
-      { name: "Hoàn tất", label: "Hoàn tất", class: "st-ht", color: "#2ecc71", limX: 999999, limV: 999999 }
+      { name: "", label: "Tất cả", class: "st-all", color: "#2c3e50" }, // Xanh đen
+      { name: "Chờ xử lý", label: "Chờ xử lý", class: "st-cxl", color: "#27ae60", limX: 60, limV: 120 }, // Xanh lá xẩm
+      { name: "Chờ thiết kế", label: "Chờ thiết kế", class: "st-ctk", color: "#2980b9", limX: 1440, limV: 2880 }, // Xanh lam
+      { name: "Chờ duyệt file", label: "Chờ duyệt file", class: "st-cdf", color: "#f39c12", limX: 60, limV: 180 }, // Vàng xẩm
+      { name: "Chờ in", label: "Chờ in", class: "st-ci", color: "#e67e22", limX: 240, limV: 480 }, // Cam
+      { name: "Chờ gia công", label: "Chờ gia công", class: "st-cgc", color: "#8e44ad", limX: 2880, limV: 4320 }, // Tím
+      { name: "Chờ giao hàng", label: "Chờ giao hàng", class: "st-cgh", color: "#00a8ff", limX: 2880, limV: 5760 }, // Xanh dương
+      { name: "Chờ thanh toán", label: "Chờ thanh toán", class: "st-ctt", color: "#e84393", limX: 1440, limV: 4320 }, // Hồng
+      { name: "Công nợ", label: "Công nợ", class: "st-cn", color: "#c0392b", limX: 0, limV: 0 }, // Đỏ
+      { name: "Hoàn tất", label: "Hoàn tất", class: "st-ht", color: "#2ecc71", limX: 999999, limV: 999999 } // Xanh lá sáng
     ];
 
     window.listAllF10 = [];
@@ -183,7 +183,8 @@
       let html = '';
       STATUS_MAP.forEach(st => {
         let activeCls = st.name === currentStatusFilter ? "active" : "";
-        html += `<button class="status-btn ${st.class} ${activeCls}" onclick="setStatusFilter('${st.name}')">${st.label}</button>`;
+        let txtColor = (st.name === "Chờ duyệt file" || st.name === "Chờ gia công") ? "#fff" : "#fff"; 
+        html += `<button class="status-btn ${activeCls}" style="background-color: ${st.color}; color: ${txtColor};" onclick="setStatusFilter('${st.name}')">${st.label}</button>`;
       });
       container.innerHTML = html;
     }
@@ -301,21 +302,21 @@
             let diffMins = Math.floor((endTime - ev.timeNum) / 60000);
             let timeStr = formatWaitTime(Math.max(0, diffMins));
 
-            let colorClass = "past";
-            if (isCurrent) {
-                const stObj = STATUS_MAP.find(s => s.name === ev.name);
-                const limX = stObj ? stObj.limX : 60;
-                const limV = stObj ? stObj.limV : 120;
-                
-                if (diffMins < limX) colorClass = "xanh";
-                else if (diffMins < limV) colorClass = "vang";
-                else colorClass = "do";
-            }
+            const stObj = STATUS_MAP.find(s => s.name === ev.name);
+            const limX = stObj ? stObj.limX : 60;
+            const limV = stObj ? stObj.limV : 120;
+            
+            let colorClass = "";
+            if (diffMins < limX) colorClass = "xanh";
+            else if (diffMins < limV) colorClass = "vang";
+            else colorClass = "do";
 
+            // Làm mờ và bỏ chớp nháy (pulse) đối với các mốc đỏ đã đi qua để giao diện không bị rối
+            let extraStyle = (!isCurrent && colorClass === 'do') ? 'animation: none; opacity: 0.85;' : (!isCurrent ? 'opacity: 0.85;' : '');
             let arrow = (i < events.length - 1) ? `<span class="tl-arrow">→</span>` : "";
 
             timelineHtml += `
-               <div class="tl-step ${colorClass}">
+               <div class="tl-step ${colorClass}" style="${extraStyle}">
                   <span style="opacity:0.7;">${ev.name}</span><br>
                   <b style="font-size:12px;">${timeStr}</b>
                </div>

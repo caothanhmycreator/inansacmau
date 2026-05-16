@@ -177,7 +177,7 @@
       </div>
       <div class="btn-container">
         <button class="btn-import-kho" onclick="openKhoImportPopup()">📥 TỪ KHO VẬT TƯ</button>
-        <button class="btn-import-dm" onclick="openDMImportPopup()">🔄 TỪ DANH MỤC SP</button>
+        <button class="btn-import-dm" onclick="openDMImportPopup()">🔄 TỪ DANH MỤC CHỜ DUYỆT</button>
         <button class="btn-submit" onclick="submitPriceItem()">📤 XÁC NHẬN LƯU BẢNG GIÁ</button>
       </div>
     </div>
@@ -717,14 +717,15 @@
     }
 
     // =========================================================================
-    // TÍNH NĂNG 2: CHUẨN HÓA DỮ LIỆU TỪ DANH MỤC SẢN PHẨM (Bỏ Giá Sỉ)
+    // TÍNH NĂNG 2: CHUẨN HÓA DỮ LIỆU TỪ DANH MỤC CHỜ DUYỆT (ĐÃ CHỈNH SỬA)
     // =========================================================================
     async function openDMImportPopup() {
-        Swal.fire({ title: 'Đang tải Danh mục...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'Đang tải Danh mục chờ duyệt...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
 
         try {
-            const resDM = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_SanPham?select=*`, { headers: h });
+            // Lấy từ bảng San_Pham_Cho_Duyet thay vì DM_SanPham
+            const resDM = await fetch(`${window.SB_CONFIG.URL}/rest/v1/San_Pham_Cho_Duyet?select=*`, { headers: h });
             const dataDM = await resDM.json();
 
             const resGia = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=Ten_Hang`, { headers: h });
@@ -747,24 +748,24 @@
             }
 
             if (uniqueSpChuaCoGia.length === 0) {
-                return Swal.fire('Thông báo', 'Tất cả sản phẩm trong Danh Mục đều đã có trên Bảng Giá chuẩn.', 'info');
+                return Swal.fire('Thông báo', 'Tất cả sản phẩm trong Danh Mục Chờ Duyệt đều đã có trên Bảng Giá chuẩn.', 'info');
             }
 
             let rowsHtml = uniqueSpChuaCoGia.map((sp, index) => {
-                const giaLeStr = Number(sp.Gia_Le || 0).toLocaleString("vi-VN");
+                const giaLeStr = Number(sp.Gia_Ban || 0).toLocaleString("vi-VN"); // Lấy Gia_Ban từ bảng chờ duyệt
                 let spId = sp.id || sp.Id || '';
                 
                 return `
                 <tr id="dm-row-${index}" style="border-bottom: 2px solid #eee; background: ${index % 2 === 0 ? '#fff' : '#fcfcfc'}">
                     <td style="padding: 10px; vertical-align: top;">
-                        <input type="text" id="dm-nhom-${index}" class="swal2-input" value="SẢN PHẨM KHÁC" placeholder="Nhóm hàng..." style="width: 100%; margin: 0; font-size: 12px; height: 30px;">
+                        <input type="text" id="dm-nhom-${index}" class="swal2-input" value="${sp.Nhom_Hang || 'SẢN PHẨM KHÁC'}" placeholder="Nhóm hàng..." style="width: 100%; margin: 0; font-size: 12px; height: 30px;">
                     </td>
                     <td style="padding: 10px; text-align: left; max-width: 200px;">
                         <b style="color: #2980b9;">${sp.Ten_Hang}</b><br>
                         <small style="color: gray;">Gốc: ${giaLeStr}đ</small><br>
                         <div style="display: flex; gap: 5px; margin-top: 5px;">
-                            <input type="text" id="dm-dvt-${index}" class="swal2-input" value="${sp.DVT || 'Cái'}" placeholder="ĐVT..." style="width: 30%; margin: 0; font-size: 12px; height: 30px;">
-                            <input type="text" id="dm-mota-${index}" class="swal2-input" placeholder="Mô tả..." style="width: 70%; margin: 0; font-size: 12px; height: 30px;">
+                            <input type="text" id="dm-dvt-${index}" class="swal2-input" value="${sp.Don_Vi_Tinh || 'Cái'}" placeholder="ĐVT..." style="width: 30%; margin: 0; font-size: 12px; height: 30px;">
+                            <input type="text" id="dm-mota-${index}" class="swal2-input" value="${sp.Mo_Ta || ''}" placeholder="Mô tả..." style="width: 70%; margin: 0; font-size: 12px; height: 30px;">
                         </div>
                     </td>
                     <td style="padding: 10px; vertical-align: top;"><input type="text" id="dm-ban-${index}" class="swal2-input" value="${giaLeStr}" style="width: 100%; margin: 0; font-size: 13px; text-align:right;" oninput="formatCurrency(this)"></td>
@@ -773,14 +774,14 @@
                         <input type="hidden" id="dm-ten-${index}" value="${sp.Ten_Hang}">
                     </td>
                     <td style="padding: 10px; text-align: center; vertical-align: top;">
-                        <button id="dm-btn-${index}" onclick="saveSingleItemFromDM(${index})" style="background: #2D5A27; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%; margin-bottom: 5px;">LƯU</button>
+                        <button id="dm-btn-${index}" onclick="saveSingleItemFromDM(${index}, '${spId}')" style="background: #2D5A27; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%; margin-bottom: 5px;">LƯU</button>
                         <button id="dm-del-btn-${index}" onclick="deleteItemFromDM(${index}, '${spId}')" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%;">XÓA</button>
                     </td>
                 </tr>
             `}).join('');
 
             Swal.fire({
-                title: 'CHUẨN HÓA TỪ DANH MỤC',
+                title: 'CHUẨN HÓA TỪ DANH MỤC CHỜ DUYỆT',
                 width: '1000px',
                 html: `
                     <div style="max-height: 500px; overflow-y: auto;">
@@ -810,7 +811,7 @@
         }
     }
 
-    window.saveSingleItemFromDM = async function(index) {
+    window.saveSingleItemFromDM = async function(index, spId) {
         const btn = document.getElementById(`dm-btn-${index}`);
         const nhom = document.getElementById(`dm-nhom-${index}`).value.trim() || "SẢN PHẨM KHÁC";
         const ten = document.getElementById(`dm-ten-${index}`).value.trim();
@@ -870,6 +871,13 @@
                 throw new Error(errInfo.message || "Cơ sở dữ liệu từ chối lưu!");
             }
 
+            // Xóa khỏi bảng Chờ duyệt sau khi lưu thành công
+            if (spId) {
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/San_Pham_Cho_Duyet?id=eq.${spId}`, {
+                    method: 'DELETE', headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` }
+                });
+            }
+
             btn.innerText = "Đã lưu ✔";
             btn.style.background = "#27ae60";
             
@@ -891,13 +899,14 @@
         }
     }
 
+    // ĐÃ SỬA LẠI ĐỊNH TUYẾN ĐỂ XÓA TRONG San_Pham_Cho_Duyet
     window.deleteItemFromDM = async function(index, id) {
         if (!id) {
             alert("Không tìm thấy ID sản phẩm để xóa!");
             return;
         }
         
-        if (!confirm("Xác nhận xóa sản phẩm này hoàn toàn khỏi Danh Mục Sản Phẩm?")) return;
+        if (!confirm("Xác nhận xóa sản phẩm này hoàn toàn khỏi Danh Mục Chờ Duyệt?")) return;
         
         const delBtn = document.getElementById(`dm-del-btn-${index}`);
         delBtn.innerText = "Đang xóa...";
@@ -906,13 +915,15 @@
         try {
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
             
-            let response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_SanPham?id=eq.${id}`, {
+            // Xóa ở bảng San_Pham_Cho_Duyet
+            let response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/San_Pham_Cho_Duyet?id=eq.${id}`, {
                 method: 'DELETE',
                 headers: h
             });
 
             if (!response.ok) {
-                response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_SanPham?Id=eq.${id}`, {
+                // Thử với Id viết hoa chữ I nếu cột Database cài lộn
+                response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/San_Pham_Cho_Duyet?Id=eq.${id}`, {
                     method: 'DELETE',
                     headers: h
                 });

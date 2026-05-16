@@ -252,18 +252,15 @@
   <script>
     var cart = []; var dsK = []; var dsS = []; var dsSP_Goc = []; var currentPayMethod = "";
 
-async function napDuLieuTrang() {
+    async function napDuLieuTrang() {
       const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
       try {
-        const [resK, resS, resSPGoc] = await Promise.all([
+        const [resK, resS] = await Promise.all([
           fetch(`${SB_CONFIG.URL}/rest/v1/DM_KhachHang?select=*&limit=10000&order=id.desc`, { headers: h }),
-          fetch(`${SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*&limit=10000`, { headers: h }),
-          fetch(`${SB_CONFIG.URL}/rest/v1/DM_SanPham?select=*&limit=10000`, { headers: h })
+          fetch(`${SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?select=*&limit=10000`, { headers: h })
         ]);
         dsK = await resK.json(); 
         dsS = await resS.json();
-        
-        dsSP_Goc = await resSPGoc.json() || []; 
         
         document.getElementById("khachList").innerHTML = dsK.map(k => `<option value="${k.Ten_Khach_Hang}">`).join("");
         document.getElementById("spList").innerHTML = dsS.map(s => `<option value="${s.Ten_Hang}">`).join("");
@@ -353,25 +350,42 @@ async function napDuLieuTrang() {
                 await fetch(`${SB_CONFIG.URL}/rest/v1/DM_KhachHang`, { method: 'POST', headers: h, body: JSON.stringify(payloadKH) });
             }
 
-            const newProducts = [];
+            const productsChoDuyet = [];
+            
             cart.forEach(item => {
                 const tenSPLower = item.sp.toLowerCase();
-                if (!dsSP_Goc.some(s => s.Ten_Hang && s.Ten_Hang.toLowerCase() === tenSPLower) && !newProducts.some(p => p.Ten_Hang.toLowerCase() === tenSPLower)) {
-                    newProducts.push({
-                        Ma_Hang: "SP" + Math.random().toString(36).substr(2, 6).toUpperCase(),
+                // Nếu sản phẩm không có trong Bang_Gia_San_Pham (dsS) và chưa thêm vào mảng productsChoDuyet
+                if (!dsS.some(s => s.Ten_Hang && s.Ten_Hang.toLowerCase() === tenSPLower) && !productsChoDuyet.some(p => p.Ten_Hang.toLowerCase() === tenSPLower)) {
+                    
+                    // Tạo mã QR mới ngẫu nhiên SMP-xxxxxx và đảm bảo không trùng
+                    let newQR = "";
+                    while (true) {
+                        newQR = "SMP-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+                        if (!dsS.some(s => s.Ma_QR === newQR) && !productsChoDuyet.some(p => p.Ma_QR === newQR)) {
+                            break;
+                        }
+                    }
+
+                    productsChoDuyet.push({
+                        Nhom_Hang: "Chờ duyệt", // Default cho nhóm hàng thay vì "Khác"
                         Ten_Hang: item.sp,
-                        DVT: item.dvt || "Cái",
-                        Gia_Le: item.dg.toString(), 
-                        Gia_Von: "0",
-                        Gia_Si: "0"
+                        Don_Vi_Tinh: item.dvt || "Cái",
+                        Gia_Ban: Number(item.dg) || 0,
+                        Gia_Si: 0,
+                        Ma_QR: newQR,
+                        Mo_Ta: "",
+                        Hinh_Anh: null,
+                        Ghi_Chu: `Tạo từ đơn ${ma}`,
+                        Gia_Von: 0
                     });
                 }
             });
 
-            if (newProducts.length > 0) {
-                await fetch(`${SB_CONFIG.URL}/rest/v1/DM_SanPham`, { method: 'POST', headers: h, body: JSON.stringify(newProducts) });
+            // LƯU VÀO BẢNG San_Pham_Cho_Duyet
+            if (productsChoDuyet.length > 0) {
+                await fetch(`${SB_CONFIG.URL}/rest/v1/San_Pham_Cho_Duyet`, { method: 'POST', headers: h, body: JSON.stringify(productsChoDuyet) });
             }
-        } catch(eAutoSave) { console.error("Lỗi auto-save DM:", eAutoSave); }
+        } catch(eAutoSave) { console.error("Lỗi auto-save SP:", eAutoSave); }
 
         const rowsBH = cart.map((i, idx) => ({ 
           Ngay_Gio: cleanTime, 
@@ -393,7 +407,6 @@ async function napDuLieuTrang() {
           Ma_VT: i.ma_vt
         }));
         
-        // --- CHỈNH SỬA LOGIC LƯU VÀO Log_TienDo THEO YÊU CẦU ---
         const rowsLog = cart.map(i => ({ 
           Ngay_Gio: cleanTime, 
           Ma_Don: ma, 
@@ -445,7 +458,7 @@ async function napDuLieuTrang() {
       } catch (e) { 
           Swal.fire('Lỗi', e.message, 'error'); 
       }
-}
+    }
 
     function changeSL(s) { let el = document.getElementById("sl"); let v = Math.max(0, getRaw("sl") + s); el.value = v.toLocaleString("vi-VN"); updateTmpTotal(); }
     function formatInput(el) { let v = el.value.replace(/\D/g, ""); if (v !== "") el.value = Number(v).toLocaleString("vi-VN"); }
