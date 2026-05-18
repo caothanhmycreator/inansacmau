@@ -53,6 +53,19 @@
     /* Hiệu ứng hover cho menu sản phẩm */
     .sp-item-hover:hover { background: #e8f5e9 !important; }
 
+    /* CSS cho bảng Popup Báo giá (Mobile) */
+    @media (max-width: 768px) {
+        .quote-popup-table, .quote-popup-table thead, .quote-popup-table tbody, .quote-popup-table th, .quote-popup-table td, .quote-popup-table tr { display: block; width: 100%; box-sizing: border-box; }
+        .quote-popup-table thead { display: none; }
+        .quote-popup-table tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 0; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); overflow: hidden; }
+        .quote-popup-table td { border: none; padding: 8px 10px; position: relative; text-align: left !important; display: block !important; }
+        .quote-popup-table td:before { font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); display: block; margin-bottom: 4px; }
+        
+        /* Hiển thị đầy đủ nội dung, bỏ cuộn ngang/dọc trong Popup trên mobile */
+        .popup-product-cell { max-height: none !important; max-width: 100% !important; overflow-y: visible !important; }
+        .quote-popup-container { max-height: none !important; overflow-y: visible !important; }
+    }
+
     /* ========================================================
        MOBILE RESPONSIVE (TỰ ĐỘNG XẾP DỌC TRÊN ĐIỆF THOẠI)
        ======================================================== */
@@ -105,7 +118,10 @@
   <div class="main-content">
     <div class="sacmau-wrapper">
       <div class="sacmau-container no-print">
-        <h2 style="color: #2D5A27; margin-bottom: 15px; margin-top: 0;">🧾 TẠO ĐƠN HÀNG MỚI</h2>
+        <h2 style="color: #2D5A27; margin-bottom: 15px; margin-top: 0; display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
+          🧾 TẠO ĐƠN HÀNG MỚI
+          <button onclick="openLoadQuotePopup()" class="no-print" style="margin-left: auto; padding:8px 15px; font-weight:bold; border-radius:8px; border:1px solid #3498db; background:#3498db; color:white; font-size: 13px; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s;">📥 TẢI BÁO GIÁ</button>
+        </h2>
 
         <div style="padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-radius: 8px;">
           <div class="sacmau-row">
@@ -251,6 +267,7 @@
 
   <script>
     var cart = []; var dsK = []; var dsS = []; var dsSP_Goc = []; var currentPayMethod = "";
+    var savedQuotesForOrder = []; 
 
     async function napDuLieuTrang() {
       const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
@@ -354,10 +371,8 @@
             
             cart.forEach(item => {
                 const tenSPLower = item.sp.toLowerCase();
-                // Nếu sản phẩm không có trong Bang_Gia_San_Pham (dsS) và chưa thêm vào mảng productsChoDuyet
                 if (!dsS.some(s => s.Ten_Hang && s.Ten_Hang.toLowerCase() === tenSPLower) && !productsChoDuyet.some(p => p.Ten_Hang.toLowerCase() === tenSPLower)) {
                     
-                    // Tạo mã QR mới ngẫu nhiên SMP-xxxxxx và đảm bảo không trùng
                     let newQR = "";
                     while (true) {
                         newQR = "SMP-" + Math.random().toString(36).substr(2, 6).toUpperCase();
@@ -367,7 +382,7 @@
                     }
 
                     productsChoDuyet.push({
-                        Nhom_Hang: "Chờ duyệt", // Default cho nhóm hàng thay vì "Khác"
+                        Nhom_Hang: "Chờ duyệt", 
                         Ten_Hang: item.sp,
                         Don_Vi_Tinh: item.dvt || "Cái",
                         Gia_Ban: Number(item.dg) || 0,
@@ -381,7 +396,6 @@
                 }
             });
 
-            // LƯU VÀO BẢNG San_Pham_Cho_Duyet
             if (productsChoDuyet.length > 0) {
                 await fetch(`${SB_CONFIG.URL}/rest/v1/San_Pham_Cho_Duyet`, { method: 'POST', headers: h, body: JSON.stringify(productsChoDuyet) });
             }
@@ -492,7 +506,7 @@
     }
 
     /* =========================================================
-       HÀM XỬ LÝ DROPDOWN SẢN PHẨM CÓ HÌNH ẢNH (ĐÃ CẬP NHẬT)
+       HÀM XỬ LÝ DROPDOWN SẢN PHẨM CÓ HÌNH ẢNH
        ========================================================= */
     function showSPSuggestions(v) {
       const dropdown = document.getElementById("spDropdown");
@@ -515,7 +529,6 @@
             let finalImgUrl = rawImg;
             let fullImgUrl = rawImg;
             
-            // XỬ LÝ LINK GOOGLE DRIVE THÀNH THUMBNAIL (ỔN ĐỊNH NHẤT)
             let fileId = "";
             if (rawImg.includes("drive.google.com")) {
                 let matchD = rawImg.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -524,12 +537,10 @@
             }
 
             if (fileId) {
-                // Sử dụng API thumbnail của Google để hiển thị ảnh ổn định hơn direct link
                 finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
-                fullImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`; // Ảnh kích thước lớn hơn khi xem
+                fullImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`; 
             }
 
-            // ĐÃ ĐIỀU CHỈNH: Thuộc tính width trong Swal.fire được đặt thành 400 (giảm 50% so với ảnh 800px)
             imgTag = `
             <img src="${finalImgUrl}" onclick="event.stopPropagation(); Swal.fire({imageUrl: '${fullImgUrl}', imageAlt: 'Ảnh sản phẩm', showConfirmButton: false, width: 400})" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width:55px; height:55px; object-fit:cover; border-radius:4px; margin-right:12px; flex-shrink:0; border: 1px solid #eee; cursor: zoom-in;">
             <div style="display:none; width:55px; height:55px; background:#f0f0f0; border-radius:4px; margin-right:12px; flex-shrink:0; align-items:center; justify-content:center; font-size:12px; color:#aaa; border: 1px solid #eee;">🖼️</div>
@@ -559,6 +570,184 @@
     function closeSPSuggestions() {
       document.getElementById("spDropdown").style.display = "none";
     }
+
+    /* =========================================================
+       HÀM TẢI DỮ LIỆU BÁO GIÁ
+       ========================================================= */
+    async function openLoadQuotePopup() {
+        Swal.fire({ title: 'Đang tải báo giá...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+            const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
+            const res = await fetch(`${SB_CONFIG.URL}/rest/v1/Tu_Van?select=*&order=id.desc`, { headers: h });
+            const data = await res.json();
+            
+            const groups = {};
+            data.forEach(item => {
+                if(!item.Ma_BG) return; 
+                if(!groups[item.Ma_BG]) {
+                    groups[item.Ma_BG] = {
+                        Ma_BG: item.Ma_BG,
+                        Ngay_Gio: item.Ngay_Gio,
+                        Ten_Khach_Hang: item.Ten_Khach_Hang,
+                        So_Dien_Thoai: item.So_Dien_Thoai,
+                        Dia_Chi: item.Dia_Chi,
+                        Tong_Tien: 0,
+                        Items: []
+                    };
+                }
+                groups[item.Ma_BG].Tong_Tien += (item.Thanh_Tien || 0);
+                groups[item.Ma_BG].Items.push(item);
+            });
+            
+            savedQuotesForOrder = Object.values(groups);
+            
+            // Check if SweetAlert is already open with the title, to prevent flicker. Else open new.
+            if(Swal.isVisible() && Swal.getTitle().innerText === 'TẢI DỮ LIỆU BÁO GIÁ'){
+                 renderQuotePopup(savedQuotesForOrder, true);
+            } else {
+                 renderQuotePopup(savedQuotesForOrder, false);
+            }
+
+        } catch (error) {
+            Swal.fire('Lỗi', 'Không thể tải danh sách báo giá', 'error');
+        }
+    }
+
+    function renderQuotePopup(dataToRender, isUpdate) {
+        let rowsHtml = dataToRender.map((q, index) => {
+            const itemsHtml = q.Items.map(i => `
+                <div style="font-size:12px; border-bottom:1px dashed #eee; padding-bottom:4px; margin-bottom:4px; overflow-wrap: break-word; word-break: break-word;">
+                    <b>${i.Ten_Hang}</b> (x${i.So_Luong}) - <span style="color:#e53e3e; font-weight:bold;">${(i.So_Luong * i.Don_Gia).toLocaleString('vi-VN')}đ</span>
+                </div>
+            `).join('');
+
+            return `
+            <tr style="border-bottom: 1px solid #eee;">
+                <td data-label="Mã BG & Ngày" style="padding: 10px; text-align: left;">
+                    <b style="color:#2D5A27;">${q.Ma_BG}</b><br>
+                    <small style="color:#777;">${q.Ngay_Gio}</small>
+                </td>
+                <td data-label="Khách hàng" style="padding: 10px; text-align: left;">
+                    <b>${q.Ten_Khach_Hang || 'Khách lẻ'}</b><br>
+                    <small>${q.So_Dien_Thoai || ''}</small>
+                </td>
+                <td class="popup-product-cell" data-label="Sản phẩm" style="padding: 10px; text-align: left; max-width: 250px; overflow-y: auto; max-height: 120px; display: block;">
+                    ${itemsHtml}
+                </td>
+                <td data-label="Thao tác" style="padding: 10px; text-align: center;">
+                    <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">
+                        <button onclick="loadQuoteData('${q.Ma_BG}')" style="background:#2D5A27; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px; transition: 0.2s;">CHỌN</button>
+                        <button id="del-quote-${q.Ma_BG}" onclick="deleteQuotePopup('${q.Ma_BG}')" style="background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px; transition: 0.2s;">XÓA</button>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }).join('');
+
+        if (dataToRender.length === 0) {
+            rowsHtml = `<tr><td colspan="4" style="text-align:center; padding: 20px;">Không tìm thấy kết quả.</td></tr>`;
+        }
+
+        if(isUpdate) {
+             document.getElementById('quote-popup-body').innerHTML = rowsHtml;
+             return;
+        }
+
+        let htmlContent = `
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="searchQuotePopup" onkeyup="filterQuotePopup()" placeholder="🔍 Tìm mã, tên khách, SĐT..." style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; box-sizing:border-box;">
+            </div>
+            <div class="quote-popup-container" style="max-height: 400px; overflow-y: auto;">
+                <table class="quote-popup-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead style="position: sticky; top: 0; background: #f1f5f9; z-index: 10;">
+                        <tr>
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0;">Mã BG & Ngày</th>
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0;">Khách hàng</th>
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0;">Sản phẩm</th>
+                            <th style="padding: 10px; text-align: center; border-bottom: 2px solid #e2e8f0;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quote-popup-body">${rowsHtml}</tbody>
+                </table>
+            </div>
+        `;
+
+        Swal.fire({
+            title: 'TẢI DỮ LIỆU BÁO GIÁ',
+            html: htmlContent,
+            width: '850px',
+            showConfirmButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'ĐÓNG'
+        });
+    }
+
+    window.filterQuotePopup = function() {
+        const query = document.getElementById("searchQuotePopup").value.toLowerCase().trim();
+        const filtered = savedQuotesForOrder.filter(q => {
+            const ma = (q.Ma_BG || "").toLowerCase();
+            const kh = (q.Ten_Khach_Hang || "").toLowerCase();
+            const sdt = (q.So_Dien_Thoai || "").toLowerCase();
+            const itemsMatch = q.Items.some(i => (i.Ten_Hang || "").toLowerCase().includes(query));
+            return ma.includes(query) || kh.includes(query) || sdt.includes(query) || itemsMatch;
+        });
+        
+        renderQuotePopup(filtered, true);
+    };
+
+    window.deleteQuotePopup = async function(maBG) {
+        if(!confirm("Bạn có chắc chắn muốn xóa báo giá này không?")) return;
+        const btn = document.getElementById(`del-quote-${maBG}`);
+        if(btn) { btn.innerText = '⏳'; btn.disabled = true; }
+        
+        try {
+            const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
+            await fetch(`${SB_CONFIG.URL}/rest/v1/Tu_Van?Ma_BG=eq.${encodeURIComponent(maBG)}`, {
+                method: 'DELETE', headers: h
+            });
+            
+            savedQuotesForOrder = savedQuotesForOrder.filter(q => q.Ma_BG !== maBG);
+            filterQuotePopup();
+        } catch(e) {
+            console.error(e);
+            alert("Lỗi khi xóa!");
+            if(btn) { btn.innerText = 'XÓA'; btn.disabled = false; }
+        }
+    };
+
+    window.loadQuoteData = function(maBG) {
+        const q = savedQuotesForOrder.find(x => x.Ma_BG === maBG);
+        if(!q) return;
+
+        cart = []; // Reset giỏ hàng hiện tại
+
+        // Nạp thông tin khách hàng
+        document.getElementById("tenKhach").value = q.Ten_Khach_Hang || "";
+        document.getElementById("sdt").value = q.So_Dien_Thoai || "";
+        document.getElementById("diaChi").value = q.Dia_Chi || "";
+
+        // Nạp sản phẩm vào giỏ hàng (Không kèm quy cách, ghi chú vào Tên_Hang để bảo toàn logic check kho)
+        q.Items.forEach(i => {
+            cart.push({
+                sp: i.Ten_Hang,
+                sl: i.So_Luong,
+                dg: i.Don_Gia,
+                dvt: i.Don_Vi_Tinh || "Cái",
+                ma_sp: i.Ma_SP || "",
+                ma_vt: i.Ma_VT || ""
+            });
+        });
+
+        // Cập nhật giao diện
+        render();
+        Swal.close();
+        
+        Swal.fire({
+            toast: true, position: 'bottom-end', icon: 'success', 
+            title: `<span style="font-size:14px;">Đã tải dữ liệu báo giá thành công!</span>`, 
+            timer: 2000, showConfirmButton: false
+        });
+    };
 
     napDuLieuTrang();
   </script>

@@ -15,9 +15,9 @@
     /* PC: Chừa lề sẵn 250px để trang KHÔNG bị giật khi load. Thêm padding-right 370px để KHÔNG đè lên AI Chat Box */
     .main-content { flex: 1; margin-left: 250px; transition: 0.3s; padding: 30px; padding-right: 370px; min-width: 0; }
 
-    /* Khung Giao Diện Chung - Làm đẹp form nhập */
-    .sacmau-wrapper { max-width: 1000px; margin: 0; /* Canh trái form để tận dụng không gian */ }
-    .sacmau-container { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+    /* Khung Giao Diện Chung - Đã giảm 10% chiều ngang (còn 1125px) và canh giữa toàn bộ */
+    .sacmau-wrapper { max-width: 1125px; margin: 0 auto; width: 100%; }
+    .sacmau-container { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 30px; }
     
     .sacmau-input { 
       width: 100%; padding: 10px 14px; border: 1px solid #dce1e6; border-radius: 8px; box-sizing: border-box; 
@@ -39,11 +39,11 @@
     .col-xs { flex: 1; }
     .col-btn { flex: 1; display: flex; align-items: flex-end; }
 
-    /* Bảng dữ liệu */
-    .table-wrapper { max-height: 250px; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 10px; margin-top: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+    /* Bảng dữ liệu - ĐÃ SỬA: Loại bỏ max-height và cuộn dọc để hiển thị toàn bộ */
+    .table-wrapper { border: 1px solid #edf2f7; border-radius: 10px; margin-top: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto; }
     .sacmau-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 600px; }
-    .sacmau-table th { background: #2D5A27; color: white; padding: 12px; position: sticky; top: 0; z-index: 10; font-weight: 600; }
-    .sacmau-table td { padding: 12px; border-bottom: 1px solid #edf2f7; vertical-align: top; }
+    .sacmau-table th { background: #2D5A27; color: white; padding: 12px; position: sticky; top: 0; z-index: 10; font-weight: 600; text-align: left; }
+    .sacmau-table td { padding: 12px; border-bottom: 1px solid #edf2f7; vertical-align: middle; }
     
     /* Vùng tổng tiền */
     .sacmau-payment-box { display: flex; justify-content: flex-end; padding: 20px; background: #fff3cd; border-radius: 10px; margin-top: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
@@ -60,20 +60,9 @@
     .sacmau-btn-print { flex:1; padding:15px; background: linear-gradient(135deg, #2D5A27, #1e3f1a); color:white; border:none; border-radius:10px; font-size: 16px; font-weight:bold; cursor:pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(45, 90, 39, 0.3); }
     .sacmau-btn-print:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(45, 90, 39, 0.4); }
 
-    /* ========================================================
-       MOBILE RESPONSIVE
-       ======================================================== */
-    @media (max-width: 768px) {
-      .main-content { margin-left: 0 !important; padding: 15px !important; padding-top: 60px !important; }
-      .sacmau-row { flex-direction: column; gap: 12px; }
-      .col-lg, .col-md, .col-sm, .col-xs, .col-btn { flex: none; width: 100%; }
-      .sacmau-btn-add { height: 45px !important; font-size: 15px; }
-      .table-wrapper { overflow-x: auto; }
-    }
-
-    /* AI CHAT BOX CSS */
-    .ai-chat-container { position: fixed; bottom: 25px; right: 25px; width: 320px; background: white; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden; z-index: 9999; border: 1px solid #e2e8f0; transition: 0.3s; }
-    .ai-chat-header { background: linear-gradient(to right, #2D5A27, #3a7532); color: white; padding: 12px 18px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    /* AI CHAT BOX CSS - Thu gọn thành icon trên cả PC và Mobile */
+    .ai-chat-container { position: fixed; background: white; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden; z-index: 9999; border: 1px solid #e2e8f0; transition: 0.3s; }
+    .ai-chat-header { background: linear-gradient(to right, #2D5A27, #3a7532); color: white; padding: 12px 18px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.3s; }
     .ai-chat-body { display: flex; flex-direction: column; }
     .ai-messages { height: 300px; overflow-y: auto; padding: 15px; background: #f8fafc; font-size: 13.5px; display: flex; flex-direction: column; gap: 10px; }
     .ai-msg-bot { align-self: flex-start; background: #e2e8f0; color: #333; padding: 10px 14px; border-radius: 18px 18px 18px 4px; max-width: 85%; line-height: 1.4; }
@@ -82,6 +71,49 @@
     .ai-input { flex: 1; border: 1px solid #cbd5e0; border-radius: 20px; padding: 10px 15px; outline: none; font-size: 13px; transition: 0.2s; }
     .ai-input:focus { border-color: #2D5A27; }
     .ai-btn { background: #FF8C00; color: white; border: none; border-radius: 50%; width: 38px; height: 38px; margin-left: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 16px; }
+
+    #ai-container:not(.opened) { width: 55px; height: 55px; border-radius: 50%; right: 25px; bottom: 25px; }
+    #ai-container:not(.opened) .ai-chat-header { height: 100%; justify-content: center; padding: 0; background: #FF8C00; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    #ai-container:not(.opened) .ai-header-text, #ai-container:not(.opened) #ai-toggle-icon, #ai-container:not(.opened) .ai-chat-body { display: none !important; }
+    #ai-container:not(.opened) .ai-robot-icon { font-size: 26px; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; }
+    #ai-container.opened { width: 320px; right: 25px; bottom: 25px; }
+
+    /* ========================================================
+       MOBILE RESPONSIVE
+       ======================================================== */
+    @media (max-width: 768px) {
+      .main-content { margin-left: 0 !important; padding: 15px !important; padding-top: 60px !important; }
+      .sacmau-row { flex-direction: column; gap: 12px; }
+      .col-lg, .col-md, .col-sm, .col-xs, .col-btn { flex: none; width: 100%; }
+      .sacmau-btn-add { height: 45px !important; font-size: 15px; }
+      .table-wrapper { overflow-x: hidden; }
+
+      /* BẢNG DỮ LIỆU CHUYỂN THÀNH THẺ (CARD) TRÊN MOBILE - SỬA LỖI TRÀN LỀ DỨT ĐIỂM HOÀN TOÀN */
+      .sacmau-table { min-width: auto !important; }
+      .sacmau-table, .sacmau-table thead, .sacmau-table tbody, .sacmau-table th, .sacmau-table td, .sacmau-table tr { display: block; width: 100%; box-sizing: border-box; }
+      .sacmau-table thead { display: none; }
+      .sacmau-table tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 0; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); overflow: hidden; }
+      
+      /* ĐÃ SỬA CHUẨN: Chuyển display thành block !important và tăng lề để ngắt dòng văn bản tuyệt đối */
+      .sacmau-table td { 
+          border: none; padding: 8px 10px 8px 120px !important; position: relative; min-height: 35px; 
+          display: block !important; text-align: left !important; width: 100% !important; box-sizing: border-box !important; 
+      }
+      .sacmau-table td:before { 
+          position: absolute; left: 10px; top: 10px; width: 100px; font-weight: bold; color: #64748b; 
+          font-size: 11px; text-transform: uppercase; content: attr(data-label); text-align: left; 
+          display: block; line-height: 1.4; 
+      }
+      .sacmau-table td > button { margin-right: 5px; margin-bottom: 5px; display: inline-block; }
+      
+      /* Ép các khối div và text con rớt dòng tự động, không đẩy phình hộp viền xám */
+      .sacmau-table td > div { display: block !important; width: 100% !important; box-sizing: border-box !important; overflow-wrap: break-word !important; word-wrap: break-word !important; word-break: break-word !important; white-space: normal !important; }
+      .sacmau-table td b, .sacmau-table td span { overflow-wrap: break-word !important; word-wrap: break-word !important; word-break: break-word !important; white-space: normal !important; }
+
+      /* Thu gọn icon trên mobile */
+      #ai-container:not(.opened) { right: 15px; bottom: 15px; }
+      #ai-container.opened { right: 10px; bottom: 10px; width: calc(100% - 20px); }
+    }
 
     /* ========================================================
        BẢN IN BÁO GIÁ HIỆN ĐẠI (KHÔNG GIỐNG HÓA ĐƠN)
@@ -116,9 +148,12 @@
 </head>
 <body>
 
-  <div class="ai-chat-container no-print">
+  <div class="ai-chat-container no-print opened" id="ai-container">
     <div class="ai-chat-header" onclick="toggleChat()">
-      <span style="display:flex; align-items:center; gap:8px;">🤖 <span>Trợ lý ảo Sắc Màu</span></span>
+      <span style="display:flex; align-items:center; gap:8px;">
+        <span class="ai-robot-icon">🤖</span> 
+        <span class="ai-header-text">Trợ lý ảo Sắc Màu</span>
+      </span>
       <span id="ai-toggle-icon">▼</span>
     </div>
     <div class="ai-chat-body" id="ai-chat-body">
@@ -135,15 +170,16 @@
   <div class="main-content">
     <div class="sacmau-wrapper">
       <div class="sacmau-container no-print">
-        <h2 style="color: #2D5A27; margin-bottom: 25px; margin-top: 0; font-size: 24px; display:flex; align-items:center; gap:10px;">
-          📋 LẬP BÁO GIÁ SẢN PHẨM
+        <h2 style="color: #2D5A27; margin-bottom: 25px; margin-top: 0; font-size: 24px; display:flex; align-items:center; flex-wrap:wrap; gap:10px;">
+          📋 LẬP BÁO GIÁ
+          <button onclick="resetToNew()" class="no-print" style="margin-left: auto; padding:8px 15px; font-weight:bold; border-radius:8px; border:1px solid #3498db; background:#3498db; color:white; font-size: 13px; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s;">Tạo mới +</button>
         </h2>
 
         <div class="form-section">
           <div class="sacmau-row">
             <div class="col-md">
-              <label class="sacmau-label">Tên khách hàng / Đơn vị</label>
-              <input id="tenKhach" list="khachList" class="sacmau-input" placeholder="Nhập tên khách hàng..." oninput="autoFillKhach(this.value)">
+              <label class="sacmau-label">Tên khách hàng / Đơn vị *</label>
+              <input id="tenKhach" list="khachList" class="sacmau-input" placeholder="Nhập tên khách hàng bắt buộc..." oninput="autoFillKhach(this.value)">
               <datalist id="khachList"></datalist>
             </div>
             <div class="col-xs">
@@ -234,6 +270,30 @@
           <button class="sacmau-btn-print" onclick="inHoaDon()">🖨️ TẠO BẢN IN BÁO GIÁ CHO KHÁCH</button>
         </div>
       </div>
+      
+      <div class="sacmau-container no-print" style="margin-top: 30px;">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap:10px;">
+            <h3 style="color: #2D5A27; margin: 0;">📂 DANH SÁCH ĐÃ LƯU</h3>
+            <input type="text" id="searchSavedQuotes" class="sacmau-input" placeholder="🔍 Tìm kiếm khách hàng, sản phẩm..." style="max-width: 300px;" onkeyup="filterSavedQuotes()">
+        </div>
+        <div class="table-wrapper">
+          <table class="sacmau-table">
+            <thead>
+              <tr>
+                <th style="width: 70px; text-align: center;">Mã QR</th>
+                <th style="width: 130px;">Ngày lưu</th>
+                <th style="width: 160px;">Khách hàng</th>
+                <th>Chi tiết sản phẩm</th>
+                <th style="width: 120px; text-align: right;">Tổng tiền</th>
+                <th style="width: 100px; text-align: center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="saved-quotes-body">
+                <tr><td colspan="6" style="text-align:center; color:#718096; padding: 20px;">Đang tải dữ liệu...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div id="vung-in-sacmau">
         <div class="print-header">
@@ -288,6 +348,30 @@
 
   <script>
     var cart = []; var dsK = []; var dsS = []; var dsSP_Goc = [];
+    var currentMaBG = null; 
+    var savedQuotes = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // AI Chat mặc định thu gọn hiển thị icon nổi
+        document.getElementById('ai-chat-body').style.display = 'none';
+        document.getElementById('ai-container').classList.remove('opened');
+        
+        napDuLieuTrang();
+    });
+
+    window.resetToNew = function() {
+        currentMaBG = null;
+        cart = [];
+        document.getElementById("tenKhach").value = "";
+        document.getElementById("sdt").value = "";
+        document.getElementById("diaChi").value = "";
+        ["sanPham","dvt","gia","sl","tmpTotal","quyCach","ghiChu"].forEach(id => document.getElementById(id).value = (id=="sl"||id=="tmpTotal"?"0":"")); 
+        render();
+        Swal.fire({
+            title: `<span style="font-size:14px; text-align:center; display:block;">Đã chuyển sang tạo mới báo giá</span>`, 
+            toast: true, position: 'bottom', icon: 'success', timer: 1500, showConfirmButton: false
+        });
+    };
 
     async function napDuLieuTrang() {
       const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
@@ -299,12 +383,166 @@
         ]);
         dsK = await resK.json(); 
         dsS = await resS.json();
-        
         dsSP_Goc = await resSPGoc.json() || []; 
         
         document.getElementById("khachList").innerHTML = dsK.map(k => `<option value="${k.Ten_Khach_Hang}">`).join("");
         document.getElementById("spList").innerHTML = dsS.map(s => `<option value="${s.Ten_Hang}">`).join("");
+
+        loadSavedQuotes(); 
       } catch (e) { console.error("Lỗi nạp danh mục:", e); }
+    }
+
+    async function loadSavedQuotes() {
+        const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
+        try {
+            const res = await fetch(`${SB_CONFIG.URL}/rest/v1/Tu_Van?select=*&order=id.desc`, { headers: h });
+            const data = await res.json();
+            
+            const groups = {};
+            data.forEach(item => {
+                if(!item.Ma_BG) return; 
+                if(!groups[item.Ma_BG]) {
+                    groups[item.Ma_BG] = {
+                        Ma_BG: item.Ma_BG,
+                        Ngay_Gio: item.Ngay_Gio,
+                        Ten_Khach_Hang: item.Ten_Khach_Hang,
+                        So_Dien_Thoai: item.So_Dien_Thoai,
+                        Dia_Chi: item.Dia_Chi,
+                        Tong_Tien: 0,
+                        Items: []
+                    };
+                }
+                groups[item.Ma_BG].Tong_Tien += (item.Thanh_Tien || 0);
+                groups[item.Ma_BG].Items.push(item);
+            });
+            
+            savedQuotes = Object.values(groups);
+            renderSavedQuotes();
+        } catch(e) { console.error("Lỗi tải báo giá đã lưu", e); }
+    }
+
+    window.filterSavedQuotes = function() {
+        const query = document.getElementById("searchSavedQuotes").value.toLowerCase().trim();
+        if(!query) {
+            renderSavedQuotes(savedQuotes);
+            return;
+        }
+        const filtered = savedQuotes.filter(q => {
+            const ma = (q.Ma_BG || "").toLowerCase();
+            const kh = (q.Ten_Khach_Hang || "").toLowerCase();
+            const sdt = (q.So_Dien_Thoai || "").toLowerCase();
+            const itemsMatch = q.Items.some(i => (i.Ten_Hang || "").toLowerCase().includes(query));
+            return ma.includes(query) || kh.includes(query) || sdt.includes(query) || itemsMatch;
+        });
+        renderSavedQuotes(filtered);
+    }
+
+    function renderSavedQuotes(dataToRender = savedQuotes) {
+        const tbody = document.getElementById("saved-quotes-body");
+        if(dataToRender.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#718096; padding: 20px;">Không tìm thấy báo giá nào.</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = dataToRender.map(q => {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(q.Ma_BG)}`;
+            
+            const itemsHtml = q.Items.map(i => `
+                <div style="font-size:13px; border-bottom:1px dashed #e2e8f0; padding-bottom:6px; margin-bottom:6px; width: 100%; box-sizing: border-box; overflow-wrap: break-word; word-break: break-word;">
+                    <b style="color:#2c3e50;">${i.Ten_Hang}</b> (x${i.So_Luong})<br>
+                    <span style="color:#718096;">Đơn giá: ${i.Don_Gia.toLocaleString('vi-VN')}đ ➔ <span style="color:#e53e3e; font-weight:bold;">${(i.So_Luong * i.Don_Gia).toLocaleString('vi-VN')}đ</span></span>
+                </div>
+            `).join('');
+
+            return `
+            <tr>
+                <td data-label="Mã QR" style="text-align:center; vertical-align:middle;">
+                    <img src="${qrUrl}" style="width:60px; height:60px; cursor:pointer; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.05);" onclick="copyMaBG('${q.Ma_BG}')" title="Nhấn để Copy Mã">
+                </td>
+                <td data-label="Ngày lưu" style="vertical-align:middle;">${q.Ngay_Gio || ''}</td>
+                <td data-label="Khách hàng">
+                    <div style="display:block; width: 100%; box-sizing: border-box; overflow-wrap: break-word; word-break: break-word;">
+                        <b style="color:#2c3e50; display:block;">${q.Ten_Khach_Hang || 'Khách lẻ'}</b>
+                        <small style="color:#718096; margin-top:2px; display:block;">${q.So_Dien_Thoai || ''}</small>
+                    </div>
+                </td>
+                <td data-label="Sản phẩm">
+                    <div style="padding-right:5px; width: 100%; box-sizing: border-box; overflow-wrap: break-word; word-break: break-word;">${itemsHtml}</div>
+                </td>
+                <td data-label="Tổng tiền" style="color:#e53e3e; font-weight:bold; text-align:right; vertical-align:middle; font-size:15px;">${q.Tong_Tien.toLocaleString('vi-VN')}đ</td>
+                <td data-label="Thao tác" style="text-align:center; vertical-align:middle;">
+                    <button onclick="editQuote('${q.Ma_BG}')" style="background:#3498db; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; margin-right:5px; transition:0.2s;" title="Sửa báo giá">✏️</button>
+                    <button onclick="deleteQuote('${q.Ma_BG}')" style="background:#e74c3c; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; transition:0.2s;" title="Xóa báo giá">🗑️</button>
+                </td>
+            </tr>
+        `}).join("");
+    }
+
+    window.copyMaBG = function(ma) {
+        navigator.clipboard.writeText(ma).then(() => {
+            Swal.fire({
+                title: `<span style="font-size:14px; text-align:center; display:block;">Đã copy mã: ${ma}</span>`,
+                icon: 'success',
+                toast: true,
+                position: 'bottom',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        });
+    }
+
+    function editQuote(maBG) {
+        const q = savedQuotes.find(x => x.Ma_BG === maBG);
+        if(!q) return;
+
+        document.getElementById("tenKhach").value = q.Ten_Khach_Hang || "";
+        document.getElementById("sdt").value = q.So_Dien_Thoai || "";
+        document.getElementById("diaChi").value = q.Dia_Chi || "";
+
+        cart = q.Items.map(i => ({
+            sp: i.Ten_Hang,
+            sl: i.So_Luong,
+            dg: i.Don_Gia,
+            dvt: i.Don_Vi_Tinh,
+            qc: i.Chi_Tiet,
+            gc: i.Ghi_Chu,
+            ma_sp: i.Ma_SP,
+            ma_vt: i.Ma_VT
+        }));
+
+        currentMaBG = maBG;
+        render();
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        Swal.fire({
+            title: `<span style="font-size:14px; text-align:center; display:block;">Đã tải dữ liệu báo giá để tiếp tục sửa</span>`, 
+            toast: true, position: 'bottom', icon: 'info', timer: 2000, showConfirmButton: false
+        });
+    }
+
+    async function deleteQuote(maBG) {
+        if(!confirm("Bạn có chắc chắn muốn xóa báo giá này không?")) return;
+        try {
+            const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}` };
+            await fetch(`${SB_CONFIG.URL}/rest/v1/Tu_Van?Ma_BG=eq.${encodeURIComponent(maBG)}`, {
+                method: 'DELETE', headers: h
+            });
+            if(currentMaBG === maBG) {
+                currentMaBG = null; 
+                cart = [];
+                render();
+                document.getElementById("tenKhach").value = "";
+                document.getElementById("sdt").value = "";
+                document.getElementById("diaChi").value = "";
+            }
+            loadSavedQuotes();
+            Swal.fire({
+                title: `<span style="font-size:14px; text-align:center; display:block;">Xóa báo giá thành công!</span>`, 
+                toast: true, position: 'bottom', icon: 'success', timer: 1500, showConfirmButton: false
+            });
+        } catch(e) {
+            console.error(e);
+            alert("Lỗi khi xóa!");
+        }
     }
 
     function autoFillKhach(v) {
@@ -343,16 +581,18 @@
     function render() { 
       document.getElementById("cart-body").innerHTML = cart.map((i, idx) => `
         <tr>
-          <td>
-            <b style="color:#2d3748; font-size:15px;">${i.sp}</b>
-            ${i.qc ? `<br><span style="color:#718096; font-size:13px; margin-top:4px; display:inline-block;">↳ Quy cách: ${i.qc}</span>` : ''}
-            ${i.gc ? `<br><span style="color:#718096; font-size:13px;">↳ Ghi chú: ${i.gc}</span>` : ''}
+          <td data-label="Mô tả Sản phẩm">
+            <div style="display:block; width:100%; box-sizing:border-box; min-width: 0;">
+                <b style="color:#2d3748; font-size:15px; overflow-wrap: break-word; word-break: break-word; white-space: normal;">${i.sp}</b>
+                ${i.qc ? `<span style="color:#718096; font-size:13px; display:block; margin-top:4px; overflow-wrap: break-word; word-break: break-word; white-space: normal;">↳ Quy cách: ${i.qc}</span>` : ''}
+                ${i.gc ? `<span style="color:#718096; font-size:13px; display:block; overflow-wrap: break-word; word-break: break-word; white-space: normal;">↳ Ghi chú: ${i.gc}</span>` : ''}
+            </div>
           </td>
-          <td style="text-align:center; vertical-align:middle;">${i.dvt}</td>
-          <td style="text-align:center; vertical-align:middle; font-weight:bold;">${i.sl.toLocaleString()}</td>
-          <td style="text-align:right; vertical-align:middle;">${i.dg.toLocaleString()}</td>
-          <td style="text-align:right; font-weight:bold; color:#e53e3e; vertical-align:middle;">${(i.sl*i.dg).toLocaleString()}</td>
-          <td onclick="cart.splice(${idx},1);render()" style="color:#e53e3e; cursor:pointer; text-align:center; font-weight:bold; vertical-align:middle; font-size:16px;">✕</td>
+          <td data-label="ĐVT" style="text-align:center; vertical-align:middle;">${i.dvt}</td>
+          <td data-label="Số lượng" style="text-align:center; vertical-align:middle; font-weight:bold;">${i.sl.toLocaleString()}</td>
+          <td data-label="Đơn giá" style="text-align:right; vertical-align:middle;">${i.dg.toLocaleString()}</td>
+          <td data-label="Thành tiền" style="text-align:right; font-weight:bold; color:#e53e3e; vertical-align:middle;">${(i.sl*i.dg).toLocaleString()}</td>
+          <td data-label="Xóa" onclick="cart.splice(${idx},1);render()" style="color:#e53e3e; cursor:pointer; text-align:center; font-weight:bold; vertical-align:middle; font-size:16px;">✕</td>
         </tr>`).join(""); 
       calc(); 
     }
@@ -362,58 +602,120 @@
       document.getElementById("tong").innerText = t.toLocaleString("vi-VN"); 
     }
 
-    function inHoaDon() {
+    function generateMaBG() {
+        let d = new Date();
+        return `SMBG-${("0"+d.getDate()).slice(-2)}${("0"+(d.getMonth() + 1)).slice(-2)}${d.getFullYear()}${("0"+d.getHours()).slice(-2)}${("0"+d.getMinutes()).slice(-2)}${("0"+d.getSeconds()).slice(-2)}`;
+    }
+
+    async function inHoaDon() {
       if (cart.length === 0) return Swal.fire('Lỗi', 'Chưa có sản phẩm nào trong báo giá!', 'warning');
       
-      const tenKhach = document.getElementById("tenKhach").value || "Khách lẻ";
+      const tenKhach = document.getElementById("tenKhach").value.trim();
+      if (!tenKhach) return Swal.fire('Lỗi', 'Vui lòng nhập tên khách hàng bắt buộc!', 'warning');
+
+      const soDienThoai = document.getElementById("sdt").value || "";
+      const diaChiKhach = document.getElementById("diaChi").value || "";
+
       document.getElementById("p-ten").innerText = tenKhach;
-      document.getElementById("p-sdt").innerText = document.getElementById("sdt").value || "---";
-      document.getElementById("p-diachi").innerText = document.getElementById("diaChi").value || "---";
+      document.getElementById("p-sdt").innerText = soDienThoai || "---";
+      document.getElementById("p-diachi").innerText = diaChiKhach || "---";
       
       let d = new Date();
-      let dStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-      document.getElementById("p-ngay").innerText = typeof formatDateTimeVN === "function" ? formatDateTimeVN() : dStr;
+      let dStr = `${("0"+d.getDate()).slice(-2)}/${("0"+(d.getMonth() + 1)).slice(-2)}/${d.getFullYear()} ${("0"+d.getHours()).slice(-2)}:${("0"+d.getMinutes()).slice(-2)}`;
+      let ngayGioLuu = typeof formatDateTimeVN === "function" ? formatDateTimeVN() : dStr;
+      
+      document.getElementById("p-ngay").innerText = ngayGioLuu;
       
       let h = ""; 
-      let spNamesArr = []; // Mảng chứa tên các SP để phục vụ thông báo
-      cart.forEach(i => { 
-        spNamesArr.push(i.sp);
-        h += `<tr>
-                <td>
-                  <b style="font-size:15px;">${i.sp}</b>
-                  ${i.qc ? `<br><span style="color:#4a5568; font-size:13px; font-style:italic;">- Quy cách: ${i.qc}</span>` : ''}
-                  ${i.gc ? `<br><span style="color:#4a5568; font-size:13px; font-style:italic;">- Ghi chú: ${i.gc}</span>` : ''}
-                </td>
-                <td style="text-align:center;">${i.dvt}</td>
-                <td style="text-align:center;">${i.sl.toLocaleString()}</td>
-                <td style="text-align:right;">${i.dg.toLocaleString()}</td>
-                <td style="text-align:right; font-weight:bold;">${(i.sl*i.dg).toLocaleString()}</td>
-              </tr>`; 
+      let spNamesArr = []; 
+
+      let finalMaBG = currentMaBG || generateMaBG();
+
+      let payloadTuVan = cart.map(i => {
+          spNamesArr.push(i.sp);
+
+          let finalMaSP = i.ma_sp && i.ma_sp.startsWith("SMP") ? i.ma_sp : "";
+          let finalMaVT = i.ma_vt && i.ma_vt.startsWith("SMK") ? i.ma_vt : "";
+
+          if (!finalMaSP && i.ma_vt && i.ma_vt.startsWith("SMP")) finalMaSP = i.ma_vt;
+          if (!finalMaVT && i.ma_sp && i.ma_sp.startsWith("SMK")) finalMaVT = i.ma_sp;
+
+          h += `<tr>
+                  <td>
+                    <b style="font-size:15px;">${i.sp}</b>
+                    ${i.qc ? `<br><span style="color:#4a5568; font-size:13px; font-style:italic;">- Quy cách: ${i.qc}</span>` : ''}
+                    ${i.gc ? `<br><span style="color:#4a5568; font-size:13px; font-style:italic;">- Ghi chú: ${i.gc}</span>` : ''}
+                  </td>
+                  <td style="text-align:center;">${i.dvt}</td>
+                  <td style="text-align:center;">${i.sl.toLocaleString()}</td>
+                  <td style="text-align:right;">${i.dg.toLocaleString()}</td>
+                  <td style="text-align:right; font-weight:bold;">${(i.sl*i.dg).toLocaleString()}</td>
+                </tr>`; 
+
+          return {
+              Ma_BG: finalMaBG,
+              Ngay_Gio: ngayGioLuu,
+              Ten_Khach_Hang: tenKhach,
+              Dia_Chi: diaChiKhach,
+              So_Dien_Thoai: soDienThoai,
+              Ten_Hang: i.sp,
+              So_Luong: i.sl,
+              Don_Gia: i.dg,
+              Don_Vi_Tinh: i.dvt,
+              Thanh_Tien: i.sl * i.dg,
+              Chi_Tiet: i.qc,
+              Ghi_Chu: i.gc,
+              Ma_SP: finalMaSP || null,
+              Ma_VT: finalMaVT || null
+          };
       });
+
       document.getElementById("p-body").innerHTML = h;
       
       let t = cart.reduce((s, i) => s + (i.sl * i.dg), 0);
       document.getElementById("p-tong-in").innerText = t.toLocaleString('vi-VN') + " VNĐ";
+
+      try {
+          const hd = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+          
+          if (currentMaBG) {
+              await fetch(`${SB_CONFIG.URL}/rest/v1/Tu_Van?Ma_BG=eq.${encodeURIComponent(currentMaBG)}`, {
+                  method: 'DELETE', headers: hd
+              });
+          }
+
+          await fetch(`${SB_CONFIG.URL}/rest/v1/Tu_Van`, {
+              method: 'POST', headers: hd, body: JSON.stringify(payloadTuVan)
+          });
+      } catch (err) {
+          console.error("Lỗi khi lưu dữ liệu sang bảng Tu_Van:", err);
+      }
       
-      // LOGIC GỬI THÔNG BÁO TỰ ĐỘNG
       try {
         const tbTitle = "BÁO GIÁ";
         const dsSanPham = spNamesArr.join(", ");
         const tongTienStr = t.toLocaleString('vi-VN') + "đ";
         const tbMsg = `Hệ thống vừa lên báo giá cho khách ${tenKhach} với sản phẩm [${dsSanPham}]. Tổng số tiền là ${tongTienStr}.`;
         
-        // Gửi thông báo (Để targetRole trống để thông báo chung, Link trống theo yêu cầu)
         guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", ""); 
       } catch (err) {
         console.error("Lỗi gửi thông báo báo giá:", err);
       }
 
       window.print();
+
+      setTimeout(() => {
+          cart = [];
+          currentMaBG = null;
+          document.getElementById("tenKhach").value = "";
+          document.getElementById("sdt").value = "";
+          document.getElementById("diaChi").value = "";
+          ["sanPham","dvt","gia","sl","tmpTotal","quyCach","ghiChu"].forEach(id => document.getElementById(id).value = (id=="sl"||id=="tmpTotal"?"0":"")); 
+          render();
+          loadSavedQuotes(); 
+      }, 1000);
     }
 
-    /* =========================================================
-       HÀM XỬ LÝ DROPDOWN SẢN PHẨM CÓ HÌNH ẢNH
-       ========================================================= */
     function showSPSuggestions(v) {
       const dropdown = document.getElementById("spDropdown");
       const keyword = (v || "").toLowerCase().trim();
@@ -477,18 +779,18 @@
       document.getElementById("spDropdown").style.display = "none";
     }
 
-    /* =========================================================
-       HÀM XỬ LÝ CHAT BOX AI TÌM KIẾM GIÁ
-       ========================================================= */
     function toggleChat() {
+      const container = document.getElementById('ai-container');
       const body = document.getElementById('ai-chat-body');
       const icon = document.getElementById('ai-toggle-icon');
       if(body.style.display === 'none') { 
         body.style.display = 'flex'; 
         icon.innerText = '▼'; 
+        container.classList.add('opened');
       } else { 
         body.style.display = 'none'; 
         icon.innerText = '▲'; 
+        container.classList.remove('opened');
       }
     }
 
@@ -579,8 +881,6 @@
           msgBox.scrollTop = msgBox.scrollHeight;
       }
     }
-
-    napDuLieuTrang();
   </script>
 </body>
 </html>

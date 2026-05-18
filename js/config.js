@@ -96,11 +96,13 @@ async function guiThongBaoSacMau(tieude, noidung, targetRole = "", targetLink = 
         .sm-noti-popup { display: none; position: absolute; top: 55px; right: 0; width: 340px; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 10005; color: #333; text-align: left; overflow: hidden; border: 1px solid #f0f0f0; }
         .noti-header { padding: 12px 15px; font-weight: bold; font-size: 14px; background: #fdfdfd; border-bottom: 1px solid #eee; color: #2D5A27; display: flex; justify-content: space-between; align-items: center; }
         .noti-list { max-height: 380px; overflow-y: auto; }
-        .noti-item { padding: 12px 15px; border-bottom: 1px solid #f4f4f4; cursor: pointer; transition: 0.2s; }
+        .noti-item { padding: 12px 15px; border-bottom: 1px solid #f4f4f4; cursor: pointer; transition: 0.2s; position: relative; }
         .noti-item:hover { background: #fafafa; }
         .noti-item.unread { background: #f4f9f4; border-left: 4px solid #27ae60; }
-        .noti-title { font-weight: bold; font-size: 13px; display: block; color: #2c3e50; }
+        .noti-title { font-weight: bold; font-size: 13px; display: block; color: #2c3e50; padding-right: 20px; }
         .noti-time { font-size: 11px; color: #95a5a6; margin-top: 5px; display: block; }
+        .btn-delete-single-noti { position: absolute; top: 12px; right: 12px; font-size: 14px; color: #e74c3c; opacity: 0.6; transition: 0.2s; background: transparent; border: none; outline: none; padding: 0; margin: 0; cursor: pointer; }
+        .btn-delete-single-noti:hover { opacity: 1; transform: scale(1.2); }
         @media print { .sm-noti-wrapper { display: none !important; } }
         @media (max-width: 768px) { .sm-noti-wrapper { top: 10px; right: 15px; } .sm-noti-popup { width: 300px; } }
     `;
@@ -198,6 +200,7 @@ window.loadNotifications = async function() {
             return `
             <div class="noti-item ${isRead ? '' : 'unread'}" onclick="markAsRead(${n.id}, '${redirectLink}', '${currentReaders}')">
                 <span class="noti-title">${n.tieu_de}</span>
+                <button class="btn-delete-single-noti" onclick="deleteSingleNoti(event, ${n.id})" title="Xóa thông báo này">✕</button>
                 <div style="font-size:12px; margin:4px 0; color:#555;">${n.noi_dung}</div>
                 <span class="noti-time">${new Date(n.created_at).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</span>
             </div>
@@ -293,5 +296,35 @@ window.deleteNotiByDate = async function() {
             console.error(e);
             Swal.fire('Lỗi', 'Không thể xóa thông báo', 'error');
         }
+    }
+};
+
+// --- TÍNH NĂNG MỚI: XÓA TỪNG THÔNG BÁO BẰNG SWEETALERT2 ---
+window.deleteSingleNoti = async function(event, id) {
+    event.stopPropagation(); // Ngăn sự kiện click cha để không bị mở link hay đánh dấu đã đọc
+    
+    const result = await Swal.fire({
+        title: 'Xóa thông báo',
+        text: "Bạn có chắc chắn muốn xóa thông báo này?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e74c3c',
+        cancelButtonColor: '#95a5a6',
+        confirmButtonText: 'XÓA',
+        cancelButtonText: 'HỦY'
+    });
+
+    if (!result.isConfirmed) return;
+
+    const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+    try {
+        await fetch(`${window.SB_CONFIG.URL}/rest/v1/nhatky_thongbao?id=eq.${id}`, {
+            method: 'DELETE',
+            headers: h
+        });
+        // Tải lại list sau khi xóa thành công mà không đóng Popup
+        loadNotifications();
+    } catch(e) {
+        console.error("Lỗi khi xóa thông báo:", e);
     }
 };

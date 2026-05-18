@@ -6,6 +6,7 @@
   <title>Báo cáo Thu Chi - Sắc Màu</title>
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="js/config.js"></script>
   <script src="js/auth_guard.js"></script>
   <script src="js/sidebar_loader.js"></script> 
@@ -55,7 +56,7 @@
 
         /* Dàn hàng tiêu đề và bộ lọc ngày */
         .f15-header-row { flex-direction: column !important; align-items: flex-start !important; gap: 12px; margin-bottom: 15px !important; }
-        .f15-header-row > div { width: 100%; display: flex; gap: 10px; flex-direction: row; }
+        .f15-header-row > div { width: 100%; display: flex; gap: 10px; flex-direction: row; flex-wrap: wrap; }
         #f15-date-picker, #f15-filter-type { flex: 1; box-sizing: border-box; padding: 10px; font-size: 14px; border: 1px solid #2D5A27; }
 
         /* Dashboard: 2 cột, các thẻ chính chiếm 100% */
@@ -110,7 +111,7 @@
     
     <div class="f15-header-row" style="display: flex; justify-content: flex-start; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
       <h2 style="margin:0; color: var(--f15-primary);">💰 BÁO CÁO TÀI CHÍNH</h2>
-      <div style="display: flex; gap: 10px; align-items: center;">
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <select id="f15-filter-type" onchange="loadF15Data()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; outline: none; font-weight: bold; cursor: pointer; color: #2D5A27;">
               <option value="day">Theo Ngày</option>
               <option value="week">Theo Tuần</option>
@@ -119,6 +120,7 @@
               <option value="year">Theo Năm</option>
           </select>
           <input type="date" id="f15-date-picker" onchange="loadF15Data()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; outline: none; font-weight: bold; cursor: pointer;">
+          <button onclick="openChartPopup()" class="no-print" style="padding: 8px 15px; background: #2980b9; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: max-content;"><span style="font-size: 14px;">📊</span> TẠO BIỂU ĐỒ</button>
       </div>
     </div>
 
@@ -335,6 +337,134 @@ async function showF15Detail(maDon, noiDung) {
     });
   } catch (e) { Swal.fire('Lỗi', 'Không thể lấy chi tiết đơn hàng', 'error'); }
 }
+
+// =========================================================================
+// CHỨC NĂNG BIỂU ĐỒ THU CHI THEO THÁNG
+// =========================================================================
+let myChart = null;
+
+window.openChartPopup = async function() {
+    const currentMonth = new Date().toISOString().slice(0, 7); 
+    Swal.fire({
+        title: 'BIỂU ĐỒ THU CHI THEO THÁNG',
+        html: `
+            <div style="margin-bottom: 15px; text-align: center;">
+                <label style="font-weight: bold; margin-right: 10px; color: #2c3e50;">Chọn tháng:</label>
+                <input type="month" id="chartMonthSelect" value="${currentMonth}" onchange="renderChartData()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; outline: none; font-weight: bold; color: #2D5A27; cursor: pointer;">
+            </div>
+            <div style="width: 100%; height: 350px; position: relative;">
+                <canvas id="thuChiChart"></canvas>
+            </div>
+        `,
+        width: '800px',
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'ĐÓNG TẮT',
+        cancelButtonColor: '#7f8c8d',
+        didOpen: () => {
+            renderChartData();
+        }
+    });
+};
+
+window.renderChartData = async function() {
+    const monthVal = document.getElementById('chartMonthSelect').value; 
+    if (!monthVal) return;
+    
+    const [yyyy, mm] = monthVal.split('-');
+    const daysInMonth = new Date(yyyy, mm, 0).getDate();
+    
+    const labels = Array.from({length: daysInMonth}, (_, i) => `${i+1}/${mm}`);
+    const thuData = new Array(daysInMonth).fill(0);
+    const chiData = new Array(daysInMonth).fill(0);
+
+    const headers = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+    
+    try {
+        // Quét dữ liệu giao dịch Thu và Chi diễn ra trong tháng được chọn
+        const [resThu, resChi] = await Promise.all([
+            fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ThuNo?Ngay_Gio=like.*%2F${mm}%2F${yyyy}*&select=Ngay_Gio,So_Tien_Thu`, { headers }),
+            fetch(`${window.SB_CONFIG.URL}/rest/v1/NK_ThuChi_PhatSinh?Ngay_Gio=like.*%2F${mm}%2F${yyyy}*&Loai=eq.Chi%20TM&select=Ngay_Gio,So_Tien`, { headers })
+        ]);
+        
+        const dataThu = await resThu.json();
+        const dataChi = await resChi.json();
+        
+        const parseDay = (dateStr) => {
+            if (!dateStr) return null;
+            return parseInt(dateStr.split('/')[0], 10);
+        };
+        
+        // Trải dữ liệu vào mảng theo từng ngày trong tháng
+        dataThu.forEach(item => {
+            const d = parseDay(item.Ngay_Gio);
+            if (d) thuData[d - 1] += Number(item.So_Tien_Thu) || 0;
+        });
+        
+        dataChi.forEach(item => {
+            const d = parseDay(item.Ngay_Gio);
+            if (d) chiData[d - 1] += Number(item.So_Tien) || 0;
+        });
+        
+        const ctx = document.getElementById('thuChiChart').getContext('2d');
+        if (myChart) {
+            myChart.destroy();
+        }
+        
+        // Vẽ biểu đồ cột
+        myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Tổng Thu (TM+CK)',
+                        data: thuData,
+                        backgroundColor: '#27ae60',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Tổng Chi',
+                        data: chiData,
+                        backgroundColor: '#e74c3c',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('vi-VN') + ' đ';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y.toLocaleString('vi-VN') + ' đ';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+    } catch (e) {
+        console.error("Lỗi vẽ biểu đồ:", e);
+    }
+};
 </script>
 </body>
 </html>
