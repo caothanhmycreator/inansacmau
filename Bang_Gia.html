@@ -17,11 +17,10 @@
     :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; --accent: #d35400; }
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
-    .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
+    .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; box-sizing: border-box; }
 
-    .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); }
+    .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--accent); box-sizing: border-box; }
     
-    /* Chỉnh sửa: Form nhập nằm trên 1 hàng ngang ở PC */
     .form-grid { display: grid; grid-template-columns: 1.2fr 2fr 1fr 0.8fr 1.5fr 1.5fr; gap: 12px; align-items: start; }
     
     .input-group { display: flex; flex-direction: column; }
@@ -29,46 +28,38 @@
     .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; height: 40px; box-sizing: border-box; }
     .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(211, 84, 0, 0.1); }
     
-    /* Ổn định input file */
     input[type="file"].input-modern { padding: 7px; font-size: 12px; }
 
-    .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); box-sizing: border-box; }
     
-    /* Layout 2 khung - Cột trái nới rộng ra để chứa 3 cột nhóm */
-    .split-layout { display: flex; gap: 20px; align-items: flex-start; }
-    .left-pane { flex: 0 0 420px; position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; margin-top: 0 !important; }
-    .right-pane { flex: 1; min-width: 0; margin-top: 0 !important; }
+    .split-layout { display: flex; gap: 20px; align-items: flex-start; box-sizing: border-box; }
+    .left-pane { flex: 0 0 420px; position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; margin-top: 0 !important; box-sizing: border-box; }
+    .right-pane { flex: 1; min-width: 0; margin-top: 0 !important; box-sizing: border-box; }
     
-    /* Scrollbar cho left-pane */
     .left-pane::-webkit-scrollbar { width: 6px; }
     .left-pane::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
 
-    /* Thiết kế thẻ vuông Nhóm chứa được 3 hàng dọc, kích thước nhỏ hơn 20% */
-    .group-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .group-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; box-sizing: border-box; width: 100%; }
     .group-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 5px; text-align: center; cursor: pointer; transition: 0.2s; border-bottom: 4px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1; }
     .group-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); border-color: var(--accent); border-bottom-color: var(--accent); }
     .group-card.active { border-color: var(--accent); border-bottom-color: var(--accent); background: #fff5eb; }
     .group-icon { font-size: 22px; margin-bottom: 5px; }
     
-    /* ĐÃ SỬA: Đổi tên class group-title thành price-group-title để không đụng Sidebar */
     .price-group-title { font-weight: bold; color: #2c3e50; font-size: 11.5px; line-height: 1.2; margin-bottom: 4px; text-align: center; }
     .group-count { font-size: 10px; color: #7f8c8d; background: #e2e8f0; padding: 2px 6px; border-radius: 8px;}
 
-    /* Bảng dữ liệu */
     .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
     .table-modern th { background: #f1f5f9; color: #64748b; font-size: 12px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; }
     .table-modern td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     .table-modern tr { transition: 0.2s; }
     .table-modern tr:hover { background: #f8fafc; }
     
-    /* Nhãn giá cho nổi bật */
     .price-badge-le { background: #fee2e2; color: #b91c1c; padding: 5px 10px; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 13px; border: 1px solid #fecaca; }
 
     .img-preview { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
     .img-preview:hover { transform: scale(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     .qr-preview { width: 45px; height: 45px; cursor: pointer; background: white; padding: 3px; border: 1px solid #eee; border-radius: 6px; }
     
-    /* Nút bấm */
     .btn-submit { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; flex: 1; }
     .btn-submit:hover { background: #a04000; transform: translateY(-2px); }
     
@@ -81,7 +72,6 @@
     .btn-container { display: flex; gap: 15px; margin-top: 20px; width: 100%; flex-wrap: wrap; }
     .swal2-container { z-index: 20000 !important; }
 
-    /* Hiệu ứng trượt */
     @keyframes slideInRight {
         from { opacity: 0; transform: translateX(30px); }
         to { opacity: 1; transform: translateX(0); }
@@ -93,7 +83,7 @@
        ======================================================== */
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
-        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
         body.sidebar-open #sidebar-frame { left: 0; }
         
         .mobile-nav-btn {
@@ -106,32 +96,54 @@
         .header-title-box { flex-direction: column; align-items: flex-start !important; gap: 10px; }
         .header-top button { width: 100%; margin-left: 0 !important; }
 
-        .form-card { padding: 15px; }
+        .form-card { padding: 15px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
         .form-grid { grid-template-columns: 1fr; }
         .btn-container { flex-direction: column; gap: 10px; }
 
-        /* Chuyển 2 khung thành 1 cột */
-        .split-layout { flex-direction: column; }
-        .left-pane { flex: none; width: 100%; position: static; max-height: none; overflow-y: visible; }
-        .group-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+        /* Chuyển 2 khung thành 1 cột ôm sát biên */
+        .split-layout { flex-direction: column; width: 100%; }
+        .left-pane { flex: none; width: 100%; position: static; max-height: none; overflow-y: visible; padding: 15px; box-sizing: border-box; }
+        .right-pane { width: 100%; box-sizing: border-box; overflow-x: hidden; padding: 15px;}
+        
+        /* Nhóm sản phẩm thu gọn vừa khung */
+        .group-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 
-        /* Biến bảng thành Card để tra cứu giá dễ dàng */
-        .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; }
+        .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; box-sizing: border-box; }
         .table-modern thead { display: none; }
         
         .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .table-modern td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: flex-start; text-align: left; }
+        .table-modern td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: flex-start; text-align: left; word-break: break-word; }
         
-        /* Nhãn hiển thị cột */
         .table-modern td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
         
         .img-preview { width: 60px; height: 60px; }
         .qr-preview { width: 50px; height: 50px; }
 
-        /* SweetAlert Popup Mobile */
-        .swal2-popup { width: 95% !important; padding: 10px !important; border-radius: 12px !important; }
-        .swal2-html-container div[style*="display: grid"] { grid-template-columns: 1fr !important; gap: 10px !important; }
-        .swal2-actions button { width: 100% !important; margin: 5px 0 !important; padding: 12px !important; border-radius: 8px !important; }
+        /* Form Popup Chỉnh sửa vừa màn hình */
+        .swal2-popup { width: 92% !important; padding: 15px 10px !important; border-radius: 12px !important; box-sizing: border-box; }
+        
+        .swal2-html-container div[style*="display: grid"] { grid-template-columns: 1fr !important; gap: 12px !important; }
+        .swal2-html-container div[style*="grid-column: span"] { grid-column: span 1 !important; }
+        
+        /* Ép chuẩn Nhãn 1 dòng - Input 1 dòng */
+        .swal2-html-container label { display: block; margin-bottom: 5px; text-align: left; }
+        .swal2-input, .swal2-file { width: 100% !important; margin: 0 !important; box-sizing: border-box; }
+
+        /* Nút LƯU - HỦY nằm ngang có icon */
+        .swal2-actions { flex-direction: row !important; display: flex !important; gap: 10px; width: 100%; margin-top: 15px; }
+        .swal2-actions button { flex: 1 !important; margin: 0 !important; padding: 12px !important; border-radius: 8px !important; width: auto !important; font-size: 15px !important; }
+
+        /* CSS tùy chỉnh Bảng Swal nhập kho di động (responsive) */
+        .responsive-swal-table table, .responsive-swal-table thead, .responsive-swal-table tbody, .responsive-swal-table th, .responsive-swal-table td, .responsive-swal-table tr { display: block; width: 100%; box-sizing: border-box; }
+        .responsive-swal-table thead { display: none; }
+        .responsive-swal-table tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; position: relative; background: #fff !important; }
+        .responsive-swal-table td { border: none; padding: 8px 0; text-align: left !important; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+        .responsive-swal-table td:before { font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); margin-bottom: 5px; }
+        .responsive-swal-table input, .responsive-swal-table button, .responsive-swal-table .swal2-input, .responsive-swal-table .swal2-file { width: 100% !important; margin: 0 !important; box-sizing: border-box; }
+        .responsive-swal-table td > div { width: 100%; }
+        
+        .action-icon-container { display: flex; flex-direction: row !important; gap: 10px; width: 100%; }
+        .action-icon-container button { flex: 1; height: 40px !important; margin-bottom: 0 !important; }
     }
 
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
@@ -304,7 +316,6 @@
           })
         });
 
-        // --- GỬI THÔNG BÁO THÊM SẢN PHẨM MỚI ---
         try {
             const userObj = JSON.parse(localStorage.getItem('currentUser'));
             const userName = userObj?.Ho_Ten || userObj?.name || "Một tài khoản";
@@ -348,7 +359,6 @@
       
       const groupKeys = Object.keys(groupedData).sort();
       if(groupKeys.length > 0) {
-          // GIỮ NGUYÊN VỊ TRÍ NHÓM ĐANG XEM SAU KHI SỬA
           if (currentActiveGroup && groupKeys.includes(currentActiveGroup)) {
               selectGroup(currentActiveGroup);
           } else {
@@ -411,14 +421,23 @@
                 thumbDisplay = `<img src="${finalThumb}" class="img-preview" onclick="window.open('${item.Hinh_Anh}', '_blank')" title="Mở ảnh Drive">`;
             }
 
+            const ghiChuHtml = item.Ghi_Chu ? `<div style="margin-top: 5px;"><small style="color:#2D5A27; font-weight:bold;">🔗 Liên kết kho: ${item.Ghi_Chu}</small></div>` : '';
+
             return `
             <tr>
-              <td data-label="Mã QR"><img src="${qrImageUrl}" class="qr-preview" onclick="Swal.fire({title: 'QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 250})"></td>
+              <td data-label="Mã QR" style="text-align: center;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                  <img src="${qrImageUrl}" class="qr-preview" onclick="Swal.fire({title: 'QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 250})">
+                  <small style="color:#7f8c8d; font-size:10.5px; font-weight:bold;">${item.Ma_QR}</small>
+                </div>
+              </td>
               <td data-label="Ảnh">${thumbDisplay}</td>
               <td data-label="Tên hàng">
-                <b style="font-size:14px; color:#2c3e50;">${item.Ten_Hang}</b><br>
-                <small style="color:#7f8c8d">${item.Mo_Ta || ''}</small><br>
-                <small style="color:#2D5A27; font-weight:bold;">${item.Ghi_Chu ? '🔗 Liên kết kho: ' + item.Ghi_Chu : ''}</small>
+                <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                    <b style="font-size:14px; color:#2c3e50;">${item.Ten_Hang}</b>
+                    <small style="color:#7f8c8d; margin-top:2px;">${item.Mo_Ta || ''}</small>
+                    ${ghiChuHtml}
+                </div>
               </td>
               <td data-label="ĐVT"><span style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:12px;">${item.Don_Vi_Tinh || '-'}</span></td>
               <td data-label="Giá lẻ"><span class="price-badge-le">${(item.Gia_Ban || 0).toLocaleString()}</span></td>
@@ -432,11 +451,11 @@
         container.innerHTML = `
           <table class="table-modern">
             <thead><tr>
-                <th style="width:60px; text-align:center;">Mã QR</th>
+                <th style="width:70px; text-align:center;">QR & Mã</th>
                 <th style="width:70px; text-align:center;">Ảnh</th>
                 <th>Tên Sản Phẩm & Quy Cách</th>
                 <th style="width:120px;">ĐVT</th>
-                <th style="width:90px;">Giá Lẻ</th>
+                <th style="width:90px;">Giá Bán</th>
                 <th style="width:120px; text-align:center;">Thao tác</th>
             </tr></thead>
             <tbody>${rows}</tbody>
@@ -469,9 +488,7 @@
         renderPriceTable(filteredData);
     };
 
-    // --- CẬP NHẬT GIAO DIỆN & TÍNH NĂNG POPUP SỬA BẢNG GIÁ ---
     async function editPrice(item) {
-      // 1. Lấy danh sách Nhóm Hàng duy nhất cho Datalist
       const uniqueGroups = [...new Set(priceListData.map(i => i.Nhom_Hang))].filter(Boolean);
       const datalistHtml = `<datalist id="editGroupList">${uniqueGroups.map(g => `<option value="${g}">`).join('')}</datalist>`;
 
@@ -494,7 +511,7 @@
                   </div>
                   
                   <div style="grid-column: span 1;">
-                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">GIÁ LẺ</label>
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">GIÁ BÁN</label>
                       <input id="e-gia-ban" class="swal2-input" value="${(item.Gia_Ban || 0).toLocaleString().replace(/,/g, '.')}" oninput="formatCurrency(this)" style="width:100%; margin: 5px 0 0 0; font-size: 14px; height: 40px; box-sizing: border-box; color: #d35400; font-weight: bold; border-radius: 6px; border: 1px solid #cbd5e1;">
                   </div>
                   
@@ -515,9 +532,9 @@
               </div>
           </div>`,
         showCancelButton: true,
-        confirmButtonText: 'LƯU THAY ĐỔI',
+        confirmButtonText: '💾 LƯU',
         confirmButtonColor: '#d35400',
-        cancelButtonText: 'HỦY',
+        cancelButtonText: '✖ HỦY',
         preConfirm: async () => {
           const newFile = document.getElementById('e-hinh').files[0];
           let newLink = item.Hinh_Anh;
@@ -554,7 +571,6 @@
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Id=eq.${id}`, { method: 'DELETE', headers: h });
         
-        // --- GỬI THÔNG BÁO XÓA SẢN PHẨM ---
         if (item) {
             try {
                 const userObj = JSON.parse(localStorage.getItem('currentUser'));
@@ -575,7 +591,7 @@
     }
 
     // =========================================================================
-    // TÍNH NĂNG 1: NHẬP GIÁ TỪ KHO VẬT TƯ (Bỏ Giá Sỉ)
+    // TÍNH NĂNG 1: NHẬP GIÁ TỪ KHO VẬT TƯ
     // =========================================================================
     async function openKhoImportPopup() {
         Swal.fire({ title: 'Đang tải dữ liệu Kho...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -606,14 +622,16 @@
                 }
 
                 return `
-                <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 10px; text-align: center;">${thumbDisplay}</td>
-                    <td style="padding: 10px; text-align: left; max-width: 150px;">
-                        <b>${vt.Ten_Hang}</b><br>
+                <tr style="border-bottom: 1px solid #eee; background: #fff; transition: 0.2s;">
+                    <td data-label="Ảnh" style="padding: 10px; text-align: center; vertical-align: middle;">${thumbDisplay}</td>
+                    <td data-label="Tên Vật Tư" style="padding: 10px; text-align: left; vertical-align: middle; max-width: 150px;">
+                        <b style="color: #2980b9; font-size: 13px;">${vt.Ten_Hang}</b><br>
                         <small style="color: gray;">Mã kho: ${vt.Ma_QR}</small>
                     </td>
-                    <td style="padding: 10px; text-align: center;">${vt.Quy_Cach || '-'}</td>
-                    <td style="padding: 10px;"><input type="text" id="imp-ban-${index}" class="swal2-input" placeholder="Giá lẻ..." style="width: 100%; margin: 0; font-size: 13px;" oninput="formatCurrency(this)"></td>
+                    <td data-label="ĐVT" style="padding: 10px; text-align: center; vertical-align: middle;">${vt.Quy_Cach || '-'}</td>
+                    <td data-label="Giá Lẻ (Nhập tay)" style="padding: 10px; vertical-align: middle;">
+                        <input type="text" id="imp-ban-${index}" class="swal2-input" placeholder="Giá lẻ..." style="width: 100%; margin: 0; font-size: 13px; height: 35px; border-radius: 6px; text-align:right;" oninput="formatCurrency(this)">
+                    </td>
                 </tr>
                 `;
             }).join('');
@@ -622,20 +640,20 @@
                 title: 'ĐỒNG BỘ GIÁ TỪ KHO',
                 width: '700px',
                 html: `
-                    <div style="max-height: 400px; overflow-y: auto;">
+                    <div class="responsive-swal-table" style="max-height: 400px; overflow-y: auto; border-radius: 10px; border: 1px solid #e2e8f0;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                            <thead style="position: sticky; top: 0; background: #2D5A27; color: white;">
+                            <thead style="position: sticky; top: 0; background: #2D5A27; color: white; z-index: 10;">
                                 <tr>
-                                    <th style="padding: 10px; text-align: center; width: 60px;">Ảnh</th>
-                                    <th style="padding: 10px; text-align: left;">Tên Vật Tư</th>
-                                    <th style="padding: 10px; text-align: center;">ĐVT</th>
-                                    <th style="padding: 10px;">Giá Lẻ (Nhập tay)</th>
+                                    <th style="padding: 12px 10px; text-align: center; width: 60px;">Ảnh</th>
+                                    <th style="padding: 12px 10px; text-align: left;">Tên Vật Tư</th>
+                                    <th style="padding: 12px 10px; text-align: center; width: 80px;">ĐVT</th>
+                                    <th style="padding: 12px 10px; width: 150px;">Giá Bán (Nhập tay)</th>
                                 </tr>
                             </thead>
                             <tbody>${rowsHtml}</tbody>
                         </table>
                     </div>
-                    <p style="color: red; font-size: 12px; margin-top: 10px; text-align: left;">* Lưu ý: Chỉ những dòng có nhập Giá Lẻ mới được lưu vào hệ thống.</p>
+                    <p style="color: red; font-size: 12px; margin-top: 10px; text-align: left;">* Lưu ý: Chỉ những dòng có nhập Giá Bán mới được lưu vào hệ thống.</p>
                 `,
                 showCancelButton: true,
                 confirmButtonText: 'LƯU TẤT CẢ VÀO BẢNG GIÁ',
@@ -690,7 +708,6 @@
                         throw new Error(errInfo.message || "Cơ sở dữ liệu từ chối gói thông tin!");
                     }
 
-                    // --- GỬI THÔNG BÁO CẬP NHẬT GIÁ TỪ KHO VẬT TƯ ---
                     try {
                         const userObj = JSON.parse(localStorage.getItem('currentUser'));
                         const userName = userObj?.Ho_Ten || userObj?.name || "Một tài khoản";
@@ -717,14 +734,13 @@
     }
 
     // =========================================================================
-    // TÍNH NĂNG 2: CHUẨN HÓA DỮ LIỆU TỪ DANH MỤC CHỜ DUYỆT (ĐÃ CHỈNH SỬA)
+    // TÍNH NĂNG 2: CHUẨN HÓA DỮ LIỆU TỪ DANH MỤC CHỜ DUYỆT
     // =========================================================================
     async function openDMImportPopup() {
         Swal.fire({ title: 'Đang tải Danh mục chờ duyệt...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
 
         try {
-            // Lấy từ bảng San_Pham_Cho_Duyet thay vì DM_SanPham
             const resDM = await fetch(`${window.SB_CONFIG.URL}/rest/v1/San_Pham_Cho_Duyet?select=*`, { headers: h });
             const dataDM = await resDM.json();
 
@@ -752,53 +768,60 @@
             }
 
             let rowsHtml = uniqueSpChuaCoGia.map((sp, index) => {
-                const giaLeStr = Number(sp.Gia_Ban || 0).toLocaleString("vi-VN"); // Lấy Gia_Ban từ bảng chờ duyệt
+                const giaLeStr = Number(sp.Gia_Ban || 0).toLocaleString("vi-VN"); 
                 let spId = sp.id || sp.Id || '';
                 
                 return `
-                <tr id="dm-row-${index}" style="border-bottom: 2px solid #eee; background: ${index % 2 === 0 ? '#fff' : '#fcfcfc'}">
-                    <td style="padding: 10px; vertical-align: top;">
-                        <input type="text" id="dm-nhom-${index}" class="swal2-input" value="${sp.Nhom_Hang || 'SẢN PHẨM KHÁC'}" placeholder="Nhóm hàng..." style="width: 100%; margin: 0; font-size: 12px; height: 30px;">
+                <tr id="dm-row-${index}" style="border-bottom: 1px solid #eee; background: #fff; transition: 0.2s;">
+                    <td data-label="Nhóm hàng" style="padding: 10px; vertical-align: middle;">
+                        <input type="text" id="dm-nhom-${index}" class="swal2-input" value="${sp.Nhom_Hang || 'SẢN PHẨM KHÁC'}" placeholder="Nhóm hàng..." style="width: 100%; margin: 0; font-size: 13px; height: 35px; border-radius: 6px;">
                     </td>
-                    <td style="padding: 10px; text-align: left; max-width: 200px;">
-                        <b style="color: #2980b9;">${sp.Ten_Hang}</b><br>
-                        <small style="color: gray;">Gốc: ${giaLeStr}đ</small><br>
-                        <div style="display: flex; gap: 5px; margin-top: 5px;">
-                            <input type="text" id="dm-dvt-${index}" class="swal2-input" value="${sp.Don_Vi_Tinh || 'Cái'}" placeholder="ĐVT..." style="width: 30%; margin: 0; font-size: 12px; height: 30px;">
-                            <input type="text" id="dm-mota-${index}" class="swal2-input" value="${sp.Mo_Ta || ''}" placeholder="Mô tả..." style="width: 70%; margin: 0; font-size: 12px; height: 30px;">
-                        </div>
+                    <td data-label="Sản phẩm" style="padding: 10px; text-align: left; vertical-align: middle; max-width: 200px;">
+                        <b style="color: #2980b9; font-size: 13px;">${sp.Ten_Hang}</b>
                     </td>
-                    <td style="padding: 10px; vertical-align: top;"><input type="text" id="dm-ban-${index}" class="swal2-input" value="${giaLeStr}" style="width: 100%; margin: 0; font-size: 13px; text-align:right;" oninput="formatCurrency(this)"></td>
-                    <td style="padding: 10px; text-align: center; vertical-align: top;">
-                        <input type="file" id="dm-file-${index}" accept="image/*" style="font-size: 11px; max-width: 120px;">
+                    <td data-label="ĐVT" style="padding: 10px; vertical-align: middle;">
+                        <input type="text" id="dm-dvt-${index}" class="swal2-input" value="${sp.Don_Vi_Tinh || 'Cái'}" placeholder="ĐVT..." style="width: 100%; margin: 0; font-size: 13px; height: 35px; border-radius: 6px;">
+                    </td>
+                    <td data-label="Giá Gốc" style="padding: 10px; vertical-align: middle; text-align: right; color: #7f8c8d; font-weight: bold; font-size: 13px;">
+                        ${giaLeStr}đ
+                    </td>
+                    <td data-label="Giá Bán Mới" style="padding: 10px; vertical-align: middle;">
+                        <input type="text" id="dm-ban-${index}" class="swal2-input" value="${giaLeStr}" style="width: 100%; margin: 0; font-size: 13px; text-align:right; font-weight:bold; color:#d35400; height: 35px; border-radius: 6px;" oninput="formatCurrency(this)">
+                    </td>
+                    <td data-label="Tải ảnh" style="padding: 10px; text-align: center; vertical-align: middle;">
+                        <input type="file" id="dm-file-${index}" accept="image/*" style="font-size: 11px; max-width: 100%;">
                         <input type="hidden" id="dm-ten-${index}" value="${sp.Ten_Hang}">
                     </td>
-                    <td style="padding: 10px; text-align: center; vertical-align: top;">
-                        <button id="dm-btn-${index}" onclick="saveSingleItemFromDM(${index}, '${spId}')" style="background: #2D5A27; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%; margin-bottom: 5px;">LƯU</button>
-                        <button id="dm-del-btn-${index}" onclick="deleteItemFromDM(${index}, '${spId}')" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%;">XÓA</button>
+                    <td data-label="Thao tác" style="padding: 10px; text-align: center; vertical-align: middle;">
+                        <div class="action-icon-container" style="display:flex; justify-content:center; gap:8px;">
+                            <button id="dm-btn-${index}" onclick="saveSingleItemFromDM(${index}, '${spId}')" style="background: #27ae60; color: white; border: none; padding: 6px; border-radius: 6px; cursor: pointer; font-size: 15px; width: 34px; height: 34px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Lưu">💾</button>
+                            <button id="dm-del-btn-${index}" onclick="deleteItemFromDM(${index}, '${spId}')" style="background: #e74c3c; color: white; border: none; padding: 6px; border-radius: 6px; cursor: pointer; font-size: 15px; width: 34px; height: 34px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="Xóa">🗑️</button>
+                        </div>
                     </td>
                 </tr>
             `}).join('');
 
             Swal.fire({
-                title: 'CHUẨN HÓA TỪ DANH MỤC CHỜ DUYỆT',
-                width: '1000px',
+                title: 'DANH MỤC CHỜ DUYỆT',
+                width: '1100px',
                 html: `
-                    <div style="max-height: 500px; overflow-y: auto;">
+                    <div class="responsive-swal-table" style="max-height: 500px; overflow-y: auto; border-radius: 10px; border: 1px solid #e2e8f0;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                             <thead style="position: sticky; top: 0; background: #2980b9; color: white; z-index: 10;">
                                 <tr>
-                                    <th style="padding: 12px 10px; width: 120px;">Nhóm hàng</th>
-                                    <th style="padding: 12px 10px; text-align: left;">Sản phẩm / Mô tả</th>
-                                    <th style="padding: 12px 10px; width: 120px;">Giá Bán mới</th>
-                                    <th style="padding: 12px 10px; text-align: center; width: 130px;">Tải ảnh Drive</th>
-                                    <th style="padding: 12px 10px; text-align: center; width: 70px;">Thao tác</th>
+                                    <th style="padding: 12px 10px; width: 140px;">Nhóm hàng</th>
+                                    <th style="padding: 12px 10px; text-align: left;">Sản phẩm</th>
+                                    <th style="padding: 12px 10px; width: 70px;">ĐVT</th>
+                                    <th style="padding: 12px 10px; width: 100px; text-align: right;">Giá Gốc</th>
+                                    <th style="padding: 12px 10px; width: 130px;">Giá Bán Mới</th>
+                                    <th style="padding: 12px 10px; text-align: center; width: 120px;">Tải ảnh Drive</th>
+                                    <th style="padding: 12px 10px; text-align: center; width: 90px;">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>${rowsHtml}</tbody>
                         </table>
                     </div>
-                    <p style="color: red; font-size: 12px; margin-top: 10px; text-align: left;">* Nhấn nút LƯU ở từng dòng để đẩy sản phẩm lên Bảng Giá.</p>
+                    <p style="color: red; font-size: 12px; margin-top: 10px; text-align: left;">* Nhấn biểu tượng Lưu 💾 ở từng dòng để đẩy sản phẩm lên Bảng Giá.</p>
                 `,
                 showConfirmButton: false,
                 showCancelButton: true,
@@ -817,7 +840,7 @@
         const ten = document.getElementById(`dm-ten-${index}`).value.trim();
         const giaBan = parseNum(document.getElementById(`dm-ban-${index}`).value);
         const dvt = document.getElementById(`dm-dvt-${index}`).value;
-        const mota = document.getElementById(`dm-mota-${index}`).value;
+        const mota = ""; 
         const fileInput = document.getElementById(`dm-file-${index}`);
 
         if (giaBan <= 0) {
@@ -828,7 +851,7 @@
             return;
         }
 
-        btn.innerText = "Đang lưu...";
+        btn.innerText = "⏳";
         btn.disabled = true;
         btn.style.background = "#95a5a6";
 
@@ -871,14 +894,26 @@
                 throw new Error(errInfo.message || "Cơ sở dữ liệu từ chối lưu!");
             }
 
-            // Xóa khỏi bảng Chờ duyệt sau khi lưu thành công
             if (spId) {
                 await fetch(`${window.SB_CONFIG.URL}/rest/v1/San_Pham_Cho_Duyet?id=eq.${spId}`, {
                     method: 'DELETE', headers: { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` }
                 });
             }
 
-            btn.innerText = "Đã lưu ✔";
+            try {
+                const userObj = JSON.parse(localStorage.getItem('currentUser'));
+                const userName = userObj?.Ho_Ten || userObj?.name || "Một tài khoản";
+                const tbTitle = "THÊM SẢN PHẨM MỚI";
+                const tbMsg = `${userName} vừa thêm sản phẩm ${ten} từ danh mục chờ duyệt vào bảng giá.`;
+                
+                if (typeof window.guiThongBaoSacMau === 'function') {
+                    window.guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", "Bang_Gia.html");
+                } else if (typeof guiThongBaoSacMau === 'function') {
+                    guiThongBaoSacMau(tbTitle, tbMsg, "Quan_Ly_Don", "Bang_Gia.html");
+                }
+            } catch (etb) { console.error("Lỗi gửi thông báo:", etb); }
+
+            btn.innerText = "✔";
             btn.style.background = "#27ae60";
             
             setTimeout(() => {
@@ -889,7 +924,7 @@
             loadPriceList();
 
         } catch (error) {
-            btn.innerText = "LƯU LỖI";
+            btn.innerText = "✖";
             btn.disabled = false;
             btn.style.background = "#e74c3c";
             Swal.fire({
@@ -899,7 +934,6 @@
         }
     }
 
-    // ĐÃ SỬA LẠI ĐỊNH TUYẾN ĐỂ XÓA TRONG San_Pham_Cho_Duyet
     window.deleteItemFromDM = async function(index, id) {
         if (!id) {
             alert("Không tìm thấy ID sản phẩm để xóa!");
@@ -909,20 +943,18 @@
         if (!confirm("Xác nhận xóa sản phẩm này hoàn toàn khỏi Danh Mục Chờ Duyệt?")) return;
         
         const delBtn = document.getElementById(`dm-del-btn-${index}`);
-        delBtn.innerText = "Đang xóa...";
+        delBtn.innerText = "⏳";
         delBtn.disabled = true;
 
         try {
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
             
-            // Xóa ở bảng San_Pham_Cho_Duyet
             let response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/San_Pham_Cho_Duyet?id=eq.${id}`, {
                 method: 'DELETE',
                 headers: h
             });
 
             if (!response.ok) {
-                // Thử với Id viết hoa chữ I nếu cột Database cài lộn
                 response = await fetch(`${window.SB_CONFIG.URL}/rest/v1/San_Pham_Cho_Duyet?Id=eq.${id}`, {
                     method: 'DELETE',
                     headers: h
@@ -934,7 +966,7 @@
             if(row) row.style.display = 'none';
 
         } catch (error) {
-            delBtn.innerText = "XÓA LỖI";
+            delBtn.innerText = "✖";
             delBtn.disabled = false;
             alert(error.message);
         }

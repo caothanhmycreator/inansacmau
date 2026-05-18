@@ -15,8 +15,9 @@
 
   <style>
     /* ========================================================
-       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       1. GIAO DIỆN CHUNG & PC
        ======================================================== */
+    /* ĐÃ SỬA: Bỏ --accent để không xung đột màu chữ của sidebar */
     :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; }
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
@@ -24,34 +25,62 @@
 
     .form-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 5px solid var(--primary); }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+    
+    /* Class mới để tăng gấp đôi chiều dài ô nhập trên PC */
+    .span-2 { grid-column: span 2; }
+    
     .input-group { display: flex; flex-direction: column; }
     .input-group label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
-    .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; }
+    .input-modern { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; box-sizing: border-box;}
     .input-modern:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(45, 90, 39, 0.1); }
+    input[type="file"].input-modern { padding: 7px; font-size: 13px; }
 
     .inventory-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .group-header { background: #f8fafc; padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 10px; transition: 0.2s; }
-    .group-header:hover { background: #edf2f7; color: var(--primary); }
-    .group-content { display: none; margin-top: 5px; }
-    .group-content.show { display: block; }
+    
+    .split-layout { display: flex; gap: 20px; align-items: flex-start; }
+    .left-pane { flex: 0 0 420px; position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; margin-top: 0 !important; }
+    .right-pane { flex: 1; min-width: 0; margin-top: 0 !important; }
+    
+    .left-pane::-webkit-scrollbar { width: 6px; }
+    .left-pane::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
 
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: left; }
-    th { background: #f1f5f9; color: #64748b; font-size: 11px; text-transform: uppercase; }
+    .group-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .group-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 5px; text-align: center; cursor: pointer; transition: 0.2s; border-bottom: 4px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1; }
+    .group-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); border-color: var(--primary); }
+    .group-card.active { border-color: var(--primary); background: #f0fdf4; }
+    .group-icon { font-size: 22px; margin-bottom: 5px; }
+    
+    /* ĐÃ SỬA: Đổi tên class group-title thành kho-group-title để không đụng Sidebar */
+    .kho-group-title { font-weight: bold; color: #2c3e50; font-size: 11.5px; line-height: 1.2; margin-bottom: 4px; text-align: center; }
+    .group-count { font-size: 10px; color: #7f8c8d; background: #e2e8f0; padding: 2px 6px; border-radius: 8px;}
+
+    .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+    .table-modern th { background: #f1f5f9; color: #64748b; font-size: 11px; text-transform: uppercase; padding: 12px 8px; border-bottom: 2px solid #e2e8f0; text-align: left; }
+    .table-modern td { padding: 12px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .table-modern tr { transition: 0.2s; }
+    .table-modern tr:hover { background: #f8fafc; }
     
     .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; }
+    .img-preview:hover { transform: scale(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     .qr-preview { width: 40px; height: 40px; cursor: pointer; background: white; padding: 2px; border: 1px solid #eee; }
+    
     .btn-submit { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; font-size: 16px; transition: 0.3s; }
     .btn-submit:hover { background: #1e3f1a; transform: translateY(-2px); }
 
     .swal2-container { z-index: 20000 !important; }
+
+    @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(30px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    .slide-effect { animation: slideInRight 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; }
 
     /* ========================================================
        2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
        ======================================================== */
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
-        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; box-sizing: border-box; width: 100%; }
         body.sidebar-open #sidebar-frame { left: 0; }
         
         .mobile-nav-btn {
@@ -63,35 +92,50 @@
         .header-top { flex-direction: column; align-items: flex-start !important; gap: 15px; }
         .header-top button { width: 100%; }
 
-        .form-card { padding: 15px; }
+        .form-card { padding: 15px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
         .form-grid { grid-template-columns: 1fr; }
         .input-group { grid-column: span 1 !important; }
 
-        /* Biến bảng thành thẻ (Card) để chống tràn */
-        .group-content { overflow-x: hidden; }
-        table, thead, tbody, th, td, tr { display: block; width: 100%; }
-        thead { display: none; } /* Ẩn tiêu đề bảng */
+        .split-layout { flex-direction: column; }
+        .left-pane { flex: none; width: 100%; position: static; max-height: none; overflow-y: visible; padding: 15px; box-sizing: border-box; }
+        .right-pane { width: 100%; box-sizing: border-box; overflow-x: hidden; }
         
-        tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        td { border: none; padding: 8px 5px 8px 100px; position: relative; min-height: 35px; display: flex; align-items: center; }
+        .group-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+        /* Chia hàng cho thanh tìm kiếm và các nút bấm trên mobile */
+        .action-bar { flex-direction: column; align-items: stretch !important; gap: 10px; }
+        .action-bar > input { max-width: 100% !important; margin: 0 !important; width: 100%; box-sizing: border-box; }
+        .action-buttons { width: 100%; justify-content: space-between; }
+        .action-buttons button { flex: 1; padding: 10px 5px !important; font-size: 12px !important; }
+
+        .table-modern, .table-modern thead, .table-modern tbody, .table-modern th, .table-modern td, .table-modern tr { display: block; width: 100%; box-sizing: border-box; }
+        .table-modern thead { display: none; }
         
-        /* Nhãn giả cho từng ô dữ liệu */
-        td:before { position: absolute; left: 10px; width: 85px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
+        .table-modern tr { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         
-        /* Cấu trúc nhãn trong JS sẽ khớp với CSS này */
+        .table-modern td { border: none; padding: 8px 5px 8px 90px; position: relative; min-height: 35px; display: flex; align-items: center; justify-content: flex-start; text-align: left; word-break: break-word; }
+        
+        .table-modern td:before { position: absolute; left: 10px; width: 75px; font-weight: bold; color: #64748b; font-size: 11px; text-transform: uppercase; content: attr(data-label); }
+        
         .img-preview { width: 60px; height: 60px; }
         .qr-preview { width: 50px; height: 50px; }
 
-        /* Sửa Popup Swal Mobile */
-        .swal2-popup { width: 95% !important; padding: 10px !important; border-radius: 15px !important; }
+        .swal2-popup { width: 92% !important; padding: 15px 10px !important; border-radius: 12px !important; box-sizing: border-box; }
+        
         .swal2-html-container div[style*="display: grid"] { grid-template-columns: 1fr !important; gap: 10px !important; }
-        .swal2-actions button { width: 100% !important; margin: 5px 0 !important; padding: 12px !important; border-radius: 8px !important; }
+        .swal2-html-container div[style*="grid-column: span 2"] { grid-column: span 1 !important; }
+        
+        .swal2-html-container label { display: block; margin-bottom: 5px; }
+        .swal2-input, .swal2-file { width: 100% !important; margin: 0 !important; box-sizing: border-box; }
+
+        .swal2-actions { flex-direction: column; gap: 10px; width: 100%; margin-top: 15px; }
+        .swal2-actions button { width: 100% !important; margin: 0 !important; padding: 12px !important; border-radius: 8px !important; }
     }
 
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
 
     /* ========================================================
-       3. CSS DÀN TRANG IN A4 (TÍNH NĂNG MỚI BỔ SUNG)
+       3. CSS DÀN TRANG IN A4
        ======================================================== */
     #vung-in-tem { display: none; background: white; color: #000; font-family: 'Segoe UI', sans-serif; }
     @media print {
@@ -100,7 +144,6 @@
       #vung-in-tem, #vung-in-tem * { visibility: visible; }
       #vung-in-tem { display: block !important; position: absolute; left: 0; top: 0; width: 100%; min-height: 100vh; background: white; }
       
-      /* Lưới chia cột để dán vừa khổ A4 (chia 4 cột) */
       .print-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; width: 100%; box-sizing: border-box; }
       .print-item { border: 1px dashed #666; padding: 12px; text-align: center; border-radius: 8px; page-break-inside: avoid; display: flex; flex-direction: column; align-items: center; justify-content: center; }
       
@@ -131,7 +174,7 @@
           <label>Nhóm hàng</label>
           <input type="text" id="f-nhom" class="input-modern" placeholder="Vd: Decal, Standee, Bạt...">
         </div>
-        <div class="input-group">
+        <div class="input-group span-2">
           <label>Tên hàng hóa *</label>
           <input type="text" id="f-ten" class="input-modern" placeholder="Tên chi tiết vật tư...">
         </div>
@@ -151,7 +194,7 @@
           <label>Quy cách</label>
           <input type="text" id="f-qc" class="input-modern" placeholder="Vd: Cuộn, Cái, Thùng...">
         </div>
-        <div class="input-group" style="grid-column: span 2;">
+        <div class="input-group span-2">
           <label>Hình ảnh (Chụp hoặc tải lên từ điện thoại)</label>
           <input type="file" id="f-hinh" class="input-modern" accept="image/*">
         </div>
@@ -159,31 +202,48 @@
       <button class="btn-submit" onclick="submitInventory()">📤 XÁC NHẬN NHẬP KHO</button>
     </div>
 
-    <div class="inventory-card no-print">
-      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-        <h3 style="margin:0;">🗂️ CHI TIẾT TỒN KHO</h3>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <button onclick="startQRScanner()" style="background:#3498db; border:none; color:white; padding: 8px 15px; border-radius: 6px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">📷 QUÉT QR TÌM KIẾM</button>
-          <button onclick="printSelectedItems()" style="background:#f39c12; border:none; color:white; padding: 8px 15px; border-radius: 6px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">🖨️ IN TEM ĐÃ CHỌN</button>
-          <button onclick="loadInventory()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold;">🔄 Làm mới bảng</button>
+    <div class="split-layout no-print">
+      
+      <div class="left-pane inventory-card">
+        <h3 style="margin-top:0; margin-bottom:15px; border-bottom: 2px solid #e2e8f0; padding-bottom:10px; color:#2c3e50;">📁 NHÓM VẬT TƯ</h3>
+        <div id="group-cards-container" class="group-grid"></div>
+      </div>
+
+      <div class="right-pane inventory-card">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+          <h3 style="margin:0;" id="current-group-title">🗂️ CHI TIẾT TỒN KHO</h3>
+          
+          <div class="action-bar" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex: 1; justify-content: flex-end;">
+            <input type="text" id="searchInventory" class="input-modern" placeholder="🔍 Tìm tên, mã QR, chất liệu..." style="max-width: 300px; flex: 1;" onkeyup="filterInventoryList()">
+            
+            <div class="action-buttons" style="display: flex; gap: 10px; align-items: center;">
+                <button onclick="startQRScanner()" style="background:#3498db; border:none; color:white; padding: 10px 15px; border-radius: 8px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">📷 QUÉT QR</button>
+                <button onclick="printSelectedItems()" style="background:#f39c12; border:none; color:white; padding: 10px 15px; border-radius: 8px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">🖨️ IN TEM</button>
+                <button onclick="loadInventory()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold;">🔄 Làm mới</button>
+            </div>
+          </div>
+        </div>
+        
+        <div id="inventory-list-container">
+          <p style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu kho...</p>
         </div>
       </div>
-      <div id="inventory-list">
-        <p style="text-align:center; padding:20px; color:#888;">🔍 Đang tải dữ liệu kho...</p>
-      </div>
+
     </div>
   </div>
 
   <div id="vung-in-tem"></div>
 
   <script>
-    // TOÀN BỘ LOGIC JS GIỮ NGUYÊN 100%
     const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
     const FOLDER_ID = "1ao2E97b8YdawmGb23c8U_6u7N65hTrVN"; 
     let accessToken = localStorage.getItem('drive_access_token');
     let tokenClient;
-    let globalInventoryData = []; // BIẾN GLOBAL ĐỂ LẤY DỮ LIỆU KHI IN VÀ TÌM KIẾM
-    let html5QrcodeScanner = null; // Biến cho máy quét QR
+    
+    let globalInventoryData = []; 
+    let groupedData = {};
+    let currentActiveGroup = null;
+    let html5QrcodeScanner = null; 
 
     function initTokenClient() {
         tokenClient = google.accounts.oauth2.initTokenClient({
@@ -198,6 +258,13 @@
     }
 
     function getToken() { tokenClient.requestAccessToken(); }
+
+    function triggerSlideEffect() {
+      const container = document.getElementById('inventory-list-container');
+      container.classList.remove('slide-effect');
+      void container.offsetWidth; 
+      container.classList.add('slide-effect');
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(loadInventory, 600);
@@ -253,7 +320,6 @@
           })
         });
 
-        // ĐÃ CẬP NHẬT: GỬI THÔNG BÁO TỰ ĐỘNG SAU KHI LƯU KHO THÀNH CÔNG
         try {
             const rolesTB = ["Admin", "Quan_Ly_Don", "Nhan_Vien_In"];
             const msgTB = `Hệ thống vừa thêm ${sl} ${ten} vào kho vật tư`;
@@ -280,21 +346,79 @@
         const data = await res.json();
         
         globalInventoryData = data; 
+        
+        buildGroups();
+        document.getElementById('searchInventory').value = "";
+      } catch (e) { console.error(e); }
+    }
 
-        const groups = {};
-        data.forEach(item => {
-          if (!groups[item.Nhom_Hang]) groups[item.Nhom_Hang] = [];
-          groups[item.Nhom_Hang].push(item);
-        });
+    function buildGroups() {
+      groupedData = {};
+      globalInventoryData.forEach(item => {
+        let nhom = item.Nhom_Hang || "Chưa phân loại";
+        if (!groupedData[nhom]) groupedData[nhom] = [];
+        groupedData[nhom].push(item);
+      });
 
-        const container = document.getElementById('inventory-list');
+      renderGroupCards();
+      
+      const groupKeys = Object.keys(groupedData).sort();
+      if(groupKeys.length > 0) {
+          if (currentActiveGroup && groupKeys.includes(currentActiveGroup)) {
+              selectGroup(currentActiveGroup);
+          } else {
+              selectGroup(groupKeys[0]);
+          }
+      } else {
+          document.getElementById('inventory-list-container').innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Kho trống.</p>';
+      }
+    }
+
+    function renderGroupCards() {
+      const container = document.getElementById('group-cards-container');
+      const keys = Object.keys(groupedData).sort();
+      
+      let html = keys.map(nhom => {
+        return `
+          <div class="group-card" id="card-${encodeURIComponent(nhom)}" onclick="selectGroup('${nhom.replace(/'/g, "\\'")}')">
+            <div class="group-icon">📂</div>
+            <div class="kho-group-title">${nhom}</div>
+            <div class="group-count">${groupedData[nhom].length} vật tư</div>
+          </div>
+        `;
+      }).join('');
+      
+      container.innerHTML = html;
+      container.style.display = 'grid'; 
+    }
+
+    window.selectGroup = function(nhom) {
+      currentActiveGroup = nhom;
+      
+      document.querySelectorAll('.group-card').forEach(el => el.classList.remove('active'));
+      let cardEl = document.getElementById(`card-${encodeURIComponent(nhom)}`);
+      if(cardEl) cardEl.classList.add('active');
+
+      document.getElementById('current-group-title').innerHTML = `TỒN KHO: <span style="color:var(--primary);">${nhom.toUpperCase()}</span>`;
+      document.getElementById('searchInventory').value = "";
+      
+      triggerSlideEffect();
+      renderInventoryTable(groupedData[nhom]);
+    }
+
+    window.renderInventoryTable = function(data) {
+        const container = document.getElementById('inventory-list-container');
         container.innerHTML = "";
-        if(data.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Kho trống.</p>'; return; }
+        
+        if(!data || data.length === 0) { 
+            container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Không tìm thấy vật tư nào.</p>'; 
+            return; 
+        }
 
-        for (let nhom in groups) {
-          let rows = groups[nhom].map(item => {
+        let rows = data.map(item => {
             const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(item.Ma_QR)}`;
-            let thumbDisplay = '<span style="color:#ccc">N/A</span>';
+            let thumbDisplay = '<span style="color:#ccc; font-size:11px;">N/A</span>';
+            
             if (item.Hinh_Anh && item.Hinh_Anh.includes('drive.google.com')) {
                 const fileId = item.Hinh_Anh.split('/d/')[1]?.split('/')[0] || item.Hinh_Anh.split('id=')[1]?.split('&')[0];
                 const finalThumb = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
@@ -306,52 +430,118 @@
               <td data-label="Chọn in" style="text-align: center;">
                 <input type="checkbox" class="cb-print" value="${item.id}" style="transform: scale(1.3); cursor: pointer;">
               </td>
-              <td data-label="Mã QR"><img src="${qrImageUrl}" class="qr-preview" onclick="Swal.fire({title: 'QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 250})"></td>
-              <td data-label="Tên hàng"><b>${item.Ten_Hang}</b></td>
-              <td data-label="Tồn kho"><b style="color:var(--primary); font-size:15px;">${item.So_Luong}</b></td>
+              <td data-label="Mã QR">
+                <div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">
+                  <img src="${qrImageUrl}" class="qr-preview" onclick="Swal.fire({title: 'QR: ${item.Ma_QR}', imageUrl: '${qrImageUrl}', imageWidth: 250})">
+                  <small style="color:#7f8c8d; font-size:10.5px; font-weight:bold;">${item.Ma_QR}</small>
+                </div>
+              </td>
+              <td data-label="Tên hàng">
+                <b style="color:#2c3e50; font-size:14px;">${item.Ten_Hang}</b>
+              </td>
+              <td data-label="Tồn kho"><b style="color:var(--primary); font-size:15px; background:#e2e8f0; padding:2px 8px; border-radius:6px;">${item.So_Luong}</b></td>
               <td data-label="Kích thước"><small>${item.Kich_Thuoc || '-'}</small></td>
               <td data-label="Quy cách">${item.Quy_Cach || '-'}</td>
               <td data-label="Chất liệu">${item.Chat_Lieu || '-'}</td>
               <td data-label="Hình ảnh">${thumbDisplay}</td>
-              <td data-label="Thao tác">
-                <button onclick='editItem(${JSON.stringify(item)})' style="color:#2980b9; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px;">SỬA</button> | 
-                <button onclick="deleteItem(${item.id})" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px;">XÓA</button>
+              <td data-label="Thao tác" style="min-width: 90px; text-align: center;">
+                <button onclick='editItem(${JSON.stringify(item)})' style="color:#2980b9; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px; font-size:13px;">SỬA</button> | 
+                <button onclick="deleteItem(${item.id})" style="color:#e74c3c; border:none; background:none; cursor:pointer; font-weight:bold; padding:5px; font-size:13px;">XÓA</button>
               </td>
-            </tr>`}).join('');
+            </tr>`
+        }).join('');
 
-          container.innerHTML += `
-            <div class="group-header" onclick="toggleGroup('${nhom}')">
-              <span>➕ ${nhom.toUpperCase()} (${groups[nhom].length} món)</span>
-              <span>▼</span>
-            </div>
-            <div id="group-${nhom}" class="group-content">
-              <table>
-                <thead><tr><th style="text-align: center; width: 50px;">Chọn</th><th>QR</th><th>Tên hàng</th><th>Tồn</th><th>KT</th><th>QC</th><th>Chất liệu</th><th>Ảnh</th><th>Thao tác</th></tr></thead>
-                <tbody>${rows}</tbody>
-              </table>
-            </div>`;
+        container.innerHTML = `
+          <table class="table-modern">
+            <thead><tr>
+                <th style="width:40px; text-align:center;">Chọn</th>
+                <th style="width:70px;">QR & Mã</th>
+                <th>Tên Vật Tư</th>
+                <th style="width:60px;">Tồn</th>
+                <th style="width:90px;">K.Thước</th>
+                <th style="width:80px;">Q.Cách</th>
+                <th style="width:80px;">C.Liệu</th>
+                <th style="width:60px; text-align:center;">Ảnh</th>
+                <th style="width:90px; text-align:center;">Thao tác</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+    };
+
+    window.filterInventoryList = function() {
+        const query = document.getElementById("searchInventory").value.toLowerCase().trim();
+        const cardsContainer = document.getElementById('group-cards-container');
+        
+        if (query === "") {
+            cardsContainer.style.display = 'grid';
+            if(currentActiveGroup) selectGroup(currentActiveGroup);
+            return;
         }
-      } catch (e) { console.error(e); }
-    }
 
-    function toggleGroup(id) { document.getElementById(`group-${id}`).classList.toggle('show'); }
+        cardsContainer.style.display = 'none';
+        document.getElementById('current-group-title').innerHTML = `TÌM KIẾM: <span style="color:#2980b9;">${query}</span>`;
+
+        const filteredData = globalInventoryData.filter(item => {
+            const ten = (item.Ten_Hang || "").toLowerCase();
+            const ma = (item.Ma_QR || "").toLowerCase();
+            const nhom = (item.Nhom_Hang || "").toLowerCase();
+            const chatlieu = (item.Chat_Lieu || "").toLowerCase();
+            const kichthuoc = (item.Kich_Thuoc || "").toLowerCase();
+            return ten.includes(query) || ma.includes(query) || nhom.includes(query) || chatlieu.includes(query) || kichthuoc.includes(query);
+        });
+        
+        triggerSlideEffect();
+        renderInventoryTable(filteredData);
+    };
 
     async function editItem(item) {
+      const uniqueGroups = [...new Set(globalInventoryData.map(i => i.Nhom_Hang))].filter(Boolean);
+      const datalistHtml = `<datalist id="editGroupList">${uniqueGroups.map(g => `<option value="${g}">`).join('')}</datalist>`;
+
       const { value: formValues } = await Swal.fire({
         title: 'CẬP NHẬT VẬT TƯ',
-        width: '700px',
+        width: '650px',
         html: `
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; font-size: 13px; padding: 10px;">
-            <div><label><b>Nhóm hàng:</b></label><input id="e-nhom" class="swal2-input" value="${item.Nhom_Hang}" style="margin: 5px 0; width: 100%;"></div>
-            <div><label><b>Tên hàng:</b></label><input id="e-ten" class="swal2-input" value="${item.Ten_Hang}" style="margin: 5px 0; width: 100%;"></div>
-            <div><label><b>Số lượng:</b></label><input id="e-sl" type="number" class="swal2-input" value="${item.So_Luong}" style="margin: 5px 0; width: 100%;"></div>
-            <div><label><b>Kích thước:</b></label><input id="e-kt" class="swal2-input" value="${item.Kich_Thuoc || ''}" style="margin: 5px 0; width: 100%;"></div>
-            <div><label><b>Quy cách:</b></label><input id="e-qc" class="swal2-input" value="${item.Quy_Cach || ''}" style="margin: 5px 0; width: 100%;"></div>
-            <div><label><b>Chất liệu:</b></label><input id="e-cl" class="swal2-input" value="${item.Chat_Lieu || ''}" style="margin: 5px 0; width: 100%;"></div>
-            <div style="grid-column: span 2;">
-                <label><b>Thay đổi hình ảnh:</b></label>
-                <input type="file" id="e-hinh" class="swal2-file" accept="image/*" style="margin: 5px 0; width: 100%;">
-            </div>
+          ${datalistHtml}
+          <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 10px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left;">
+                  
+                  <div style="grid-column: span 2;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">NHÓM HÀNG</label>
+                      <input id="e-nhom" list="editGroupList" class="swal2-input" value="${item.Nhom_Hang}" style="width:100%; margin: 5px 0 0 0; font-size: 14px; height: 40px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+                  
+                  <div style="grid-column: span 2;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">TÊN HÀNG HÓA *</label>
+                      <input id="e-ten" class="swal2-input" value="${item.Ten_Hang}" style="width:100%; margin: 5px 0 0 0; font-size: 14px; height: 40px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+                  
+                  <div style="grid-column: span 1;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">SỐ LƯỢNG TỒN</label>
+                      <input id="e-sl" type="number" class="swal2-input" value="${item.So_Luong}" style="width:100%; margin: 5px 0 0 0; font-size: 14px; height: 40px; box-sizing: border-box; color: #d35400; font-weight: bold; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+                  
+                  <div style="grid-column: span 1;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">KÍCH THƯỚC</label>
+                      <input id="e-kt" class="swal2-input" value="${item.Kich_Thuoc || ''}" style="width:100%; margin: 5px 0 0 0; font-size: 14px; height: 40px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+
+                  <div style="grid-column: span 1;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">QUY CÁCH</label>
+                      <input id="e-qc" class="swal2-input" value="${item.Quy_Cach || ''}" style="width:100%; margin: 5px 0 0 0; font-size: 14px; height: 40px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+
+                  <div style="grid-column: span 1;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">CHẤT LIỆU</label>
+                      <input id="e-cl" class="swal2-input" value="${item.Chat_Lieu || ''}" style="width:100%; margin: 5px 0 0 0; font-size: 14px; height: 40px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+
+                  <div style="grid-column: span 2;">
+                      <label style="font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase;">THAY ĐỔI HÌNH ẢNH</label>
+                      <input type="file" id="e-hinh" class="swal2-file" accept="image/*" style="width:100%; margin: 5px 0 0 0; font-size: 13px; padding: 6px; box-sizing: border-box; background: white; border-radius: 6px; border: 1px solid #cbd5e1;">
+                  </div>
+              </div>
           </div>`,
         showCancelButton: true,
         confirmButtonText: 'LƯU THAY ĐỔI',
@@ -379,7 +569,6 @@
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/Kho_Vat_Tu?id=eq.${item.id}`, { method: 'PATCH', headers: h, body: JSON.stringify(formValues) });
         
-        // ĐÃ CẬP NHẬT: GỬI THÔNG BÁO TỰ ĐỘNG SAU KHI SỬA THÀNH CÔNG
         try {
             const rolesTB = ["Admin", "Quan_Ly_Don", "Nhan_Vien_In"];
             const msgTB = `Hệ thống vừa thay đổi thành ${formValues.So_Luong} ${formValues.Ten_Hang} trong kho vật tư`;
@@ -444,9 +633,6 @@
         window.print();
     }
 
-    /* =========================================================
-       HÀM MỚI BỔ SUNG: XỬ LÝ QUÉT QR TÌM KIẾM
-       ========================================================= */
     function startQRScanner() {
         Swal.fire({
             title: 'HƯỚNG CAMERA VÀO MÃ QR',
