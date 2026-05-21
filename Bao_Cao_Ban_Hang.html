@@ -172,8 +172,8 @@
         
         try {
             // Lấy dữ liệu của tháng được chọn (Dựa trên Ngay_Gio bắt đầu bằng YYYY-MM)
-            // Chỉ lấy các trường cần thiết để tối ưu tốc độ
-            const url = `${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?Ngay_Gio=like.${selectedMonth}%&select=Ngay_Gio,Ma_Don,Ten_Khach_Hang,Ten_Hang,So_Luong,Thanh_Tien`;
+            // Đã sửa dấu % thành * cho toán tử like của Supabase
+            const url = `${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?Ngay_Gio=like.${selectedMonth}*&select=Ngay_Gio,Ma_Don,Ten_Khach_Hang,Ten_Hang,So_Luong,Thanh_Tien`;
             const res = await fetch(url, { headers: h });
             
             if (!res.ok) throw new Error("Lỗi kết nối cơ sở dữ liệu");
