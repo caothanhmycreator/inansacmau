@@ -26,8 +26,9 @@
     .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
 
     /* Header & Input */
-    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;}
-    .input-modern { padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 15px; font-weight: bold; color: var(--primary); transition: 0.3s; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
+    .header-top { display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px;}
+    .title-wrapper { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    .input-modern { padding: 8px 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 15px; font-weight: bold; color: var(--primary); transition: 0.3s; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
     .input-modern:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(45, 90, 39, 0.2); }
 
     /* KPI Cards */
@@ -48,9 +49,14 @@
     .chart-title { font-size: 16px; font-weight: bold; color: var(--primary); margin-bottom: 15px; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px;}
     .chart-container { position: relative; height: 300px; width: 100%; }
 
-    /* Tables */
-    .table-card { background: var(--card-bg); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-x: auto;}
-    .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; min-width: 600px; }
+    /* Buttons Popup */
+    .btn-popup { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.3s; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; text-transform: uppercase; }
+    .btn-popup:hover { background: #1e3d1a; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+    .btn-popup.blue { background: #2980b9; }
+    .btn-popup.blue:hover { background: #1a5276; }
+
+    /* Tables (Dùng chung cho popup) */
+    .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; }
     .table-modern th { background: #f8fafc; color: #475569; font-weight: bold; padding: 12px 15px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; text-align: left; }
     .table-modern td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #334155; }
     .table-modern tr:hover { background: #f8fafc; }
@@ -63,6 +69,7 @@
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
         .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
+        .title-wrapper { gap: 10px; }
     }
   </style>
 </head>
@@ -70,13 +77,11 @@
 
   <div class="main-content">
     <div class="header-top">
-      <div>
+      <div class="title-wrapper">
         <h2 style="margin:0; color: var(--primary);">📈 BÁO CÁO DOANH THU & BÁN HÀNG</h2>
-        <p style="margin:5px 0 0 0; color:#64748b; font-size: 13px;">Phân tích chỉ số kinh doanh chi tiết</p>
-      </div>
-      <div>
         <input type="month" id="monthPicker" class="input-modern" onchange="loadReportData()">
       </div>
+      <p style="margin:0; color:#64748b; font-size: 13px;">Phân tích chỉ số kinh doanh chi tiết</p>
     </div>
 
     <div class="kpi-container">
@@ -125,21 +130,9 @@
         </div>
     </div>
 
-    <div class="table-card">
-        <div class="chart-title" style="text-align: left; border:none;">📋 THỐNG KÊ CHI TIẾT MẶT HÀNG ĐÃ BÁN</div>
-        <table class="table-modern">
-            <thead>
-                <tr>
-                    <th style="width: 50px; text-align: center;">STT</th>
-                    <th>Tên Sản Phẩm / Hàng Hóa</th>
-                    <th style="text-align: center;">Số lượng bán</th>
-                    <th style="text-align: right;">Tổng Doanh Thu</th>
-                </tr>
-            </thead>
-            <tbody id="table-products-body">
-                <tr><td colspan="4" style="text-align: center; color: #888;">Đang tải dữ liệu...</td></tr>
-            </tbody>
-        </table>
+    <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px;">
+        <button class="btn-popup" onclick="showProductsPopup()">📋 Chi tiết mặt hàng đã bán</button>
+        <button class="btn-popup blue" onclick="showCustomersPopup()">👥 Danh sách khách hàng</button>
     </div>
 
   </div>
@@ -152,8 +145,11 @@
     let productsChartInst = null;
     let customersChartInst = null;
 
+    // Biến lưu trữ dữ liệu toàn cục cho Popup
+    let globalRawData = [];
+    let globalCustomerMap = {};
+
     document.addEventListener("DOMContentLoaded", () => {
-        // Thiết lập tháng mặc định là tháng hiện tại
         const today = new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -171,11 +167,7 @@
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
         
         try {
-            // FIX LỖI NGÀY THÁNG: 
-            // Tách YYYY và MM từ giá trị input (vd: 2026-05)
             const [year, month] = selectedMonth.split('-');
-            
-            // Tìm kiếm theo định dạng MM/YYYY (vd: *05/2026*) vì CSDL lưu kiểu "21/05/2026 15:40:25"
             const url = `${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?Ngay_Gio=like.*${month}/${year}*&select=Ngay_Gio,Ma_Don,Ten_Khach_Hang,Ten_Hang,So_Luong,Thanh_Tien`;
             
             const res = await fetch(url, { headers: h });
@@ -188,21 +180,23 @@
         } catch (e) {
             console.error(e);
             Swal.fire('Lỗi', 'Không thể tải dữ liệu báo cáo: ' + e.message, 'error');
-            document.getElementById('table-products-body').innerHTML = `<tr><td colspan="4" style="text-align: center; color: red;">Lỗi tải dữ liệu</td></tr>`;
         }
     }
 
     function processData(data, monthStr) {
+        // Lưu dữ liệu vào biến toàn cục để popup sử dụng
+        globalRawData = data; 
+        
         let totalRevenue = 0;
         let totalItemsSold = 0;
         let uniqueCustomers = new Set();
         let uniqueOrders = new Set();
         
         let dailyRevenueMap = {};
-        let productMap = {};
-        let customerMap = {};
+        let productMap = {}; // Dùng cho biểu đồ (gộp riêng Sản phẩm)
+        let customerMap = {}; // Dùng cho biểu đồ và Popup Khách Hàng
 
-        // Tạo mảng các ngày trong tháng (Key theo định dạng YYYY-MM-DD để dễ sort)
+        // Tạo mảng các ngày trong tháng (Key: YYYY-MM-DD)
         const [year, month] = monthStr.split('-');
         const daysInMonth = new Date(year, month, 0).getDate();
         for (let i = 1; i <= daysInMonth; i++) {
@@ -217,43 +211,37 @@
             const khachHang = (row.Ten_Khach_Hang || "Khách lẻ").trim();
             const maDon = row.Ma_Don || "No-ID";
             
-            // FIX LỖI PARSE NGÀY ĐỂ VẼ BIỂU ĐỒ:
-            // Chuyển "21/05/2026 15:40:25" thành key chuẩn "2026-05-21"
             let dayKey = null;
             if (row.Ngay_Gio) {
-                const dateStr = row.Ngay_Gio.split(' ')[0]; // Lấy "21/05/2026"
-                const parts = dateStr.split('/'); // ["21", "05", "2026"]
+                const dateStr = row.Ngay_Gio.split(' ')[0]; // "21/05/2026"
+                const parts = dateStr.split('/');
                 if (parts.length === 3) {
                     dayKey = `${parts[2]}-${parts[1]}-${parts[0]}`;
                 }
             }
 
-            // Cộng dồn các chỉ số
+            // Cộng dồn KPIs
             totalRevenue += thanhTien;
             totalItemsSold += soLuong;
             if (row.Ten_Khach_Hang) uniqueCustomers.add(row.Ten_Khach_Hang);
             if (row.Ma_Don) uniqueOrders.add(row.Ma_Don);
 
-            // Nhóm doanh thu theo ngày
+            // Gom nhóm cho biểu đồ
             if (dayKey && dailyRevenueMap[dayKey] !== undefined) {
                 dailyRevenueMap[dayKey] += thanhTien;
             }
-
-            // Nhóm theo sản phẩm
-            if (!productMap[tenHang]) {
-                productMap[tenHang] = { quantity: 0, revenue: 0 };
-            }
+            if (!productMap[tenHang]) productMap[tenHang] = { quantity: 0, revenue: 0 };
             productMap[tenHang].quantity += soLuong;
             productMap[tenHang].revenue += thanhTien;
 
-            // Nhóm theo khách hàng
-            if (!customerMap[khachHang]) {
-                customerMap[khachHang] = 0;
-            }
+            if (!customerMap[khachHang]) customerMap[khachHang] = 0;
             customerMap[khachHang] += thanhTien;
         });
 
-        // Đổ dữ liệu ra view
+        // Gán customerMap vào toàn cục cho Popup
+        globalCustomerMap = customerMap; 
+
+        // Update UI
         document.getElementById('kpi-revenue').innerText = totalRevenue.toLocaleString('vi-VN') + " đ";
         document.getElementById('kpi-items').innerText = totalItemsSold.toLocaleString('vi-VN');
         document.getElementById('kpi-customers').innerText = uniqueCustomers.size.toLocaleString('vi-VN');
@@ -262,14 +250,119 @@
         drawDailyChart(dailyRevenueMap);
         drawTopProductsChart(productMap);
         drawTopCustomersChart(customerMap);
-        renderProductsTable(productMap);
     }
 
+    // ==========================================
+    // CÁC HÀM XỬ LÝ POPUP
+    // ==========================================
+    window.showProductsPopup = function() {
+        if (!globalRawData || globalRawData.length === 0) {
+            Swal.fire('Thông báo', 'Không có giao dịch mặt hàng nào trong tháng này.', 'info');
+            return;
+        }
+
+        // Nhóm dữ liệu theo Khách Hàng + Tên Sản Phẩm để hiển thị chi tiết
+        let detailedMap = {};
+        globalRawData.forEach(row => {
+            const tenHang = (row.Ten_Hang || "Sản phẩm không tên").trim();
+            const khachHang = (row.Ten_Khach_Hang || "Khách lẻ").trim();
+            const soLuong = Number(row.So_Luong) || 0;
+            const thanhTien = Number(row.Thanh_Tien) || 0;
+            
+            const key = khachHang + "|||" + tenHang;
+            if(!detailedMap[key]) {
+                detailedMap[key] = { tenHang, khachHang, quantity: 0, revenue: 0 };
+            }
+            detailedMap[key].quantity += soLuong;
+            detailedMap[key].revenue += thanhTien;
+        });
+
+        const sortedItems = Object.values(detailedMap).sort((a, b) => b.revenue - a.revenue);
+
+        let tbodyHTML = sortedItems.map((item, index) => `
+            <tr>
+                <td style="text-align: center;">${index + 1}</td>
+                <td style="font-weight: bold; color: #2980b9;">${item.khachHang}</td>
+                <td style="font-weight: 500;">${item.tenHang}</td>
+                <td class="number">${item.quantity.toLocaleString('vi-VN')}</td>
+                <td class="money">${item.revenue.toLocaleString('vi-VN')} đ</td>
+            </tr>
+        `).join('');
+
+        Swal.fire({
+            title: '<span style="color:var(--primary); font-size: 20px; text-transform: uppercase;">📋 Chi tiết các mặt hàng đã bán</span>',
+            html: `
+                <div style="max-height: 65vh; overflow-y: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff;">
+                    <table class="table-modern" style="margin: 0; min-width: 100%;">
+                        <thead style="position: sticky; top: 0; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <tr>
+                                <th style="width: 50px; text-align: center;">STT</th>
+                                <th>Tên Khách Hàng</th>
+                                <th>Tên Sản Phẩm / Hàng Hóa</th>
+                                <th style="text-align: center;width: 100px">Số Lượng</th>
+                                <th style="text-align: right;width: 100px"">Doanh Thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tbodyHTML}</tbody>
+                    </table>
+                </div>
+            `,
+            width: '900px',
+            showConfirmButton: true,
+            confirmButtonText: 'ĐÓNG',
+            confirmButtonColor: '#2D5A27'
+        });
+    };
+
+    window.showCustomersPopup = function() {
+        if (!globalCustomerMap || Object.keys(globalCustomerMap).length === 0) {
+            Swal.fire('Thông báo', 'Không có dữ liệu khách hàng trong tháng này.', 'info');
+            return;
+        }
+
+        const sortedCustomers = Object.entries(globalCustomerMap)
+            .map(([name, revenue]) => ({ name, revenue }))
+            .sort((a, b) => b.revenue - a.revenue);
+
+        let tbodyHTML = sortedCustomers.map((item, index) => `
+            <tr>
+                <td style="text-align: center;">${index + 1}</td>
+                <td style="font-weight: bold; color: #2980b9;">${item.name}</td>
+                <td class="money">${item.revenue.toLocaleString('vi-VN')} đ</td>
+            </tr>
+        `).join('');
+
+        Swal.fire({
+            title: '<span style="color:#2980b9; font-size: 20px; text-transform: uppercase;">👥 Danh sách khách hàng</span>',
+            html: `
+                <div style="max-height: 65vh; overflow-y: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff;">
+                    <table class="table-modern" style="margin: 0; min-width: 100%;">
+                        <thead style="position: sticky; top: 0; z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <tr>
+                                <th style="width: 50px; text-align: center;">STT</th>
+                                <th>Tên Khách Hàng</th>
+                                <th style="text-align: right;width: 150px">Tổng Doanh Thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tbodyHTML}</tbody>
+                    </table>
+                </div>
+            `,
+            width: '700px',
+            showConfirmButton: true,
+            confirmButtonText: 'ĐÓNG',
+            confirmButtonColor: '#2980b9'
+        });
+    };
+
+    // ==========================================
+    // CÁC HÀM VẼ BIỂU ĐỒ (GIỮ NGUYÊN)
+    // ==========================================
     function drawDailyChart(dailyMap) {
         const ctx = document.getElementById('chartDailyRevenue').getContext('2d');
         if (dailyChartInst) dailyChartInst.destroy();
 
-        const labels = Object.keys(dailyMap).map(k => k.split('-')[2]); // Chỉ lấy số ngày hiển thị
+        const labels = Object.keys(dailyMap).map(k => k.split('-')[2]);
         const dataValues = Object.values(dailyMap);
 
         dailyChartInst = new Chart(ctx, {
@@ -293,13 +386,7 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.raw.toLocaleString('vi-VN') + ' đ';
-                            }
-                        }
-                    }
+                    tooltip: { callbacks: { label: function(context) { return context.raw.toLocaleString('vi-VN') + ' đ'; } } }
                 },
                 scales: {
                     y: { 
@@ -358,13 +445,7 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { position: 'right', labels: { boxWidth: 12, font: {size: 11} } },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return ' ' + context.raw.toLocaleString('vi-VN') + ' đ';
-                            }
-                        }
-                    }
+                    tooltip: { callbacks: { label: function(context) { return ' ' + context.raw.toLocaleString('vi-VN') + ' đ'; } } }
                 }
             }
         });
@@ -399,13 +480,7 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.raw.toLocaleString('vi-VN') + ' đ';
-                            }
-                        }
-                    }
+                    tooltip: { callbacks: { label: function(context) { return context.raw.toLocaleString('vi-VN') + ' đ'; } } }
                 },
                 scales: {
                     x: {
@@ -420,28 +495,6 @@
                 }
             }
         });
-    }
-
-    function renderProductsTable(productMap) {
-        const tbody = document.getElementById('table-products-body');
-        
-        const sortedProducts = Object.entries(productMap)
-            .map(([name, data]) => ({ name, quantity: data.quantity, revenue: data.revenue }))
-            .sort((a, b) => b.revenue - a.revenue); 
-
-        if (sortedProducts.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #888;">Không có giao dịch nào trong tháng này.</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = sortedProducts.map((item, index) => `
-            <tr>
-                <td style="text-align: center;">${index + 1}</td>
-                <td style="font-weight: 500;">${item.name}</td>
-                <td class="number">${item.quantity.toLocaleString('vi-VN')}</td>
-                <td class="money">${item.revenue.toLocaleString('vi-VN')} đ</td>
-            </tr>
-        `).join('');
     }
   </script>
 </body>
