@@ -283,6 +283,11 @@
     let masterData = [];     
     let currentItems = []; 
 
+    // Biến toàn cục để lưu trạng thái chỉnh sửa
+    let editingMaHD = null;
+    let editingNgayGio = null;
+    let editingLinkFile = null;
+
     document.addEventListener("DOMContentLoaded", () => { loadData(); });
 
     function formatCurrency(input) { let v = input.value.replace(/\D/g, ""); input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
@@ -376,7 +381,29 @@
     }
 
     function removeItem(index) { currentItems.splice(index, 1); renderCart(); }
-    function clearCart() { currentItems = []; renderCart(); }
+    
+    // Hàm reset lại trạng thái lưu/sửa
+    function resetEditState() {
+        editingMaHD = null;
+        editingNgayGio = null;
+        editingLinkFile = null;
+        const submitBtn = document.querySelector('.btn-submit[onclick="saveToDB()"]');
+        if(submitBtn) {
+            submitBtn.innerHTML = '💾 LƯU VÀO DATABASE';
+            submitBtn.style.background = ''; // reset to default css
+        }
+    }
+
+    function clearCart() { 
+        currentItems = []; 
+        renderCart(); 
+        resetEditState();
+        // Xóa form luôn khi bấm LÀM LẠI
+        document.querySelectorAll('.form-card input').forEach(input => {
+            if(input.id !== 'f-giamthue' && input.id !== 'f-sl' && input.id !== 'f-dongia' && input.id !== 'f-thanhtien') input.value = '';
+        });
+        document.getElementById('f-giamthue').value = "0";
+    }
 
     function renderCart() {
         const cartDiv = document.getElementById('cart-section');
@@ -430,11 +457,23 @@
             if(!tenDonVi || !daiDien) return Swal.fire('Lỗi', 'Vui lòng nhập Tên Đơn Vị và Người Đại Diện!', 'warning');
             if(currentItems.length === 0) return Swal.fire('Lỗi', 'Chưa có sản phẩm nào!', 'warning');
 
-            Swal.fire({ title: 'Đang lưu hợp đồng...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: editingMaHD ? 'Đang cập nhật hợp đồng...' : 'Đang lưu hợp đồng...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
             
-            const maHD = generateNewMaHD();
-            const ngayGio = getCleanVNTime();
+            let maHD, ngayGio, linkFile;
+            
+            // Xử lý CẬP NHẬT nếu đang trong chế độ Edit
+            if (editingMaHD) {
+                maHD = editingMaHD;
+                ngayGio = editingNgayGio;
+                linkFile = editingLinkFile;
+                // Xóa dữ liệu cũ của hợp đồng này trước khi thêm danh sách mới để đảm bảo chính xác các item
+                await fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?Ma_HD=eq.${maHD}`, { method: 'DELETE', headers: h });
+            } else {
+                maHD = generateNewMaHD();
+                ngayGio = getCleanVNTime();
+                linkFile = null;
+            }
             
             const payloads = currentItems.map(item => {
                 let giamThueAmount = item.Thanh_Tien * 0.2 * (giamThueRate / 100);
@@ -443,18 +482,15 @@
                 return {
                     Ngay_Gio: ngayGio, Ma_HD: maHD, Ten_Don_Vi: tenDonVi, Ten_Dai_Dien: daiDien, Chuc_Vu: chucVu, MST: mst, Dia_Chi: diaChi, So_Tai_Khoan: stk,
                     Ngan_Hang: nganHang, Ten_Hang: item.Ten_Hang, DVT: item.DVT, So_Luong: item.So_Luong, Don_Gia: item.Don_Gia, Thanh_Tien: item.Thanh_Tien,
-                    Giam_Thue: giamThueRate, Tong_Cong: tongCong, Link_File: null, So_Dien_Thoai: sdt
+                    Giam_Thue: giamThueRate, Tong_Cong: tongCong, Link_File: linkFile, So_Dien_Thoai: sdt
                 };
             });
 
             await Promise.all(payloads.map(payload => fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}`, { method: 'POST', headers: h, body: JSON.stringify(payload) }) ));
 
-            Swal.fire({ icon: 'success', title: 'Lưu thành công!', text: `Mã HĐ: ${maHD}`, timer: 2000, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: editingMaHD ? 'Cập nhật thành công!' : 'Lưu thành công!', text: `Mã HĐ: ${maHD}`, timer: 2000, showConfirmButton: false });
+            
             clearCart();
-            document.querySelectorAll('.form-card input').forEach(input => {
-                if(input.id !== 'f-giamthue' && input.id !== 'f-sl' && input.id !== 'f-dongia' && input.id !== 'f-thanhtien') input.value = '';
-            });
-            document.getElementById('f-giamthue').value = "0";
             loadData();
         } catch (e) { Swal.fire('Lỗi', e.message, 'error'); }
     }
@@ -531,77 +567,57 @@
         }).join('');
     }
 
-    window.editGroupRecord = async function(maHD) {
+    // Nạp dữ liệu vào form để chỉnh sửa
+    window.editGroupRecord = function(maHD) {
         const items = masterData.filter(x => x.Ma_HD === maHD);
         if(items.length === 0) return;
         const info = items[0];
 
-        const { value: formValues } = await Swal.fire({
-            title: 'Chỉnh sửa Hợp Đồng',
-            html: `
-                <div style="text-align: left; font-size: 14px; max-height: 60vh; overflow-y: auto; padding-right: 10px;">
-                    <div style="margin-bottom: 10px;"><b>Tên Cơ Quan / Đơn Vị (Bên B):</b> <input id="e-tendonvi" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.Ten_Don_Vi || ''}"></div>
-                    <div style="margin-bottom: 10px;"><b>Người Đại Diện:</b> <input id="e-daidien" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.Ten_Dai_Dien || ''}"></div>
-                    <div style="margin-bottom: 10px;"><b>Chức Vụ:</b> <input id="e-chucvu" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.Chuc_Vu || ''}"></div>
-                    <div style="margin-bottom: 10px;"><b>Số Điện Thoại:</b> <input id="e-sdt" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.So_Dien_Thoai || ''}"></div>
-                    <div style="margin-bottom: 10px;"><b>Mã Số Thuế:</b> <input id="e-mst" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.MST || ''}"></div>
-                    <div style="margin-bottom: 10px;"><b>Địa Chỉ:</b> <input id="e-diachi" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.Dia_Chi || ''}"></div>
-                    <div style="margin-bottom: 10px;"><b>Số Tài Khoản:</b> <input id="e-stk" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.So_Tai_Khoan || ''}"></div>
-                    <div style="margin-bottom: 10px;"><b>Ngân Hàng:</b> <input id="e-nganhang" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.Ngan_Hang || ''}"></div>
-                    <div style="margin-bottom: 10px;"><b>Mức Tỷ Lệ Thuế (%):</b> <input id="e-giamthue" type="number" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.Giam_Thue || '0'}"></div>
-                    <div style="margin-top: 15px; font-style: italic; color: #7f8c8d; font-size: 12px;">* Lưu ý: Việc chỉnh sửa này sẽ áp dụng thông tin Khách hàng cho <b>tất cả sản phẩm</b> trong mã hợp đồng này. Để thay đổi tên hoặc số lượng sản phẩm, vui lòng xóa và tạo mới hợp đồng.</div>
-                </div>
-            `,
-            width: '600px',
-            focusConfirm: false,
-            showCancelButton: true,
-            confirmButtonText: 'Lưu thay đổi',
-            cancelButtonText: 'Hủy bỏ',
-            confirmButtonColor: '#2D5A27',
-            preConfirm: () => {
-                return {
-                    Ten_Don_Vi: document.getElementById('e-tendonvi').value.trim(),
-                    Ten_Dai_Dien: document.getElementById('e-daidien').value.trim(),
-                    Chuc_Vu: document.getElementById('e-chucvu').value.trim(),
-                    So_Dien_Thoai: document.getElementById('e-sdt').value.trim(),
-                    MST: document.getElementById('e-mst').value.replace(/\D/g, '') ? parseInt(document.getElementById('e-mst').value.replace(/\D/g, ''), 10) : null,
-                    Dia_Chi: document.getElementById('e-diachi').value.trim(),
-                    So_Tai_Khoan: document.getElementById('e-stk').value.replace(/\D/g, '') ? parseInt(document.getElementById('e-stk').value.replace(/\D/g, ''), 10) : null,
-                    Ngan_Hang: document.getElementById('e-nganhang').value.trim(),
-                    Giam_Thue: parseFloat(document.getElementById('e-giamthue').value) || 0
-                }
-            }
-        });
+        // 1. Nạp dữ liệu Bên B
+        document.getElementById('f-tendonvi').value = info.Ten_Don_Vi || '';
+        document.getElementById('f-daidien').value = info.Ten_Dai_Dien || '';
+        document.getElementById('f-chucvu').value = info.Chuc_Vu || '';
+        document.getElementById('f-sdt').value = info.So_Dien_Thoai || '';
+        document.getElementById('f-mst').value = info.MST || '';
+        document.getElementById('f-diachi').value = info.Dia_Chi || '';
+        document.getElementById('f-stk').value = info.So_Tai_Khoan || '';
+        document.getElementById('f-nganhang').value = info.Ngan_Hang || '';
+        document.getElementById('f-giamthue').value = info.Giam_Thue || '0';
 
-        if (formValues) {
-            Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+        // 2. Nạp giỏ hàng sản phẩm
+        currentItems = items.map(item => ({
+            Ten_Hang: item.Ten_Hang,
+            DVT: item.DVT,
+            So_Luong: item.So_Luong,
+            Don_Gia: item.Don_Gia,
+            Thanh_Tien: item.Thanh_Tien
+        }));
 
-            try {
-                // Lặp qua tất cả các sản phẩm có cùng Mã HĐ để cập nhật lại thông tin chung & tính lại Thuế
-                const patchPromises = items.map(item => {
-                    let newGiamThue = formValues.Giam_Thue;
-                    let giamThueAmount = item.Thanh_Tien * 0.2 * (newGiamThue / 100);
-                    let newTongCong = item.Thanh_Tien - giamThueAmount;
+        // 3. Đánh dấu trạng thái Edit
+        editingMaHD = info.Ma_HD;
+        editingNgayGio = info.Ngay_Gio;
+        editingLinkFile = info.Link_File;
 
-                    let payload = { ...formValues, Tong_Cong: newTongCong };
-
-                    return fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?id=eq.${item.id}`, {
-                        method: 'PATCH',
-                        headers: h,
-                        body: JSON.stringify(payload)
-                    });
-                });
-
-                await Promise.all(patchPromises);
-                
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Cập nhật thành công!', showConfirmButton: false, timer: 1500 });
-                loadData();
-            } catch(e) {
-                console.error(e);
-                Swal.fire('Lỗi', e.message, 'error');
-            }
+        // 4. Update UI hiển thị
+        renderCart();
+        
+        const submitBtn = document.querySelector('.btn-submit[onclick="saveToDB()"]');
+        if(submitBtn) {
+            submitBtn.innerHTML = '🔄 CẬP NHẬT DATABASE';
+            submitBtn.style.background = '#f39c12';
         }
+
+        // Tự động cuộn lên đầu trang form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: 'Đã tải dữ liệu lên Form để chỉnh sửa!',
+            showConfirmButton: false,
+            timer: 2000
+        });
     }
 
     window.deleteFileLink = async function(maHD) {
