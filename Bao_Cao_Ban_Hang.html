@@ -171,11 +171,14 @@
         const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
         
         try {
-            // Lấy dữ liệu của tháng được chọn (Dựa trên Ngay_Gio bắt đầu bằng YYYY-MM)
-            // Đã sửa dấu % thành * cho toán tử like của Supabase
-            const url = `${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?Ngay_Gio=like.${selectedMonth}*&select=Ngay_Gio,Ma_Don,Ten_Khach_Hang,Ten_Hang,So_Luong,Thanh_Tien`;
-            const res = await fetch(url, { headers: h });
+            // FIX LỖI NGÀY THÁNG: 
+            // Tách YYYY và MM từ giá trị input (vd: 2026-05)
+            const [year, month] = selectedMonth.split('-');
             
+            // Tìm kiếm theo định dạng MM/YYYY (vd: *05/2026*) vì CSDL lưu kiểu "21/05/2026 15:40:25"
+            const url = `${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?Ngay_Gio=like.*${month}/${year}*&select=Ngay_Gio,Ma_Don,Ten_Khach_Hang,Ten_Hang,So_Luong,Thanh_Tien`;
+            
+            const res = await fetch(url, { headers: h });
             if (!res.ok) throw new Error("Lỗi kết nối cơ sở dữ liệu");
             const data = await res.json();
             
@@ -190,7 +193,6 @@
     }
 
     function processData(data, monthStr) {
-        // --- 1. Khởi tạo biến lưu trữ ---
         let totalRevenue = 0;
         let totalItemsSold = 0;
         let uniqueCustomers = new Set();
@@ -200,7 +202,7 @@
         let productMap = {};
         let customerMap = {};
 
-        // Tạo mảng các ngày trong tháng để vẽ trục X đầy đủ
+        // Tạo mảng các ngày trong tháng (Key theo định dạng YYYY-MM-DD để dễ sort)
         const [year, month] = monthStr.split('-');
         const daysInMonth = new Date(year, month, 0).getDate();
         for (let i = 1; i <= daysInMonth; i++) {
@@ -208,7 +210,6 @@
             dailyRevenueMap[dayKey] = 0;
         }
 
-        // --- 2. Duyệt dữ liệu và gom nhóm ---
         data.forEach(row => {
             const thanhTien = Number(row.Thanh_Tien) || 0;
             const soLuong = Number(row.So_Luong) || 0;
@@ -216,16 +217,24 @@
             const khachHang = (row.Ten_Khach_Hang || "Khách lẻ").trim();
             const maDon = row.Ma_Don || "No-ID";
             
-            // Lấy YYYY-MM-DD từ Ngay_Gio
-            const dayKey = row.Ngay_Gio ? row.Ngay_Gio.substring(0, 10) : null;
+            // FIX LỖI PARSE NGÀY ĐỂ VẼ BIỂU ĐỒ:
+            // Chuyển "21/05/2026 15:40:25" thành key chuẩn "2026-05-21"
+            let dayKey = null;
+            if (row.Ngay_Gio) {
+                const dateStr = row.Ngay_Gio.split(' ')[0]; // Lấy "21/05/2026"
+                const parts = dateStr.split('/'); // ["21", "05", "2026"]
+                if (parts.length === 3) {
+                    dayKey = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                }
+            }
 
-            // Tính KPI tổng
+            // Cộng dồn các chỉ số
             totalRevenue += thanhTien;
             totalItemsSold += soLuong;
             if (row.Ten_Khach_Hang) uniqueCustomers.add(row.Ten_Khach_Hang);
             if (row.Ma_Don) uniqueOrders.add(row.Ma_Don);
 
-            // Nhóm theo ngày
+            // Nhóm doanh thu theo ngày
             if (dayKey && dailyRevenueMap[dayKey] !== undefined) {
                 dailyRevenueMap[dayKey] += thanhTien;
             }
@@ -244,30 +253,23 @@
             customerMap[khachHang] += thanhTien;
         });
 
-        // --- 3. Cập nhật thẻ KPI ---
+        // Đổ dữ liệu ra view
         document.getElementById('kpi-revenue').innerText = totalRevenue.toLocaleString('vi-VN') + " đ";
         document.getElementById('kpi-items').innerText = totalItemsSold.toLocaleString('vi-VN');
         document.getElementById('kpi-customers').innerText = uniqueCustomers.size.toLocaleString('vi-VN');
         document.getElementById('kpi-orders').innerText = uniqueOrders.size.toLocaleString('vi-VN');
 
-        // --- 4. Vẽ biểu đồ ---
         drawDailyChart(dailyRevenueMap);
         drawTopProductsChart(productMap);
         drawTopCustomersChart(customerMap);
-
-        // --- 5. Đổ dữ liệu vào bảng ---
         renderProductsTable(productMap);
     }
-
-    // ==========================================
-    // CÁC HÀM VẼ BIỂU ĐỒ VÀ BẢNG
-    // ==========================================
 
     function drawDailyChart(dailyMap) {
         const ctx = document.getElementById('chartDailyRevenue').getContext('2d');
         if (dailyChartInst) dailyChartInst.destroy();
 
-        const labels = Object.keys(dailyMap).map(k => k.split('-')[2]); // Chỉ lấy ngày (DD)
+        const labels = Object.keys(dailyMap).map(k => k.split('-')[2]); // Chỉ lấy số ngày hiển thị
         const dataValues = Object.values(dailyMap);
 
         dailyChartInst = new Chart(ctx, {
@@ -319,12 +321,10 @@
         const ctx = document.getElementById('chartTopProducts').getContext('2d');
         if (productsChartInst) productsChartInst.destroy();
 
-        // Chuyển object thành mảng và sort giảm dần theo doanh thu
         const sortedProducts = Object.entries(productMap)
             .map(([name, data]) => ({ name, revenue: data.revenue }))
             .sort((a, b) => b.revenue - a.revenue);
 
-        // Lấy top 5, còn lại gộp vào "Khác"
         let labels = [];
         let dataValues = [];
         let othersRevenue = 0;
@@ -377,7 +377,7 @@
         const sortedCustomers = Object.entries(customerMap)
             .map(([name, revenue]) => ({ name, revenue }))
             .sort((a, b) => b.revenue - a.revenue)
-            .slice(0, 5); // Lấy top 5
+            .slice(0, 5); 
 
         const labels = sortedCustomers.map(c => c.name.length > 15 ? c.name.substring(0, 15) + '...' : c.name);
         const dataValues = sortedCustomers.map(c => c.revenue);
@@ -394,7 +394,7 @@
                 }]
             },
             options: {
-                indexAxis: 'y', // Đổi thành biểu đồ cột ngang
+                indexAxis: 'y', 
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
@@ -427,7 +427,7 @@
         
         const sortedProducts = Object.entries(productMap)
             .map(([name, data]) => ({ name, quantity: data.quantity, revenue: data.revenue }))
-            .sort((a, b) => b.revenue - a.revenue); // Xếp theo doanh thu giảm dần
+            .sort((a, b) => b.revenue - a.revenue); 
 
         if (sortedProducts.length === 0) {
             tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #888;">Không có giao dịch nào trong tháng này.</td></tr>`;
