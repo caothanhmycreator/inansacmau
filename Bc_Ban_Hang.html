@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Báo Cáo Bán Hàng - Sắc Màu</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script src="js/config.js"></script>
+  <script src="js/auth_guard.js"></script>
+  <script src="js/sidebar_loader.js"></script> 
+  
+  <style>
+    :root { 
+        --primary: #2D5A27; 
+        --bg: #f4f7f6; 
+        --border: #e2e8f0; 
+        --accent: #2980b9; 
+        --orange: #e67e22; 
+        --card-bg: #ffffff;
+    }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
+    #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
+    .main-content { flex: 1; margin-left: 250px; padding: 25px; transition: 0.3s; min-width: 0; }
+
+    /* Header & Input */
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;}
+    .input-modern { padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 15px; font-weight: bold; color: var(--primary); transition: 0.3s; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
+    .input-modern:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(45, 90, 39, 0.2); }
+
+    /* KPI Cards */
+    .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
+    .kpi-card { background: var(--card-bg); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; position: relative; overflow: hidden; border-bottom: 4px solid var(--primary); }
+    .kpi-card.blue { border-color: #3498db; }
+    .kpi-card.orange { border-color: #e67e22; }
+    .kpi-card.purple { border-color: #9b59b6; }
+    .kpi-title { font-size: 13px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; margin-bottom: 8px; z-index: 1;}
+    .kpi-value { font-size: 26px; font-weight: 900; color: #2c3e50; z-index: 1;}
+    .kpi-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 45px; opacity: 0.1; z-index: 0; }
+
+    /* Charts Grid */
+    .charts-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; margin-bottom: 25px; }
+    .chart-card { background: var(--card-bg); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .chart-card-full { grid-column: span 12; }
+    .chart-card-half { grid-column: span 6; }
+    .chart-title { font-size: 16px; font-weight: bold; color: var(--primary); margin-bottom: 15px; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px;}
+    .chart-container { position: relative; height: 300px; width: 100%; }
+
+    /* Tables */
+    .table-card { background: var(--card-bg); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-x: auto;}
+    .table-modern { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; min-width: 600px; }
+    .table-modern th { background: #f8fafc; color: #475569; font-weight: bold; padding: 12px 15px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; text-align: left; }
+    .table-modern td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #334155; }
+    .table-modern tr:hover { background: #f8fafc; }
+    .table-modern td.money { font-weight: bold; color: #c0392b; text-align: right; }
+    .table-modern td.number { font-weight: bold; text-align: center; color: #2980b9;}
+
+    @media (max-width: 1024px) {
+        .chart-card-half { grid-column: span 12; }
+    }
+    @media (max-width: 768px) {
+        #sidebar-frame { left: -250px; }
+        .main-content { margin-left: 0 !important; padding: 15px; padding-top: 65px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-content">
+    <div class="header-top">
+      <div>
+        <h2 style="margin:0; color: var(--primary);">📈 BÁO CÁO DOANH THU & BÁN HÀNG</h2>
+        <p style="margin:5px 0 0 0; color:#64748b; font-size: 13px;">Phân tích chỉ số kinh doanh chi tiết theo tháng</p>
+      </div>
+      <div>
+        <input type="month" id="monthPicker" class="input-modern" onchange="loadReportData()">
+      </div>
+    </div>
+
+    <div class="kpi-container">
+        <div class="kpi-card">
+            <div class="kpi-icon">💰</div>
+            <div class="kpi-title">TỔNG DOANH THU</div>
+            <div class="kpi-value" id="kpi-revenue">0 đ</div>
+        </div>
+        <div class="kpi-card blue">
+            <div class="kpi-icon">📦</div>
+            <div class="kpi-title">TỔNG SP ĐÃ BÁN</div>
+            <div class="kpi-value" id="kpi-items">0</div>
+        </div>
+        <div class="kpi-card orange">
+            <div class="kpi-icon">👥</div>
+            <div class="kpi-title">SỐ KHÁCH HÀNG</div>
+            <div class="kpi-value" id="kpi-customers">0</div>
+        </div>
+        <div class="kpi-card purple">
+            <div class="kpi-icon">🧾</div>
+            <div class="kpi-title">TỔNG SỐ ĐƠN</div>
+            <div class="kpi-value" id="kpi-orders">0</div>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-card chart-card-full">
+            <div class="chart-title">BIỂU ĐỒ DOANH THU THEO NGÀY TRONG THÁNG</div>
+            <div class="chart-container" style="height: 350px;">
+                <canvas id="chartDailyRevenue"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card chart-card-half">
+            <div class="chart-title">TOP SẢN PHẨM DOANH THU CAO</div>
+            <div class="chart-container">
+                <canvas id="chartTopProducts"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card chart-card-half">
+            <div class="chart-title">TOP KHÁCH HÀNG DOANH SỐ CAO</div>
+            <div class="chart-container">
+                <canvas id="chartTopCustomers"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="chart-title" style="text-align: left; border:none;">📋 THỐNG KÊ CHI TIẾT MẶT HÀNG ĐÃ BÁN</div>
+        <table class="table-modern">
+            <thead>
+                <tr>
+                    <th style="width: 50px; text-align: center;">STT</th>
+                    <th>Tên Sản Phẩm / Hàng Hóa</th>
+                    <th style="text-align: center;">Số lượng bán</th>
+                    <th style="text-align: right;">Tổng Doanh Thu</th>
+                </tr>
+            </thead>
+            <tbody id="table-products-body">
+                <tr><td colspan="4" style="text-align: center; color: #888;">Đang tải dữ liệu...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+  </div>
+
+  <script>
+    const TABLE_NAME = "NhatKy_BanHang";
+    
+    // Biến lưu trữ instances của Chart.js để hủy trước khi vẽ lại
+    let dailyChartInst = null;
+    let productsChartInst = null;
+    let customersChartInst = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // Thiết lập tháng mặc định là tháng hiện tại
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        document.getElementById('monthPicker').value = `${yyyy}-${mm}`;
+        
+        loadReportData();
+    });
+
+    async function loadReportData() {
+        const selectedMonth = document.getElementById('monthPicker').value; // Format: YYYY-MM
+        if (!selectedMonth) return;
+
+        Swal.fire({ title: 'Đang tổng hợp dữ liệu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
+        
+        try {
+            // Lấy dữ liệu của tháng được chọn (Dựa trên Ngay_Gio bắt đầu bằng YYYY-MM)
+            // Chỉ lấy các trường cần thiết để tối ưu tốc độ
+            const url = `${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?Ngay_Gio=like.${selectedMonth}%&select=Ngay_Gio,Ma_Don,Ten_Khach_Hang,Ten_Hang,So_Luong,Thanh_Tien`;
+            const res = await fetch(url, { headers: h });
+            
+            if (!res.ok) throw new Error("Lỗi kết nối cơ sở dữ liệu");
+            const data = await res.json();
+            
+            processData(data, selectedMonth);
+            Swal.close();
+            
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Lỗi', 'Không thể tải dữ liệu báo cáo: ' + e.message, 'error');
+            document.getElementById('table-products-body').innerHTML = `<tr><td colspan="4" style="text-align: center; color: red;">Lỗi tải dữ liệu</td></tr>`;
+        }
+    }
+
+    function processData(data, monthStr) {
+        // --- 1. Khởi tạo biến lưu trữ ---
+        let totalRevenue = 0;
+        let totalItemsSold = 0;
+        let uniqueCustomers = new Set();
+        let uniqueOrders = new Set();
+        
+        let dailyRevenueMap = {};
+        let productMap = {};
+        let customerMap = {};
+
+        // Tạo mảng các ngày trong tháng để vẽ trục X đầy đủ
+        const [year, month] = monthStr.split('-');
+        const daysInMonth = new Date(year, month, 0).getDate();
+        for (let i = 1; i <= daysInMonth; i++) {
+            let dayKey = `${monthStr}-${String(i).padStart(2, '0')}`;
+            dailyRevenueMap[dayKey] = 0;
+        }
+
+        // --- 2. Duyệt dữ liệu và gom nhóm ---
+        data.forEach(row => {
+            const thanhTien = Number(row.Thanh_Tien) || 0;
+            const soLuong = Number(row.So_Luong) || 0;
+            const tenHang = (row.Ten_Hang || "Sản phẩm không tên").trim();
+            const khachHang = (row.Ten_Khach_Hang || "Khách lẻ").trim();
+            const maDon = row.Ma_Don || "No-ID";
+            
+            // Lấy YYYY-MM-DD từ Ngay_Gio
+            const dayKey = row.Ngay_Gio ? row.Ngay_Gio.substring(0, 10) : null;
+
+            // Tính KPI tổng
+            totalRevenue += thanhTien;
+            totalItemsSold += soLuong;
+            if (row.Ten_Khach_Hang) uniqueCustomers.add(row.Ten_Khach_Hang);
+            if (row.Ma_Don) uniqueOrders.add(row.Ma_Don);
+
+            // Nhóm theo ngày
+            if (dayKey && dailyRevenueMap[dayKey] !== undefined) {
+                dailyRevenueMap[dayKey] += thanhTien;
+            }
+
+            // Nhóm theo sản phẩm
+            if (!productMap[tenHang]) {
+                productMap[tenHang] = { quantity: 0, revenue: 0 };
+            }
+            productMap[tenHang].quantity += soLuong;
+            productMap[tenHang].revenue += thanhTien;
+
+            // Nhóm theo khách hàng
+            if (!customerMap[khachHang]) {
+                customerMap[khachHang] = 0;
+            }
+            customerMap[khachHang] += thanhTien;
+        });
+
+        // --- 3. Cập nhật thẻ KPI ---
+        document.getElementById('kpi-revenue').innerText = totalRevenue.toLocaleString('vi-VN') + " đ";
+        document.getElementById('kpi-items').innerText = totalItemsSold.toLocaleString('vi-VN');
+        document.getElementById('kpi-customers').innerText = uniqueCustomers.size.toLocaleString('vi-VN');
+        document.getElementById('kpi-orders').innerText = uniqueOrders.size.toLocaleString('vi-VN');
+
+        // --- 4. Vẽ biểu đồ ---
+        drawDailyChart(dailyRevenueMap);
+        drawTopProductsChart(productMap);
+        drawTopCustomersChart(customerMap);
+
+        // --- 5. Đổ dữ liệu vào bảng ---
+        renderProductsTable(productMap);
+    }
+
+    // ==========================================
+    // CÁC HÀM VẼ BIỂU ĐỒ VÀ BẢNG
+    // ==========================================
+
+    function drawDailyChart(dailyMap) {
+        const ctx = document.getElementById('chartDailyRevenue').getContext('2d');
+        if (dailyChartInst) dailyChartInst.destroy();
+
+        const labels = Object.keys(dailyMap).map(k => k.split('-')[2]); // Chỉ lấy ngày (DD)
+        const dataValues = Object.values(dailyMap);
+
+        dailyChartInst = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: dataValues,
+                    backgroundColor: 'rgba(45, 90, 39, 0.2)',
+                    borderColor: '#2D5A27',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#e67e22',
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw.toLocaleString('vi-VN') + ' đ';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                if(value >= 1000000) return (value / 1000000) + ' Tr';
+                                if(value >= 1000) return (value / 1000) + ' K';
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function drawTopProductsChart(productMap) {
+        const ctx = document.getElementById('chartTopProducts').getContext('2d');
+        if (productsChartInst) productsChartInst.destroy();
+
+        // Chuyển object thành mảng và sort giảm dần theo doanh thu
+        const sortedProducts = Object.entries(productMap)
+            .map(([name, data]) => ({ name, revenue: data.revenue }))
+            .sort((a, b) => b.revenue - a.revenue);
+
+        // Lấy top 5, còn lại gộp vào "Khác"
+        let labels = [];
+        let dataValues = [];
+        let othersRevenue = 0;
+
+        sortedProducts.forEach((item, index) => {
+            if (index < 5) {
+                labels.push(item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name);
+                dataValues.push(item.revenue);
+            } else {
+                othersRevenue += item.revenue;
+            }
+        });
+
+        if (othersRevenue > 0) {
+            labels.push("Khác");
+            dataValues.push(othersRevenue);
+        }
+
+        productsChartInst = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataValues,
+                    backgroundColor: ['#2D5A27', '#2980b9', '#e67e22', '#8e44ad', '#f1c40f', '#95a5a6'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { boxWidth: 12, font: {size: 11} } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ' ' + context.raw.toLocaleString('vi-VN') + ' đ';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function drawTopCustomersChart(customerMap) {
+        const ctx = document.getElementById('chartTopCustomers').getContext('2d');
+        if (customersChartInst) customersChartInst.destroy();
+
+        const sortedCustomers = Object.entries(customerMap)
+            .map(([name, revenue]) => ({ name, revenue }))
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 5); // Lấy top 5
+
+        const labels = sortedCustomers.map(c => c.name.length > 15 ? c.name.substring(0, 15) + '...' : c.name);
+        const dataValues = sortedCustomers.map(c => c.revenue);
+
+        customersChartInst = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Doanh số',
+                    data: dataValues,
+                    backgroundColor: '#3498db',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Đổi thành biểu đồ cột ngang
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw.toLocaleString('vi-VN') + ' đ';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                if(value >= 1000000) return (value / 1000000) + ' Tr';
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderProductsTable(productMap) {
+        const tbody = document.getElementById('table-products-body');
+        
+        const sortedProducts = Object.entries(productMap)
+            .map(([name, data]) => ({ name, quantity: data.quantity, revenue: data.revenue }))
+            .sort((a, b) => b.revenue - a.revenue); // Xếp theo doanh thu giảm dần
+
+        if (sortedProducts.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #888;">Không có giao dịch nào trong tháng này.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = sortedProducts.map((item, index) => `
+            <tr>
+                <td style="text-align: center;">${index + 1}</td>
+                <td style="font-weight: 500;">${item.name}</td>
+                <td class="number">${item.quantity.toLocaleString('vi-VN')}</td>
+                <td class="money">${item.revenue.toLocaleString('vi-VN')} đ</td>
+            </tr>
+        `).join('');
+    }
+  </script>
+</body>
+</html>

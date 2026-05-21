@@ -78,6 +78,7 @@
                         <div class="group-items">
                             <a href="Tien_Do.html" id="Quan_Ly_Tien_Do" class="nav-link">📈 Tiến độ chung</a>
                             <a href="BC_Cong_Viec.html" id="Bao_Cao_Cong_Viec" class="nav-link">📝 Báo cáo công việc</a>
+                            <a href="BC_Ban_Hang.html" id="Bao_Cao_Ban_Hang" class="nav-link">📊 Báo cáo bán hàng</a>
                             <a href="Quan_Tri.html" id="Quan_Tri_Don_Hang" class="nav-link">🗂️ Quản trị đơn</a>
                             <a href="Khach_Hang.html" id="Khach_Hang" class="nav-link">👥 Khách hàng</a>
                             <a href="Admin_Quan_Ly_Nhan_Su.html" id="Admin_Quan_Ly_Nhan_Su" class="nav-link">⚙️ Quản lý nhân sự</a>
