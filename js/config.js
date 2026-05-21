@@ -25,7 +25,7 @@ window.APP_MODULES = [
   { id: "Bao_Cao_Thu_Chi",      label: "Báo cáo thu chi",        icon: "📊", file: "BC_Thu_Chi.html",    group: "Kế toán" },
   { id: "Quan_Tri_Don_Hang",    label: "Quản trị đơn hàng",      icon: "🗂️", file: "Quan_Tri.html",      group: "Quản trị" },
   { id: "Bao_Cao_Cong_Viec",    label: "Báo cáo công việc",      icon: "📝", file: "BC_Cong_Viec.html",  group: "Quản trị" },
-  { id: "Bao_Cao_Ban_Hang",    label: "Báo cáo bán hàng",      icon: "📊", file: "BC_Ban_Hang.html",  group: "Quản trị" },
+  { id: "Bao_Cao_Ban_Hang",    label: "Báo cáo bán hàng",      icon: "📊", file: "Bao_Cao_Ban_Hang.html",  group: "Quản trị" },
   { id: "Cham_Cong",            label: "Chấm công nhanh",        icon: "🕒", file: "Cham_Cong.html",     group: "Quản trị" },
   { id: "Quan_Ly_Luong",        label: "Bảng tính lương",        icon: "💵", file: "Quan_Ly_Luong.html", group: "Quản trị" },
   { id: "Khach_Hang",           label: "Khách hàng",             icon: "👥", file: "Khach_Hang.html",    group: "Quản trị" },
