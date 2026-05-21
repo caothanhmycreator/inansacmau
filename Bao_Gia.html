@@ -162,6 +162,9 @@
             <label style="font-size: 14px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center;">
                 <input type="checkbox" id="check-stamp" checked style="width: 18px; height: 18px; margin-right: 8px;"> CÓ CON DẤU CHỮ KÝ
             </label>
+            <label style="font-size: 14px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center;">
+                <input type="checkbox" id="check-date" checked style="width: 18px; height: 18px; margin-right: 8px;"> CÓ NGÀY THÁNG
+            </label>
             <button class="btn-action" style="background:#e74c3c;" onclick="clearQuote()">LÀM LẠI</button>
             <button class="btn-action" style="background:#27ae60;" onclick="exportPDF()">🖨️ XUẤT PDF / IN 3 CƠ SỞ</button>
             <button class="btn-submit" onclick="saveQuoteToDB()">💾 LƯU VÀO DATABASE</button>
@@ -175,6 +178,9 @@
         <div class="search-area" style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; align-items: center;">
           <label style="font-size: 13px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center; white-space: nowrap;">
             <input type="checkbox" id="check-stamp-history" checked style="width: 16px; height: 16px; margin-right: 5px;"> CÓ CON DẤU CHỮ KÝ
+          </label>
+          <label style="font-size: 13px; font-weight: bold; cursor: pointer; color: #2D5A27; display: flex; align-items: center; white-space: nowrap;">
+            <input type="checkbox" id="check-date-history" checked style="width: 16px; height: 16px; margin-right: 5px;"> CÓ NGÀY THÁNG
           </label>
           <input type="text" id="searchFilter" class="input-modern" placeholder="🔍 Tìm khách hàng, mã báo giá..." style="max-width: 300px; flex: 1;" onkeyup="filterDisplayList()">
           <button onclick="loadData()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold; white-space: nowrap;">🔄 Tải lại</button>
@@ -236,44 +242,74 @@
         return dateString; 
     }
 
-    // ĐỌC SỐ THÀNH CHỮ VIỆT NAM
+    // ĐỌC SỐ THÀNH CHỮ VIỆT NAM CHUẨN
     const chuSo = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+    
     function docSo(so) {
-        if (so == 0) return chuSo[0] + " đồng";
+        if (so == 0) return "Không đồng";
         let chuoi = "", hauto = "";
         do {
             let ty = so % 1000000000;
             so = Math.floor(so / 1000000000);
-            if (so > 0) chuoi = docTrien(ty, true) + hauto + chuoi;
-            else chuoi = docTrien(ty, false) + hauto + chuoi;
+            if (ty > 0) {
+                chuoi = docTrien(ty, so > 0) + hauto + chuoi;
+            } else if (so > 0 && hauto == " tỷ") {
+                chuoi = " không tỷ" + chuoi;
+            }
             hauto = " tỷ";
         } while (so > 0);
-        let res = chuoi.trim() + " đồng";
+        
+        let res = chuoi.trim().replace(/\s+/g, ' ') + " đồng";
         return res.charAt(0).toUpperCase() + res.slice(1);
     }
+
     function docTrien(so, daydu) {
         let chuoi = "";
         let tram = Math.floor(so / 1000000);
         so = so % 1000000;
-        if (tram > 0 || daydu) { chuoi += docHang(tram, daydu) + " triệu"; daydu = true; }
+        if (tram > 0 || daydu) { 
+            chuoi += docHang(tram, daydu) + " triệu"; 
+            daydu = true; 
+        }
         let nghin = Math.floor(so / 1000);
         so = so % 1000;
-        if (nghin > 0 || daydu) { chuoi += docHang(nghin, daydu) + " nghìn"; daydu = true; }
-        if (so > 0 || daydu) chuoi += docHang(so, daydu);
+        if (nghin > 0 || (daydu && (nghin > 0 || so > 0))) { 
+            chuoi += docHang(nghin, daydu) + " nghìn"; 
+            daydu = true; 
+        }
+        if (so > 0 || (daydu && so > 0)) { 
+            chuoi += docHang(so, daydu); 
+        }
         return chuoi;
     }
+
     function docHang(so, daydu) {
         let chuoi = "";
         let tram = Math.floor(so / 100);
         so = so % 100;
-        if (tram > 0 || daydu) { chuoi += " " + chuSo[tram] + " trăm"; chuoi += (so == 0 && daydu) ? "" : ""; }
+        if (tram > 0 || daydu) { 
+            chuoi += " " + chuSo[tram] + " trăm"; 
+        }
         let chuc = Math.floor(so / 10);
         let donvi = so % 10;
-        if (chuc > 1) { chuoi += " " + chuSo[chuc] + " mươi"; if (donvi == 1) chuoi += " mốt"; }
-        else if (chuc == 1) { chuoi += " mười"; if (donvi == 1) chuoi += " một"; }
-        else if (daydu && donvi > 0) chuoi += " lẻ";
-        if (donvi == 5 && chuc > 0) chuoi += " lăm";
-        else if (donvi > 0 && (chuc != 1 || donvi != 1) && (chuc != 0 || donvi != 5)) chuoi += " " + chuSo[donvi];
+        if (chuc > 1) { 
+            chuoi += " " + chuSo[chuc] + " mươi"; 
+            if (donvi == 1) chuoi += " mốt"; 
+        }
+        else if (chuc == 1) { 
+            chuoi += " mười"; 
+            if (donvi == 1) chuoi += " một"; 
+        }
+        else if (daydu && donvi > 0) { 
+            chuoi += " lẻ"; 
+        }
+        
+        if (donvi == 5 && chuc > 0) { 
+            chuoi += " lăm"; 
+        }
+        else if (donvi > 0 && (chuc != 1 || donvi != 1) && (chuc != 0 || donvi != 5)) { 
+            chuoi += " " + chuSo[donvi]; 
+        }
         return chuoi;
     }
 
@@ -564,7 +600,7 @@
     // HỆ THỐNG XUẤT FILE PDF 
     // ====================================================================
 
-    function buildTemplate(itemsToPrint, tenKh, diaChiKh, giamThueRate, showStamp) {
+    function buildTemplate(itemsToPrint, tenKh, diaChiKh, giamThueRate, showStamp, showDate) {
         let originalDate = new Date();
         if(itemsToPrint && itemsToPrint[0] && itemsToPrint[0].Ngay_Gio) {
             let parts = itemsToPrint[0].Ngay_Gio.split(' ')[0].split('-');
@@ -572,7 +608,11 @@
                 originalDate = new Date(parts[0], parts[1]-1, parts[2]);
             }
         }
-        const strDate = `Ngày ${originalDate.getDate().toString().padStart(2,'0')} tháng ${originalDate.getMonth()+1} năm ${originalDate.getFullYear()}`;
+        
+        let strDate = "Ngày......tháng......năm.........";
+        if (showDate) {
+            strDate = `Ngày ${originalDate.getDate().toString().padStart(2,'0')} tháng ${originalDate.getMonth()+1} năm ${originalDate.getFullYear()}`;
+        }
 
         const buildPage = (coSoName, headerHtml, donGiaMultiplier, stampImg, repName, fontStyle) => {
             let rowsHtml = "";
@@ -607,7 +647,7 @@
                 </tr>`;
             }
 
-            const stampHtml = showStamp ? `<img src="${stampImg}" width="300" style="margin-top: 10px; display:block;">` : `<div style="height:120px;"></div>`;
+            const stampHtml = showStamp ? `<img src="${stampImg}" width="390" style="margin-top: 10px; display:block;">` : `<div style="height:120px;"></div>`;
 
             return `
                 <div style="page-break-after: always; ${fontStyle} background: white; margin: 0 auto; padding: 30px; box-sizing: border-box; max-width: 800px;">
@@ -657,7 +697,7 @@
                                 - Giá trên đã gồm thuế VAT.<br>
                                 - Miễn phí vận chuyển, giao hàng tận nơi.<br>
                                 - Hỗ trợ thiết kế hoàn chỉnh.<br>
-                                - Sau khi thống nhất thiết kế, quý khách vui lòng thanh toán 50% số tiền.
+                                - Sau khi thống nhất thiết kế, quý khách vui lòng<br>thanh toán 50% số tiền.
                             </td>
                             <td width="40%" valign="top" align="center">
                                 <div style="font-style: italic; margin-bottom: 5px;">${strDate}</div>
@@ -708,7 +748,7 @@
                 <tr>
                     <td valign="middle" style="line-height: 1.6;">
                         <span style="font-size: 18px; font-weight: bold; color: #15803d;">CƠ SỞ IN NGÂN ĐẠT</span><br>
-                        Đc: 369, Khóm Tân Đông, thị trấn Thanh Bình, huyện Thanh Bình, Đồng Tháp
+                        Đc: 369, Khóm Tân Đông, xã Thanh Bình, Đồng Tháp
                     </td>
                 </tr>
             </table>
@@ -742,8 +782,9 @@
         const diaChiKh = document.getElementById('f-diachi').value.trim() || ".......................................................";
         const giamThueRate = parseFloat(document.getElementById('f-giamthue').value) || 0;
         const showStamp = document.getElementById('check-stamp').checked;
+        const showDate = document.getElementById('check-date').checked;
 
-        const htmlContent = buildTemplate(currentQuoteItems, tenKh, diaChiKh, giamThueRate, showStamp);
+        const htmlContent = buildTemplate(currentQuoteItems, tenKh, diaChiKh, giamThueRate, showStamp, showDate);
         const printWindow = window.open('', '_blank');
         printWindow.document.write(htmlContent.replace('</body>', '<script>setTimeout(() => { window.print(); }, 500);<\/script></body>'));
         printWindow.document.close();
@@ -763,8 +804,9 @@
         const diaChiKh = itemsToPrint[0].Dia_Chi || ".......................................................";
         const giamThueRate = itemsToPrint[0].Giam_Thue || 0;
         const showStamp = document.getElementById('check-stamp-history') ? document.getElementById('check-stamp-history').checked : true;
+        const showDate = document.getElementById('check-date-history') ? document.getElementById('check-date-history').checked : true;
 
-        const htmlContent = buildTemplate(itemsToPrint, tenKh, diaChiKh, giamThueRate, showStamp);
+        const htmlContent = buildTemplate(itemsToPrint, tenKh, diaChiKh, giamThueRate, showStamp, showDate);
         const printWindow = window.open('', '_blank');
         printWindow.document.write(htmlContent.replace('</body>', '<script>setTimeout(() => { window.print(); }, 500);<\/script></body>'));
         printWindow.document.close();
