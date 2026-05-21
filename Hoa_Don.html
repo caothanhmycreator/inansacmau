@@ -63,6 +63,10 @@
     .badge.out { background: #d5f5e3; color: #1e8449; }
     .btn-link { background: #3498db; color: white; padding: 6px 12px; text-decoration: none; border-radius: 6px; font-size: 12px; font-weight: bold; }
     .btn-link:hover { background: #2980b9; }
+    
+    /* CSS cho nút Sửa */
+    .btn-edit { background: #f39c12; color: white; padding: 6px 12px; border: none; text-decoration: none; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; margin-left: 5px; transition: 0.2s; }
+    .btn-edit:hover { background: #d68910; }
 
     @media (max-width: 768px) {
       .main-content { margin-left: 0 !important; padding: 15px; padding-top: 60px; }
@@ -174,7 +178,7 @@
                 <th>Loại HĐ</th>
                 <th style="text-align: right;">Số Tiền</th>
                 <th>Ghi Chú</th>
-                <th style="text-align: center;">File</th>
+                <th style="text-align: center;">File & Tác vụ</th>
               </tr>
             </thead>
             <tbody id="tableBody">
@@ -258,6 +262,7 @@
 
           let badgeClass = item.Loai_Hoa_Don === "Đầu vào" ? "in" : "out";
           let linkHienThi = item.Link_Hoa_Don ? `<a href="${item.Link_Hoa_Don}" target="_blank" class="btn-link">📁 Xem File</a>` : "---";
+          let btnSua = `<button onclick="editHoaDon(${item.id})" class="btn-edit">✏️ Sửa</button>`;
 
           return `
             <tr>
@@ -268,7 +273,7 @@
               <td><span class="badge ${badgeClass}">${item.Loai_Hoa_Don || ""}</span></td>
               <td style="text-align: right; font-weight: bold; color: ${item.Loai_Hoa_Don === 'Đầu vào' ? '#c0392b' : '#2D5A27'}">${soTien.toLocaleString("vi-VN")} đ</td>
               <td>${item.Ghi_Chu || ""}</td>
-              <td style="text-align: center;">${linkHienThi}</td>
+              <td style="text-align: center;">${linkHienThi} ${btnSua}</td>
             </tr>
           `;
         }).join("");
@@ -425,6 +430,67 @@
       } catch (err) {
         console.error(err);
         Swal.fire('Lỗi', err.message, 'error');
+      }
+    }
+
+    // Hàm Chỉnh sửa Hóa Đơn
+    async function editHoaDon(id) {
+      const item = danhSachHoaDon.find(x => x.id === id);
+      if (!item) return;
+
+      const { value: formValues } = await Swal.fire({
+        title: 'Chỉnh sửa Hóa Đơn',
+        html: `
+          <div style="text-align: left; font-size: 14px;">
+            <div style="margin-bottom: 10px;"><b>Số Hóa Đơn:</b> <input id="swal-so" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${item.So_Hoa_Don || ''}"></div>
+            <div style="margin-bottom: 10px;"><b>Ngày Hóa Đơn:</b> <input id="swal-ngay" type="date" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${item.Ngay_Hoa_Don || ''}"></div>
+            <div style="margin-bottom: 10px;"><b>Tên Khách:</b> <input id="swal-khach" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${item.Ten_Khach || ''}"></div>
+            <div style="margin-bottom: 10px;"><b>Loại Hóa Đơn:</b> 
+              <select id="swal-loai" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;">
+                <option value="Đầu vào" ${item.Loai_Hoa_Don === 'Đầu vào' ? 'selected' : ''}>Đầu vào</option>
+                <option value="Đầu ra" ${item.Loai_Hoa_Don === 'Đầu ra' ? 'selected' : ''}>Đầu ra</option>
+              </select>
+            </div>
+            <div style="margin-bottom: 10px;"><b>Số Tiền:</b> <input id="swal-tien" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${item.So_Tien || ''}" oninput="formatTien(this)"></div>
+            <div style="margin-bottom: 10px;"><b>Ghi Chú:</b> <input id="swal-ghi" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${item.Ghi_Chu || ''}"></div>
+          </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Lưu thay đổi',
+        cancelButtonText: 'Hủy bỏ',
+        confirmButtonColor: '#2D5A27',
+        preConfirm: () => {
+          return {
+            So_Hoa_Don: document.getElementById('swal-so').value.trim(),
+            Ngay_Hoa_Don: document.getElementById('swal-ngay').value,
+            Ten_Khach: document.getElementById('swal-khach').value.trim(),
+            Loai_Hoa_Don: document.getElementById('swal-loai').value,
+            So_Tien: document.getElementById('swal-tien').value,
+            Ghi_Chu: document.getElementById('swal-ghi').value.trim()
+          }
+        }
+      });
+
+      if (formValues) {
+        Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const h = { 'apikey': SB_CONFIG.KEY, 'Authorization': `Bearer ${SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+        
+        try {
+          const res = await fetch(`${SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: h,
+            body: JSON.stringify(formValues)
+          });
+          
+          if (!res.ok) throw new Error("Lỗi khi cập nhật dữ liệu");
+          
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Cập nhật thành công!', showConfirmButton: false, timer: 1500 });
+          loadData(); // Tải lại bảng ngay lập tức
+        } catch(e) {
+           console.error(e);
+           Swal.fire('Lỗi', e.message, 'error');
+        }
       }
     }
 

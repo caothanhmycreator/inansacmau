@@ -8,7 +8,7 @@ window.APP_MODULES = [
   { id: "Tao_Don",              label: "Tạo đơn hàng",       icon: "🧾", file: "Tao_Don.html",      group: "Kinh doanh" },
   { id: "Sua_Phieu_Dat_Hang",   label: "Sửa phiếu đặt hàng",     icon: "📋", file: "Sua_Don.html",      group: "Kinh doanh" },
   { id: "Bang_Gia_San_Pham",    label: "Bảng giá sản phẩm",      icon: "🏷️", file: "Bang_Gia.html",     group: "Kinh doanh" },
-  { id: "Gia_Von",              label: "Giá Vốn",                 icon: "💰", file: "Gia_Von.html",     group: "Kinh doanh" },
+  { id: "Gia_Von",              label: "Giá Vốn",                icon: "💰", file: "Gia_Von.html",     group: "Kinh doanh" },
   { id: "Cong_No",              label: "Công nợ khách hàng",     icon: "💸", file: "Cong_No.html",      group: "Kinh doanh" },
   { id: "Xu_Ly",                label: "Xử lý đơn hàng",         icon: "⚙️", file: "Xu_Ly.html",        group: "Sản xuất" },
   { id: "Thiet_Ke",             label: "Thiết kế đồ họa",        icon: "🎨", file: "Thiet_Ke.html",      group: "Sản xuất" },
@@ -200,7 +200,7 @@ window.loadNotifications = async function() {
             return `
             <div class="noti-item ${isRead ? '' : 'unread'}" onclick="markAsRead(${n.id}, '${redirectLink}', '${currentReaders}')">
                 <span class="noti-title">${n.tieu_de}</span>
-                <button class="btn-delete-single-noti" onclick="deleteSingleNoti(event, ${n.id})" title="Xóa thông báo này">✕</button>
+                ${role === 'Admin' ? `<button class="btn-delete-single-noti" onclick="deleteSingleNoti(event, ${n.id})" title="Xóa thông báo này">✕</button>` : ''}
                 <div style="font-size:12px; margin:4px 0; color:#555;">${n.noi_dung}</div>
                 <span class="noti-time">${new Date(n.created_at).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</span>
             </div>

@@ -519,6 +519,7 @@
                 <td data-label="Thao tác" style="text-align:center; white-space: nowrap;">
                     <div class="action-group">
                         <button type="button" onclick="viewGroupDetails('${group.Ma_HD}')" class="btn-pdf" title="Xem chi tiết" style="padding: 6px; min-width: 35px;">👁️</button>
+                        <button type="button" onclick="editGroupRecord('${group.Ma_HD}')" class="btn-pdf" title="Sửa thông tin Hợp đồng" style="padding: 6px; min-width: 35px; background: #f39c12; color: white; border-color: #f39c12;">✏️</button>
                         <button type="button" onclick="exportPDFHistory('${group.Ma_HD}', 'hopdong')" class="btn-pdf" title="Xem trước Hợp Đồng" style="padding: 6px; min-width: 35px; background: #27ae60; color: white; border-color: #27ae60;">🖨️ HĐ</button>
                         <button type="button" onclick="exportPDFHistory('${group.Ma_HD}', 'nghiemthu')" class="btn-pdf" title="Xem trước Nghiệm Thu" style="padding: 6px; min-width: 35px; background: #8e44ad; color: white; border-color: #8e44ad;">🖨️ NT</button>
                         <button type="button" onclick="triggerUpload('${group.Ma_HD}')" class="btn-pdf" title="Tải File Lên Drive" style="padding: 6px; min-width: 35px; background: #e67e22; color: white; border-color: #e67e22;">📤 đã ký</button>
@@ -528,6 +529,79 @@
                 </td>
             </tr>`;
         }).join('');
+    }
+
+    window.editGroupRecord = async function(maHD) {
+        const items = masterData.filter(x => x.Ma_HD === maHD);
+        if(items.length === 0) return;
+        const info = items[0];
+
+        const { value: formValues } = await Swal.fire({
+            title: 'Chỉnh sửa Hợp Đồng',
+            html: `
+                <div style="text-align: left; font-size: 14px; max-height: 60vh; overflow-y: auto; padding-right: 10px;">
+                    <div style="margin-bottom: 10px;"><b>Tên Cơ Quan / Đơn Vị (Bên B):</b> <input id="e-tendonvi" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.Ten_Don_Vi || ''}"></div>
+                    <div style="margin-bottom: 10px;"><b>Người Đại Diện:</b> <input id="e-daidien" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.Ten_Dai_Dien || ''}"></div>
+                    <div style="margin-bottom: 10px;"><b>Chức Vụ:</b> <input id="e-chucvu" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.Chuc_Vu || ''}"></div>
+                    <div style="margin-bottom: 10px;"><b>Số Điện Thoại:</b> <input id="e-sdt" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.So_Dien_Thoai || ''}"></div>
+                    <div style="margin-bottom: 10px;"><b>Mã Số Thuế:</b> <input id="e-mst" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.MST || ''}"></div>
+                    <div style="margin-bottom: 10px;"><b>Địa Chỉ:</b> <input id="e-diachi" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.Dia_Chi || ''}"></div>
+                    <div style="margin-bottom: 10px;"><b>Số Tài Khoản:</b> <input id="e-stk" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.So_Tai_Khoan || ''}"></div>
+                    <div style="margin-bottom: 10px;"><b>Ngân Hàng:</b> <input id="e-nganhang" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.Ngan_Hang || ''}"></div>
+                    <div style="margin-bottom: 10px;"><b>Mức Tỷ Lệ Thuế (%):</b> <input id="e-giamthue" type="number" class="swal2-input" style="margin: 5px 0; width: 100%; box-sizing: border-box;" value="${info.Giam_Thue || '0'}"></div>
+                    <div style="margin-top: 15px; font-style: italic; color: #7f8c8d; font-size: 12px;">* Lưu ý: Việc chỉnh sửa này sẽ áp dụng thông tin Khách hàng cho <b>tất cả sản phẩm</b> trong mã hợp đồng này. Để thay đổi tên hoặc số lượng sản phẩm, vui lòng xóa và tạo mới hợp đồng.</div>
+                </div>
+            `,
+            width: '600px',
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Lưu thay đổi',
+            cancelButtonText: 'Hủy bỏ',
+            confirmButtonColor: '#2D5A27',
+            preConfirm: () => {
+                return {
+                    Ten_Don_Vi: document.getElementById('e-tendonvi').value.trim(),
+                    Ten_Dai_Dien: document.getElementById('e-daidien').value.trim(),
+                    Chuc_Vu: document.getElementById('e-chucvu').value.trim(),
+                    So_Dien_Thoai: document.getElementById('e-sdt').value.trim(),
+                    MST: document.getElementById('e-mst').value.replace(/\D/g, '') ? parseInt(document.getElementById('e-mst').value.replace(/\D/g, ''), 10) : null,
+                    Dia_Chi: document.getElementById('e-diachi').value.trim(),
+                    So_Tai_Khoan: document.getElementById('e-stk').value.replace(/\D/g, '') ? parseInt(document.getElementById('e-stk').value.replace(/\D/g, ''), 10) : null,
+                    Ngan_Hang: document.getElementById('e-nganhang').value.trim(),
+                    Giam_Thue: parseFloat(document.getElementById('e-giamthue').value) || 0
+                }
+            }
+        });
+
+        if (formValues) {
+            Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+
+            try {
+                // Lặp qua tất cả các sản phẩm có cùng Mã HĐ để cập nhật lại thông tin chung & tính lại Thuế
+                const patchPromises = items.map(item => {
+                    let newGiamThue = formValues.Giam_Thue;
+                    let giamThueAmount = item.Thanh_Tien * 0.2 * (newGiamThue / 100);
+                    let newTongCong = item.Thanh_Tien - giamThueAmount;
+
+                    let payload = { ...formValues, Tong_Cong: newTongCong };
+
+                    return fetch(`${window.SB_CONFIG.URL}/rest/v1/${TABLE_NAME}?id=eq.${item.id}`, {
+                        method: 'PATCH',
+                        headers: h,
+                        body: JSON.stringify(payload)
+                    });
+                });
+
+                await Promise.all(patchPromises);
+                
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Cập nhật thành công!', showConfirmButton: false, timer: 1500 });
+                loadData();
+            } catch(e) {
+                console.error(e);
+                Swal.fire('Lỗi', e.message, 'error');
+            }
+        }
     }
 
     window.deleteFileLink = async function(maHD) {
@@ -675,12 +749,12 @@
                     .no-border, .no-border td { border: none !important; padding: 0 !important; }
                     .html2pdf__page-break { page-break-before: always; height: 0; clear: both; }
                     tr, td, th { page-break-inside: avoid; }
-                ${'<'}/style>
-            ${'<'}/head>
+                </style>
+            </head>
             <body>
                 ${editedContent}
-            ${'<'}/body>
-            ${'<'}/html>
+            </body>
+            </html>
         `;
         
         let iframe = document.createElement('iframe');
