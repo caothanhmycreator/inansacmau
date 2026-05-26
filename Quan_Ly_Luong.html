@@ -269,10 +269,11 @@
           infoCong = `${soBuoi} buổi`;
         }
 
+        let isHuongHoaHong = emp.Huong_Hoa_Hong || emp.Ho_Ten.includes("Trọng") || emp.Ho_Ten.includes("Thư") || emp.Ho_Ten.includes("Nhung");
         let phanTramHH = 0;
         let bacDoanhThu = Math.floor(workingRevenue / 100000000);
         if (bacDoanhThu >= 1) phanTramHH = 1 + (bacDoanhThu - 1) * 0.5;
-        if (emp.Huong_Hoa_Hong && phanTramHH > 0) hoaHong = workingRevenue * (phanTramHH / 100);
+        if (isHuongHoaHong && phanTramHH > 0) hoaHong = workingRevenue * (phanTramHH / 100);
 
         myTC.forEach(tc => { if (tc.Loai === "Tạm ứng") tamUng += tc.So_Tien; else phuCapViec += tc.So_Tien; });
         tongNhan = luongCoBan + hoaHong + phuCapViec - tamUng;
@@ -284,7 +285,7 @@
             <h3 class="staff-name">${emp.Ho_Ten} ${titleBage}</h3>
             <div class="salary-row"><span>Công thực tế:</span> <b>${infoCong}</b></div>
             <div class="salary-row"><span>Lương cứng:</span> <b>${Math.round(luongCoBan).toLocaleString('vi-VN')}đ</b></div>
-            ${(emp.Huong_Hoa_Hong && phanTramHH > 0) ? `<div class="salary-row"><span>Hoa hồng (${phanTramHH}%):</span> <b class="val-plus">+ ${Math.round(hoaHong).toLocaleString('vi-VN')}đ</b></div>` : ''}
+            ${(isHuongHoaHong && phanTramHH > 0) ? `<div class="salary-row"><span>Hoa hồng (${phanTramHH}%):</span> <b class="val-plus">+ ${Math.round(hoaHong).toLocaleString('vi-VN')}đ</b></div>` : ''}
             <div class="salary-row"><span>Phụ cấp việc:</span> <b class="val-plus">+ ${phuCapViec.toLocaleString('vi-VN')}đ</b></div>
             <div class="salary-row"><span>Trừ tạm ứng:</span> <b class="val-minus">- ${tamUng.toLocaleString('vi-VN')}đ</b></div>
             <div class="salary-row total"><span>THỰC NHẬN:</span> <span>${Math.round(tongNhan).toLocaleString('vi-VN')}đ</span></div>
@@ -306,7 +307,7 @@
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                     <tr><td style="padding: 4px 0; color: #555;">Công thực tế:</td><td style="text-align: right;"><b>${infoCong}</b></td></tr>
                     <tr><td style="padding: 4px 0; color: #555;">Lương cứng:</td><td style="text-align: right;"><b>${Math.round(luongCoBan).toLocaleString('vi-VN')}đ</b></td></tr>
-                    ${(emp.Huong_Hoa_Hong && phanTramHH > 0) ? `<tr><td style="padding: 4px 0; color: #555;">Hoa hồng (${phanTramHH}%):</td><td style="text-align: right; color: #27ae60;"><b>+ ${Math.round(hoaHong).toLocaleString('vi-VN')}đ</b></td></tr>` : ''}
+                    ${(isHuongHoaHong && phanTramHH > 0) ? `<tr><td style="padding: 4px 0; color: #555;">Hoa hồng (${phanTramHH}%):</td><td style="text-align: right; color: #27ae60;"><b>+ ${Math.round(hoaHong).toLocaleString('vi-VN')}đ</b></td></tr>` : ''}
                     <tr><td style="padding: 4px 0; color: #555;">Phụ cấp việc:</td><td style="text-align: right; color: #27ae60;"><b>+ ${phuCapViec.toLocaleString('vi-VN')}đ</b></td></tr>
                     <tr><td style="padding: 4px 0; color: #555;">Trừ tạm ứng:</td><td style="text-align: right; color: #e74c3c;"><b>- ${tamUng.toLocaleString('vi-VN')}đ</b></td></tr>
                     <tr>
