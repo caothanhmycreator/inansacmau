@@ -125,9 +125,12 @@
 
     async function loadPayroll() {
       const monthVal = document.getElementById('month-selector').value; 
-      const [year, month] = monthVal.split('-');
-      const firstDay = `${year}-${month}-01`;
-      const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
+const [year, month] = monthVal.split('-');
+const firstDay = `${year}-${month}-01`;
+
+// Lấy số ngày của tháng để nối chuỗi trực tiếp, tránh lỗi Timezone
+const daysInMonth = new Date(year, month, 0).getDate();
+const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
 
       const today = new Date();
       let refDate = new Date(year, month - 1, new Date(year, month, 0).getDate());
