@@ -115,11 +115,14 @@
       loadAllData();
     });
 
-    async function loadAllData() {
+ async function loadAllData() {
       const monthVal = document.getElementById('month-selector').value;
       const [year, month] = monthVal.split('-');
       const firstDay = `${year}-${month}-01`;
-      const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
+      
+      // Khắc phục lỗi Timezone bằng cách lấy số ngày trực tiếp
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
 
       try {
         const resEmp = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?Vai_Tro=neq.Admin&select=*`, { headers: h });
