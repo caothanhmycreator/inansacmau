@@ -10,70 +10,70 @@
   <script src="js/sidebar_loader.js"></script> 
   <style>
     /* ========================================================
-       1. GIAO DIỆN CHUNG & PC (GIỮ NGUYÊN 100%)
+       1. GIAO DIỆN CHUNG & PC
        ======================================================== */
     :root { --primary: #2D5A27; --bg: #f4f7f6; --border: #e2e8f0; --accent: #3498db; }
-    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; color: #333; }
     
     #sidebar-frame { width: 250px; height: 100vh; position: fixed; left: 0; top: 0; border: none; z-index: 999; transition: 0.3s; }
     .main-content { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; min-width: 0; }
     
-    .header { border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 25px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-    .header-top-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    .header { border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px; }
+    .header-left { display: flex; flex-direction: column; gap: 10px; }
+    .header-left-top { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
     .header h2 { margin: 0; color: var(--primary); }
-
-    .admin-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); margin-bottom: 30px; }
-    .staff-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #f8fafc; padding: 10px 15px; border-radius: 10px; }
     
+    .month-picker { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold; outline: none; background: white; }
+    .btn-add-staff { background: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2); transition: 0.2s; display: flex; align-items: center; gap: 5px; }
+    .btn-add-staff:hover { background: #219653; transform: translateY(-1px); }
+
+    .admin-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid var(--border); margin-bottom: 25px; }
+    
+    /* Giao diện Header của Staff thay đổi theo hướng mở */
+    .staff-header-wrapper { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #cbd5e1; }
+    .staff-info-main { display: flex; flex-direction: column; gap: 8px; }
+    .staff-name { margin: 0; color: var(--primary); font-size: 20px; display: flex; align-items: center; gap: 10px; }
+    
+    .badge-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-salary { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-type { background: #fef08a; color: #9a3412; border: 1px solid #fde047; }
+    .badge-commission { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-no-commission { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+    .staff-actions { display: flex; gap: 10px; }
+    .btn { padding: 8px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 12px; }
+    .btn-config { background: #f39c12; color: white; }
+    .btn-finance { background: #8e44ad; color: white; width: 100%; margin-top: 15px; padding: 12px;}
+    .btn-danger { background: #e74c3c; color: white; }
+
+    /* Bảng chấm công giữ nguyên */
     .table-responsive { width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: white; }
     .attendance-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1100px; }
     .attendance-table th, .attendance-table td { border: 1px solid #e2e8f0; padding: 8px 4px; text-align: center; }
     .attendance-table th { background: #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 10; }
     .attendance-table td input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary); }
-    
     .shift-label { font-weight: bold; color: #64748b; background: #f8fafc !important; width: 60px; position: sticky; left: 0; z-index: 5; }
-    .month-picker { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold; outline: none; background: white; }
-
-    .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 12px; text-transform: uppercase; }
-    .btn-edit { background: var(--accent); color: white; }
-    .btn-danger { background: #e74c3c; color: white; }
-    .edit-input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 5px; font-weight: bold; width: 120px; outline: none; }
 
     .swal2-container { z-index: 20000 !important; }
 
     /* ========================================================
-       2. MOBILE RESPONSIVE (ĐIỆN THOẠI)
+       2. MOBILE RESPONSIVE
        ======================================================== */
     @media (max-width: 768px) {
         #sidebar-frame { left: -250px; }
         .main-content { margin-left: 0 !important; padding: 15px; padding-top: 70px; overflow-x: hidden; }
         body.sidebar-open #sidebar-frame { left: 0; }
         
-        .mobile-nav-btn {
-            display: block; position: fixed; top: 10px; left: 10px; 
-            z-index: 1000; background: var(--primary); color: white; 
-            padding: 8px 12px; border: none; border-radius: 4px;
-        }
-
-        .header-top-row { flex-direction: column; align-items: flex-start; }
-        .month-picker { width: 100%; box-sizing: border-box; }
-
-        .staff-header { flex-direction: column; align-items: flex-start; gap: 12px; }
-        .staff-header > div { width: 100%; display: flex; justify-content: space-between; align-items: center; }
-        .edit-input { width: 100px; }
-
-        .admin-card { padding: 12px; margin-bottom: 20px; }
+        .mobile-nav-btn { display: block; position: fixed; top: 10px; left: 10px; z-index: 1000; background: var(--primary); color: white; padding: 8px 12px; border: none; border-radius: 4px; }
+        .header { flex-direction: column; align-items: flex-start; }
+        .btn-add-staff { width: 100%; justify-content: center; }
         
+        .staff-header-wrapper { flex-direction: column; gap: 15px; }
+        .staff-actions { width: 100%; justify-content: flex-end; }
         .table-responsive { -webkit-overflow-scrolling: touch; }
-        .attendance-table { font-size: 11px; }
-        
-        .btn { width: 100%; padding: 14px; margin-top: 5px; }
-
-        .swal2-popup { width: 95% !important; border-radius: 15px !important; padding: 15px !important; }
-        .swal2-html-container { margin: 10px 0 !important; }
-        .swal2-input, .swal2-select { font-size: 16px !important; margin: 10px auto !important; width: 90% !important; box-sizing: border-box !important; }
+        .swal2-popup { width: 95% !important; }
     }
-
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
@@ -82,11 +82,16 @@
   <div class="main-content">
     
     <div class="header">
-      <div class="header-top-row">
-        <h2>⚙️ QUẢN TRỊ NHÂN SỰ</h2>
-        <input type="month" id="month-selector" class="month-picker" onchange="loadAllData()">
+      <div class="header-left">
+        <div class="header-left-top">
+            <h2>⚙️ QUẢN TRỊ NHÂN SỰ</h2>
+            <input type="month" id="month-selector" class="month-picker" onchange="loadAllData()">
+        </div>
+        <p style="color: #666; font-size: 14px; margin: 0;">Quản lý hồ sơ, cấu hình lương & Chốt công</p>
       </div>
-      <p style="color: #666; font-size: 14px; margin: 0;">Điều chỉnh hệ số & Chốt công tháng</p>
+      <div>
+        <button class="btn-add-staff" onclick="openStaffModal()">➕ THÊM NHÂN VIÊN</button>
+      </div>
     </div>
 
     <div id="admin-container">
@@ -95,12 +100,10 @@
   </div>
 
   <script>
-    // FIX LỖI SYNTAX confirmButtonColor
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
     let listStaff = [];
     let listAttendance = [];
 
-    // --- HÀM PHỤ TRỢ GỬI THÔNG BÁO TỚI ADMIN ---
     async function notifyAdmin(title, message) {
       try {
         if (typeof window.guiThongBaoSacMau === 'function') {
@@ -115,20 +118,22 @@
       loadAllData();
     });
 
- async function loadAllData() {
+    async function loadAllData() {
       const monthVal = document.getElementById('month-selector').value;
       const [year, month] = monthVal.split('-');
       const firstDay = `${year}-${month}-01`;
       
-      // Khắc phục lỗi Timezone bằng cách lấy số ngày trực tiếp
       const daysInMonth = new Date(year, month, 0).getDate();
       const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
 
       try {
-        const resEmp = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?Vai_Tro=neq.Admin&select=*`, { headers: h });
+        // Lấy tất cả nhân viên trừ Admin, sắp xếp theo ID để danh sách ổn định
+        const resEmp = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?Vai_Tro=neq.Admin&select=*&order=id.asc`, { headers: h });
         listStaff = await resEmp.json();
+        
         const resCC = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?Ngay=gte.${firstDay}&Ngay=lte.${lastDay}&select=*`, { headers: h });
         listAttendance = await resCC.json();
+        
         renderAdminModule(year, month);
       } catch (e) { console.error(e); }
     }
@@ -137,6 +142,11 @@
       const container = document.getElementById('admin-container');
       const daysInMonth = new Date(year, month, 0).getDate();
       
+      if(listStaff.length === 0) {
+          container.innerHTML = '<h3 style="text-align:center; color:#888; margin-top:50px;">Chưa có dữ liệu nhân viên. Hãy thêm mới!</h3>';
+          return;
+      }
+
       container.innerHTML = listStaff.map(s => {
         let headerRow = `<tr><th class="shift-label">Ngày</th>`;
         let morningRow = `<tr><td class="shift-label">SÁNG</td>`;
@@ -148,23 +158,40 @@
             const isWeekend = dateObj.getDay() === 0;
             const bg = isWeekend ? 'background:#fff1f0;' : '';
             headerRow += `<th style="${bg}">${d}<br><small>${getDayName(dateObj)}</small></th>`;
+            
             const logS = findLog(s.id, dateStr, 'morning');
             const logC = findLog(s.id, dateStr, 'afternoon');
+            
             morningRow += `<td style="${bg}"><input type="checkbox" ${logS ? 'checked' : ''} onchange="toggleAttendance(this, '${s.id}', '${s.Ho_Ten}', '${dateStr}', 'morning', '${logS?logS.id:''}')"></td>`;
             afternoonRow += `<td style="${bg}"><input type="checkbox" ${logC ? 'checked' : ''} onchange="toggleAttendance(this, '${s.id}', '${s.Ho_Ten}', '${dateStr}', 'afternoon', '${logC?logC.id:''}')"></td>`;
         }
+        
+        // Render thẻ cấu hình nhân sự
+        const luongCbStr = s.Luong_Co_Ban ? Number(s.Luong_Co_Ban).toLocaleString('vi-VN') + 'đ' : 'Chưa nhập';
+        const loaiLuongStr = s.Loai_Luong ? `Hệ ${s.Loai_Luong}` : 'Chưa thiết lập';
+        const hoaHongBadge = s.Huong_Hoa_Hong === true 
+            ? `<span class="badge badge-commission">✔️ Có Hoa Hồng</span>` 
+            : `<span class="badge badge-no-commission">❌ Không Hoa Hồng</span>`;
+
         return `
           <div class="admin-card">
-            <div class="staff-header">
-              <h3 style="margin:0; color:var(--primary);">👤 ${s.Ho_Ten}</h3>
-              <div>
-                <span style="font-size:12px; font-weight:bold; color:#475569;">Lương CB: </span>
-                <input type="number" id="base-${s.id}" class="edit-input" value="${s.Luong_Co_Ban}">
-                <button class="btn btn-edit" style="padding: 8px 12px;" onclick="updateSalary('${s.id}', '${s.Ho_Ten}')">LƯU</button>
+            <div class="staff-header-wrapper">
+              <div class="staff-info-main">
+                  <h3 class="staff-name">👤 ${s.Ho_Ten}</h3>
+                  <div class="badge-group">
+                      <span class="badge badge-salary">💰 Cơ bản: ${luongCbStr}</span>
+                      <span class="badge badge-type">🏷️ ${loaiLuongStr}</span>
+                      ${hoaHongBadge}
+                  </div>
+              </div>
+              <div class="staff-actions">
+                  <button class="btn btn-config" onclick='openStaffModal(${JSON.stringify(s)})'>⚙️ SỬA CẤU HÌNH</button>
               </div>
             </div>
+            
             <div class="table-responsive"><table class="attendance-table">${headerRow}</tr>${morningRow}</tr>${afternoonRow}</tr></table></div>
-            <div style="margin-top:15px;"><button class="btn btn-edit" style="background:#8e44ad; width: 100%;" onclick="viewFinancials('${s.id}', '${s.Ho_Ten}')">🎁 PHỤ CẤP / TẠM ỨNG / KÊ KHAI</button></div>
+            
+            <button class="btn btn-finance" onclick="viewFinancials('${s.id}', '${s.Ho_Ten}')">🎁 QUẢN LÝ PHỤ CẤP / TẠM ỨNG / KÊ KHAI</button>
           </div>`;
       }).join('');
     }
@@ -178,9 +205,11 @@
         });
     }
 
+    // --- LOGIC CHẤM CÔNG (Giữ nguyên tính năng chống click đúp) ---
     async function toggleAttendance(checkbox, userId, empName, day, shift, existingId) {
         const shiftName = shift === 'morning' ? 'Sáng' : 'Chiều';
-        
+        checkbox.disabled = true;
+
         if (checkbox.checked) {
             const gioVao = shift === 'morning' ? "07:30:00" : "13:30:00";
             const gioRa = shift === 'morning' ? "11:30:00" : "17:30:00";
@@ -195,18 +224,118 @@
                     await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_ChamCong?id=eq.${existingId}`, { method: 'DELETE', headers: h });
                     await notifyAdmin("CẬP NHẬT CHẤM CÔNG", `Đã XÓA BỎ chấm công ca ${shiftName} ngày ${day} của nhân viên ${empName}.`);
                     loadAllData();
-                } else checkbox.checked = true;
+                } else {
+                    checkbox.checked = true;
+                    checkbox.disabled = false;
+                }
             });
         }
     }
 
-    async function updateSalary(id, empName) {
-      const newVal = document.getElementById(`base-${id}`).value;
-      await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?id=eq.${id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ Luong_Co_Ban: Number(newVal) }) });
-      await notifyAdmin("CẬP NHẬT LƯƠNG CƠ BẢN", `Lương cơ bản của ${empName} đã được điều chỉnh thành ${Number(newVal).toLocaleString('vi-VN')} đ.`);
-      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Đã cập nhật lương cơ bản', showConfirmButton: false, timer: 1500 });
+    // --- MODULE: THÊM & SỬA HỒ SƠ NHÂN SỰ ---
+    function openStaffModal(empData = null) {
+        const isEdit = empData !== null;
+        const title = isEdit ? `Chỉnh sửa: ${empData.Ho_Ten}` : 'Tạo Nhân Sự Mới';
+        
+        // Gán giá trị mặc định nếu sửa, rỗng nếu thêm mới
+        const vName = isEdit ? empData.Ho_Ten : '';
+        const vSalary = isEdit ? (empData.Luong_Co_Ban || 0) : '';
+        const vType = isEdit ? empData.Loai_Luong : 'Tháng';
+        const vComm = isEdit && empData.Huong_Hoa_Hong === true ? 'checked' : '';
+        
+        // Các trường đăng nhập (chỉ bắt buộc khi tạo mới)
+        const accInfo = isEdit ? '' : `
+            <hr style="border:0.5px dashed #ccc; margin: 15px 0;">
+            <p style="font-size:12px; color:#e74c3c; margin:0 0 10px 0;">* Thông tin cấp quyền đăng nhập hệ thống:</p>
+            <label style="font-weight:bold; display:block;">Tên đăng nhập (User):</label>
+            <input id="sw-user" type="text" class="swal2-input" placeholder="VD: Nhanvienin..." style="margin-top:5px;">
+            <label style="font-weight:bold; display:block; margin-top:10px;">Mật khẩu (Password):</label>
+            <input id="sw-pass" type="text" class="swal2-input" placeholder="Nhập mật khẩu..." style="margin-top:5px;">
+        `;
+
+        Swal.fire({
+            title: `<span style="font-size: 22px; color: var(--primary);">${title}</span>`,
+            html: `
+                <div style="text-align: left; font-size: 14px; padding: 0 10px;">
+                    <label style="font-weight:bold; display:block;">Họ và Tên:</label>
+                    <input id="sw-name" type="text" class="swal2-input" value="${vName}" placeholder="Nhập tên nhân viên..." style="margin-top:5px;">
+                    
+                    <label style="font-weight:bold; display:block; margin-top:10px;">Mức lương cơ bản (VNĐ):</label>
+                    <input id="sw-salary" type="number" class="swal2-input" value="${vSalary}" placeholder="Nhập số tiền..." style="margin-top:5px;">
+                    
+                    <label style="font-weight:bold; display:block; margin-top:10px;">Hình thức tính lương:</label>
+                    <select id="sw-type" class="swal2-input" style="margin-top:5px;">
+                        <option value="Tháng" ${vType==='Tháng'?'selected':''}>Hệ Tháng (Theo công)</option>
+                        <option value="Tuần" ${vType==='Tuần'?'selected':''}>Hệ Tuần (Theo buổi)</option>
+                        <option value="Giờ" ${vType==='Giờ'?'selected':''}>Hệ Giờ (Part-time)</option>
+                    </select>
+
+                    <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <input type="checkbox" id="sw-comm" style="width: 18px; height: 18px; cursor: pointer;" ${vComm}>
+                        <label for="sw-comm" style="font-weight:bold; cursor:pointer; color: #166534; margin:0;">Nhân sự được hưởng % Hoa hồng</label>
+                    </div>
+                    
+                    ${accInfo}
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'LƯU HỒ SƠ',
+            cancelButtonText: 'HỦY',
+            confirmButtonColor: '#27ae60',
+            width: '500px',
+            preConfirm: () => {
+                const name = document.getElementById('sw-name').value.trim();
+                const salary = document.getElementById('sw-salary').value;
+                if (!name) return Swal.showValidationMessage('Vui lòng nhập Tên nhân viên!');
+                if (!salary) return Swal.showValidationMessage('Vui lòng nhập Mức lương cơ bản!');
+                
+                let payload = {
+                    Ho_Ten: name,
+                    Luong_Co_Ban: Number(salary),
+                    Loai_Luong: document.getElementById('sw-type').value,
+                    Huong_Hoa_Hong: document.getElementById('sw-comm').checked
+                };
+
+                if (!isEdit) {
+                    const usr = document.getElementById('sw-user').value.trim();
+                    const pwd = document.getElementById('sw-pass').value.trim();
+                    if(!usr || !pwd) return Swal.showValidationMessage('Vui lòng cấp Tên đăng nhập và Mật khẩu!');
+                    payload.User = usr;
+                    payload.Password = pwd;
+                    payload.Vai_Tro = "NhanVien"; // Default role
+                }
+                
+                return payload;
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    let url = `${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien`;
+                    let method = 'POST';
+                    let logMsg = `Đã thêm nhân viên mới: ${result.value.Ho_Ten}`;
+                    
+                    if (isEdit) {
+                        url += `?id=eq.${empData.id}`;
+                        method = 'PATCH';
+                        logMsg = `Đã cập nhật cấu hình lương cho: ${result.value.Ho_Ten}`;
+                    }
+
+                    const res = await fetch(url, { method: method, headers: h, body: JSON.stringify(result.value) });
+                    if(res.ok) {
+                        await notifyAdmin("CẬP NHẬT HỒ SƠ NHÂN SỰ", logMsg);
+                        Swal.fire({ icon: 'success', title: 'Đã lưu thành công!', timer: 1500, showConfirmButton: false });
+                        loadAllData();
+                    } else {
+                        throw new Error("Lỗi lưu DB");
+                    }
+                } catch (e) {
+                    Swal.fire('Lỗi', 'Không thể lưu thông tin nhân sự. Vui lòng kiểm tra lại!', 'error');
+                }
+            }
+        });
     }
 
+    // --- MODULE: KÊ KHAI TÀI CHÍNH (Giữ nguyên) ---
     async function viewFinancials(empId, name) {
       const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh?User_ID=eq.${empId}&order=Ngay_Ghi.desc&limit=20`, { headers: h });
       const fds = await res.json();
@@ -220,7 +349,7 @@
             <small style="color:#888;">Nội dung: ${f.Noi_Dung || '...'}</small>
           </div>
           <div style="display:flex; gap:5px;">
-            <button class="btn btn-edit" style="padding:5px 8px; font-size:10px; width:auto; margin:0;" onclick='editFinanceItem(${JSON.stringify(f)}, "${name}")'>Sửa</button>
+            <button class="btn btn-edit" style="background:#3498db; padding:5px 8px; font-size:10px; width:auto; margin:0;" onclick='editFinanceItem(${JSON.stringify(f)}, "${name}")'>Sửa</button>
             <button class="btn btn-danger" style="padding:5px 8px; font-size:10px; width:auto; margin:0;" onclick="deleteFinance('${f.id}', '${name}', '${f.Loai}', ${f.So_Tien})">Xóa</button>
           </div>
         </div>`;

@@ -45,8 +45,11 @@
     .btn-absent { background: #64748b; }
     .btn-payslip { background: #8e44ad; }
 
-    .badge { font-size: 11px; background: #e2e8f0; color: #475569; padding: 4px 10px; border-radius: 12px; font-weight: normal; }
+    .badge { font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: 600; }
+    .badge-thang { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
     .badge-tuan { background: #fef08a; color: #9a3412; border: 1px solid #fde047; }
+    .badge-gio { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    
     .swal2-container { z-index: 20000 !important; }
 
     /* ========================================================
@@ -75,7 +78,6 @@
         .col-amount { width: 85px !important; white-space: nowrap !important; font-weight: bold !important; text-align: right !important; color: #2c3e50; }
         .col-action { width: 45px !important; text-align: right !important; }
     }
-
     @media (min-width: 769px) { .mobile-nav-btn { display: none; } }
   </style>
 </head>
@@ -91,11 +93,11 @@
           <button class="btn-export no-print" onclick="openPrintPopup()">🖨️ TẢI BẢNG LƯƠNG</button>
         </div>
       </div>
-      <p style="margin: 0; color: #666; font-size: 14px;">In Ấn Sắc Màu - Đồng Tháp</p>
+      <p style="margin: 0; color: #666; font-size: 14px;">Hệ thống tính toán tự động dựa trên công chuẩn của tháng</p>
     </div>
 
     <div class="summary-box"><p>TỔNG DOANH THU TRONG THÁNG</p><h3 id="lbl-doanh-thu">0đ</h3></div>
-    <div id="payroll-container" class="payroll-grid"><h3 style="color:#888;">Đang tính toán sổ sách...</h3></div>
+    <div id="payroll-container" class="payroll-grid"><h3 style="color:#888;">Đang tải và tính toán sổ sách...</h3></div>
   </div>
 
   <script>
@@ -105,7 +107,7 @@
     let currentTcData = []; 
     let currentTcWeekData = []; 
     let globalAbsentData = {}; 
-    let globalPrintHTML = ""; // Biến toàn cục lưu trữ HTML để in
+    let globalPrintHTML = "";
 
     const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
@@ -116,7 +118,6 @@
       loadPayroll();
     });
 
-    // Hàm hỗ trợ: Lấy ngày Thứ Hai của tuần chứa một ngày bất kỳ
     function getMonday(d) {
         d = new Date(d);
         var day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6:1); 
@@ -125,12 +126,10 @@
 
     async function loadPayroll() {
       const monthVal = document.getElementById('month-selector').value; 
-const [year, month] = monthVal.split('-');
-const firstDay = `${year}-${month}-01`;
-
-// Lấy số ngày của tháng để nối chuỗi trực tiếp, tránh lỗi Timezone
-const daysInMonth = new Date(year, month, 0).getDate();
-const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
+      const [year, month] = monthVal.split('-');
+      const firstDay = `${year}-${month}-01`;
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
 
       const today = new Date();
       let refDate = new Date(year, month - 1, new Date(year, month, 0).getDate());
@@ -154,7 +153,6 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
           if (item.Ngay_Gio && (item.Ngay_Gio.includes(`${month}/${year}`) || item.Ngay_Gio.includes(`${year}-${month}`))) {
               totalRevenue += tDon;
           }
-          
           if(item.Ngay_Gio) {
               const nDateStr = item.Ngay_Gio.split(' ')[0]; 
               let dt;
@@ -164,7 +162,6 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
               } else {
                   dt = new Date(nDateStr);
               }
-              
               if(dt >= monday && dt <= refDate) {
                   totalRevenueWeek += tDon;
               }
@@ -200,18 +197,31 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
       const todayDate = new Date();
       todayDate.setHours(23, 59, 59, 999);
 
+      // --- TÍNH CÔNG CHUẨN CỦA THÁNG ---
+      const daysInMonth = new Date(year, month, 0).getDate();
+      let congChuanThang = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+          const checkDate = new Date(year, month - 1, d);
+          if (checkDate.getDay() !== 0) { // Không tính ngày Chủ Nhật (0)
+              congChuanThang++;
+          }
+      }
+
       globalPrintHTML = `
         <div style="font-family: Arial, sans-serif; padding: 10px; max-width: 800px; margin: 0 auto; color: #333;">
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="color: #2D5A27; margin: 0 0 10px 0; font-size: 24px;">BẢNG TỔNG HỢP LƯƠNG</h2>
                 <p style="margin: 0; font-size: 15px;">Tháng: <b>${month}/${year}</b> &nbsp;|&nbsp; Tổng doanh thu tháng: <b>${Math.round(totalRevenue).toLocaleString('vi-VN')}đ</b></p>
+                <p style="margin: 5px 0 0 0; font-size: 13px; color: #888;">(Công chuẩn tháng: ${congChuanThang} ngày)</p>
             </div>
             <hr style="border: 0; border-top: 2px solid #2D5A27; margin-bottom: 25px;">
       `;
 
       filteredEmp.forEach(emp => {
-        const isMonthBasis = emp.Ho_Ten.includes("Nhung") || emp.Ho_Ten.includes("Thư") || emp.Ho_Ten.includes("Trọng");
-        
+        const loaiLuong = emp.Loai_Luong || 'Tháng'; 
+        const isMonthBasis = loaiLuong === 'Tháng';
+        const isHuongHoaHong = emp.Huong_Hoa_Hong === true;
+
         const workingCCData = isMonthBasis ? ccData : ccWeekData;
         const workingTCData = isMonthBasis ? tcData : tcWeekData;
         const workingRevenue = isMonthBasis ? totalRevenue : totalRevenueWeek;
@@ -223,8 +233,8 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
         let infoCong = "";
         let absents = [];
 
+        // Check nghỉ và đếm công
         if (isMonthBasis) {
-            const daysInMonth = new Date(year, month, 0).getDate();
             for (let d = 1; d <= daysInMonth; d++) {
               const checkDate = new Date(year, month - 1, d);
               if (checkDate > todayDate) continue; 
@@ -262,42 +272,53 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
         
         globalAbsentData[emp.id] = absents;
 
-        if (isMonthBasis) {
-          const soNgay = myCC.length * 0.5;
-          luongCoBan = (emp.Luong_Co_Ban / 30) * soNgay;
-          infoCong = `${soNgay} ngày`;
-        } else {
-          let soBuoi = myCC.length;
-          luongCoBan = emp.Luong_Co_Ban * soBuoi;
-          infoCong = `${soBuoi} buổi`;
+        // --- CÔNG THỨC TÍNH LƯƠNG ---
+        const soCaThucTe = myCC.length; 
+        
+        if (loaiLuong === 'Tháng') {
+          const soNgay = soCaThucTe * 0.5;
+          // Chia cho Công Chuẩn của tháng để tìm ra đơn giá 1 ngày chính xác
+          luongCoBan = Math.round((emp.Luong_Co_Ban / congChuanThang) * soNgay);
+          infoCong = `${soNgay} / ${congChuanThang} ngày`; 
+        } 
+        else if (loaiLuong === 'Tuần') {
+          luongCoBan = Math.round(emp.Luong_Co_Ban * soCaThucTe);
+          infoCong = `${soCaThucTe} buổi`;
+        }
+        else if (loaiLuong === 'Giờ') {
+          const soGioLuu = soCaThucTe * 4; 
+          luongCoBan = Math.round(emp.Luong_Co_Ban * soGioLuu);
+          infoCong = `${soGioLuu} giờ`;
         }
 
-        let isHuongHoaHong = emp.Huong_Hoa_Hong || emp.Ho_Ten.includes("Trọng") || emp.Ho_Ten.includes("Thư") || emp.Ho_Ten.includes("Nhung");
         let phanTramHH = 0;
         let bacDoanhThu = Math.floor(workingRevenue / 100000000);
         if (bacDoanhThu >= 1) phanTramHH = 1 + (bacDoanhThu - 1) * 0.5;
-        if (isHuongHoaHong && phanTramHH > 0) hoaHong = workingRevenue * (phanTramHH / 100);
+        if (isHuongHoaHong && phanTramHH > 0) hoaHong = Math.round(workingRevenue * (phanTramHH / 100));
 
         myTC.forEach(tc => { if (tc.Loai === "Tạm ứng") tamUng += tc.So_Tien; else phuCapViec += tc.So_Tien; });
-        tongNhan = luongCoBan + hoaHong + phuCapViec - tamUng;
+        tongNhan = Math.round(luongCoBan + hoaHong + phuCapViec - tamUng);
 
-        const titleBage = isMonthBasis ? '<span class="badge">Kết theo Tháng</span>' : '<span class="badge badge-tuan">Kết theo Tuần</span>';
+        let titleBadge = '';
+        if (loaiLuong === 'Tháng') titleBadge = '<span class="badge badge-thang">Kết Tháng</span>';
+        else if (loaiLuong === 'Tuần') titleBadge = '<span class="badge badge-tuan">Kết Tuần</span>';
+        else if (loaiLuong === 'Giờ') titleBadge = '<span class="badge badge-gio">Tính Giờ</span>';
 
         container.innerHTML += `
           <div class="staff-card">
-            <h3 class="staff-name">${emp.Ho_Ten} ${titleBage}</h3>
+            <h3 class="staff-name">${emp.Ho_Ten} ${titleBadge}</h3>
             <div class="salary-row"><span>Công thực tế:</span> <b>${infoCong}</b></div>
-            <div class="salary-row"><span>Lương cứng:</span> <b>${Math.round(luongCoBan).toLocaleString('vi-VN')}đ</b></div>
-            ${(isHuongHoaHong && phanTramHH > 0) ? `<div class="salary-row"><span>Hoa hồng (${phanTramHH}%):</span> <b class="val-plus">+ ${Math.round(hoaHong).toLocaleString('vi-VN')}đ</b></div>` : ''}
+            <div class="salary-row"><span>Lương cứng:</span> <b>${luongCoBan.toLocaleString('vi-VN')}đ</b></div>
+            ${(isHuongHoaHong && phanTramHH > 0) ? `<div class="salary-row"><span>Hoa hồng (${phanTramHH}%):</span> <b class="val-plus">+ ${hoaHong.toLocaleString('vi-VN')}đ</b></div>` : ''}
             <div class="salary-row"><span>Phụ cấp việc:</span> <b class="val-plus">+ ${phuCapViec.toLocaleString('vi-VN')}đ</b></div>
             <div class="salary-row"><span>Trừ tạm ứng:</span> <b class="val-minus">- ${tamUng.toLocaleString('vi-VN')}đ</b></div>
-            <div class="salary-row total"><span>THỰC NHẬN:</span> <span>${Math.round(tongNhan).toLocaleString('vi-VN')}đ</span></div>
+            <div class="salary-row total"><span>THỰC NHẬN:</span> <span>${tongNhan.toLocaleString('vi-VN')}đ</span></div>
             
             <div class="action-group no-print">
               <button class="btn btn-finance" onclick="openFinanceModal('${emp.id}', '${emp.Ho_Ten}', ${isMonthBasis})">💰 Nhập</button>
               <button class="btn btn-details" onclick="viewFinanceDetails('${emp.id}', '${emp.Ho_Ten}', ${isMonthBasis})">👀 Kê khai</button>
               <button class="btn btn-absent" onclick="showAbsentDetails('${emp.id}', '${emp.Ho_Ten}')">🚫 Nghỉ</button>
-              <button class="btn btn-payslip" onclick="showPayslip('${emp.id}', '${emp.Ho_Ten}', '${infoCong}', ${luongCoBan}, ${hoaHong}, ${phanTramHH}, ${phuCapViec}, ${tamUng}, ${tongNhan}, ${isMonthBasis})">📄 Phiếu</button>
+              <button class="btn btn-payslip" onclick="showPayslip('${emp.id}', '${emp.Ho_Ten}', '${infoCong}', ${luongCoBan}, ${hoaHong}, ${phanTramHH}, ${phuCapViec}, ${tamUng}, ${tongNhan}, '${loaiLuong}')">📄 Phiếu</button>
             </div>
           </div>`;
 
@@ -305,17 +326,17 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
             <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; page-break-inside: avoid; background: #fff;">
                 <h3 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px; display: flex; justify-content: space-between;">
                     <span>${emp.Ho_Ten}</span>
-                    <span style="font-size: 12px; font-weight: normal; color: #7f8c8d; background: #f8f9fa; padding: 2px 8px; border-radius: 10px; border: 1px solid #ddd;">${isMonthBasis ? 'Hệ Tháng' : 'Hệ Tuần'}</span>
+                    <span style="font-size: 12px; font-weight: normal; color: #7f8c8d; background: #f8f9fa; padding: 2px 8px; border-radius: 10px; border: 1px solid #ddd;">Hệ ${loaiLuong}</span>
                 </h3>
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                     <tr><td style="padding: 4px 0; color: #555;">Công thực tế:</td><td style="text-align: right;"><b>${infoCong}</b></td></tr>
-                    <tr><td style="padding: 4px 0; color: #555;">Lương cứng:</td><td style="text-align: right;"><b>${Math.round(luongCoBan).toLocaleString('vi-VN')}đ</b></td></tr>
-                    ${(isHuongHoaHong && phanTramHH > 0) ? `<tr><td style="padding: 4px 0; color: #555;">Hoa hồng (${phanTramHH}%):</td><td style="text-align: right; color: #27ae60;"><b>+ ${Math.round(hoaHong).toLocaleString('vi-VN')}đ</b></td></tr>` : ''}
+                    <tr><td style="padding: 4px 0; color: #555;">Lương cứng:</td><td style="text-align: right;"><b>${luongCoBan.toLocaleString('vi-VN')}đ</b></td></tr>
+                    ${(isHuongHoaHong && phanTramHH > 0) ? `<tr><td style="padding: 4px 0; color: #555;">Hoa hồng (${phanTramHH}%):</td><td style="text-align: right; color: #27ae60;"><b>+ ${hoaHong.toLocaleString('vi-VN')}đ</b></td></tr>` : ''}
                     <tr><td style="padding: 4px 0; color: #555;">Phụ cấp việc:</td><td style="text-align: right; color: #27ae60;"><b>+ ${phuCapViec.toLocaleString('vi-VN')}đ</b></td></tr>
                     <tr><td style="padding: 4px 0; color: #555;">Trừ tạm ứng:</td><td style="text-align: right; color: #e74c3c;"><b>- ${tamUng.toLocaleString('vi-VN')}đ</b></td></tr>
                     <tr>
                         <td style="padding: 10px 0 4px 0; font-weight: bold; font-size: 16px; border-top: 1px solid #eee; margin-top: 5px;">THỰC NHẬN:</td>
-                        <td style="text-align: right; font-weight: bold; font-size: 18px; color: #c0392b; border-top: 1px solid #eee; padding-top: 10px; margin-top: 5px;">${Math.round(tongNhan).toLocaleString('vi-VN')}đ</td>
+                        <td style="text-align: right; font-weight: bold; font-size: 18px; color: #c0392b; border-top: 1px solid #eee; padding-top: 10px; margin-top: 5px;">${tongNhan.toLocaleString('vi-VN')}đ</td>
                     </tr>
                 </table>
             </div>
@@ -329,7 +350,6 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
         if (!globalPrintHTML || globalPrintHTML === "") {
             return Swal.fire('Thông báo', 'Chưa có dữ liệu để tải/in!', 'warning');
         }
-
         Swal.fire({
             title: '<span style="font-size: 20px;">TỔNG HỢP BẢNG LƯƠNG</span>',
             html: `<div style="max-height: 60vh; overflow-y: auto; text-align: left; background: #f8fafc; padding: 10px; border-radius: 8px;">${globalPrintHTML}</div>`,
@@ -340,9 +360,7 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
             confirmButtonColor: '#27ae60',
             cancelButtonColor: '#64748b'
         }).then((result) => {
-            if (result.isConfirmed) {
-                executePrint(globalPrintHTML);
-            }
+            if (result.isConfirmed) executePrint(globalPrintHTML);
         });
     }
 
@@ -350,30 +368,14 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
         const printWindow = window.open('', '_blank', 'width=800,height=600');
         printWindow.document.write(`
             <html>
-            <head>
-                <title>In Bảng Lương - Tiệm In Sắc Màu</title>
-                <style>
-                    body { margin: 0; padding: 0; background: #fff; }
-                    @media print {
-                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                        @page { margin: 15mm; }
-                    }
-                </style>
+            <head><title>In Bảng Lương - Tiệm In Sắc Màu</title>
+                <style>body { margin: 0; padding: 0; background: #fff; } @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } @page { margin: 15mm; } } </style>
             </head>
-            <body>
-                ${htmlContent}
-                <script>
-                    window.onload = function() { 
-                        window.print(); 
-                        setTimeout(function(){ window.close(); }, 500); 
-                    }
-                <\/script>
-            </body>
+            <body>${htmlContent}<script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);}<\/script></body>
             </html>
         `);
         printWindow.document.close();
     }
-
 
     function showAbsentDetails(empId, name) {
         const absents = globalAbsentData[empId] || [];
@@ -384,42 +386,10 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
         });
     }
 
-    function showPayslip(empId, name, cong, luong, hh, hhPct, pc, ung, tong, isMonthBasis) {
-        const monthVal = document.getElementById('month-selector').value;
-        const [year, month] = monthVal.split('-');
-        const tcSource = isMonthBasis ? currentTcData : currentTcWeekData;
-        const myTC = tcSource.filter(t => String(t.User_ID) === String(empId));
-        const absents = globalAbsentData[empId] || [];
-        
-        let absentHtml = absents.length > 0 ? `
-            <div style="margin-top:10px; padding:10px; background:#fff5f5; border-radius:8px; border:1px solid #fed7d7;">
-                <p style="font-weight:bold; color:#c53030; font-size:12px; margin-bottom:5px; text-align:left;">CÁC BUỔI NGHỈ:</p>
-                <div style="font-size:11px; color:#c53030; text-align:left;">${absents.join(', ')}</div>
-            </div>` : '';
-
-        const titlePrint = isMonthBasis ? `PHIẾU LƯƠNG THÁNG ${month}/${year}` : `PHIẾU LƯƠNG TUẦN NÀY`;
-
-        Swal.fire({
-            title: `<span style="color:var(--primary)">${titlePrint}</span>`,
-            html: `<div style="text-align: left; font-size: 14px; border: 1px solid #eee; padding: 15px; border-radius: 10px; background: #fff;">
-                    <p><b>Nhân viên:</b> ${name}</p><hr style="border: 0.5px dashed #ccc">
-                    <div style="display:flex; justify-content: space-between; margin: 8px 0;"><span>Lương cứng (${cong}):</span><b>${Math.round(luong).toLocaleString('vi-VN')}đ</b></div>
-                    ${hh > 0 ? `<div style="display:flex; justify-content: space-between; margin: 8px 0; color: #27ae60;"><span>Hoa hồng (${hhPct}%):</span><b>+ ${Math.round(hh).toLocaleString('vi-VN')}đ</b></div>` : ''}
-                    <div style="display:flex; justify-content: space-between; margin: 8px 0; color: #27ae60;"><span>Phụ cấp:</span><b>+ ${pc.toLocaleString('vi-VN')}đ</b></div>
-                    <div style="display:flex; justify-content: space-between; margin: 8px 0; color: #e74c3c;"><span>Tạm ứng:</span><b>- ${ung.toLocaleString('vi-VN')}đ</b></div>
-                    <hr style="border: 1px solid #333"><div style="display:flex; justify-content: space-between; font-size: 18px; font-weight: bold; color: #c0392b;"><span>THỰC LÃNH:</span><span>${Math.round(tong).toLocaleString('vi-VN')}đ</span></div>
-                    ${absentHtml}
-                    ${myTC.length > 0 ? `<div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"><p style="font-weight:bold; font-size:12px;">CHI TIẾT PHÁT SINH:</p>
-                    <div style="overflow-x:auto"><table style="width:100%; font-size:11px;">${myTC.map(tc => `<tr><td style="white-space:nowrap">${new Date(tc.Ngay_Ghi).toLocaleDateString('vi-VN')}</td><td>${tc.Loai} (${tc.Noi_Dung || ''})</td><td align="right" style="white-space:nowrap">${Number(tc.So_Tien).toLocaleString('vi-VN')}đ</td></tr>`).join('')}</table></div></div>` : ''}</div>`,
-            confirmButtonText: 'ĐÓNG', confirmButtonColor: '#2D5A27', width: '500px'
-        });
-    }
-
     function viewFinanceDetails(empId, empName, isMonthBasis) {
       const tcSource = isMonthBasis ? currentTcData : currentTcWeekData;
       const myTC = tcSource.filter(t => String(t.User_ID) === String(empId));
       if(myTC.length === 0) return Swal.fire('Thông báo', 'Không có khoản kê khai nào.', 'info');
-      
       let rows = myTC.map(tc => {
         const d = new Date(tc.Ngay_Ghi);
         const dateStr = d.getDate() + "/" + (d.getMonth()+1) + "/" + d.getFullYear();
@@ -430,14 +400,7 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
           '<td class="col-action"><button onclick="deleteFinance(\'' + tc.id + '\')" class="btn" style="background:#e74c3c; padding:5px 8px; font-size:10px; flex:none;">Xóa</button></td>' +
         '</tr>';
       }).join('');
-
-      Swal.fire({ 
-        title: 'Kê khai: ' + empName, 
-        html: '<div style="overflow-x:auto"><table class="finance-table">' + rows + '</table></div>', 
-        width:'600px',
-        confirmButtonText: 'ĐÓNG',
-        confirmButtonColor: '#64748b'
-      });
+      Swal.fire({ title: 'Kê khai: ' + empName, html: '<div style="overflow-x:auto"><table class="finance-table">' + rows + '</table></div>', width:'600px', confirmButtonText: 'ĐÓNG', confirmButtonColor: '#64748b' });
     }
 
     async function deleteFinance(id) {
@@ -449,8 +412,7 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
       Swal.fire({
         title: 'Nhập cho ' + empName,
         html: '<select id="sw-loai" class="swal2-input"><option value="Giao hàng">Giao hàng (+20k)</option><option value="Nhận hàng">Nhận hàng (+10k)</option><option value="Khác">Phụ cấp khác</option><option value="Tạm ứng">Tạm ứng</option></select><input id="sw-tien" type="number" class="swal2-input" placeholder="Số tiền..."><input id="sw-noidung" type="text" class="swal2-input" placeholder="Nội dung...">',
-        showCancelButton: true,
-        confirmButtonText: 'LƯU DỮ LIỆU',
+        showCancelButton: true, confirmButtonText: 'LƯU DỮ LIỆU',
         preConfirm: () => {
           const loai = document.getElementById('sw-loai').value; let tien = document.getElementById('sw-tien').value;
           if (loai === "Giao hàng" && !tien) tien = 20000; if (loai === "Nhận hàng" && !tien) tien = 10000;
@@ -460,29 +422,49 @@ const lastDay = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
       }).then(async (r) => { 
           if (r.isConfirmed) { 
               await fetch(`${window.SB_CONFIG.URL}/rest/v1/BienDong_TaiChinh`, { 
-                  method: 'POST', 
-                  headers: h, 
-                  body: JSON.stringify({...r.value, Ngay_Ghi: new Date().toISOString(), Nguoi_Xac_Nhan: currentUser.name}) 
+                  method: 'POST', headers: h, body: JSON.stringify({...r.value, Ngay_Ghi: new Date().toISOString(), Nguoi_Xac_Nhan: currentUser.name}) 
               }); 
-              
-              // ĐÃ BỔ SUNG: GỬI THÔNG BÁO TỰ ĐỘNG
               try {
                   let ndStr = r.value.Noi_Dung ? (r.value.Loai + " - " + r.value.Noi_Dung) : r.value.Loai;
                   let soTienStr = r.value.So_Tien.toLocaleString('vi-VN') + 'đ';
                   let tbMsg = `Đã cập nhật phụ cấp/tạm ứng [${ndStr}] cho ${empName} với số tiền ${soTienStr}`;
-                  
-                  if (typeof guiThongBaoSacMau === 'function') {
-                      await guiThongBaoSacMau("CẬP NHẬT PHỤ CẤP/ TẠM ỨNG", tbMsg, "Admin", "Quan_Ly_Luong.html");
-                  } else if (window.guiThongBaoSacMau) {
-                      await window.guiThongBaoSacMau("CẬP NHẬT PHỤ CẤP/ TẠM ỨNG", tbMsg, "Admin", "Quan_Ly_Luong.html");
-                  }
+                  if (typeof guiThongBaoSacMau === 'function') await guiThongBaoSacMau("CẬP NHẬT PHỤ CẤP/ TẠM ỨNG", tbMsg, "Admin", "Quan_Ly_Luong.html");
               } catch(e) { console.error("Lỗi gửi thông báo:", e); }
-
               loadPayroll(); 
           } 
       });
     }
-    
+
+    function showPayslip(empId, name, cong, luong, hh, hhPct, pc, ung, tong, loaiLuong) {
+        const monthVal = document.getElementById('month-selector').value;
+        const [year, month] = monthVal.split('-');
+        const tcSource = loaiLuong === 'Tháng' ? currentTcData : currentTcWeekData;
+        const myTC = tcSource.filter(t => String(t.User_ID) === String(empId));
+        const absents = globalAbsentData[empId] || [];
+        
+        let absentHtml = absents.length > 0 ? `
+            <div style="margin-top:10px; padding:10px; background:#fff5f5; border-radius:8px; border:1px solid #fed7d7;">
+                <p style="font-weight:bold; color:#c53030; font-size:12px; margin-bottom:5px; text-align:left;">CÁC BUỔI NGHỈ:</p>
+                <div style="font-size:11px; color:#c53030; text-align:left;">${absents.join(', ')}</div>
+            </div>` : '';
+
+        const titlePrint = loaiLuong === 'Tháng' ? `PHIẾU LƯƠNG THÁNG ${month}/${year}` : `PHIẾU LƯƠNG TUẦN NÀY`;
+
+        Swal.fire({
+            title: `<span style="color:var(--primary)">${titlePrint}</span>`,
+            html: `<div style="text-align: left; font-size: 14px; border: 1px solid #eee; padding: 15px; border-radius: 10px; background: #fff;">
+                    <p><b>Nhân viên:</b> ${name}</p><hr style="border: 0.5px dashed #ccc">
+                    <div style="display:flex; justify-content: space-between; margin: 8px 0;"><span>Lương cứng (${cong}):</span><b>${luong.toLocaleString('vi-VN')}đ</b></div>
+                    ${hh > 0 ? `<div style="display:flex; justify-content: space-between; margin: 8px 0; color: #27ae60;"><span>Hoa hồng (${hhPct}%):</span><b>+ ${hh.toLocaleString('vi-VN')}đ</b></div>` : ''}
+                    <div style="display:flex; justify-content: space-between; margin: 8px 0; color: #27ae60;"><span>Phụ cấp:</span><b>+ ${pc.toLocaleString('vi-VN')}đ</b></div>
+                    <div style="display:flex; justify-content: space-between; margin: 8px 0; color: #e74c3c;"><span>Tạm ứng:</span><b>- ${ung.toLocaleString('vi-VN')}đ</b></div>
+                    <hr style="border: 1px solid #333"><div style="display:flex; justify-content: space-between; font-size: 18px; font-weight: bold; color: #c0392b;"><span>THỰC LÃNH:</span><span>${tong.toLocaleString('vi-VN')}đ</span></div>
+                    ${absentHtml}
+                    ${myTC.length > 0 ? `<div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"><p style="font-weight:bold; font-size:12px;">CHI TIẾT PHÁT SINH:</p>
+                    <div style="overflow-x:auto"><table style="width:100%; font-size:11px;">${myTC.map(tc => `<tr><td style="white-space:nowrap">${new Date(tc.Ngay_Ghi).toLocaleDateString('vi-VN')}</td><td>${tc.Loai} (${tc.Noi_Dung || ''})</td><td align="right" style="white-space:nowrap">${Number(tc.So_Tien).toLocaleString('vi-VN')}đ</td></tr>`).join('')}</table></div></div>` : ''}</div>`,
+            confirmButtonText: 'ĐÓNG', confirmButtonColor: '#2D5A27', width: '500px'
+        });
+    }
   </script>
 </body>
 </html>
