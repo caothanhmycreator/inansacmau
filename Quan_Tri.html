@@ -168,7 +168,7 @@
   </div>
 
   <script>
-    // BẢNG MÀU ÁNH XẠ CHO CÁC TRẠNG THÁI (ĐÃ CẬP NHẬT THEO YÊU CẦU MỚI)
+    // BẢNG MÀU ÁNH XẠ CHO CÁC TRẠNG THÁI
     const STATUS_MAP = [
       { name: "", label: "Tất cả", class: "st-all", color: "#2c3e50" },
       { name: "Chờ xử lý", label: "Chờ xử lý", class: "st-cxl", color: "#27ae60" },
@@ -183,6 +183,7 @@
     ];
 
     window.listAllF10 = [];
+    window.listNhanVien = []; // Lưu trữ danh sách nhân viên
     window.filteredGroupedData = []; 
     window.expandedGroups = new Set(); // Biến ghi nhớ các nhóm đơn đang mở
     
@@ -223,6 +224,11 @@
       try {
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?select=*&order=id.desc`, { headers: h });
         window.listAllF10 = await res.json();
+        
+        // Load danh sách nhân viên
+        const resNV = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?select=Ho_Ten,Vai_Tro`, { headers: h });
+        if(resNV.ok) window.listNhanVien = await resNV.json();
+
         filterF10(); 
       } catch (e) {
         tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Lỗi: ${e.message}</td></tr>`;
@@ -316,9 +322,12 @@
               const stObj = STATUS_MAP.find(s => s.name === item.Trang_Thai);
               const itemBorderColor = stObj ? stObj.color : "#ccc";
 
-              // BỔ SUNG: Hiển thị Nút Xem Ảnh và Nút Xem File nếu có
               let linkAnh = item.Link_Anh ? `<a href="${item.Link_Anh}" target="_blank" style="display:inline-block; margin-top:5px; margin-right:5px; padding:3px 8px; background:#27ae60; color:white; text-decoration:none; border-radius:4px; font-size:11px; font-weight:bold;">🖼️ Ảnh</a>` : '';
               let linkFile = item.Link_File ? `<a href="${item.Link_File}" target="_blank" style="display:inline-block; margin-top:5px; padding:3px 8px; background:#8e44ad; color:white; text-decoration:none; border-radius:4px; font-size:11px; font-weight:bold;">📁 File</a>` : '';
+
+              // --- BỔ SUNG: Nhãn và chức năng đổi người phụ trách thiết kế ---
+              let assignee = item.Nhan_Vien_Phu_Trach || "Chưa phân công";
+              let assigneeHtml = `<div style="margin-top:4px;"><span style="font-size:11px; color:#8e44ad; font-weight:bold; cursor:pointer; background:#f5eef8; padding:3px 6px; border-radius:4px; border:1px solid #d2b4de;" onclick="reassignTask(${item.id}, '${assignee}', '${item.Ma_Don}', '${item.Ten_Hang.replace(/'/g, "\\'")}')" title="Bấm để điều chỉnh người phụ trách">👤 PT: ${assignee} ✏️</span></div>`;
 
               html += `
               <tr class="f10-row child-row child-of-${group.Ma_Don} ${displayStyle}">
@@ -328,7 +337,8 @@
                 <td data-label="Khách hàng"><span style="color:#7f8c8d;">---</span></td>
                 <td data-label="Sản phẩm" style="color:#2980b9;">
                   <b>${item.Ten_Hang}</b><br>
-                  <small style="color:#d35400;">SL: ${item.So_Luong} ${item.Don_Vi_Tinh || ""}</small><br>
+                  <small style="color:#d35400;">SL: ${item.So_Luong} ${item.Don_Vi_Tinh || ""}</small>
+                  ${assigneeHtml}
                   ${linkAnh}${linkFile}
                 </td>
                 <td data-label="Trạng thái">
@@ -402,6 +412,68 @@
       renderF10Table();
     }
 
+    // TÍNH NĂNG MỚI: CHỈNH SỬA PHÂN CÔNG (GIAO VIỆC LẠI)
+    window.reassignTask = function(id, currentAssignee, maDon, tenHang) {
+        let nvOptions = `<option value="">-- Để trống (Chưa phân công) --</option>`;
+        window.listNhanVien.forEach(nv => {
+            // Chỉ hiển thị nhân viên Thiết kế trong danh sách
+            if (nv.Vai_Tro === 'Thiet_Ke' || nv.Vai_Tro === 'Admin') {
+                let selected = (nv.Ho_Ten === currentAssignee) ? 'selected' : '';
+                nvOptions += `<option value="${nv.Ho_Ten}" ${selected}>${nv.Ho_Ten}</option>`;
+            }
+        });
+
+        Swal.fire({
+            title: 'CHỈNH SỬA PHÂN CÔNG',
+            html: `
+                <div style="text-align:left; font-size:14px; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                    Mã đơn: <b>${maDon}</b><br>SP: <b>${tenHang}</b>
+                </div>
+                <div style="text-align:left;">
+                    <label style="font-size: 11px; font-weight: bold; color: #2D5A27; display: block; margin-bottom: 3px;">👤 PHỤ TRÁCH THIẾT KẾ:</label>
+                    <select id="f10_nguoi_nhan" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box; cursor:pointer; background: #fffcf5; border-color: #FF8C00; outline:none;">
+                        ${nvOptions}
+                    </select>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#2D5A27',
+            confirmButtonText: 'LƯU THAY ĐỔI',
+            cancelButtonText: 'HỦY',
+            preConfirm: () => {
+                return document.getElementById('f10_nguoi_nhan').value;
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                const newAssignee = result.value;
+                if (newAssignee === currentAssignee || (newAssignee === "" && currentAssignee === "Chưa phân công")) return; 
+
+                Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
+                
+                try {
+                    await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, {
+                        method: 'PATCH', headers: h,
+                        body: JSON.stringify({ Nhan_Vien_Phu_Trach: newAssignee || null })
+                    });
+                    
+                    Swal.fire({ icon: 'success', title: 'Đã cập nhật!', timer: 800, showConfirmButton: false });
+                    
+                    if (newAssignee) {
+                        try {
+                            await guiThongBaoSacMau("📌 PHÂN CÔNG LẠI", `Quản trị viên vừa phân công bạn phụ trách Thiết kế cho đơn ${maDon} - SP: ${tenHang}.`, newAssignee, "Thiet_Ke.html");
+                        } catch (etb) { console.log(etb); }
+                    }
+                    
+                    window.expandedGroups.add(maDon);
+                    loadF10Data();
+                } catch (e) {
+                    Swal.fire('Lỗi hệ thống', e.message, 'error');
+                }
+            }
+        });
+    }
+
     // TÍNH NĂNG XÓA VÀ HOÀN KHO KÈM CHI TIẾT TÀI CHÍNH
     async function confirmDeleteF10(itemId, maDon) {
       const item = window.listAllF10.find(i => i.id === itemId);
@@ -432,7 +504,6 @@
           let vtHtml = "<li>Không có vật tư hệ thống</li>";
           let maVTToRestore = item.Ma_VT;
           
-          // Fallback: Nếu NhatKy_BanHang không lưu Ma_VT, tìm lại trong Bang_Gia_San_Pham
           if (!maVTToRestore || !maVTToRestore.startsWith('SMK-')) {
               const resBG = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Bang_Gia_San_Pham?Ten_Hang=eq.${encodeURIComponent(item.Ten_Hang)}&select=Ghi_Chu`, {headers: h});
               const bgData = await resBG.json();
@@ -527,7 +598,6 @@
 
               const remainingItems = window.listAllF10.filter(i => i.Ma_Don === item.Ma_Don && i.id !== item.id);
               
-              // Gửi thông báo xóa sản phẩm hiện tại
               try { 
                   await guiThongBaoSacMau("🗑️ XÓA MẶT HÀNG", `Mặt hàng "${item.Ten_Hang}" thuộc đơn ${item.Ma_Don} của khách ${item.Ten_Khach_Hang} đã bị xóa và hoàn kho.`, "Quan_Ly_Don", "Xu_Ly.html"); 
               } catch(e){}
@@ -626,7 +696,6 @@
 
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}`, 'Content-Type': 'application/json' };
 
-      // Xử lý riêng nếu chuyển thành Công nợ (tạo record bên bảng Cong_No)
       if (newStatus === "Công nợ") {
         const dsMon = window.listAllF10.filter(it => it.Ma_Don === maDon);
         const khachHang = dsMon.length > 0 ? dsMon[0].Ten_Khach_Hang : "";
@@ -658,7 +727,6 @@
       Swal.fire({ title: 'Đang cập nhật...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const nowVN = window.formatDateTimeVN();
       
-      // MẢNG TUYẾN TÍNH CÁC TRẠNG THÁI (DÙNG ĐỂ RESET TƯƠNG LAI)
       const statusTimeline = [
           { name: "Chờ xử lý", col: "Gio_Xu_Ly" },
           { name: "Chờ thiết kế", col: "Gio_Thiet_Ke" },
@@ -672,17 +740,13 @@
       ];
 
       try {
-        // Cập nhật Trang_Thai vào NhatKy_BanHang
         await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${id}`, { method: 'PATCH', headers: h, body: JSON.stringify({ "Trang_Thai": newStatus }) });
 
-        // LOGIC MỚI: TÌM VỊ TRÍ, GÁN GIỜ HIỆN TẠI VÀ XÓA TƯƠNG LAI BẰNG NULL
         let logData = { "Trang_Thai": newStatus, "Nguoi_Thuc_Hien": "Bộ phận Quản trị đơn" };
         const currentIndex = statusTimeline.findIndex(s => s.name === newStatus);
 
         if (currentIndex !== -1) {
             logData[statusTimeline[currentIndex].col] = nowVN;
-            
-            // Ép null để xóa trắng các cột thời gian ở trạng thái tương lai
             for (let i = currentIndex + 1; i < statusTimeline.length; i++) {
                 logData[statusTimeline[i].col] = null;
             }

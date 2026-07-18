@@ -63,8 +63,8 @@
         
         .f3-container { padding: 15px; }
         .f3-header { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; border-radius: 8px; }
-        .f3-header > div { width: 100%; display: flex; justify-content: space-between; }
-        .f3-header button { flex: 1; padding: 10px; font-size: 12px; }
+        .f3-header > div { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+        .f3-header button { width: 100%; padding: 10px; font-size: 12px; }
 
         /* Biến Bảng thành Dạng Thẻ (Card) */
         .f3-table, .f3-table thead, .f3-table tbody, .f3-table th, .f3-table td, .f3-table tr { display: block; width: 100%; box-sizing: border-box; }
@@ -113,6 +113,7 @@
         <div>
           <h2 style="margin:0; font-size: 22px;">🎨 BỘ PHẬN THIẾT KẾ</h2>
           <small style="opacity:0.9">Xử lý yêu cầu & Xuất file sản xuất</small>
+          <div id="task-counter" style="margin-top: 8px; font-size: 12px; font-weight: bold; color: #f39c12; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 6px; display: inline-block;"></div>
         </div>
         <div style="display: flex; gap: 10px;">
             <button onclick="getToken()" style="padding:10px 15px; cursor:pointer; font-weight:bold; border-radius:8px; border:1px solid white; background:transparent; color:white; transition: 0.2s;">🔐 KẾT NỐI DRIVE</button>
@@ -291,10 +292,31 @@
       const tbody = document.getElementById('f3-table-body');
       const h = { 'apikey': window.SB_CONFIG.KEY, 'Authorization': `Bearer ${window.SB_CONFIG.KEY}` };
       
+      const user = JSON.parse(localStorage.getItem('currentUser')) || {};
+      const userName = user.Ho_Ten || user.name || "";
+      const userRole = user.Vai_Tro || user.role || "";
+
       try {
-        const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=eq.Chờ thiết kế&select=*&order=id.desc`, { headers: h });
+        // Xây dựng URL API Fetch: Nếu là nhân viên Thiết kế, chỉ lấy đơn của mình
+        let fetchUrl = `${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=eq.Chờ thiết kế&select=*&order=id.desc`;
+        
+        if (userRole !== "Admin" && userRole !== "Quan_Ly_Don") {
+            fetchUrl += `&Nhan_Vien_Phu_Trach=eq.${encodeURIComponent(userName)}`;
+        }
+
+        const res = await fetch(fetchUrl, { headers: h });
         const data = await res.json();
         
+        // Cập nhật thống kê công việc
+        const counterEl = document.getElementById('task-counter');
+        if (counterEl) {
+            if (userRole !== "Admin" && userRole !== "Quan_Ly_Don") {
+                counterEl.innerHTML = `📌 Số lượng file đang chờ bạn xử lý: ${data.length} file`;
+            } else {
+                counterEl.innerHTML = `📌 Tổng số file đang chờ thiết kế: ${data.length} file`;
+            }
+        }
+
         if (!data || data.length === 0) {
           tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; color:#2980b9; font-weight:bold;">✨ Tuyệt vời! Bạn đã hoàn thành tất cả thiết kế.</td></tr>';
           return;
@@ -332,6 +354,14 @@
           
           const waitTimeStr = formatWaitTime(Math.max(0, diffMins));
 
+          // Cấp nhãn hiển thị tên nhân viên phụ trách nếu tài khoản đăng nhập là Quản lý/Admin
+          let assigneeBadge = "";
+          if (userRole === "Admin" || userRole === "Quan_Ly_Don") {
+              const assignee = item.Nhan_Vien_Phu_Trach || "Chưa phân công";
+              const badgeColor = item.Nhan_Vien_Phu_Trach ? "#8e44ad" : "#e74c3c";
+              assigneeBadge = `<div style="margin-top: 5px;"><span style="background:${badgeColor}; color:white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">👤 Phụ trách: ${assignee}</span></div>`;
+          }
+
           return `
           <tr class="f3-row">
             <td>
@@ -343,7 +373,11 @@
               </div>
             </td>
             <td><b>${item.Ten_Khach_Hang}</b></td>
-            <td><b style="color:#2980b9">${item.Ten_Hang}</b><br><small>SL: ${item.So_Luong} ${item.Don_Vi_Tinh || ''}</small></td>
+            <td>
+                <b style="color:#2980b9">${item.Ten_Hang}</b><br>
+                <small>SL: ${item.So_Luong} ${item.Don_Vi_Tinh || ''}</small>
+                ${assigneeBadge}
+            </td>
             <td>${item.Ghi_Chu_San_Xuat ? `<div class="feedback-cell">⚠️ Yêu cầu sửa: ${item.Ghi_Chu_San_Xuat}</div>` : '<span style="color:#cbd5e1; font-style:italic;">Không có yêu cầu đặc biệt</span>'}</td>
             <td style="text-align:center">
               <button onclick="openDesignForm('${encodeURIComponent(JSON.stringify(item))}')"

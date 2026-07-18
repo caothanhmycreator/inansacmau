@@ -133,6 +133,8 @@
   </div>
 
   <script>
+    window.listNhanVien = []; // Lưu trữ danh sách nhân viên để nạp vào Popup
+
     // 1. CẤU HÌNH DRIVE API
     const CLIENT_ID = "139226878812-nuf4fl5sp2gvofgsgu7krtm89iqqgon6.apps.googleusercontent.com";
     const FOLDER_ID = "1Cn8AyIJvMxkEC4-UQnBdZOS_vhvkrnF_";
@@ -276,6 +278,11 @@
         const res = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Trang_Thai=eq.Chờ xử lý&select=*&order=id.desc`, { headers: h });
         const data = await res.json();
         
+        // --- TẢI DANH SÁCH NHÂN VIÊN ---
+        const resNV = await fetch(`${window.SB_CONFIG.URL}/rest/v1/DM_NhanVien?select=Ho_Ten,Vai_Tro`, { headers: h });
+        if(resNV.ok) window.listNhanVien = await resNV.json();
+        // -----------------------------------------------
+
         if (!data || data.length === 0) {
           tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px;">✨ Tuyệt vời! Hiện tại không còn đơn nào chờ điều phối.</td></tr>';
           return;
@@ -286,7 +293,7 @@
         let logData = [];
         if (maDons.length > 0) {
             try {
-                // Đổi thành lấy Gio_Xu_Ly theo logic mới
+                // Lấy Gio_Xu_Ly theo logic mới
                 const logRes = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=in.(${maDons.join(',')})&select=Ma_Don,Ten_Hang,Gio_Xu_Ly,Ngay_Gio`, { headers: h });
                 if (logRes.ok) logData = await logRes.json();
             } catch (err) { console.error("Lỗi tải Log_TienDo:", err); }
@@ -344,6 +351,27 @@
     }
 
     function updateStatus(ma, sp, stt) {
+      let assignHtml = "";
+
+      // CHỈ HIỂN THỊ GIAO VIỆC KHI CHUYỂN TỚI KHÂU THIẾT KẾ
+      if (stt === 'Chờ thiết kế') {
+        let nvOptions = `<option value="" disabled selected>-- Chọn nhân viên thiết kế --</option>`;
+        window.listNhanVien.forEach(nv => {
+            // CHỈ LẤY NHÂN VIÊN THIẾT KẾ ĐỂ HIỂN THỊ VÀO DROPDOWN
+            if (nv.Vai_Tro === 'Thiet_Ke' || nv.Vai_Tro === 'Admin') {
+                nvOptions += `<option value="${nv.Ho_Ten}">${nv.Ho_Ten}</option>`;
+            }
+        });
+
+        assignHtml = `
+          <div class="f2-form-group">
+            <label>👤 GIAO VIỆC THIẾT KẾ CHO:</label>
+            <select id="f2_nguoi_nhan" class="f2-input" style="cursor:pointer; background: #fffcf5; border-color: #FF8C00;">
+                ${nvOptions}
+            </select>
+          </div>`;
+      }
+
       if (stt === 'Chờ in' || stt === 'Chờ gia công') {
         Swal.fire({
           title: 'HỒ SƠ SẢN XUẤT',
@@ -351,6 +379,7 @@
             <div style="text-align:left; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px; font-size:13px;">
               Mã đơn: <b>${ma}</b> | SP: <b>${sp}</b><br>Điều phối đến: <b style="color:#2D5A27">${stt.toUpperCase()}</b>
             </div>
+            ${assignHtml}
             <div class="f2-form-group"><label>KÍCH THƯỚC:</label><input type="text" id="f2_kt" class="f2-input" placeholder="Vd: 60x160cm"></div>
             <div class="f2-form-group"><label>CHẤT LIỆU:</label><input type="text" id="f2_cl" class="f2-input" placeholder="Vd: Bạt Hiflex 3.2"></div>
             <div class="f2-form-group"><label>GIA CÔNG:</label><input type="text" id="f2_gc" class="f2-input" placeholder="Vd: Đóng khoen, dán biên"></div>
@@ -388,7 +417,8 @@
               gc: document.getElementById('f2_gc').value.trim(), 
               linkAnh: document.getElementById('f2_link_anh').value.trim(),
               linkFile: document.getElementById('f2_link_file').value.trim(), 
-              note: document.getElementById('f2_note').value.trim()
+              note: document.getElementById('f2_note').value.trim(),
+              nguoiNhan: "" // Cố định trống vì không có tính năng giao việc ở đây
             };
             // RÀNG BUỘC THÔNG TIN
             if(!data.kt || !data.cl || !data.gc || !data.linkAnh || !data.linkFile) {
@@ -406,15 +436,34 @@
       else {
         Swal.fire({
           title: 'CHUYỂN QUY TRÌNH',
-          html: `<div style="text-align:left; font-size:14px;">Đơn: <b>${ma}</b><br>Chuyển đến: <b style="color:#3498db">${stt.toUpperCase()}</b></div>`,
-          input: 'textarea',
-          inputLabel: 'Ghi chú sản xuất (Dặn dò):',
-          inputPlaceholder: 'Nhập nội dung cần lưu ý cho bộ phận tiếp theo...',
+          html: `<div style="text-align:left; font-size:14px; margin-bottom:15px;">Đơn: <b>${ma}</b><br>Chuyển đến: <b style="color:#3498db">${stt.toUpperCase()}</b></div>
+                 <div style="text-align:left;">${assignHtml}</div>
+                 <div class="f2-form-group" style="text-align:left; margin-top:10px;">
+                    <label>📝 GHI CHÚ (DẶN DÒ):</label>
+                    <textarea id="f2_note_basic" class="f2-input" style="height:60px" placeholder="Nhập nội dung cần lưu ý..."></textarea>
+                 </div>`,
           allowOutsideClick: false,
-          showCancelButton: true, confirmButtonColor: '#3498db', confirmButtonText: 'ĐỒNG Ý', cancelButtonText: 'HỦY'
+          showCancelButton: true, confirmButtonColor: '#3498db', confirmButtonText: 'ĐỒNG Ý', cancelButtonText: 'HỦY',
+          preConfirm: () => {
+            const nguoiNhanEl = document.getElementById('f2_nguoi_nhan');
+            
+            if (stt === 'Chờ thiết kế') {
+                if (!nguoiNhanEl || !nguoiNhanEl.value) {
+                    Swal.showValidationMessage('Vui lòng chọn nhân viên thiết kế để giao việc!');
+                    return false;
+                }
+            }
+
+            return {
+              maDon: ma, tenSP: sp, newStatus: stt, 
+              note: document.getElementById('f2_note_basic').value.trim(), 
+              nguoiNhan: nguoiNhanEl ? nguoiNhanEl.value : "",
+              kt: "", cl: "", gc: "", linkAnh: "", linkFile: ""
+            };
+          }
         }).then((result) => {
           if (result.isConfirmed) {
-            thuc_thi_cap_nhat({ maDon: ma, tenSP: sp, newStatus: stt, note: result.value, kt: "", cl: "", gc: "", linkAnh: "", linkFile: "" });
+            thuc_thi_cap_nhat(result.value);
           }
         });
       }
@@ -429,9 +478,19 @@
         const searchBH = await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.tenSP)}&select=id,Ten_Khach_Hang`, { headers: h });
         const rowBH = await searchBH.json();
         if (rowBH.length > 0) {
+          // --- PATCH DỮ LIỆU CÓ KÈM CỘT Nhan_Vien_Phu_Trach ---
           await fetch(`${window.SB_CONFIG.URL}/rest/v1/NhatKy_BanHang?id=eq.${rowBH[0].id}`, {
             method: 'PATCH', headers: h,
-            body: JSON.stringify({ Trang_Thai: p.newStatus, Kich_Thuoc: p.kt, Chat_Lieu: p.cl, Gia_Cong: p.gc, Link_Anh: p.linkAnh, Link_File: p.linkFile, Ghi_Chu_San_Xuat: p.note })
+            body: JSON.stringify({ 
+                Trang_Thai: p.newStatus, 
+                Kich_Thuoc: p.kt, 
+                Chat_Lieu: p.cl, 
+                Gia_Cong: p.gc, 
+                Link_Anh: p.linkAnh, 
+                Link_File: p.linkFile, 
+                Ghi_Chu_San_Xuat: p.note,
+                Nhan_Vien_Phu_Trach: p.nguoiNhan || null
+            })
           });
         }
         const searchLog = await fetch(`${window.SB_CONFIG.URL}/rest/v1/Log_TienDo?Ma_Don=eq.${p.maDon}&Ten_Hang=eq.${encodeURIComponent(p.tenSP)}&select=id`, { headers: h });
@@ -453,7 +512,7 @@
         // =========================================================
         // XỬ LÝ GỬI THÔNG BÁO THEO TỪNG PHÒNG BAN CHUYÊN BIỆT (ĐÃ BỔ SUNG TÊN KHÁCH HÀNG)
         // =========================================================
-        let titleTB = ""; let msgTB = ""; let roleMoi = "";
+        let titleTB = ""; let msgTB = ""; let roleMoi = ""; let LinkMoi = "";
         let tenKH = rowBH.length > 0 ? rowBH[0].Ten_Khach_Hang : "Khách";
         
         if (p.newStatus === "Chờ thiết kế") {
@@ -478,9 +537,12 @@
             LinkMoi = "Thanh_Toan.html";
         }
         
+        // KIỂM TRA: NẾU CÓ NGƯỜI NHẬN, ĐỔI TARGET GỬI THÔNG BÁO THÀNH TÊN NGƯỜI ĐÓ ĐỂ GỬI CHUÔNG ĐÍCH DANH
+        let finalTargetRole = p.nguoiNhan !== "" ? p.nguoiNhan : roleMoi;
+
         if (titleTB !== "") {
             try {
-               await guiThongBaoSacMau(titleTB, msgTB, roleMoi, LinkMoi);
+               await guiThongBaoSacMau(titleTB, msgTB, finalTargetRole, LinkMoi);
             } catch(etb) { console.log(etb); }
         }
 
